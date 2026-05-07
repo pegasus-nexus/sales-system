@@ -233,7 +233,7 @@ export default function PedidosPage() {
                                                 <tbody className="divide-y divide-gray-50">
                                                     {pedido.items.map((item, i) => (
                                                         <tr key={i} className="text-gray-800">
-                                                            <td className="py-1.5">{item.descripcion || item.producto_nombre || 'Producto Desconocido'}</td>
+                                                            <td className="py-1.5">{item.descripcion || item.producto_nombre || item.nombre || 'Producto Desconocido'}</td>
                                                             <td className="py-1.5 text-center">{item.cantidad}</td>
                                                             <td className="py-1.5 text-right">Bs. {(item.precio_mayorista || 0).toFixed(2)}</td>
                                                             <td className="py-1.5 text-right font-medium">Bs. {(item.cantidad * (item.precio_mayorista || 0)).toFixed(2)}</td>
@@ -617,7 +617,7 @@ function ReceptionModal({ pedido, onClose, onSuccess }: { pedido: any; onClose: 
     const [items, setItems] = useState<{producto_id: string, descripcion: string, cantidad_enviada: number, cantidad_recibida: number}[]>(
         pedido.items.map((i: any) => ({
             producto_id: i.producto_id,
-            descripcion: i.producto_nombre || i.descripcion,
+            descripcion: i.descripcion || i.producto_nombre || i.nombre || 'Producto',
             cantidad_enviada: i.cantidad,
             cantidad_recibida: i.cantidad // defecto: asume que todo llegó
         }))
