@@ -51,6 +51,34 @@ export const getValuedInventory = (date?: string) => {
     return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${date ? '?' + params.toString() : ''}`);
 };
 
+export const exportValuedInventory = async (date?: string) => {
+    const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
+    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
+        ? 'https://sales-system-kappa.vercel.app/api/v1' 
+        : 'http://localhost:8000/api/v1');
+        
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    const qs = params.toString();
+    
+    const response = await fetch(`${CACHE_URL}/reports/valued-inventory/export${qs ? '?' + qs : ''}`, {
+        method: 'GET',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+    
+    if (!response.ok) throw new Error('Error al descargar el reporte valorado');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `inventario_valorado_${date || new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+};
+
+
 
 export const getFinancialReport = (startDate: string, endDate: string, sucursal_id: string = 'all') => {
     const params = new URLSearchParams({ 

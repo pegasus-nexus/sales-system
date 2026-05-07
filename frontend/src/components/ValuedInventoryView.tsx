@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getValuedInventory } from '../api/api';
-import { Loader2, Package, Store, AlertTriangle, ChevronDown, ChevronUp, DollarSign, Gem, ShieldCheck, Tag, Calendar, History } from 'lucide-react';
+import { getValuedInventory, exportValuedInventory } from '../api/api';
+import { Loader2, Package, Store, AlertTriangle, ChevronDown, ChevronUp, DollarSign, Gem, ShieldCheck, Tag, Calendar, History, Download } from 'lucide-react';
+
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -76,6 +77,13 @@ export default function ValuedInventoryView() {
                             Ver Hoy
                         </button>
                     )}
+                    <button 
+                        onClick={() => exportValuedInventory(selectedDate)}
+                        className="ml-2 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold transition-all"
+                    >
+                        <Download size={16} />
+                        Exportar Excel
+                    </button>
                 </div>
             </div>
 

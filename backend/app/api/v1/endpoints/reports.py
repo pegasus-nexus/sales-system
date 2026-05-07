@@ -646,6 +646,50 @@ async def get_valued_inventory(
         "date": date
     }
 
+import pandas as pd
+import io
+from fastapi.responses import StreamingResponse
+
+@router.get("/valued-inventory/export")
+async def export_valued_inventory(
+    date: Optional[str] = None, # YYYY-MM-DD
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Exports the valued inventory report to Excel.
+    """
+    report_data = await get_valued_inventory(date=date, current_user=current_user)
+    
+    rows = []
+    for sucursal in report_data.get("por_sucursal", []):
+        sucursal_nombre = sucursal.get("sucursal_nombre", "")
+        for item in sucursal.get("desglose", []):
+            rows.append({
+                "SUCURSAL": sucursal_nombre,
+                "PRODUCTO": item.get("producto_nombre", ""),
+                "CANTIDAD": item.get("cantidad", 0),
+                "P. COSTO": float(item.get("costo_unitario", 0)),
+                "P. PÚBLICO": float(item.get("precio_publico_unitario", 0)),
+                "VALOR COSTO TOTAL": float(item.get("valor_fabrica", 0)),
+                "VALOR PÚBLICO TOTAL": float(item.get("valor_publico", 0)),
+            })
+            
+    df = pd.DataFrame(rows)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Inventario Valorado', index=False)
+        
+    output.seek(0)
+    
+    filename_date = date if date else datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
+    filename = f"inventario_valorado_{filename_date}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 @router.get("/sales-by-hour")
 async def get_sales_by_hour(
     date: str, # YYYY-MM-DD
