@@ -240,9 +240,9 @@ function AnularModal({
                             value={notas}
                             onChange={e => setNotas(e.target.value)}
                             placeholder={requiereNotas ? 'Describe el motivo con al menos 10 caracteres...' : 'Observaciones adicionales...'}
-                            className={`w-full text-sm rounded-xl border p-3 outline-none focus:ring-2 resize-none h-20 transition-all ${
+                            className={`w-full text-sm rounded-xl border p-3 outline-none focus:ring-2 resize-none h-20 transition-all text-gray-900 ${
                                 requiereNotas && notas.trim().length < 10 && notas.length > 0
-                                    ? 'border-red-300 bg-red-50 focus:ring-red-200'
+                                    ? 'border-red-300 bg-red-50 focus:ring-red-200 text-red-900'
                                     : 'border-gray-200 bg-white focus:ring-indigo-200'
                             }`}
                         />
