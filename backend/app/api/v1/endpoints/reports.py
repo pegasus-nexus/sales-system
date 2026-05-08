@@ -528,6 +528,30 @@ async def get_valued_inventory(
             # Skip items with 0 stock to keep report clean
             {"$match": {"cantidad": {"$gt": 0}}},
             {
+                "$lookup": {
+                    "from": "products",
+                    "let": {"pid": "$producto_id"},
+                    "pipeline": [
+                        {"$match": {
+                            "$expr": {"$eq": [{"$toString": "$_id"}, "$$pid"]}
+                        }}
+                    ],
+                    "as": "product_info"
+                }
+            },
+            {"$unwind": { "path": "$product_info", "preserveNullAndEmptyArrays": True }},
+            {
+                "$addFields": {
+                    "producto_nombre": {
+                        "$cond": [
+                            {"$and": [{"$ne": ["$producto_nombre", ""]}, {"$ne": ["$producto_nombre", None]}]},
+                            "$producto_nombre",
+                            {"$ifNull": ["$product_info.descripcion", "Producto Desconocido"]}
+                        ]
+                    }
+                }
+            },
+            {
                 "$group": {
                     "_id": "$sucursal_id",
                     "total_items": {"$sum": "$cantidad"},
