@@ -123,6 +123,7 @@ export interface PedidoItem {
     producto_id: string;
     producto_nombre: string;
     descripcion?: string;
+    nombre?: string;
     cantidad: number;
     precio_mayorista: number;
 }
