@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getValuedInventory, exportValuedInventory } from '../api/api';
 import { Loader2, Package, Store, AlertTriangle, ChevronDown, ChevronUp, DollarSign, Gem, ShieldCheck, Tag, Calendar, History, Download } from 'lucide-react';
