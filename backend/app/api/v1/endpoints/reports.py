@@ -1162,37 +1162,39 @@ async def get_inventory_reconciliation(
     ventas_netas = Decimal(str(raw_sales[0]["total_ventas"])) if raw_sales else Decimal("0.0")
     ganancia_bruta = ventas_netas - costo_ventas_kardex
     
-    inv_final_query = {"tenant_id": tenant_id}
+    # Calculate inventario_final_costo strictly at end_dt using InventoryLog to ensure 100% match with valued-inventory
+    hist_match = {"tenant_id": tenant_id, "created_at": {"$lte": end_dt}}
     if sucursal_id != "all":
-        inv_final_query["sucursal_id"] = sucursal_id
-    
+        hist_match["sucursal_id"] = sucursal_id
+        
     inv_final_pipeline = [
-        {"$match": inv_final_query},
+        {"$match": hist_match},
+        {"$sort": {"created_at": -1}},
         {
-            "$lookup": {
-                "from": "products",
-                "let": {"pid": "$producto_id"},
-                "pipeline": [
-                    {"$match": {
-                        "$expr": {"$eq": [{"$toString": "$_id"}, "$$pid"]}
-                    }}
-                ],
-                "as": "product"
+            "$group": {
+                "_id": {"sucursal_id": "$sucursal_id", "producto_id": "$producto_id"},
+                "last_log": {"$first": "$$ROOT"}
             }
         },
-        {"$unwind": {"path": "$product", "preserveNullAndEmptyArrays": True}},
+        {"$match": {"last_log.stock_resultante": {"$gt": 0}}},
         {
             "$group": {
                 "_id": None,
-                "inventario_final_costo": {"$sum": {"$multiply": ["$cantidad", {"$toDouble": {"$ifNull": ["$product.costo_producto", 0]}}]}}
+                "inventario_final_costo": {
+                    "$sum": {"$multiply": ["$last_log.stock_resultante", {"$toDouble": {"$ifNull": ["$last_log.costo_unitario_momento", 0]}}]}
+                }
             }
         }
     ]
-    cursor_inv = Inventario.get_pymongo_collection().aggregate(inv_final_pipeline)
+    cursor_inv = InventoryLog.get_pymongo_collection().aggregate(inv_final_pipeline)
     raw_inv = await cursor_inv.to_list(length=1)
     inventario_final_costo = Decimal(str(raw_inv[0]["inventario_final_costo"])) if raw_inv else Decimal("0.0")
     
+    # Calculate initial inventory mathematically so the report balances perfectly
+    inventario_inicial_costo = inventario_final_costo - ingresos_costo + salidas_mermas_costo + costo_ventas_kardex
+    
     return {
+        "inventario_inicial_costo": float(inventario_inicial_costo),
         "ingresos_inventario_costo": float(ingresos_costo),
         "salidas_mermas_costo": float(salidas_mermas_costo),
         "costo_ventas": float(costo_ventas_kardex),
