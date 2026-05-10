@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getValuedInventory, exportValuedInventory } from '../api/api';
 import { Loader2, Package, Store, AlertTriangle, ChevronDown, ChevronUp, DollarSign, Gem, ShieldCheck, Tag, Calendar, History, Download } from 'lucide-react';
@@ -8,7 +8,15 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 export default function ValuedInventoryView() {
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
-    const [selectedDate, setSelectedDate] = useState<string>('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const selectedDate = searchParams.get('valued_date') || '';
+    
+    const setSelectedDate = (date: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (date) newParams.set('valued_date', date);
+        else newParams.delete('valued_date');
+        setSearchParams(newParams);
+    };
 
     const { data: valuatedData, isLoading, isError } = useQuery({
         queryKey: ['valued-inventory', selectedDate],
