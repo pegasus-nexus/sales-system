@@ -12,11 +12,37 @@ import { generarPDFSesion } from '../utils/cajaPDF';
 import {
     Unlock, Lock, MinusCircle, Plus, X,
     Receipt, Tag, RefreshCw, AlertCircle, AlertTriangle,
-    History, ChevronDown, ChevronUp, ShieldCheck, Download, FileText, Wallet
+    History, ChevronDown, ChevronUp, ShieldCheck, Download, FileText, Wallet, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocalStorage } from 'usehooks-ts';
 import { formatDate } from '../utils/dateUtils';
+import { useEffect } from 'react';
+
+function BoliviaClock() {
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const timeStr = time.toLocaleTimeString('es-BO', { 
+        timeZone: 'America/La_Paz',
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+    });
+
+    return (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-xl shadow-lg border border-gray-700 font-mono text-sm">
+            <Clock size={14} className="text-indigo-400 animate-pulse" />
+            <span className="font-bold tracking-wider">{timeStr}</span>
+            <span className="text-[10px] text-gray-500 font-sans font-bold uppercase ml-1">BO</span>
+        </div>
+    );
+}
 
 
 const fmt = (n?: number) => `Bs. ${(n || 0).toFixed(2)}`;
@@ -614,6 +640,10 @@ export default function CajaPage() {
                                 {' '}· {sesion.cajero_name}
                             </p>
                         )}
+                    </div>
+
+                    <div className="hidden sm:block">
+                        <BoliviaClock />
                     </div>
                     {tab === 'sesion' && (
                         <div className="flex gap-2 flex-wrap justify-end">
