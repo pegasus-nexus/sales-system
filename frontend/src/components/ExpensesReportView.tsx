@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { getExpensesReport, getCategoriasGasto, getSucursales, createCategoriaGasto, updateCategoriaGasto, deleteCategoriaGasto } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
