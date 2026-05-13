@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    Download
+    Printer
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 
@@ -98,7 +98,7 @@ export default function FinancialDetailView() {
                     onClick={() => window.print()}
                     className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
                 >
-                    <Download size={18} /> Exportar PDF
+                    <Printer size={18} /> PDF
                 </button>
             </div>
 

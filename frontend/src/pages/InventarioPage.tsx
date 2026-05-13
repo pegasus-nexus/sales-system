@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import { getInventario, getMovimientosInventario, ajustarInventario, getSucursales, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -250,13 +250,24 @@ export default function InventarioPage() {
                             </button>
                         )}
                         {tab === 'kardex' && (
-                            <button 
-                                onClick={() => exportMovimientosInventario(selectedSucursal, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-                            >
-                                <Download size={16} />
-                                Exportar
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => exportMovimientosInventario(selectedSucursal, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
+                                    title="Exportar a Excel"
+                                >
+                                    <FileSpreadsheet size={16} />
+                                    <span>Excel</span>
+                                </button>
+                                <button 
+                                    onClick={() => window.print()}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
+                                    title="Imprimir PDF"
+                                >
+                                    <Printer size={16} />
+                                    <span>PDF</span>
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>

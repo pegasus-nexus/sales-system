@@ -490,12 +490,19 @@ export const registrarAbono = (sale_id: string, abono: { metodo: 'EFECTIVO' | 'T
 
 export const getCajaSesionActiva = () =>
     client<CajaSesion | null>('/caja/sesion/activa');
-export const getHistorialCaja = (startDate?: string, endDate?: string) => {
-    let url = '/caja/sesiones';
+export interface PaginatedSesiones {
+    items: CajaSesionResumen[];
+    total: number;
+    page: number;
+    page_size: number;
+}
+
+export const getHistorialCaja = (startDate?: string, endDate?: string, page: number = 1, pageSize: number = 10) => {
+    let url = `/caja/sesiones?page=${page}&page_size=${pageSize}`;
     if (startDate && endDate) {
-        url += `?start_date=${startDate}&end_date=${endDate}`;
+        url += `&start_date=${startDate}&end_date=${endDate}`;
     }
-    return client<CajaSesionResumen[]>(url);
+    return client<PaginatedSesiones>(url);
 };
 export const abrirCaja = (data: AbrirCajaIn) =>
     client<CajaSesion>('/caja/sesion/abrir', { method: 'POST', body: data });

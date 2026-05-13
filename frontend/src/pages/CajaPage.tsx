@@ -218,17 +218,27 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
     const [filterActive, setFilterActive] = useState<boolean>(false);
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
 
-    const { data: sesiones = [], isLoading } = useHistorialCaja(
+    const { data, isLoading } = useHistorialCaja(
         filterActive ? startDate : undefined,
-        filterActive ? endDate : undefined
+        filterActive ? endDate : undefined,
+        page,
+        pageSize
     );
+    
+    const sesiones = data?.items || [];
+    const totalRecords = data?.total || 0;
+    const totalPages = Math.ceil(totalRecords / (filterActive ? pageSize : 5));
+
     const [expanded, setExpanded] = useState<string | null>(null);
     const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
     function handleBuscar() {
         if (startDate && endDate) {
             setFilterActive(true);
+            setPage(1);
         }
     }
 
@@ -236,6 +246,7 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
         setStartDate('');
         setEndDate('');
         setFilterActive(false);
+        setPage(1);
     }
 
     async function handleExportPDF(e: React.MouseEvent, s: CajaSesionResumen) {
@@ -384,6 +395,35 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
                         })}
                     </tbody>
                 </table>
+
+                {/* Pagination Footer */}
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                    <div className="text-[11px] text-gray-500 font-medium">
+                        Mostrando <span className="font-bold text-gray-700">{sesiones.length}</span> de <span className="font-bold text-gray-700">{totalRecords}</span> sesiones
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="px-2 py-1 bg-white border border-gray-200 rounded text-[10px] font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-30 transition-all"
+                        >
+                            Anterior
+                        </button>
+                        
+                        <div className="text-[10px] font-bold text-gray-400 px-2">
+                            Página {page} de {totalPages || 1}
+                        </div>
+                        
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="px-2 py-1 bg-white border border-gray-200 rounded text-[10px] font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-30 transition-all"
+                        >
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
             </div>
             )}
         </div>

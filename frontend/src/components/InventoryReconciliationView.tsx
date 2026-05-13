@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { client, getSucursales } from '../api/api';
 import { 
-    Loader2, Calendar, Store, Scale, AlertTriangle, Info, TrendingUp, Download
+    Loader2, Calendar, Store, Scale, AlertTriangle, Info, TrendingUp, Download, Printer
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
@@ -107,12 +107,20 @@ export default function InventoryReconciliationView() {
                     </div>
                 </div>
 
-                <button 
-                    onClick={handleDownloadImg}
-                    className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 ml-auto"
-                >
-                    <Download size={18} /> Exportar Imagen
-                </button>
+                <div className="flex items-center gap-3 ml-auto">
+                    <button 
+                        onClick={handleDownloadImg}
+                        className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+                    >
+                        <Download size={18} /> Imagen
+                    </button>
+                    <button 
+                        onClick={() => window.print()}
+                        className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                    >
+                        <Printer size={18} /> PDF
+                    </button>
+                </div>
             </div>
 
             {isLoading ? (

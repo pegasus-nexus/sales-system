@@ -44,9 +44,11 @@ async def _get_active_session(tenant_id: str, sucursal_id: str, cajero_id: str) 
 async def get_sesiones(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 10,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Return sessions. By default returns last 5, or filters by date range if provided."""
+    """Return sessions. By default returns last 5 (page 1, size 5), or filters by date range with pagination."""
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
 
@@ -63,10 +65,13 @@ async def get_sesiones(
         
     find_query = CajaSesion.find(*query_args).sort("-abierta_at")
     
-    if not start_date and not end_date:
-        find_query = find_query.limit(5)
-        
-    sesiones = await find_query.to_list()
+    total = await find_query.count()
+    
+    # Si no hay fechas, forzamos limit 5 para la "vista rápida"
+    actual_limit = page_size if (start_date or end_date) else 5
+    skip = (page - 1) * actual_limit
+    
+    sesiones = await find_query.skip(skip).limit(actual_limit).to_list()
 
     result = []
     for s in sesiones:
@@ -112,7 +117,12 @@ async def get_sesiones(
             "notas_cierre":    s.notas_cierre,
         })
 
-    return result
+    return {
+        "items": result,
+        "total": total,
+        "page": page,
+        "page_size": actual_limit
+    }
 
 
 
