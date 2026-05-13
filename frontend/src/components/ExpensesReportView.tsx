@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getExpensesReport, getCategoriasGasto, getSucursales, createCategoriaGasto, updateCategoriaGasto, deleteCategoriaGasto } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
-    Calendar, Loader2, ArrowDownCircle, Filter, FileDown, 
-    Tag, Plus, Edit2, Trash2, X, Check, Search, Receipt
+    Calendar, Loader2, ArrowDownCircle, FileDown, 
+    Tag, Edit2, Trash2, X, Check, Receipt
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFGastos } from '../utils/reportPDF';
@@ -14,7 +14,6 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 export default function ExpensesReportView() {
     const { role, sucursal_id } = useAuthStore();
-    const queryClient = useQueryClient();
     
     // Filters
     const today = getBoliviaTodayISO();
@@ -44,7 +43,7 @@ export default function ExpensesReportView() {
         queryFn: getCategoriasGasto
     });
 
-    const { data: report, isLoading, isError } = useQuery({
+    const { data: report, isLoading } = useQuery({
         queryKey: ['expenses-report', startDate, endDate, selectedSucursal, selectedCategory],
         queryFn: () => getExpensesReport(startDate, endDate, selectedSucursal, selectedCategory)
     });
