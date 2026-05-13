@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { client, getSucursales } from '../api/api';
 import { 
-    Loader2, Calendar, Store, Scale, AlertTriangle, Info, TrendingUp, Download, Printer, FileDown
+    Loader2, Calendar, Store, Scale, AlertTriangle, Info, TrendingUp, Download, FileDown
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';

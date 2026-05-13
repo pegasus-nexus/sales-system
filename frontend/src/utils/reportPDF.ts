@@ -385,7 +385,6 @@ export function descargarPDFInventario(valuatedData: any, fecha: string) {
 
 export function descargarPDFAuditoria(report: any, startDate: string, endDate: string, sucursalNombre: string) {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pw = doc.internal.pageSize.getWidth();
 
     let y = drawHeader(doc, 'Auditoría: Inventario vs Caja', `${sucursalNombre}  •  ${startDate} al ${endDate}`);
 
@@ -398,14 +397,14 @@ export function descargarPDFAuditoria(report: any, startDate: string, endDate: s
 
     autoTable(doc, {
         startY: y,
-        body: [
+        body: ([
             ['Inventario Inicial (antes del período)', bs(report.inventario_inicial_costo), ''],
             ['(+) Ingresos a Inventario (Pedidos / Compras)', bs(report.ingresos_inventario_costo), 'Entradas registradas en el período'],
             ['(-) Mermas y Salidas Manuales', bs(report.salidas_mermas_costo), 'Mercadería sin cobrar'],
             ['(-) Costo de Ventas (Salió por Caja)', bs(report.costo_ventas), 'Costo unitario al momento de la venta'],
             report.revalorizacion_costos !== 0 ? ['(±) Ajuste por Revalorización', bs(report.revalorizacion_costos), 'Por cambios en costo unitario del catálogo'] : null,
             ['= Inventario Final Calculado', bs(report.inventario_final_costo), 'Stock valorado actual'],
-        ].filter(Boolean),
+        ] as (string[] | null)[]).filter((r): r is string[] => r !== null),
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: C.primary, textColor: C.white },
         alternateRowStyles: { fillColor: C.light },

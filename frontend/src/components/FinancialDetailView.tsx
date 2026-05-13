@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    Printer, FileDown
+    FileDown
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
