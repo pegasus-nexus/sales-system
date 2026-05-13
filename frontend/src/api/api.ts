@@ -510,10 +510,13 @@ export interface PaginatedSesiones {
     page_size: number;
 }
 
-export const getHistorialCaja = (startDate?: string, endDate?: string, page: number = 1, pageSize: number = 10) => {
+export const getHistorialCaja = (startDate?: string, endDate?: string, page: number = 1, pageSize: number = 10, sucursalId?: string) => {
     let url = `/caja/sesiones?page=${page}&page_size=${pageSize}`;
     if (startDate && endDate) {
         url += `&start_date=${startDate}&end_date=${endDate}`;
+    }
+    if (sucursalId && sucursalId !== 'all') {
+        url += `&sucursal_id=${sucursalId}`;
     }
     return client<PaginatedSesiones>(url);
 };

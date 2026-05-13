@@ -579,3 +579,52 @@ export function descargarPDFGastos(report: any, startDate: string, endDate: stri
     addFooters(doc);
     doc.save(`Reporte_Gastos_${startDate}_${endDate}.pdf`);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. REPORTE DE VENTAS POR CAJA (SÍNTESIS)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export function descargarPDFVentasCaja(sessions: any[], startDate: string, endDate: string, sucursalNombre: string) {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pw = doc.internal.pageSize.getWidth();
+
+    let y = drawHeader(doc, 'Resumen de Ventas por Caja', `${sucursalNombre}  •  ${startDate} al ${endDate}`);
+
+    const totalVentas = sessions.reduce((acc, s) => acc + (s.total_ventas || 0), 0);
+    const totalQR = sessions.reduce((acc, s) => acc + (s.total_qr || 0), 0);
+    const totalEfectivo = sessions.reduce((acc, s) => acc + (s.total_efectivo - s.total_cambio), 0);
+
+    // KPIs
+    const kpiW = (pw - 30) / 3;
+    drawKPI(doc, 10, y, kpiW - 2, 'Ventas Totales', bs(totalVentas), C.primary);
+    drawKPI(doc, 10 + kpiW, y, kpiW - 2, 'Total QR (Digital)', bs(totalQR), C.sky);
+    drawKPI(doc, 10 + (kpiW * 2), y, kpiW - 2, 'Ef. Neto (Cajón)', bs(totalEfectivo), C.green);
+    y += 28;
+
+    autoTable(doc, {
+        startY: y,
+        head: [['Fecha Apertura', 'Sucursal', 'Cajero / Sesión', 'Ventas QR', 'Ef. Neto', 'Total Ventas', 'Estado']],
+        body: sessions.map(s => [
+            new Date(s.abierta_at).toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            s.sucursal_id,
+            s.cajero_name,
+            bs(s.total_qr),
+            bs(s.total_efectivo - s.total_cambio),
+            bs(s.total_ventas),
+            s.estado
+        ]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: C.dark, textColor: C.white, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: C.light },
+        columnStyles: {
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right', fontStyle: 'bold' },
+            6: { halign: 'center' }
+        },
+        margin: { left: 10, right: 10 },
+    });
+
+    addFooters(doc);
+    doc.save(`Ventas_por_Caja_${startDate}_${endDate}.pdf`);
+}

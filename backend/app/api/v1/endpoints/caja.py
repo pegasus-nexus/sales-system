@@ -42,20 +42,26 @@ async def _get_active_session(tenant_id: str, sucursal_id: str, cajero_id: str) 
 
 @router.get("/sesiones")
 async def get_sesiones(
+    page: int = 1, 
+    page_size: int = 10,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    page: int = 1,
-    page_size: int = 10,
+    sucursal_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user)
 ):
     """Return sessions. By default returns last 5 (page 1, size 5), or filters by date range with pagination."""
     tenant_id   = current_user.tenant_id or "default"
-    sucursal_id = current_user.sucursal_id or "CENTRAL"
+    # Permission check for sucursal filtering
+    if current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+        target_sucursal = sucursal_id if sucursal_id and sucursal_id != "all" else None
+    else:
+        target_sucursal = current_user.sucursal_id or "CENTRAL"
 
     query_args = [
-        CajaSesion.tenant_id == tenant_id,
-        CajaSesion.sucursal_id == sucursal_id,
+        CajaSesion.tenant_id == tenant_id
     ]
+    if target_sucursal:
+        query_args.append(CajaSesion.sucursal_id == target_sucursal)
     
     if start_date and end_date:
         from app.utils.date_utils import get_range_bolivia
@@ -87,7 +93,7 @@ async def get_sesiones(
         cerrada_at = s.cerrada_at or datetime.utcnow()
         sales = await Sale.find(
             Sale.tenant_id   == tenant_id,
-            Sale.sucursal_id == sucursal_id,
+            Sale.sucursal_id == s.sucursal_id,
             Sale.created_at  >= s.abierta_at,
             Sale.created_at  <= cerrada_at,
             Sale.anulada     == False,
