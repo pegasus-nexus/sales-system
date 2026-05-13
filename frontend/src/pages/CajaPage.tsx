@@ -11,7 +11,7 @@ import { getResumenCaja, getCategoriasGasto } from '../api/api';
 import { generarPDFSesion } from '../utils/cajaPDF';
 import {
     Unlock, Lock, MinusCircle, Plus, X,
-    Receipt, Tag, RefreshCw, AlertCircle, AlertTriangle,
+    Receipt, Tag, RefreshCw, AlertCircle, AlertTriangle, Info,
     History, ChevronDown, ChevronUp, ShieldCheck, Download, FileText, Wallet, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -357,16 +357,44 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
                 <table className="w-full text-left text-xs">
                     <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fecha / Hora</th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">Fecha / Hora</th>
                             <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cajero</th>
                             <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Txs</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">QR</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Tarjeta</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Ef. neto</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Gastos</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Total</th>
-                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Saldo caja</th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    Txs <Info size={10} className="text-gray-300 cursor-help" title="Número total de transacciones registradas" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    QR <Info size={10} className="text-gray-300 cursor-help" title="Ventas cobradas mediante QR (Dinero digital)" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    Tarjeta <Info size={10} className="text-gray-300 cursor-help" title="Ventas cobradas mediante Tarjeta/POS (Dinero digital)" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    Ef. neto <Info size={10} className="text-gray-300 cursor-help" title="Ingresos en Efectivo - Cambios/Vueltos entregados" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    Gastos <Info size={10} className="text-gray-300 cursor-help" title="Total de egresos registrados por gastos operativos" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                    Total <Info size={10} className="text-gray-300 cursor-help" title="Suma de todas las ventas (Efectivo + QR + Tarjeta)" />
+                                </div>
+                            </th>
+                            <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                <div className="flex items-center justify-end gap-1 font-black text-gray-600">
+                                    Saldo caja <Info size={10} className="text-indigo-300 cursor-help" title="Monto Inicial + Ef. neto - Gastos (Dinero esperado físicamente)" />
+                                </div>
+                            </th>
                             <th className="px-2 py-2" />
                             <th className="px-2 py-2" />
                         </tr>
