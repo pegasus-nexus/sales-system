@@ -651,11 +651,11 @@ function ReceptionModal({ pedido, onClose, onSuccess }: { pedido: any; onClose: 
                                 <th className="px-3 py-2 text-center w-32">Recibida</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 text-gray-900">
                             {items.map((i, idx) => (
                                 <tr key={idx} className="hover:bg-gray-50/50">
-                                    <td className="px-3 py-2 text-xs font-semibold">{i.descripcion}</td>
-                                    <td className="px-3 py-2 text-center font-bold text-gray-500 bg-gray-50/50">{i.cantidad_enviada}</td>
+                                    <td className="px-3 py-2 text-xs font-semibold text-gray-900">{i.descripcion}</td>
+                                    <td className="px-3 py-2 text-center font-bold text-gray-600 bg-gray-50/50">{i.cantidad_enviada}</td>
                                     <td className="px-3 py-2 relative">
                                         <input type="number" min="0" max={i.cantidad_enviada}
                                             value={i.cantidad_recibida}
@@ -663,7 +663,7 @@ function ReceptionModal({ pedido, onClose, onSuccess }: { pedido: any; onClose: 
                                                 const val = parseInt(e.target.value) || 0;
                                                 setItems(items.map((it, n) => n === idx ? { ...it, cantidad_recibida: Math.min(val, it.cantidad_enviada) } : it));
                                             }}
-                                            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-700 bg-indigo-50"
+                                            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-gray-900 bg-indigo-50"
                                         />
                                         {i.cantidad_recibida !== i.cantidad_enviada && (
                                             <div className="absolute top-1/2 -right-6 -translate-y-1/2 text-amber-500" title="Diferencia de inventario detectada">
