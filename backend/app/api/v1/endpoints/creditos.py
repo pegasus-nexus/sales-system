@@ -40,9 +40,13 @@ async def get_cuentas_credito(
     is_global_admin = current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ]
     
     if not is_global_admin and current_user.sucursal_id:
-        # Encontrar IDs de cuentas que tienen deudas (activas o pagadas) en esta sucursal
-        # Usamos el motor collection directo para distinct ya que FindMany no lo tiene
-        cuentas_ids = await Deuda.get_motor_collection().distinct("cuenta_id", {"sucursal_id": current_user.sucursal_id})
+        # Encontrar IDs de cuentas que tienen deudas en esta sucursal usando agregación
+        pipeline = [
+            {"$match": {"sucursal_id": current_user.sucursal_id}},
+            {"$group": {"_id": "$cuenta_id"}}
+        ]
+        results = await Deuda.aggregate(pipeline).to_list()
+        cuentas_ids = [r["_id"] for r in results]
         from bson import ObjectId
         # Nota: Beanie maneja IDs como ObjectId internamente si se pasan así
         filters.append({"_id": {"$in": [ObjectId(cid) for cid in cuentas_ids]}})
