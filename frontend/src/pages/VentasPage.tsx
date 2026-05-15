@@ -353,8 +353,7 @@ export default function VentasPage() {
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
-        queryFn: getSucursales,
-        enabled: esMatriz
+        queryFn: getSucursales
     });
 
     const { data: ventasRes, isLoading } = useQuery({
@@ -687,7 +686,14 @@ export default function VentasPage() {
 
             {/* Hidden Ticket Wrapper for Re-printing */}
             <div className="print-only">
-                {printSale && <TicketPrinter sale={printSale} tenantName={user?.tenant_id || "Mi Tienda"} />}
+                {printSale && (
+                    <TicketPrinter 
+                        sale={printSale} 
+                        tenantName={user?.tenant_id || "Mi Tienda"} 
+                        isReimprint={true}
+                        sucursalName={sucursales.find(s => s._id === printSale.sucursal_id)?.nombre}
+                    />
+                )}
             </div>
         </div>
     );

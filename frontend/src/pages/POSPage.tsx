@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProducts, getInventario, getCategories, getSaleStatsToday, getUsers } from '../api/api';
+import { getProducts, getInventario, getCategories, getSaleStatsToday, getUsers, getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { usePosStore, type MetodoPago } from '../store/usePosStore';
 import { useDescuentos } from '../hooks/useDescuentos';
@@ -78,6 +78,7 @@ export default function POSPage() {
     const { data: stats } = useQuery({ queryKey: ['pos-stats'], queryFn: () => getSaleStatsToday(), refetchInterval: 60_000 });
     const { data: descuentosDisponibles = [], isLoading: loadingD } = useDescuentos();
     const { data: usersData = [] } = useQuery({ queryKey: ['users'], queryFn: getUsers });
+    const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales });
     
     // Filtrar usuarios que pueden ser vendedores (de la misma sucursal)
     const vendedores = useMemo(() => {
@@ -993,7 +994,13 @@ export default function POSPage() {
 
             {/* Hidden wrapper for thermal printing */}
             <div className="print-only">
-                {lastSale && <TicketPrinter sale={lastSale} tenantName={user?.tenant_id || "Mi Tienda"} />}
+                {lastSale && (
+                    <TicketPrinter 
+                        sale={lastSale} 
+                        tenantName={user?.tenant_id || "Mi Tienda"} 
+                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
+                    />
+                )}
             </div>
         </div>
     );
