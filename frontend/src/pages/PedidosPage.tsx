@@ -133,7 +133,6 @@ export default function PedidosPage() {
     }, [availableProducts, searchProd]);
 
     const resetForm = () => { setSelectedSucursal(''); setOrderItems([]); setNotas(''); setSearchProd(''); };
-    const addItem = () => setOrderItems(p => [...p, { producto_id: '', cantidad: 1 }]);
     const updateItem = (i: number, f: 'producto_id' | 'cantidad', v: string | number) =>
         setOrderItems(p => p.map((item, idx) => idx === i ? { ...item, [f]: v } : item));
     const removeItem = (i: number) => setOrderItems(p => p.filter((_, idx) => idx !== i));
