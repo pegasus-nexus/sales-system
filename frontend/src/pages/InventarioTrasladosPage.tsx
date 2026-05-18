@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Truck, Search, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText } from 'lucide-react';
+import { Truck, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText } from 'lucide-react';
 import { getTraslados, despacharTraslado, recibirTraslado, cancelarTraslado } from '../api/traslados';
 import { getSucursales, getProducts } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
 export default function InventarioTrasladosPage() {
-    const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [tab, setTab] = useState<'enviados' | 'recibidos'>('enviados');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -182,10 +181,11 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const [notas, setNotas] = useState('');
     const [items, setItems] = useState<any[]>([]);
 
-    const { data: productos = [] } = useQuery({
+    const { data: productosResponse } = useQuery({
         queryKey: ['products'],
-        queryFn: getProducts,
+        queryFn: () => getProducts(1, 1000),
     });
+    const productos = productosResponse?.items || [];
 
     const mutation = useMutation({
         mutationFn: despacharTraslado,

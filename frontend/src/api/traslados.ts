@@ -1,4 +1,4 @@
-import api from './axios';
+import api from './client';
 
 export interface TrasladoItemCreate {
     producto_id: string;
