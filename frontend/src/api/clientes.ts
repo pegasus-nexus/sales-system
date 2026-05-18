@@ -1,4 +1,4 @@
-import api from './axios';
+import { client } from './client';
 
 export interface Cliente {
     _id: string;
@@ -17,23 +17,21 @@ export interface Cliente {
 }
 
 export const getClientes = async (page: number = 1, limit: number = 50, q: string = '') => {
-    // API pagination uses skip, but let's map it based on page
     const skip = (page - 1) * limit;
-    const { data } = await api.get<Cliente[]>('/clientes', { params: { skip, limit, q } });
-    return data;
+    let url = `/clientes?skip=${skip}&limit=${limit}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    return await client<Cliente[]>(url);
 };
 
 export const createCliente = async (cliente: Partial<Cliente>) => {
-    const { data } = await api.post<Cliente>('/clientes', cliente);
-    return data;
+    return await client<Cliente>('/clientes', { body: cliente });
 };
 
 export const updateCliente = async ({ id, data }: { id: string; data: Partial<Cliente> }) => {
-    const response = await api.put<Cliente>(`/clientes/${id}`, data);
-    return response.data;
+    return await client<Cliente>(`/clientes/${id}`, { method: 'PUT', body: data });
 };
 
 export const deleteCliente = async (id: string) => {
-    const { data } = await api.delete(`/clientes/${id}`);
-    return data;
+    return await client<{ message: string }>(`/clientes/${id}`, { method: 'DELETE' });
 };
+

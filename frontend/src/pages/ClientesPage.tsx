@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
     Users, Search, Plus, Edit2, Trash2, Mail, Phone, MapPin, CreditCard, 
-    X, ShoppingBag, Clock, ShieldCheck 
+    X, ShoppingBag, ShieldCheck 
 } from 'lucide-react';
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente } from '../hooks/useClientes';
-import { Cliente } from '../api/clientes';
-import { useDebounce } from 'use-debounce';
+import type { Cliente } from '../api/clientes';
 import { AnimatePresence, motion } from 'framer-motion';
+
+// Simple debounce hook
+function useDebounce<T>(value: T, delay: number): [T] {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+    React.useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return [debouncedValue];
+}
 
 export default function ClientesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch] = useDebounce(searchTerm, 500);
-    const [page, setPage] = useState(1);
+    const [page] = useState(1);
     
     // API
     const { data: clientes = [], isLoading } = useClientes(page, 50, debouncedSearch);
@@ -71,13 +80,6 @@ export default function ClientesPage() {
         if (window.confirm(`¿Estás seguro de eliminar a ${nombre}?`)) {
             deleteMut.mutate(id);
         }
-    };
-
-    const formatDate = (dateStr?: string) => {
-        if (!dateStr) return 'Nunca';
-        return new Date(dateStr).toLocaleDateString('es-BO', {
-            year: 'numeric', month: 'short', day: 'numeric'
-        });
     };
 
     const formatMoney = (amount: number) => {
@@ -144,7 +146,7 @@ export default function ClientesPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {clientes.map((cliente) => (
+                        {clientes.map((cliente: Cliente) => (
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
