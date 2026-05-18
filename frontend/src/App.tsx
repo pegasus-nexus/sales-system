@@ -20,6 +20,7 @@ import ControlQRPage from './pages/ControlQRPage';
 import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
 import CreditosPage from './pages/CreditosPage';
+import ClientesPage from './pages/ClientesPage';
 import ReclamosFabrica from './pages/b2b/ReclamosFabrica';
 import ComunidadPage from './pages/ComunidadPage';
 import { useAuthStore } from './store/authStore';
@@ -203,6 +204,13 @@ function App() {
                 <Route path="/creditos" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CREDITOS">
                     <CreditosPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Clientes */}
+                <Route path="/clientes" element={
+                  <ProtectedRoute allowedRoles={ALL_STAFF}>
+                    <ClientesPage />
                   </ProtectedRoute>
                 } />
 

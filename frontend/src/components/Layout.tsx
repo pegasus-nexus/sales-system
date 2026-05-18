@@ -60,6 +60,7 @@ export default function Layout({ children }: LayoutProps) {
             { icon: Store,           label: 'Sucursales',   path: '/sucursales',         feature: 'MULTI_SUCURSAL',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
             { icon: ClipboardList,   label: 'Pedidos',      path: '/pedidos',            feature: 'PEDIDOS_INTERNOS',     roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
             { icon: Users,           label: 'Personal',     path: '/usuarios',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+            { icon: Users,           label: 'Clientes',     path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: QrCode,          label: 'Control QR',   path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
             { icon: Users,           label: 'Comunidad',    path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
             { icon: Warehouse,       label: 'Deuda Taboada',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
