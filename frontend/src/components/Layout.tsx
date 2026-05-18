@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
-    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote
+    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -52,6 +52,7 @@ export default function Layout({ children }: LayoutProps) {
             { icon: Wallet,          label: 'Caja',         path: '/caja',               feature: 'CAJA',                 roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Package,         label: 'Catálogo',     path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Warehouse,       label: 'Inventario',   path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+            { icon: Truck,           label: 'Traslados',    path: '/traslados',          feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
             { icon: Banknote,        label: 'Créditos',     path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             {icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: 'REPORTES_AVANZADOS',   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN', 'CAJERO'] },
             { icon: Percent,         label: 'Descuentos',   path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },

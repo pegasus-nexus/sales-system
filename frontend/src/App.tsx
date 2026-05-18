@@ -8,6 +8,7 @@ import TenantDashboard from './pages/TenantDashboard';
 import SucursalesPage from './pages/SucursalesPage';
 import CatalogoPage from './pages/CatalogoPage';
 import InventarioPage from './pages/InventarioPage';
+import InventarioTrasladosPage from './pages/InventarioTrasladosPage';
 import PedidosPage from './pages/PedidosPage';
 import POSPage from './pages/POSPage';
 import CajaPage from './pages/CajaPage';
@@ -176,6 +177,13 @@ function App() {
                 <Route path="/inventario" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
                     <InventarioPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Traslados de Inventario */}
+                <Route path="/traslados" element={
+                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="INVENTARIO">
+                    <InventarioTrasladosPage />
                   </ProtectedRoute>
                 } />
 
