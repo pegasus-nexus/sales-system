@@ -1,4 +1,4 @@
-import api from './client';
+import { client } from './client';
 
 export interface TrasladoItemCreate {
     producto_id: string;
@@ -22,26 +22,23 @@ export interface TrasladoReceive {
 }
 
 export const despacharTraslado = async (data: TrasladoCreate) => {
-    const response = await api.post('/traslados/', data);
-    return response.data;
+    return await client('/traslados/', { body: data, method: 'POST' });
 };
 
 export const recibirTraslado = async (trasladoId: string, data: TrasladoReceive) => {
-    const response = await api.post(`/traslados/${trasladoId}/recibir`, data);
-    return response.data;
+    return await client(`/traslados/${trasladoId}/recibir`, { body: data, method: 'POST' });
 };
 
 export const cancelarTraslado = async (trasladoId: string) => {
-    const response = await api.post(`/traslados/${trasladoId}/cancelar`);
-    return response.data;
+    return await client(`/traslados/${trasladoId}/cancelar`, { method: 'POST' });
 };
 
 export const getTraslados = async (params: { tipo: 'enviados' | 'recibidos' | 'todos', estado?: string, page?: number, page_size?: number }) => {
-    const response = await api.get('/traslados/', { params });
-    return response.data;
+    const validParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
+    const queryParams = new URLSearchParams(validParams as any).toString();
+    return await client(`/traslados/?${queryParams}`);
 };
 
 export const getTrasladoById = async (trasladoId: string) => {
-    const response = await api.get(`/traslados/${trasladoId}`);
-    return response.data;
+    return await client(`/traslados/${trasladoId}`);
 };
