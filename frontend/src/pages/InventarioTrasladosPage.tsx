@@ -187,6 +187,12 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     });
     const productos = (productosResponse as any)?.items || [];
 
+    const getUserStock = (prod: any) => {
+        const branchId = user?.sucursal_id || 'CENTRAL';
+        const inv = prod.inventario?.find((i: any) => i.sucursal_id === branchId);
+        return inv ? inv.cantidad : 0;
+    };
+
     const mutation = useMutation({
         mutationFn: despacharTraslado,
         onSuccess: () => {
@@ -202,18 +208,34 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const addItem = (productoId: string) => {
         if (!productoId) return;
         const prod = productos.find((p: any) => p._id === productoId);
-        if (prod && !items.find(i => i.producto_id === productoId)) {
-            setItems([...items, { producto_id: productoId, descripcion: prod.descripcion, cantidad: 1 }]);
+        if (prod) {
+            const stock = getUserStock(prod);
+            if (stock <= 0) {
+                toast.error(`No tienes stock de '${prod.descripcion}' en tu sucursal para transferir.`);
+                return;
+            }
+            if (!items.find(i => i.producto_id === productoId)) {
+                setItems([...items, { producto_id: productoId, descripcion: prod.descripcion, cantidad: 1, maxStock: stock }]);
+            }
         }
     };
 
     const updateQty = (id: string, qty: number) => {
+        const item = items.find(i => i.producto_id === id);
+        if (item && qty > item.maxStock) {
+            toast.warning(`La cantidad ingresada supera el stock disponible (${item.maxStock})`);
+        }
         setItems(items.map(i => i.producto_id === id ? { ...i, cantidad: qty } : i));
     };
 
     const handleSubmit = () => {
         if (!destinoId) return toast.error("Selecciona una sucursal destino");
         if (items.length === 0) return toast.error("Agrega al menos un producto");
+        
+        const exceedsItem = items.find(i => i.cantidad > i.maxStock);
+        if (exceedsItem) {
+            return toast.error(`No tienes suficiente inventario para '${exceedsItem.descripcion}'. Stock disponible: ${exceedsItem.maxStock}`);
+        }
         
         mutation.mutate({
             sucursal_destino_id: destinoId,
@@ -255,9 +277,14 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                             value=""
                         >
                             <option value="">Buscar producto...</option>
-                            {productos.map((p: any) => (
-                                <option key={p._id} value={p._id}>{p.descripcion} (Stock: {p.inventario?.[0]?.cantidad || 0})</option>
-                            ))}
+                            {productos.map((p: any) => {
+                                const stock = getUserStock(p);
+                                return (
+                                    <option key={p._id} value={p._id}>
+                                        {p.descripcion} (Stock disponible: {stock})
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
 
@@ -267,31 +294,40 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                                 <thead className="bg-gray-50 text-gray-500">
                                     <tr>
                                         <th className="p-3">Producto</th>
-                                        <th className="p-3 w-32">Cantidad</th>
+                                        <th className="p-3 text-center">Disponible</th>
+                                        <th className="p-3 w-32 text-center">Cantidad</th>
                                         <th className="p-3 w-16"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {items.map(item => (
-                                        <tr key={item.producto_id}>
-                                            <td className="p-3 font-medium text-gray-700">{item.descripcion}</td>
-                                            <td className="p-3">
-                                                <input 
-                                                    type="number" 
-                                                    min="1"
-                                                    value={item.cantidad}
-                                                    onChange={e => updateQty(item.producto_id, parseInt(e.target.value) || 1)}
-                                                    onFocus={(e) => e.target.select()}
-                                                    className="w-full p-2 border border-gray-200 rounded-lg text-center text-black"
-                                                />
-                                            </td>
-                                            <td className="p-3">
-                                                <button onClick={() => setItems(items.filter(i => i.producto_id !== item.producto_id))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg">
-                                                    <XCircle size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {items.map(item => {
+                                        const hasError = item.cantidad > item.maxStock;
+                                        return (
+                                            <tr key={item.producto_id}>
+                                                <td className="p-3 font-medium text-gray-700">{item.descripcion}</td>
+                                                <td className="p-3 text-center font-bold text-gray-500">{item.maxStock}</td>
+                                                <td className="p-3">
+                                                    <input 
+                                                        type="number" 
+                                                        min="1"
+                                                        value={item.cantidad}
+                                                        onChange={e => updateQty(item.producto_id, parseInt(e.target.value) || 1)}
+                                                        onFocus={(e) => e.target.select()}
+                                                        className={`w-full p-2 border rounded-lg text-center font-bold ${
+                                                            hasError 
+                                                                ? 'border-red-500 bg-red-50 text-red-600 focus:ring-red-500 focus:border-red-500' 
+                                                                : 'border-gray-200 text-black focus:ring-indigo-500 focus:border-indigo-500'
+                                                        }`}
+                                                    />
+                                                </td>
+                                                <td className="p-3">
+                                                    <button onClick={() => setItems(items.filter(i => i.producto_id !== item.producto_id))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                                                        <XCircle size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -315,7 +351,7 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                     </button>
                     <button 
                         onClick={handleSubmit}
-                        disabled={mutation.isPending}
+                        disabled={mutation.isPending || items.some(i => i.cantidad > i.maxStock)}
                         className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50 flex items-center gap-2"
                     >
                         {mutation.isPending ? <Clock size={16} className="animate-spin" /> : <Truck size={16} />}
