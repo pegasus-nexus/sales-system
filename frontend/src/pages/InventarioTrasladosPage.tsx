@@ -281,7 +281,8 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                                                     min="1"
                                                     value={item.cantidad}
                                                     onChange={e => updateQty(item.producto_id, parseInt(e.target.value) || 1)}
-                                                    className="w-full p-2 border border-gray-200 rounded-lg text-center"
+                                                    onFocus={(e) => e.target.select()}
+                                                    className="w-full p-2 border border-gray-200 rounded-lg text-center text-black"
                                                 />
                                             </td>
                                             <td className="p-3">
@@ -389,6 +390,7 @@ function ReceiveTrasladoModal({ onClose, traslado, onSuccess }: any) {
                                                 max={item.cantidad_enviada}
                                                 value={item.cantidad_recibida}
                                                 onChange={e => updateQty(item.producto_id, parseInt(e.target.value) || 0)}
+                                                onFocus={(e) => e.target.select()}
                                                 className={`w-full p-2 border rounded-lg text-center font-bold ${
                                                     item.cantidad_recibida < item.cantidad_enviada ? 'bg-red-50 border-red-200 text-red-600' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                                 }`}
