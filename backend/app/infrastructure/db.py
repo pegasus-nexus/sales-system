@@ -22,6 +22,7 @@ from app.domain.models.price_list import ListaPrecio, ListaPrecioItem
 from app.domain.models.credito import CuentaCredito, Deuda, TransaccionCredito
 from app.domain.models.b2b import NotaDevolucionMerma, NotaTraspaso, InventarioMovil
 from app.domain.models.comunidad import ComunidadUser, VisitaRegistro
+from app.domain.models.traslado import TrasladoInventario
 
 from app.infrastructure.core.config import settings
 
@@ -63,7 +64,8 @@ async def init_db():
             NotaTraspaso,
             InventarioMovil,
             ComunidadUser,
-            VisitaRegistro
+            VisitaRegistro,
+            TrasladoInventario
         ]
     )
 
