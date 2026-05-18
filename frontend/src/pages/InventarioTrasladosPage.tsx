@@ -23,7 +23,7 @@ export default function InventarioTrasladosPage() {
         queryFn: getSucursales,
     });
 
-    const traslados = trasladosData?.items || [];
+    const traslados = (trasladosData as any)?.items || [];
 
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['traslados'] });
@@ -185,7 +185,7 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
         queryKey: ['products'],
         queryFn: () => getProducts(1, 1000),
     });
-    const productos = productosResponse?.items || [];
+    const productos = (productosResponse as any)?.items || [];
 
     const mutation = useMutation({
         mutationFn: despacharTraslado,
