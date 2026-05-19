@@ -287,6 +287,8 @@ class TrasladoService:
 
                     traslado.estado = EstadoTraslado.CANCELADO
                     traslado.cancelado_at = datetime.utcnow()
+                    traslado.cancelado_por_id = str(current_user.id)
+                    traslado.cancelado_por_nombre = current_user.full_name or current_user.username
                     await traslado.save(session=session)
                     return traslado
 

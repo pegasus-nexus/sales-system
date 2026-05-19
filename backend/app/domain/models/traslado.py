@@ -43,6 +43,8 @@ class TrasladoInventario(Document):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     completado_at: Optional[datetime] = None
     cancelado_at: Optional[datetime] = None
+    cancelado_por_id: Optional[str] = None
+    cancelado_por_nombre: Optional[str] = None
     
     despachado_por_id: str
     despachado_por_nombre: str

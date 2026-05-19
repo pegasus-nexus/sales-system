@@ -5,6 +5,7 @@ import { getTraslados, despacharTraslado, recibirTraslado, cancelarTraslado } fr
 import { getSucursales, getInventario, getClientes, createCliente } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
+import { formatFullDate } from '../utils/dateUtils';
 
 export default function InventarioTrasladosPage() {
     const queryClient = useQueryClient();
@@ -110,7 +111,7 @@ export default function InventarioTrasladosPage() {
                                         }`}>
                                             {t.estado.replace('_', ' ')}
                                         </span>
-                                        <span className="text-xs text-gray-400 font-mono">{new Date(t.created_at).toLocaleString('es-BO')}</span>
+                                        <span className="text-xs text-gray-400 font-mono">{formatFullDate(t.created_at)}</span>
                                     </div>
                                     
                                     <div className="flex items-center gap-3 text-gray-700">
@@ -228,11 +229,18 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
         // Info cards row
         let y = 44;
         const cards = [
-            { label: 'Fecha de Despacho', value: new Date(t.created_at).toLocaleString('es-BO') },
+            { label: 'Fecha de Despacho', value: formatFullDate(t.created_at) },
             { label: 'Estado', value: t.estado.replace('_', ' ') },
             { label: 'Despachado por', value: t.despachado_por_nombre },
         ];
-        if (t.completado_at) cards.push({ label: 'Recibido por', value: t.recibido_por_nombre || '-' });
+        if (t.estado === 'CANCELADO') {
+            cards.push({ label: 'Fecha de Cancelación', value: formatFullDate(t.cancelado_at) });
+            cards.push({ label: 'Cancelado por', value: t.cancelado_por_nombre || '-' });
+        }
+        if (t.completado_at) {
+            cards.push({ label: 'Fecha de Recepción', value: formatFullDate(t.completado_at) });
+            cards.push({ label: 'Recibido por', value: t.recibido_por_nombre || '-' });
+        }
         if (t.notas) cards.push({ label: 'Notas', value: t.notas });
 
         const cardW = (pw - 28 - (cards.length - 1) * 4) / Math.min(cards.length, 3);
@@ -318,7 +326,7 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
                             <ArrowRight size={18} className="text-slate-400" />
                             {t.sucursal_destino_nombre}
                         </h2>
-                        <p className="text-sm text-slate-400 mt-0.5">{new Date(t.created_at).toLocaleString('es-BO')}</p>
+                        <p className="text-sm text-slate-400 mt-0.5">{formatFullDate(t.created_at)}</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-300">
                         <XCircle size={24} />
@@ -341,8 +349,20 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
                         {t.completado_at && (
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Completado</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{new Date(t.completado_at).toLocaleString('es-BO')}</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{formatFullDate(t.completado_at)}</p>
                             </div>
+                        )}
+                        {t.estado === 'CANCELADO' && (
+                            <>
+                                <div>
+                                    <p className="text-[10px] text-red-400 uppercase font-semibold tracking-wider">Cancelado por</p>
+                                    <p className="text-sm font-bold text-red-700 mt-0.5">{t.cancelado_por_nombre || '-'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-red-400 uppercase font-semibold tracking-wider">Fecha Cancelación</p>
+                                    <p className="text-sm font-bold text-red-700 mt-0.5">{formatFullDate(t.cancelado_at)}</p>
+                                </div>
+                            </>
                         )}
                         <div>
                             <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Total Enviado</p>
