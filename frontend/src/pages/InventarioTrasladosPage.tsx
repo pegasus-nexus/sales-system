@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Truck, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText, Search } from 'lucide-react';
+import { Truck, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText, Search, Download, Eye } from 'lucide-react';
 import { getTraslados, despacharTraslado, recibirTraslado, cancelarTraslado } from '../api/traslados';
 import { getSucursales, getInventario } from '../api/api';
 import { useAuthStore } from '../store/authStore';
@@ -11,6 +11,7 @@ export default function InventarioTrasladosPage() {
     const [tab, setTab] = useState<'enviados' | 'recibidos'>('enviados');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isReceiveModalOpen, setIsReceiveModalOpen] = useState<string | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState<any | null>(null);
 
     // Queries
     const { data: trasladosData, isLoading } = useQuery({
@@ -89,7 +90,11 @@ export default function InventarioTrasladosPage() {
                     </div>
                 ) : (
                     traslados.map((t: any) => (
-                        <div key={t._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                        <div 
+                            key={t._id} 
+                            onClick={() => setIsDetailOpen(t)}
+                            className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden group"
+                        >
                             {/* Decorative Line */}
                             <div className={`absolute left-0 top-0 bottom-0 w-1 ${
                                 t.estado === 'COMPLETADO' ? 'bg-emerald-500' :
@@ -124,6 +129,10 @@ export default function InventarioTrasladosPage() {
                                     <div className="text-xs text-gray-500">Valor al Costo</div>
                                     <div className="text-xl font-black text-gray-900">
                                         Bs. {t.valor_total_enviado?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-xs text-indigo-500 font-semibold mt-1">
+                                        <Eye size={13} />
+                                        <span>Ver detalle</span>
                                     </div>
                                     
                                     {tab === 'recibidos' && t.estado === 'EN_TRANSITO' && (
@@ -162,6 +171,20 @@ export default function InventarioTrasladosPage() {
                 />
             )}
             
+            {isDetailOpen && (
+                <TrasladoDetailModal
+                    traslado={isDetailOpen}
+                    onClose={() => setIsDetailOpen(null)}
+                    onReceive={(t: any) => { setIsDetailOpen(null); setIsReceiveModalOpen(t); }}
+                    onCancel={(id: string) => {
+                        if(confirm("¿Cancelar este traslado? El stock volverá a tu sucursal.")) {
+                            cancelMutation.mutate(id);
+                            setIsDetailOpen(null);
+                        }
+                    }}
+                    tab={tab}
+                />
+            )}
             {isReceiveModalOpen && (
                 <ReceiveTrasladoModal 
                     traslado={isReceiveModalOpen}
@@ -174,6 +197,246 @@ export default function InventarioTrasladosPage() {
 }
 
 // ─── Componentes Hijos (Modales) ─────────────────────────────────────────────
+
+function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }: any) {
+    const bs = (n: number) => `Bs. ${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+    const handlePDF = async () => {
+        const jsPDF = (await import('jspdf')).default;
+        const autoTable = (await import('jspdf-autotable')).default;
+
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pw = doc.internal.pageSize.getWidth();
+
+        // Header
+        doc.setFillColor(15, 23, 42);
+        doc.roundedRect(0, 0, pw, 36, 0, 0, 'F');
+        doc.setFillColor(79, 70, 229);
+        doc.rect(0, 0, 6, 36, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(255, 255, 255);
+        doc.text('TRASLADO DE INVENTARIO', 14, 14);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(180, 190, 210);
+        doc.text(`${t.sucursal_origen_nombre}  →  ${t.sucursal_destino_nombre}`, 14, 23);
+        doc.setFontSize(8);
+        doc.setTextColor(140, 150, 170);
+        doc.text(`Generado: ${new Date().toLocaleString('es-BO', { timeZone: 'America/La_Paz' })}`, pw - 14, 23, { align: 'right' });
+
+        // Info cards row
+        let y = 44;
+        const cards = [
+            { label: 'Fecha de Despacho', value: new Date(t.created_at).toLocaleString('es-BO') },
+            { label: 'Estado', value: t.estado.replace('_', ' ') },
+            { label: 'Despachado por', value: t.despachado_por_nombre },
+        ];
+        if (t.completado_at) cards.push({ label: 'Recibido por', value: t.recibido_por_nombre || '-' });
+        if (t.notas) cards.push({ label: 'Notas', value: t.notas });
+
+        const cardW = (pw - 28 - (cards.length - 1) * 4) / Math.min(cards.length, 3);
+        cards.forEach((card, idx) => {
+            const col = idx % 3;
+            const row = Math.floor(idx / 3);
+            const cx = 14 + col * (cardW + 4);
+            const cy = y + row * 22;
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(cx, cy, cardW, 18, 2, 2, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(107, 114, 128);
+            doc.text(card.label.toUpperCase(), cx + 4, cy + 6);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text(card.value, cx + 4, cy + 13);
+        });
+        y += Math.ceil(cards.length / 3) * 22 + 6;
+
+        // Products table
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Detalle de Productos', 14, y + 6);
+        y += 10;
+
+        autoTable(doc, {
+            startY: y,
+            margin: { left: 14, right: 14 },
+            head: [['Producto', 'Cant. Enviada', 'Cant. Recibida', 'Costo Unit.', 'Valor Total']],
+            body: t.items.map((item: any) => [
+                item.descripcion,
+                item.cantidad_enviada,
+                item.cantidad_recibida ?? '-',
+                bs(item.costo_unitario),
+                bs(item.valor_total),
+            ]),
+            foot: [['', '', '', 'TOTAL ENVIADO', bs(t.valor_total_enviado)]],
+            headStyles: { fillColor: [15, 23, 42], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
+            bodyStyles: { fontSize: 8.5, textColor: [30, 41, 59] },
+            footStyles: { fillColor: [79, 70, 229], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { halign: 'center' },
+                2: { halign: 'center' },
+                3: { halign: 'right' },
+                4: { halign: 'right' },
+            },
+        });
+
+        // Footer
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(7);
+            doc.setTextColor(160, 170, 185);
+            doc.text(`Taboada System • Traslado de Inventario • Pág. ${i}/${pageCount}`, pw / 2, 290, { align: 'center' });
+        }
+
+        const fecha = new Date(t.created_at).toISOString().split('T')[0];
+        doc.save(`traslado_${t.sucursal_origen_nombre}_${fecha}.pdf`);
+    };
+
+    const estadoColor = t.estado === 'COMPLETADO' ? 'bg-emerald-100 text-emerald-800' :
+        t.estado === 'EN_TRANSITO' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700';
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh]">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${estadoColor}`}>
+                                {t.estado.replace('_', ' ')}
+                            </span>
+                        </div>
+                        <h2 className="text-xl font-black text-white flex items-center gap-2">
+                            {t.sucursal_origen_nombre}
+                            <ArrowRight size={18} className="text-slate-400" />
+                            {t.sucursal_destino_nombre}
+                        </h2>
+                        <p className="text-sm text-slate-400 mt-0.5">{new Date(t.created_at).toLocaleString('es-BO')}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-300">
+                        <XCircle size={24} />
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1">
+                    {/* Info grid */}
+                    <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4 bg-gray-50 border-b border-gray-100">
+                        <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Despachado por</p>
+                            <p className="text-sm font-bold text-gray-800 mt-0.5">{t.despachado_por_nombre}</p>
+                        </div>
+                        {t.recibido_por_nombre && (
+                            <div>
+                                <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Recibido por</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{t.recibido_por_nombre}</p>
+                            </div>
+                        )}
+                        {t.completado_at && (
+                            <div>
+                                <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Completado</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{new Date(t.completado_at).toLocaleString('es-BO')}</p>
+                            </div>
+                        )}
+                        <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Total Enviado</p>
+                            <p className="text-lg font-black text-indigo-700 mt-0.5">Bs. {Number(t.valor_total_enviado).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        {t.valor_total_recibido > 0 && (
+                            <div>
+                                <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Total Recibido</p>
+                                <p className="text-lg font-black text-emerald-700 mt-0.5">Bs. {Number(t.valor_total_recibido).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                        )}
+                        {t.notas && (
+                            <div className="col-span-2 sm:col-span-3">
+                                <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Notas</p>
+                                <p className="text-sm text-gray-700 mt-0.5 italic">{t.notas}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Products table */}
+                    <div className="p-6">
+                        <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Package size={16} />
+                            Detalle de Productos
+                        </h3>
+                        <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-800 text-white text-xs">
+                                        <th className="px-4 py-3 text-left">Producto</th>
+                                        <th className="px-4 py-3 text-center">Enviado</th>
+                                        <th className="px-4 py-3 text-center">Recibido</th>
+                                        <th className="px-4 py-3 text-right">Costo Unit.</th>
+                                        <th className="px-4 py-3 text-right">Valor Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {t.items.map((item: any, idx: number) => {
+                                        const merma = item.cantidad_recibida !== null && item.cantidad_recibida !== undefined && item.cantidad_recibida < item.cantidad_enviada;
+                                        return (
+                                            <tr key={idx} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3 font-medium text-gray-800">{item.descripcion}</td>
+                                                <td className="px-4 py-3 text-center font-bold text-gray-600">{item.cantidad_enviada}</td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {item.cantidad_recibida !== null && item.cantidad_recibida !== undefined ? (
+                                                        <span className={`font-bold ${merma ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                            {item.cantidad_recibida}
+                                                            {merma && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">−{item.cantidad_enviada - item.cantidad_recibida} merma</span>}
+                                                        </span>
+                                                    ) : <span className="text-gray-300">—</span>}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono text-gray-600">Bs. {Number(item.costo_unitario).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                                <td className="px-4 py-3 text-right font-mono font-bold text-gray-900">Bs. {Number(item.valor_total).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-indigo-600 text-white">
+                                        <td colSpan={4} className="px-4 py-3 font-black text-right text-sm">TOTAL ENVIADO</td>
+                                        <td className="px-4 py-3 text-right font-black font-mono">Bs. {Number(t.valor_total_enviado).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer actions */}
+                <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
+                    <div className="flex gap-2">
+                        {tab === 'recibidos' && t.estado === 'EN_TRANSITO' && (
+                            <button onClick={() => onReceive(t)} className="px-4 py-2 bg-emerald-500 text-white font-bold text-sm rounded-xl hover:bg-emerald-600 transition-colors flex items-center gap-2">
+                                <CheckCircle2 size={16} /> Recibir Mercadería
+                            </button>
+                        )}
+                        {tab === 'enviados' && t.estado === 'EN_TRANSITO' && (
+                            <button onClick={() => onCancel(t._id)} className="px-4 py-2 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors">
+                                Cancelar Envío
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={handlePDF}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-700 transition-colors shadow-lg"
+                    >
+                        <Download size={16} />
+                        Descargar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const { user } = useAuthStore();
