@@ -20,8 +20,10 @@ import ControlQRPage from './pages/ControlQRPage';
 import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
 import CreditosPage from './pages/CreditosPage';
+import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import { useAuthStore } from './store/authStore';
 import { Toaster } from 'sonner';
+import ChatbotAnalitico from './components/ChatbotAnalitico';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -41,7 +43,7 @@ const ProtectedRoute = ({
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     if (role === 'SUPERADMIN') return <Navigate to="/admin" replace />;
-    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/dashboard" replace />;
+    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/inteligencia" replace />;
     if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
     if (['SUPERVISOR', 'VENDEDOR'].includes(role)) return <Navigate to="/inventario" replace />;
     return <Navigate to="/pos" replace />;
@@ -54,7 +56,7 @@ const ProtectedRoute = ({
 const DashboardDispatch = () => {
   const { role } = useAuthStore();
   if (role === 'SUPERADMIN') return <Navigate to="/admin" replace />;
-  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/dashboard" replace />;
+  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/inteligencia" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
   if (['SUPERVISOR', 'VENDEDOR'].includes(role ?? '')) return <Navigate to="/inventario" replace />;
   return <Navigate to="/pos" replace />;
@@ -71,32 +73,36 @@ function App() {
       <Toaster position="top-right" richColors theme="light" />
       <BrowserRouter>
         <Routes>
+          {/* 1. Ruta de Login fuera del Layout */}
           <Route path="/login" element={<LoginPage />} />
 
+          {/* 2. Todas las demás rutas dentro del Layout */}
           <Route path="/*" element={
             <Layout>
               <Routes>
-                {/* Auto-redirect to the right view for the role */}
                 <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
 
-                {/* SuperAdmin */}
                 <Route path="/admin" element={
                   <ProtectedRoute allowedRoles={['SUPERADMIN']}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 } />
 
-                {/* Matriz Admin */}
                 <Route path="/dashboard" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                     <TenantDashboard />
                   </ProtectedRoute>
                 } />
 
-                {/* Reportes/Analytics */}
                 <Route path="/reportes" element={
                   <ProtectedRoute allowedRoles={BRANCH_ROLES}>
                     <ReportsPage />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/inteligencia" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                    <ExecutiveDashboard />
                   </ProtectedRoute>
                 } />
 
@@ -124,35 +130,30 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-                {/* B2B Orders — both Matriz and Sucursal and Supervisors */}
                 <Route path="/pedidos" element={
                   <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
                     <PedidosPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Historial de Ventas (Tickets) */}
                 <Route path="/ventas" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <VentasPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Control QR */}
                 <Route path="/qr-control" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <ControlQRPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Créditos y Cuentas por Cobrar */}
                 <Route path="/creditos" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <CreditosPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Descuentos */}
                 <Route path="/descuentos" element={
                   <ProtectedRoute allowedRoles={BRANCH_ROLES}>
                     <DescuentosPage />
@@ -165,28 +166,24 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-                {/* Categories */}
                 <Route path="/categories" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                     <CategoriesPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Users (Personal) */}
                 <Route path="/usuarios" element={
                   <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
                     <UsersPage />
                   </ProtectedRoute>
                 } />
 
-                {/* Caja */}
                 <Route path="/caja" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <CajaPage />
                   </ProtectedRoute>
                 } />
 
-                {/* POS */}
                 <Route path="/pos" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <POSPage />
@@ -196,6 +193,8 @@ function App() {
             </Layout>
           } />
         </Routes>
+        {/* Chatbot siempre visible pero fuera del sistema de rutas */}
+        <ChatbotAnalitico />
       </BrowserRouter>
     </QueryClientProvider>
   );

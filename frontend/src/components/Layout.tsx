@@ -18,7 +18,6 @@ function cn(...inputs: ClassValue[]) {
 interface LayoutProps {
     children: React.ReactNode;
 }
-
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role } = useAuthStore();
@@ -40,8 +39,9 @@ export default function Layout({ children }: LayoutProps) {
             ];
         } else if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) {
             return [
-                { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-                { icon: BarChart3, label: 'Reportes', path: '/reportes' },
+                { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia' },
+                { icon: Store, label: 'Dashboard Matriz', path: '/dashboard' },
+                { icon: ClipboardList, label: 'Reportes', path: '/reportes' },
                 { icon: Store, label: 'Sucursales', path: '/sucursales' },
                 { icon: Package, label: 'Catálogo', path: '/catalogo' },
                 { icon: Warehouse, label: 'Inventario', path: '/inventario' },
@@ -183,7 +183,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className={`flex-1 min-h-0 relative scroll-smooth ${location.pathname === '/pos'
+                    <div id="main-scroll-container" className={`flex-1 min-h-0 relative scroll-smooth ${location.pathname === '/pos'
                         ? 'overflow-hidden flex flex-col'
                         : 'overflow-y-auto overflow-x-hidden'
                         }`}>

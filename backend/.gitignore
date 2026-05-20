@@ -45,3 +45,7 @@ env/
 uvicorn_logs.txt
 logs/
 .vercel
+.cache.sqlite
+*.log
+err.txt
+models_list.txt

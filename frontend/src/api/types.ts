@@ -406,3 +406,67 @@ export interface PriceRequestCreate {
     precio_propuesto: number;
     motivo_solicitud: string;
 }
+
+export interface OrchestrationOverview {
+    total_revenue: number;
+    revenue_growth: number;
+    total_orders: number;
+    orders_growth: number;
+    active_customers: number;
+    customers_growth: number;
+    average_ticket: number;
+}
+
+export interface OrchestrationRevenueTrend {
+    name: string;
+    ingresos: number | null;
+    meta: number;
+}
+
+export interface OrchestrationCategoryMix {
+    name: string;
+    value: number;
+}
+
+export interface OrchestrationRecentActivity {
+    id: number;
+    type: string;
+    msg: string;
+    time: string;
+    val: string;
+}
+
+export interface OrchestrationResponse {
+    overview: OrchestrationOverview;
+    revenue_trend: OrchestrationRevenueTrend[];
+    sales_by_branch: { name: string; ventas: number }[];
+    top_categories: OrchestrationCategoryMix[];
+    recent_activity: OrchestrationRecentActivity[];
+}
+
+export interface HourlyComparisson {
+    hora: string;
+    venta_hoy: number;
+    venta_pasada: number;
+    is_now: boolean;
+}
+
+export interface DemandPredictionPoint {
+    date: string;
+    real: number | null;
+    prediccion: number;
+    pred_p10?: number;
+    pred_p50?: number;
+    pred_p90?: number;
+    margen_error: number[];
+    weather_temp_max?: number;
+    weather_precip?: number;
+}
+
+export interface DemandPredictionResponse {
+    model_accuracy: number;
+    insight: string;
+    trend_percentage: number;
+    predictions: DemandPredictionPoint[];
+    hourly_today: HourlyComparisson[];
+}

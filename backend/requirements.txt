@@ -8,6 +8,14 @@ passlib[bcrypt]
 bcrypt==3.2.2
 python-jose[cryptography]
 email-validator
+numpy
 pandas
 openpyxl
 reportlab
+scikit-learn
+holidays
+openmeteo-requests
+requests-cache
+retry-requests
+langchain-google-genai
+langchain-experimental

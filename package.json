@@ -1,0 +1,9 @@
+{
+  "name": "sales-system-root",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "install": "npm install --prefix frontend"
+  }
+}
