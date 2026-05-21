@@ -101,14 +101,15 @@ async def get_sales(
 
     if search and search.strip():
         import re
-        from beanie.operators import Or, RegEx
         safe_q = re.escape(search.strip())
-        filters.append(Or(
-            RegEx(Sale.id, safe_q, options="i"),
-            RegEx(Sale.cashier_name, safe_q, options="i"),
-            RegEx(Sale.cliente.razon_social, safe_q, options="i"),
-            RegEx(Sale.cliente.nit, safe_q, options="i")
-        ))
+        filters.append({
+            "$or": [
+                { "$expr": { "$regexMatch": { "input": { "$toString": "$_id" }, "regex": safe_q, "options": "i" } } },
+                { "cashier_name": {"$regex": safe_q, "$options": "i"} },
+                { "cliente.razon_social": {"$regex": safe_q, "$options": "i"} },
+                { "cliente.nit": {"$regex": safe_q, "$options": "i"} }
+            ]
+        })
 
     if start_date and end_date:
         from app.utils.date_utils import get_range_bolivia
