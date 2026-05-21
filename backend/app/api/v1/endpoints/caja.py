@@ -112,6 +112,7 @@ async def get_sesiones(
             "monto_inicial":   float(s.monto_inicial),
             "saldo_calculado": round(saldo, 2),
             "total_efectivo":  round(ef, 2),
+            "total_ingresos_ef": round(ef_ing, 2),
             "total_cambio":    round(cc, 2),
             "total_gastos":    round(gs, 2),
             "total_ajustes":   round(aj, 2),

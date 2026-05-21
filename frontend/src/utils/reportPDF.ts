@@ -594,7 +594,7 @@ export function descargarPDFVentasCaja(sessions: any[], startDate: string, endDa
 
     const totalVentas = sessions.reduce((acc, s) => acc + (s.total_ventas || 0), 0);
     const totalQR = sessions.reduce((acc, s) => acc + (s.total_qr || 0), 0);
-    const totalEfectivo = sessions.reduce((acc, s) => acc + (s.total_efectivo - s.total_cambio), 0);
+    const totalEfectivo = sessions.reduce((acc, s) => acc + (s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio), 0);
 
     // KPIs
     const kpiW = (pw - 30) / 3;
@@ -607,11 +607,11 @@ export function descargarPDFVentasCaja(sessions: any[], startDate: string, endDa
         startY: y,
         head: [['Fecha Apertura', 'Sucursal', 'Cajero / Sesión', 'Ventas QR', 'Ef. Neto', 'Total Ventas', 'Estado']],
         body: sessions.map(s => [
-            new Date(s.abierta_at).toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            new Date(s.abierta_at).toLocaleString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
             s.sucursal_id,
             s.cajero_name,
             bs(s.total_qr),
-            bs(s.total_efectivo - s.total_cambio),
+            bs(s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio),
             bs(s.total_ventas),
             s.estado
         ]),

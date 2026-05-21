@@ -78,6 +78,7 @@ export interface CajaSesionResumen {
     monto_inicial: number;
     saldo_calculado: number;
     total_efectivo: number;
+    total_ingresos_ef?: number;
     total_cambio: number;
     total_gastos: number;
     total_ajustes?: number;

@@ -44,7 +44,7 @@ export default function CashSalesSummaryView() {
     // Totals
     const totalVentas = sessions.reduce((acc, s) => acc + (s.total_ventas || 0), 0);
     const totalQR = sessions.reduce((acc, s) => acc + (s.total_qr || 0), 0);
-    const totalEfectivo = sessions.reduce((acc, s) => acc + (s.total_efectivo - s.total_cambio), 0);
+    const totalEfectivo = sessions.reduce((acc, s) => acc + (s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio), 0);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -151,7 +151,7 @@ export default function CashSalesSummaryView() {
                                             <div className="text-[10px] text-gray-400">ID: {s.id.slice(-6)}</div>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-sky-600 font-bold">{formatBs(s.total_qr)}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-green-600 font-bold">{formatBs(s.total_efectivo - s.total_cambio)}</td>
+                                        <td className="px-6 py-4 text-right font-mono text-green-600 font-bold">{formatBs(s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio)}</td>
                                         <td className="px-6 py-4 text-right font-mono text-indigo-700 font-black">{formatBs(s.total_ventas)}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${s.estado === 'ABIERTA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

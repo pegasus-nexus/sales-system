@@ -66,7 +66,7 @@ function exportarHistorialCSV(sesiones: CajaSesionResumen[]) {
         s.monto_inicial.toFixed(2),
         s.total_efectivo.toFixed(2),
         s.total_cambio.toFixed(2),
-        (s.total_efectivo - s.total_cambio).toFixed(2),
+        (s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio).toFixed(2),
         s.total_qr.toFixed(2),
         s.total_tarjeta.toFixed(2),
         s.total_gastos.toFixed(2),
@@ -115,7 +115,8 @@ function SubtipoBadge({ subtipo }: { subtipo: string }) {
 
 function SessionDetail({ sesion, categoriasGlobal }: { sesion: CajaSesionResumen, categoriasGlobal: CajaGastoCategoria[] }) {
     const { data: resumen, isLoading } = useResumenCaja(sesion.id);
-    const efNeto = sesion.total_efectivo - sesion.total_cambio + (sesion.total_ajustes || 0);
+    // Efectivo Neto: Ventas Efectivo + Ingresos Efectivo - Cambio + Ajustes (ingresos manuales adicionales)
+    const efNeto = sesion.total_efectivo + (sesion.total_ingresos_ef || 0) - sesion.total_cambio + (sesion.total_ajustes || 0);
 
     return (
         <tr className="bg-slate-50">
@@ -402,7 +403,7 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
                     <tbody className="divide-y divide-gray-100">
                         {sesiones.map((s: CajaSesionResumen) => {
                             const isOpen = expanded === s.id;
-                            const efNeto = s.total_efectivo - s.total_cambio;
+                            const efNeto = s.total_efectivo + (s.total_ingresos_ef || 0) - s.total_cambio;
                             return (
                                 <React.Fragment key={s.id}>
                                     <tr
