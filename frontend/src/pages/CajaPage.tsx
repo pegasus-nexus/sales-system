@@ -378,7 +378,7 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
                             </th>
                             <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                    Ef. neto <span title="Ingresos en Efectivo - Cambios/Vueltos entregados"><Info size={10} className="text-gray-300 cursor-help" /></span>
+                                    Ef. neto <span title="Ventas Efectivo + Ingresos Manuales - Vueltos"><Info size={10} className="text-gray-300 cursor-help" /></span>
                                 </div>
                             </th>
                             <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
@@ -393,7 +393,7 @@ function HistorialTab({ categoriasGlobal }: { categoriasGlobal: CajaGastoCategor
                             </th>
                             <th className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
                                 <div className="flex items-center justify-end gap-1 font-black text-gray-600">
-                                    Saldo caja <span title="Monto Inicial + Ef. neto - Gastos (Dinero esperado físicamente)"><Info size={10} className="text-indigo-300 cursor-help" /></span>
+                                    Saldo caja <span title="Monto Inicial + Ef. Neto - Gastos + Ajustes (Dinero esperado en cajón)"><Info size={10} className="text-indigo-300 cursor-help" /></span>
                                 </div>
                             </th>
                             <th className="px-2 py-2" />

@@ -4,7 +4,7 @@ import { getHistorialCaja, getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     Calendar, Loader2, FileDown, 
-    LayoutGrid, Store
+    LayoutGrid, Store, Info
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFVentasCaja } from '../utils/reportPDF';
@@ -129,8 +129,16 @@ export default function CashSalesSummaryView() {
                                     <th className="px-6 py-4">Sucursal</th>
                                     <th className="px-6 py-4">Cajero / Sesión</th>
                                     <th className="px-6 py-4 text-right">Ventas QR</th>
-                                    <th className="px-6 py-4 text-right">Ef. Neto</th>
-                                    <th className="px-6 py-4 text-right">Total Ventas</th>
+                                    <th className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            Ef. Neto <span title="Ventas Ef. + Ingresos Manuales - Vueltos"><Info size={12} className="text-gray-300 cursor-help" /></span>
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            Total Ventas <span title="Suma de Efectivo, QR y Tarjeta"><Info size={12} className="text-gray-300 cursor-help" /></span>
+                                        </div>
+                                    </th>
                                     <th className="px-6 py-4 text-center">Estado</th>
                                 </tr>
                             </thead>
