@@ -124,10 +124,8 @@ export function descargarPDFJornada(report: any, fecha: string, sucursalNombre: 
         ...metodos.map(([m, v]) => [m, bs(v)]),
         ['Vueltos Entregados (Cambio)', bs(resumen_ventas.total_cambio || 0)],
         ['Anuladas', `${bs(resumen_ventas.anuladas?.monto || 0)} (${resumen_ventas.anuladas?.cantidad || 0})`],
+        ['Créditos Otorgados (no afecta efectivo)', bs(resumen_ventas.total_creditos || 0)],
     ];
-    if (resumen_ventas.total_creditos && resumen_ventas.total_creditos > 0) {
-        bodyRows.push(['Créditos Otorgados (no afecta efectivo)', bs(resumen_ventas.total_creditos)]);
-    }
 
     autoTable(doc, {
         startY: y,
