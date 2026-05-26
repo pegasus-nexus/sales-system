@@ -42,6 +42,7 @@ interface AuthState {
     isMatriz: () => boolean;
     isSucursal: () => boolean;
     isCajero: () => boolean;
+    isFacturador: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -74,6 +75,7 @@ export const useAuthStore = create<AuthState>()(
             isMatriz: () => ['ADMIN_MATRIZ', 'ADMIN'].includes(get().role ?? ''),
             isSucursal: () => get().role === 'ADMIN_SUCURSAL',
             isCajero: () => ['CAJERO', 'USER'].includes(get().role ?? ''),
+            isFacturador: () => get().role === 'FACTURADOR',
         }),
         { name: 'auth-storage' }
     )

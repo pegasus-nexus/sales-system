@@ -24,6 +24,8 @@ logger = logging.getLogger("SalesService")
 class SalesService:
     @staticmethod
     async def create_sale(sale_in: SaleCreate, current_user: User) -> Sale:
+        if current_user.role == UserRole.FACTURADOR:
+            raise HTTPException(status_code=403, detail="Un facturador no tiene permisos para crear ventas")
         tenant_id = current_user.tenant_id or "default"
         sucursal_id = current_user.sucursal_id or sale_in.sucursal_id or "CENTRAL"
         
@@ -340,6 +342,8 @@ class SalesService:
           
         - OTRO: Comportamiento estándar (inversión de movimientos).
         """
+        if current_user.role == UserRole.FACTURADOR:
+            raise HTTPException(status_code=403, detail="Un facturador no tiene permisos para anular ventas")
         tenant_id = current_user.tenant_id or "default"
         client = get_client()
 

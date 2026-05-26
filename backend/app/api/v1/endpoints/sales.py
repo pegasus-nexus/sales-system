@@ -89,6 +89,9 @@ async def get_sales(
     current_user: User = Depends(get_current_active_user)
 ):
     """List all sales for the tenant, optionally filtered by sucursal, payment method or invoice status with pagination."""
+    if current_user.role == UserRole.FACTURADOR:
+        solo_facturas = True
+
     filters = []
     
     # Superadmins bypass primary tenant filter to see everything

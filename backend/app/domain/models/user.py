@@ -16,6 +16,7 @@ class UserRole(str, Enum):
     CAJERO = "CAJERO"               # POS Cashier
     SUPERVISOR = "SUPERVISOR"       # Fuerza de ventas - Supervisor
     VENDEDOR = "VENDEDOR"           # Fuerza de ventas - Vendedor en calle
+    FACTURADOR = "FACTURADOR"       # Facturador (invoice manager)
     # Legacy aliases for backward compatibility
     ADMIN = "ADMIN_MATRIZ"
     USER = "CAJERO"

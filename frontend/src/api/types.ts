@@ -1,4 +1,4 @@
-export type UserRole = 'SUPERADMIN' | 'ADMIN_MATRIZ' | 'ADMIN' | 'USER' | 'ADMIN_SUCURSAL' | 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR';
+export type UserRole = 'SUPERADMIN' | 'ADMIN_MATRIZ' | 'ADMIN' | 'USER' | 'ADMIN_SUCURSAL' | 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR' | 'FACTURADOR';
 
 export interface User {
     _id: string;
@@ -223,7 +223,7 @@ export interface EmployeeCreate {
     email: string;
     password: string;
     full_name: string;
-    role?: 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR';
+    role?: 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR' | 'FACTURADOR';
 }
 
 export interface CartItem {

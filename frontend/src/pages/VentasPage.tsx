@@ -334,19 +334,25 @@ function AnularModal({
 export default function VentasPage() {
     const qc = useQueryClient();
     const { user, role } = useAuthStore();
-    const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'].includes(role || '');
+    const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'FACTURADOR'].includes(role || '');
 
     // Filtros
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
     const [searchTerm, setSearchTerm] = useState('');
-    const [soloFacturas, setSoloFacturas] = useState(false);
+    const [soloFacturas, setSoloFacturas] = useState(role === 'FACTURADOR');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [metodoPago, setMetodoPago] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
     const [printSale, setPrintSale] = useState<Sale | null>(null);
     const [page, setPage] = useState(1);
-    const limit = 50;
+    const limit = role === 'FACTURADOR' ? 10 : 50;
+
+    useEffect(() => {
+        if (role === 'FACTURADOR') {
+            setSoloFacturas(true);
+        }
+    }, [role]);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -367,7 +373,7 @@ export default function VentasPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, startDate, endDate, metodoPago, debouncedSearch],
+        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, startDate, endDate, metodoPago, debouncedSearch, limit],
         queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined)
     });
 
@@ -427,18 +433,20 @@ export default function VentasPage() {
                     )}
 
                     {/* Filtro Sólo Facturas */}
-                    <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
-                        <input 
-                            type="checkbox" 
-                            checked={soloFacturas} 
-                            onChange={e => {
-                                setSoloFacturas(e.target.checked);
-                                setPage(1);
-                            }}
-                            className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-xs font-semibold text-gray-700">Solo Facturas</span>
-                    </label>
+                    {role !== 'FACTURADOR' && (
+                        <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
+                            <input 
+                                type="checkbox" 
+                                checked={soloFacturas} 
+                                onChange={e => {
+                                    setSoloFacturas(e.target.checked);
+                                    setPage(1);
+                                }}
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-xs font-semibold text-gray-700">Solo Facturas</span>
+                        </label>
+                    )}
                 </div>
             </div>
 
@@ -515,12 +523,21 @@ export default function VentasPage() {
                                             {isAnulado ? <Ban size={20} /> : <Receipt size={20} />}
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="font-bold text-gray-900 text-sm">Ticket #{venta._id.slice(-6).toUpperCase()}</span>
                                                 {(venta.cliente?.nit || venta.cliente?.es_factura) && (
-                                                    <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-lg uppercase border border-indigo-200">
-                                                        FACTURA
-                                                    </span>
+                                                    <>
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-lg uppercase border border-indigo-200">
+                                                            FACTURA
+                                                        </span>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border uppercase ${
+                                                            venta.factura_emitida 
+                                                                ? 'bg-green-100 text-green-700 border-green-200' 
+                                                                : 'bg-amber-100 text-amber-700 border-amber-200'
+                                                        }`}>
+                                                            {venta.factura_emitida ? 'Hecho' : 'Pendiente'}
+                                                        </span>
+                                                    </>
                                                 )}
                                                 {isAnulado && <span className="text-[10px] font-bold px-2 py-0.5 bg-red-100 text-red-700 rounded-lg uppercase border border-red-200">Anulado</span>}
                                             </div>
@@ -533,7 +550,22 @@ export default function VentasPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
+                                    <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+                                        {(venta.cliente?.nit || venta.cliente?.es_factura) && (
+                                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 p-1.5 rounded-xl shadow-inner shrink-0" onClick={e => e.stopPropagation()}>
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider hidden xs:inline">Factura:</span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); facturaMut.mutate({ id: venta._id, emitida: !venta.factura_emitida }); }}
+                                                    disabled={facturaMut.isPending || isAnulado}
+                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:ring-offset-1 ${venta.factura_emitida ? 'bg-green-600' : 'bg-amber-500'} ${(facturaMut.isPending || isAnulado) && 'opacity-50 cursor-not-allowed'}`}
+                                                >
+                                                    <span className={`${venta.factura_emitida ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 ease-in-out`} />
+                                                </button>
+                                                <span className={`text-[10px] font-black ${venta.factura_emitida ? 'text-green-600' : 'text-amber-600'}`}>
+                                                    {venta.factura_emitida ? 'HECHO' : 'PENDIENTE'}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div className="text-right">
                                             <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Total Pagado</div>
                                             <div className={`text-xl font-black ${isAnulado ? 'text-gray-400 line-through' : 'text-gray-900'} `}>
@@ -646,7 +678,7 @@ export default function VentasPage() {
                                                         <Receipt size={16} />
                                                         Reimprimir
                                                     </button>
-                                                    {!isAnulado && role !== 'CAJERO' && (
+                                                    {!isAnulado && role !== 'CAJERO' && role !== 'FACTURADOR' && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setAnularVenta(venta); }}
                                                             disabled={anularMut.isPending}

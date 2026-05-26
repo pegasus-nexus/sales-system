@@ -49,7 +49,7 @@ async def get_users(current_user: User = Depends(get_current_active_user)):
         return await User.find(User.role == UserRole.CAJERO).to_list()
 
     # Define roles that are considered "Staff" for sale assignment or branch view
-    staff_roles = [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.ADMIN_SUCURSAL]
+    staff_roles = [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.ADMIN_SUCURSAL, UserRole.FACTURADOR]
 
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO]:
         # Scoped view: staff of their own sucursal

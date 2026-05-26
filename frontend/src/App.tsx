@@ -92,6 +92,7 @@ const ProtectedRoute = ({
     if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/dashboard" replace />;
     if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
     if (['SUPERVISOR', 'VENDEDOR'].includes(role)) return <Navigate to="/inventario" replace />;
+    if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
     return <Navigate to="/pos" replace />;
   }
 
@@ -110,6 +111,7 @@ const DashboardDispatch = () => {
   if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/dashboard" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
   if (['SUPERVISOR', 'VENDEDOR'].includes(role ?? '')) return <Navigate to="/inventario" replace />;
+  if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
   return <Navigate to="/pos" replace />;
 };
 
@@ -196,7 +198,7 @@ function App() {
 
                 {/* Historial de Ventas */}
                 <Route path="/ventas" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="VENTAS">
+                  <ProtectedRoute allowedRoles={[...ALL_STAFF, 'FACTURADOR']} requiredFeature="VENTAS">
                     <VentasPage />
                   </ProtectedRoute>
                 } />
