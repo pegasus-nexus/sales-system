@@ -260,6 +260,7 @@ class SalesService:
                         "EFECTIVO": SubtipoMovimiento.VENTA_EFECTIVO,
                         "QR":       SubtipoMovimiento.VENTA_QR,
                         "TARJETA":  SubtipoMovimiento.VENTA_TARJETA,
+                        "TRANSFERENCIA": SubtipoMovimiento.VENTA_QR,
                     }
 
                     caja_sesion = await CajaSesion.find_one(
@@ -377,35 +378,34 @@ class SalesService:
 
                     sucursal_id = sale.sucursal_id
 
-                    # ── 1. Revertir stock (siempre, excepto si es ERROR_COBRO) ──
-                    if motivo != "ERROR_COBRO":
-                        for item in sale.items:
-                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {
-                                    "tenant_id": tenant_id,
-                                    "sucursal_id": sucursal_id,
-                                    "producto_id": item.producto_id,
-                                },
-                                {"$inc": {"cantidad": item.cantidad}},
-                                return_document=ReturnDocument.AFTER,
-                                session=session.client_session if hasattr(session, "client_session") else session
-                            )
-                            if updated_inv:
-                                await InventoryLog(
-                                    tenant_id=tenant_id,
-                                    sucursal_id=sucursal_id,
-                                    producto_id=item.producto_id,
-                                    descripcion=item.descripcion,
-                                    tipo_movimiento=TipoMovimiento.ENTRADA_MANUAL,
-                                    cantidad_movida=item.cantidad,
-                                    stock_resultante=updated_inv["cantidad"],
-                                    costo_unitario_momento=item.costo_unitario,
-                                    precio_venta_momento=item.precio_unitario,
-                                    usuario_id=str(current_user.id),
-                                    usuario_nombre=current_user.full_name or current_user.username,
-                                    notas=f"Anulación de Venta #{str(sale.id)[-6:]} — Motivo: {motivo}",
-                                    referencia_id=str(sale.id)
-                                ).create(session=session)
+                    # ── 1. Revertir stock (siempre) ──────────────────────────────
+                    for item in sale.items:
+                        updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                            {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": sucursal_id,
+                                "producto_id": item.producto_id,
+                            },
+                            {"$inc": {"cantidad": item.cantidad}},
+                            return_document=ReturnDocument.AFTER,
+                            session=session.client_session if hasattr(session, "client_session") else session
+                        )
+                        if updated_inv:
+                            await InventoryLog(
+                                tenant_id=tenant_id,
+                                sucursal_id=sucursal_id,
+                                producto_id=item.producto_id,
+                                descripcion=item.descripcion,
+                                tipo_movimiento=TipoMovimiento.ENTRADA_MANUAL,
+                                cantidad_movida=item.cantidad,
+                                stock_resultante=updated_inv["cantidad"],
+                                costo_unitario_momento=item.costo_unitario,
+                                precio_venta_momento=item.precio_unitario,
+                                usuario_id=str(current_user.id),
+                                usuario_nombre=current_user.full_name or current_user.username,
+                                notas=f"Anulación de Venta #{str(sale.id)[-6:]} — Motivo: {motivo}",
+                                referencia_id=str(sale.id)
+                            ).create(session=session)
 
                     # ── 1.5 Revertir deuda de crédito (si la venta fue a crédito) ──
                     has_credit_payment = any(p.metodo == "CREDITO" for p in sale.pagos)
@@ -441,6 +441,15 @@ class SalesService:
                             deuda.updated_at = datetime.utcnow()
                             await deuda.save(session=session)
 
+                    # Decrementar compras del cliente al anular (para mantener estadísticas limpias)
+                    if sale.cliente_id:
+                        from beanie.operators import Inc
+                        await Cliente.find_one(Cliente.id == sale.cliente_id, session=session).update(
+                            Inc({Cliente.total_compras: -sale.total}),
+                            Inc({Cliente.cantidad_compras: -1}),
+                            session=session
+                        )
+
                     # ── 2. Ajuste de caja según motivo ───────────────────────────
                     if afectar_caja:
                         if caja_sesion_id:
@@ -475,54 +484,8 @@ class SalesService:
                             ticket_ref = f"#{str(sale.id)[-6:].upper()}"
                             cajero_info = current_user.full_name or current_user.username
 
-                            if motivo == "ERROR_COBRO":
-                                # ── FLUJO ESPECIAL: Corrección de método de pago ──
-                                total_venta = float(sum(p.monto for p in sale.pagos))
-                                
-                                # Paso A: Revertir movimientos del método incorrecto
-                                for mov in movs_originales:
-                                    inverse_type = "EGRESO" if mov.tipo == "INGRESO" else "INGRESO"
-                                    await CajaMovimiento(
-                                        tenant_id   = tenant_id,
-                                        sucursal_id = sucursal_id,
-                                        sesion_id   = str(caja_sesion.id),
-                                        cajero_id   = str(current_user.id),
-                                        cajero_name = cajero_info,
-                                        subtipo     = mov.subtipo,
-                                        tipo        = inverse_type,
-                                        monto       = mov.monto,
-                                        descripcion = f"Corrección Ticket {ticket_ref}: Reversa método incorrecto ({mov.subtipo})",
-                                        sale_id     = str(sale.id),
-                                    ).create(session=session)
-
-                                # Paso B: Registrar con el método CORRECTO
-                                subtipo_correcto = SubtipoMovimiento.VENTA_EFECTIVO
-                                if metodo_pago_correcto == "QR":
-                                    subtipo_correcto = SubtipoMovimiento.VENTA_QR
-                                elif metodo_pago_correcto == "TARJETA":
-                                    subtipo_correcto = SubtipoMovimiento.VENTA_TARJETA
-                                elif metodo_pago_correcto == "TRANSFERENCIA":
-                                    subtipo_correcto = SubtipoMovimiento.VENTA_TRANSFERENCIA
-
-                                await CajaMovimiento(
-                                    tenant_id   = tenant_id,
-                                    sucursal_id = sucursal_id,
-                                    sesion_id   = str(caja_sesion.id),
-                                    cajero_id   = str(current_user.id),
-                                    cajero_name = cajero_info,
-                                    subtipo     = subtipo_correcto,
-                                    tipo        = "INGRESO",
-                                    monto       = total_venta,
-                                    descripcion = f"Corrección Ticket {ticket_ref}: Ingreso real vía {metodo_pago_correcto} — {notas or 'Error de método de pago'}",
-                                    sale_id     = str(sale.id),
-                                ).create(session=session)
-
-                                logger.info(
-                                    f"[AnularSale] ERROR_COBRO corregido en venta {sale_id}: "
-                                    f"método incorrecto revertido, ingreso correcto ({metodo_pago_correcto}) registrado."
-                                )
-
-                            elif motivo == "VENTA_DUPLICADA":
+                            # Para ERROR_COBRO, VENTA_DUPLICADA o cualquier motivo, hacemos reversa estándar
+                            if motivo == "VENTA_DUPLICADA":
                                 for mov in movs_originales:
                                     inverse_type = "EGRESO" if mov.tipo == "INGRESO" else "INGRESO"
                                     await CajaMovimiento(
@@ -537,13 +500,13 @@ class SalesService:
                                         descripcion = f"Venta Duplicada — Reversa Ticket {ticket_ref} ({mov.subtipo})",
                                         sale_id     = str(sale.id),
                                     ).create(session=session)
-
                             else:
                                 for mov in movs_originales:
                                     inverse_type = "EGRESO" if mov.tipo == "INGRESO" else "INGRESO"
                                     motivo_label = {
                                         "DEVOLUCION_CLIENTE": "Devolución de Cliente",
                                         "PRODUCTO_DEFECTUOSO": "Prod. Defectuoso",
+                                        "ERROR_COBRO": "Error de Cobro",
                                         "OTRO": "Anulación"
                                     }.get(motivo, motivo)
                                     await CajaMovimiento(
@@ -559,36 +522,128 @@ class SalesService:
                                         sale_id     = str(sale.id),
                                     ).create(session=session)
 
-                    # ── 3. Guardar auditoría de anulación / corrección ───────────
+                    # ── 3. Guardar auditoría de anulación en venta original ──
+                    sale.anulada              = True
+                    sale.motivo_anulacion     = motivo
+                    sale.notas_anulacion      = notas
+                    sale.anulada_por_id       = str(current_user.id)
+                    sale.anulada_por_nombre   = current_user.full_name or current_user.username
+                    sale.anulada_at           = datetime.utcnow()
+                    sale.metodo_pago_correcto = metodo_pago_correcto
+                    await sale.save(session=session)
+                    
+                    await SaleItemAnalytics.find(
+                        SaleItemAnalytics.tenant_id == tenant_id,
+                        SaleItemAnalytics.sale_id == str(sale.id),
+                        session=session
+                    ).delete(session=session)
+
+                    # ── 4. CLONAR Y CREAR NUEVA VENTA CON MÉTODO CORRECTO (Para ERROR_COBRO) ──
                     if motivo == "ERROR_COBRO":
-                        for pago in sale.pagos:
-                            pago.metodo = metodo_pago_correcto
+                        from bson import ObjectId
                         
-                        sale.anulada = False  # NO se anula
-                        sale.metodo_pago_correcto = metodo_pago_correcto
-                        sale.notas_anulacion = f"[Método de pago corregido a {metodo_pago_correcto}] - {notas or ''}" if notas else f"[Método de pago corregido a {metodo_pago_correcto}]"
-                        sale.anulada_por_id = str(current_user.id)
-                        sale.anulada_por_nombre = current_user.full_name or current_user.username
-                        sale.anulada_at = datetime.utcnow()
-                        sale.motivo_anulacion = "ERROR_COBRO"
+                        # Generar nueva ID para la venta clonada
+                        new_sale_id = str(ObjectId())
                         
-                        await sale.save(session=session)
-                        # No borramos SaleItemAnalytics porque la venta sigue vigente
-                    else:
-                        sale.anulada              = True
-                        sale.motivo_anulacion     = motivo
-                        sale.notas_anulacion      = notas
-                        sale.anulada_por_id       = str(current_user.id)
-                        sale.anulada_por_nombre   = current_user.full_name or current_user.username
-                        sale.anulada_at           = datetime.utcnow()
-                        sale.metodo_pago_correcto = metodo_pago_correcto
-                        await sale.save(session=session)
+                        # A. Descontar stock para la nueva venta y registrar logs
+                        for item in sale.items:
+                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": sucursal_id,
+                                    "producto_id": item.producto_id,
+                                },
+                                {"$inc": {"cantidad": -item.cantidad}},
+                                return_document=ReturnDocument.AFTER,
+                                session=session.client_session if hasattr(session, "client_session") else session
+                            )
+                            # Crear log de venta para el kárdex (con descripcion correcta)
+                            if updated_inv:
+                                await InventoryLog(
+                                    tenant_id=tenant_id,
+                                    sucursal_id=sucursal_id,
+                                    producto_id=item.producto_id,
+                                    descripcion=item.descripcion,
+                                    tipo_movimiento=TipoMovimiento.VENTA,
+                                    cantidad_movida=-item.cantidad,
+                                    stock_resultante=updated_inv["cantidad"],
+                                    costo_unitario_momento=item.costo_unitario,
+                                    precio_venta_momento=item.precio_unitario,
+                                    usuario_id=str(current_user.id),
+                                    usuario_nombre=current_user.full_name or current_user.username,
+                                    notas=f"Salida por Venta POS (Corrección de Ticket #{str(sale.id)[-6:].upper()})",
+                                    referencia_id=new_sale_id
+                                ).create(session=session)
+                                
+                                # Crear SaleItemAnalytics para la nueva venta
+                                await SaleItemAnalytics(
+                                    tenant_id=tenant_id,
+                                    sucursal_id=sucursal_id,
+                                    sale_id=new_sale_id,
+                                    sale_date=datetime.utcnow(),
+                                    producto_id=item.producto_id,
+                                    descripcion=item.descripcion,
+                                    cantidad=item.cantidad,
+                                    precio_unitario=item.precio_unitario,
+                                    costo_unitario=item.costo_unitario,
+                                    descuento_unitario=item.descuento_unitario,
+                                    subtotal=item.subtotal
+                                ).create(session=session)
+
+                        # B. Crear el documento de la nueva venta
+                        new_pagos = [PagoItem(metodo=metodo_pago_correcto, monto=sale.total)]
                         
-                        await SaleItemAnalytics.find(
-                            SaleItemAnalytics.tenant_id == tenant_id,
-                            SaleItemAnalytics.sale_id == str(sale.id),
-                            session=session
-                        ).delete(session=session)
+                        new_sale = Sale(
+                            id=ObjectId(new_sale_id),
+                            tenant_id=tenant_id,
+                            sucursal_id=sucursal_id,
+                            items=sale.items,
+                            total=sale.total,
+                            pagos=new_pagos,
+                            descuento=sale.descuento,
+                            cliente_id=sale.cliente_id,
+                            cliente=sale.cliente,
+                            cashier_id=str(current_user.id),
+                            cashier_name=current_user.full_name or current_user.username,
+                            vendedor_id=sale.vendedor_id,
+                            vendedor_name=sale.vendedor_name,
+                            anulada=False,
+                            created_at=datetime.utcnow(),
+                            notas_anulacion=f"[Creada automáticamente por corrección del Ticket #{str(sale.id)[-6:].upper()}]"
+                        )
+                        await new_sale.insert(session=session)
+                        
+                        # C. Incrementar compras del cliente para la nueva venta
+                        if new_sale.cliente_id:
+                            from beanie.operators import Inc, Set
+                            await Cliente.find_one(Cliente.id == new_sale.cliente_id, session=session).update(
+                                Inc({Cliente.total_compras: new_sale.total}),
+                                Inc({Cliente.cantidad_compras: 1}),
+                                Set({Cliente.ultima_compra_at: new_sale.created_at}),
+                                session=session
+                            )
+                            
+                        # D. Registrar el ingreso en la caja (si afectamos caja y hay sesión abierta)
+                        if afectar_caja and caja_sesion:
+                            _SUBTIPO_MAP = {
+                                "EFECTIVO": SubtipoMovimiento.VENTA_EFECTIVO,
+                                "QR":       SubtipoMovimiento.VENTA_QR,
+                                "TARJETA":  SubtipoMovimiento.VENTA_TARJETA,
+                                "TRANSFERENCIA": SubtipoMovimiento.VENTA_QR,
+                            }
+                            subtipo = _SUBTIPO_MAP.get(metodo_pago_correcto, SubtipoMovimiento.VENTA_EFECTIVO)
+                            await CajaMovimiento(
+                                tenant_id   = tenant_id,
+                                sucursal_id = sucursal_id,
+                                sesion_id   = str(caja_sesion.id),
+                                cajero_id   = str(current_user.id),
+                                cajero_name = cajero_info,
+                                subtipo     = subtipo,
+                                tipo        = "INGRESO",
+                                monto       = sale.total,
+                                descripcion = f"Corrección Ticket #{str(sale.id)[-6:].upper()}: Ingreso real vía {metodo_pago_correcto} — {notas or 'Error de cobro'}",
+                                sale_id     = new_sale_id,
+                            ).create(session=session)
                     
                     return sale
         except HTTPException:

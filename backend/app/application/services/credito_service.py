@@ -203,8 +203,8 @@ class CreditoService:
             
             # 7. Create CajaMovimiento for each real payment
             subtipo = SubtipoMovimiento.INGRESO_EFECTIVO if p.metodo == "EFECTIVO" else SubtipoMovimiento.INGRESO_QR
-            if p.metodo == "TARJETA": subtipo = SubtipoMovimiento.INGRESO_BANCO
-            if p.metodo == "TRANSFERENCIA": subtipo = SubtipoMovimiento.INGRESO_BANCO
+            if p.metodo == "TARJETA": subtipo = SubtipoMovimiento.INGRESO_TARJETA
+            if p.metodo == "TRANSFERENCIA": subtipo = SubtipoMovimiento.INGRESO_QR
             
             await CajaMovimiento(
                 tenant_id=cuenta.tenant_id,
