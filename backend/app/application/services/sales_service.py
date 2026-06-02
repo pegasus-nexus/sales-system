@@ -377,34 +377,35 @@ class SalesService:
 
                     sucursal_id = sale.sucursal_id
 
-                    # ── 1. Revertir stock (siempre) ──────────────────────────────
-                    for item in sale.items:
-                        updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                            {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": sucursal_id,
-                                "producto_id": item.producto_id,
-                            },
-                            {"$inc": {"cantidad": item.cantidad}},
-                            return_document=ReturnDocument.AFTER,
-                            session=session.client_session if hasattr(session, "client_session") else session
-                        )
-                        if updated_inv:
-                            await InventoryLog(
-                                tenant_id=tenant_id,
-                                sucursal_id=sucursal_id,
-                                producto_id=item.producto_id,
-                                descripcion=item.descripcion,
-                                tipo_movimiento=TipoMovimiento.ENTRADA_MANUAL,
-                                cantidad_movida=item.cantidad,
-                                stock_resultante=updated_inv["cantidad"],
-                                costo_unitario_momento=item.costo_unitario,
-                                precio_venta_momento=item.precio_unitario,
-                                usuario_id=str(current_user.id),
-                                usuario_nombre=current_user.full_name or current_user.username,
-                                notas=f"Anulación de Venta #{str(sale.id)[-6:]} — Motivo: {motivo}",
-                                referencia_id=str(sale.id)
-                            ).create(session=session)
+                    # ── 1. Revertir stock (siempre, excepto si es ERROR_COBRO) ──
+                    if motivo != "ERROR_COBRO":
+                        for item in sale.items:
+                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": sucursal_id,
+                                    "producto_id": item.producto_id,
+                                },
+                                {"$inc": {"cantidad": item.cantidad}},
+                                return_document=ReturnDocument.AFTER,
+                                session=session.client_session if hasattr(session, "client_session") else session
+                            )
+                            if updated_inv:
+                                await InventoryLog(
+                                    tenant_id=tenant_id,
+                                    sucursal_id=sucursal_id,
+                                    producto_id=item.producto_id,
+                                    descripcion=item.descripcion,
+                                    tipo_movimiento=TipoMovimiento.ENTRADA_MANUAL,
+                                    cantidad_movida=item.cantidad,
+                                    stock_resultante=updated_inv["cantidad"],
+                                    costo_unitario_momento=item.costo_unitario,
+                                    precio_venta_momento=item.precio_unitario,
+                                    usuario_id=str(current_user.id),
+                                    usuario_nombre=current_user.full_name or current_user.username,
+                                    notas=f"Anulación de Venta #{str(sale.id)[-6:]} — Motivo: {motivo}",
+                                    referencia_id=str(sale.id)
+                                ).create(session=session)
 
                     # ── 1.5 Revertir deuda de crédito (si la venta fue a crédito) ──
                     has_credit_payment = any(p.metodo == "CREDITO" for p in sale.pagos)
@@ -558,21 +559,36 @@ class SalesService:
                                         sale_id     = str(sale.id),
                                     ).create(session=session)
 
-                    # ── 3. Guardar auditoría de anulación ────────────────────────
-                    sale.anulada              = True
-                    sale.motivo_anulacion     = motivo
-                    sale.notas_anulacion      = notas
-                    sale.anulada_por_id       = str(current_user.id)
-                    sale.anulada_por_nombre   = current_user.full_name or current_user.username
-                    sale.anulada_at           = datetime.utcnow()
-                    sale.metodo_pago_correcto = metodo_pago_correcto
-                    await sale.save(session=session)
-                    
-                    await SaleItemAnalytics.find(
-                        SaleItemAnalytics.tenant_id == tenant_id,
-                        SaleItemAnalytics.sale_id == str(sale.id),
-                        session=session
-                    ).delete(session=session)
+                    # ── 3. Guardar auditoría de anulación / corrección ───────────
+                    if motivo == "ERROR_COBRO":
+                        for pago in sale.pagos:
+                            pago.metodo = metodo_pago_correcto
+                        
+                        sale.anulada = False  # NO se anula
+                        sale.metodo_pago_correcto = metodo_pago_correcto
+                        sale.notas_anulacion = f"[Método de pago corregido a {metodo_pago_correcto}] - {notas or ''}" if notas else f"[Método de pago corregido a {metodo_pago_correcto}]"
+                        sale.anulada_por_id = str(current_user.id)
+                        sale.anulada_por_nombre = current_user.full_name or current_user.username
+                        sale.anulada_at = datetime.utcnow()
+                        sale.motivo_anulacion = "ERROR_COBRO"
+                        
+                        await sale.save(session=session)
+                        # No borramos SaleItemAnalytics porque la venta sigue vigente
+                    else:
+                        sale.anulada              = True
+                        sale.motivo_anulacion     = motivo
+                        sale.notas_anulacion      = notas
+                        sale.anulada_por_id       = str(current_user.id)
+                        sale.anulada_por_nombre   = current_user.full_name or current_user.username
+                        sale.anulada_at           = datetime.utcnow()
+                        sale.metodo_pago_correcto = metodo_pago_correcto
+                        await sale.save(session=session)
+                        
+                        await SaleItemAnalytics.find(
+                            SaleItemAnalytics.tenant_id == tenant_id,
+                            SaleItemAnalytics.sale_id == str(sale.id),
+                            session=session
+                        ).delete(session=session)
                     
                     return sale
         except HTTPException:

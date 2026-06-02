@@ -616,18 +616,23 @@ export default function VentasPage() {
                                             </div>
                                         )}
 
-                                        {/* Log de auditoría en ventas anuladas */}
-                                        {isAnulado && (venta as any).motivo_anulacion && (
-                                            <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
-                                                <div className="p-1.5 bg-red-100 rounded-lg shrink-0">
-                                                    <AlertTriangle size={14} className="text-red-600" />
+                                        {/* Log de auditoría en ventas corregidas o anuladas */}
+                                        {(isAnulado || (venta as any).metodo_pago_correcto) && (venta as any).motivo_anulacion && (
+                                            <div className={`mb-4 border rounded-xl p-3 flex items-start gap-3 ${
+                                                isAnulado ? 'bg-red-50 border-red-200 text-red-800' : 'bg-sky-50 border-sky-200 text-sky-800'
+                                            }`}>
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${isAnulado ? 'bg-red-100' : 'bg-sky-100'}`}>
+                                                    <AlertTriangle size={14} className={isAnulado ? 'text-red-600' : 'text-sky-600'} />
                                                 </div>
                                                 <div className="text-xs">
-                                                    <p className="font-black text-red-900 uppercase tracking-wide mb-1">Registro de Anulación</p>
-                                                    <div className="space-y-0.5 text-red-800">
-                                                        <p><span className="font-bold">Motivo:</span> {MOTIVOS.find(m => m.value === (venta as any).motivo_anulacion)?.label || (venta as any).motivo_anulacion}</p>
+                                                    <p className={`font-black uppercase tracking-wide mb-1 ${isAnulado ? 'text-red-900' : 'text-sky-900'}`}>
+                                                        {isAnulado ? 'Registro de Anulación' : 'Registro de Corrección de Pago'}
+                                                    </p>
+                                                    <div className={`space-y-0.5 ${isAnulado ? 'text-red-800' : 'text-sky-800'}`}>
+                                                        <p><span className="font-bold">{isAnulado ? 'Motivo' : 'Detalle'}:</span> {MOTIVOS.find(m => m.value === (venta as any).motivo_anulacion)?.label || (venta as any).motivo_anulacion}</p>
+                                                        {(venta as any).metodo_pago_correcto && <p><span className="font-bold">Método Correcto:</span> {(venta as any).metodo_pago_correcto}</p>}
                                                         {(venta as any).notas_anulacion && <p><span className="font-bold">Notas:</span> {(venta as any).notas_anulacion}</p>}
-                                                        {(venta as any).anulada_por_nombre && <p><span className="font-bold">Autorizado por:</span> {(venta as any).anulada_por_nombre}</p>}
+                                                        {(venta as any).anulada_por_nombre && <p><span className="font-bold">{isAnulado ? 'Autorizado por' : 'Corregido por'}:</span> {(venta as any).anulada_por_nombre}</p>}
                                                     </div>
                                                 </div>
                                             </div>
