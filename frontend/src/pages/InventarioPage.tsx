@@ -645,7 +645,7 @@ function PriceRequestModal({ onClose, sucursalId, productoId, productoNombre, cu
                         Enviar Solicitud a Matriz
                     </button>
                     <p className="text-[9px] text-gray-400 text-center px-4 leading-tight">
-                        Tu solicitud será revisada por el administrador de la matriz (Taboada). Se te notificará el resultado.
+                        Tu solicitud será revisada por el administrador de la matriz. Se te notificará el resultado.
                     </p>
                 </form>
             </div>

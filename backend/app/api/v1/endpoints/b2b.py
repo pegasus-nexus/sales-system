@@ -18,7 +18,7 @@ async def registrar_merma(
 ):
     """
     Registra el ingreso de mercadería vencida desde un supermercado.
-    Calcula automáticamente la deuda de Taboada basada en costo unitario.
+    Calcula automáticamente la deuda de la Fábrica Matriz basada en costo unitario.
     Cruza el inventario para reponer mercadería fresca.
     """
     tenant_id = current_user.tenant_id or "default"
@@ -40,7 +40,7 @@ async def listar_mermas(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Obtiene la lista de Mermas/Reclamos hacia Fábrica Taboada.
+    Obtiene la lista de Mermas/Reclamos hacia Fábrica Matriz.
     """
     tenant_id = current_user.tenant_id or "default"
     query = {"tenant_id": tenant_id}
@@ -77,7 +77,7 @@ async def compensar_merma(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Marca un reporte de merma como pagado o devuelto por la fábrica Taboada, 
+    Marca un reporte de merma como pagado o devuelto por la fábrica matriz, 
     bajando así la deuda acumulada.
     """
     tenant_id = current_user.tenant_id or "default"

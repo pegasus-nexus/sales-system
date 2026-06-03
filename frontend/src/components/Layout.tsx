@@ -64,7 +64,7 @@ export default function Layout({ children }: LayoutProps) {
             { icon: Users,           label: 'Clientes',     path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: QrCode,          label: 'Control QR',   path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
             { icon: Users,           label: 'Comunidad',    path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: Warehouse,       label: 'Deuda Taboada',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            { icon: Warehouse,       label: 'Deuda Fábrica',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
         ];
 
         return allItems
@@ -91,7 +91,7 @@ export default function Layout({ children }: LayoutProps) {
                         <Menu size={20} />
                     </button>
                     <div className={cn("flex items-center overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-                        <span className="text-base font-bold tracking-tight whitespace-nowrap">Taboada System</span>
+                        <span className="text-base font-bold tracking-tight whitespace-nowrap">Sales System</span>
                     </div>
                 </div>
 
@@ -151,7 +151,7 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
                     {/* Mobile Top Bar */}
                     <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shrink-0">
-                        <img src="/logoTaboada.png" alt="Taboada System" className="h-7 w-auto object-contain" />
+                        <img src="/vite.svg" alt="Sales System" className="h-7 w-auto object-contain" />
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600"
@@ -221,7 +221,7 @@ export default function Layout({ children }: LayoutProps) {
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <img src="/logoTaboada.png" alt="Taboada System" className="h-8 w-auto object-contain" />
+                                <img src="/vite.svg" alt="Sales System" className="h-8 w-auto object-contain" />
                                 <button
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-gray-400"

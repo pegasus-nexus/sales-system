@@ -307,7 +307,7 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
             doc.setPage(i);
             doc.setFontSize(7);
             doc.setTextColor(160, 170, 185);
-            doc.text(`Taboada System • Traslado de Inventario • Pág. ${i}/${pageCount}`, pw / 2, 290, { align: 'center' });
+            doc.text(`Sales System • Traslado de Inventario • Pág. ${i}/${pageCount}`, pw / 2, 290, { align: 'center' });
         }
 
         const fecha = new Date(t.created_at).toISOString().split('T')[0];

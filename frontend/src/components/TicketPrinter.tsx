@@ -8,7 +8,7 @@ interface TicketPrinterProps {
     sucursalName?: string;
 }
 
-export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName = 'TABOADA', sucursalName }) => {
+export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName = 'EMPRESA', sucursalName }) => {
     // Format currency
     const fmt = (n: number) => {
         return new Intl.NumberFormat('es-BO', { style: 'decimal', minimumFractionDigits: 2 }).format(n);
@@ -26,7 +26,7 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
             
             {/* Cabecera */}
             <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                <h2 style={{ fontSize: '18px', margin: '0 0 2px 0', fontWeight: '900', letterSpacing: '1px' }}>{tenantName === sale.tenant_id ? 'TABOADA' : tenantName}</h2>
+                <h2 style={{ fontSize: '18px', margin: '0 0 2px 0', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>{tenantName}</h2>
                 <div style={{ borderTop: '2px solid #000', width: '60%', margin: '2px auto 8px auto' }}></div>
                 
                 <h3 style={{ fontSize: '14px', margin: '0 0 8px 0', fontWeight: 'bold', border: '1px solid #000', padding: '4px', display: 'inline-block' }}>
@@ -137,7 +137,7 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
                 {sale.vendedor_name && (
                     <p style={{ margin: '2px 0' }}><b>Vendedor:</b> {sale.vendedor_name}</p>
                 )}
-                <p style={{ margin: '8px 0', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>¡Gracias por preferir Taboada!</p>
+                <p style={{ margin: '8px 0', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>¡Gracias por su compra en {tenantName}!</p>
                 
                 <p style={{ margin: '10px 0 0 0', fontStyle: 'italic', fontSize: '8px', opacity: 0.7 }}>
                     Este documento no es una factura comercial.

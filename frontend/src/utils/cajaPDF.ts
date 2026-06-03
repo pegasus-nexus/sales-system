@@ -179,7 +179,7 @@ export function generarPDFSesion(
     doc.setTextColor(...C.white);
     doc.setFontSize(17);
     doc.setFont('helvetica', 'bold');
-    doc.text('Taboada System', margin, 11);
+    doc.text('Sales System', margin, 11);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -409,7 +409,7 @@ export function generarPDFSesion(
         doc.setFontSize(7);
         doc.setTextColor(...C.gray);
         doc.setFont('helvetica', 'normal');
-        doc.text('Taboada System — Documento de uso interno. Horas en hora Bolivia (UTC-4).', margin, pageH - 8);
+        doc.text('Sales System — Documento de uso interno. Horas en hora Bolivia (UTC-4).', margin, pageH - 8);
         doc.text(`Página ${p} de ${totalPages}`, W - margin, pageH - 8, { align: 'right' });
 
         // Stamp on every page

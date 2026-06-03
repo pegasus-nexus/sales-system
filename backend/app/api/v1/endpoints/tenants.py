@@ -299,10 +299,9 @@ async def seed_plans(current_user: User = Depends(get_current_active_user)):
 
 
 @router.post("/tenants/admin/assign-ilimitado")
-async def assign_ilimitado_to_taboada(current_user: User = Depends(get_current_active_user)):
+async def assign_ilimitado_to_matriz(current_user: User = Depends(get_current_active_user)):
     """
-    [SUPERADMIN] Busca el tenant de Taboada y le asigna el plan ILIMITADO.
-    El nombre del tenant se busca de forma case-insensitive con 'taboada'.
+    [SUPERADMIN] Busca el primer tenant (Matriz) y le asigna el plan ILIMITADO.
     """
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -312,19 +311,18 @@ async def assign_ilimitado_to_taboada(current_user: User = Depends(get_current_a
     if not plan_ilimitado:
         raise HTTPException(status_code=404, detail="Plan ILIMITADO no encontrado. Ejecuta seed-plans primero.")
 
-    # Buscar el tenant de Taboada (case-insensitive)
-    import re
-    taboada = await Tenant.find_one({"name": re.compile("taboada", re.IGNORECASE)})
-    if not taboada:
-        raise HTTPException(status_code=404, detail="Tenant 'Taboada' no encontrado. Verifica el nombre exacto.")
+    # Buscar el primer tenant
+    matriz = await Tenant.find_one()
+    if not matriz:
+        raise HTTPException(status_code=404, detail="No hay tenants registrados en el sistema.")
 
-    taboada.plan_id = str(plan_ilimitado.id)
-    taboada.plan    = PlanType.ILIMITADO
-    await taboada.save()
+    matriz.plan_id = str(plan_ilimitado.id)
+    matriz.plan    = PlanType.ILIMITADO
+    await matriz.save()
 
     return {
         "ok": True,
-        "tenant": taboada.name,
+        "tenant": matriz.name,
         "plan_asignado": "ILIMITADO",
         "plan_id": str(plan_ilimitado.id),
     }

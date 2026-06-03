@@ -29,7 +29,7 @@ class B2BService:
     ) -> NotaDevolucionMerma:
         """
         Registra la devolución de vencidos. 
-        Calcula la deuda de Fábrica Taboada en Costo Base.
+        Calcula la deuda de Fábrica Matriz en Costo Base.
         Automáticamente resta los productos frescos de la sucursal como 'reposición'.
         """
         supermercado = await Cliente.get(supermercado_id)
@@ -121,7 +121,7 @@ class B2BService:
         user: User
     ) -> NotaDevolucionMerma:
         """
-        Marca un reclamo como pagado/compensado por la Fábrica Taboada.
+        Marca un reclamo como pagado/compensado por la Fábrica Matriz.
         """
         nota = await NotaDevolucionMerma.get(merma_id)
         if not nota or nota.tenant_id != tenant_id:

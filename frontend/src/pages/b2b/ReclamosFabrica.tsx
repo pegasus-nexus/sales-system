@@ -31,7 +31,7 @@ export default function ReclamosFabrica() {
     });
 
     const handleCompensar = (id: string) => {
-        if(window.confirm("¿Confirmas que la fábrica Taboada pagó o repuso esta merma? El reclamo bajará de la cuenta por cobrar.")){
+        if(window.confirm("¿Confirmas que la fábrica matriz pagó o repuso esta merma? El reclamo bajará de la cuenta por cobrar.")){
             compensarMut.mutate(id);
         }
     };
@@ -54,7 +54,7 @@ export default function ReclamosFabrica() {
                     <Factory size={120} />
                 </div>
                 <div className="relative z-10">
-                    <p className="text-indigo-200 font-bold tracking-widest uppercase text-xs mb-2">Deuda Pendiente de Taboada a Favor Nuestro</p>
+                    <p className="text-indigo-200 font-bold tracking-widest uppercase text-xs mb-2">Deuda Pendiente de Fábrica a Favor Nuestro</p>
                     <div className="flex items-baseline gap-2">
                         <span className="text-5xl md:text-7xl font-black tracking-tighter">Bs. {deudaGlobal.toFixed(2)}</span>
                     </div>
@@ -145,7 +145,7 @@ export default function ReclamosFabrica() {
                                             className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-500 hover:text-white rounded-lg text-xs font-bold transition-colors"
                                         >
                                             {compensarMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                            Marcar como Compensado por Taboada
+                                            Marcar como Compensado por Fábrica
                                         </button>
                                     </div>
                                 )}

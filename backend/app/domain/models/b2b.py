@@ -21,7 +21,7 @@ class EstadoReclamo(str, Enum):
 class NotaDevolucionMerma(Document):
     """
     Rastrea productos vencidos retornados por un Supermercado a la Sucursal.
-    Automáticamente representa una Deuda a Favor contra Fábrica Taboada Central.
+    Automáticamente representa una Deuda a Favor contra la Fábrica Matriz.
     """
     tenant_id: str
     sucursal_id: str
@@ -31,7 +31,7 @@ class NotaDevolucionMerma(Document):
     fecha_recuperacion: datetime = Field(default_factory=datetime.utcnow)
     items: List[ItemMovimientoB2B]
     
-    # El monto total de pérdida que Taboada nos debe compensar basado en costo_unitario:
+    # El monto total de pérdida que la fábrica nos debe compensar basado en costo_unitario:
     costo_total_merma: DecimalMoney = DecimalMoney("0") 
     
     # Estado Contable del Reclamo a Fábrica:

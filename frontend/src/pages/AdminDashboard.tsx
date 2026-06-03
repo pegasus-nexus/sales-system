@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                         </button>
                         <button onClick={() => assignIlimitadoMutation.mutate()} disabled={assignIlimitadoMutation.isPending} className="flex items-center gap-2 px-6 py-3 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-400 rounded-2xl font-bold text-sm transition-all disabled:opacity-50">
                             {assignIlimitadoMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Star size={18} />}
-                            Forzar Plan Ilimitado a Taboada
+                            Forzar Plan Ilimitado a Tenant Matriz
                         </button>
                     </div>
                 </div>

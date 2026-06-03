@@ -88,7 +88,7 @@ function addFooters(doc: jsPDF) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.setTextColor(...C.gray);
-        doc.text('Sistema Taboada  •  Confidencial', 14, ph - 6);
+        doc.text('Sales System  •  Confidencial', 14, ph - 6);
         doc.text(`Pág. ${i} / ${pages}`, pw - 14, ph - 6, { align: 'right' });
     }
 }
