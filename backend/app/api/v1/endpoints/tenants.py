@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
@@ -202,6 +202,55 @@ async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current
 
     return {"message": "Tenant and all associated data deleted successfully"}
 
+
+class TenantSettingsUpdate(BaseModel):
+    ticket_footer: Optional[str] = None
+    report_watermark: Optional[str] = None
+    logo_base64: Optional[str] = None
+    direccion: Optional[str] = None
+    telefono: Optional[str] = None
+
+@router.get("/tenants/me", response_model=Tenant)
+async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(status_code=404, detail="No tenant associated")
+    from beanie import PydanticObjectId
+    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return tenant
+
+@router.put("/tenants/me/settings", response_model=Tenant)
+async def update_my_tenant_settings(
+    settings_in: TenantSettingsUpdate, 
+    current_user: User = Depends(get_current_active_user)
+):
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+        raise HTTPException(status_code=403, detail="Not authorized to change settings")
+        
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(status_code=404, detail="No tenant associated")
+        
+    from beanie import PydanticObjectId
+    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
+    if settings_in.ticket_footer is not None:
+        tenant.settings.ticket_footer = settings_in.ticket_footer
+    if settings_in.report_watermark is not None:
+        tenant.settings.report_watermark = settings_in.report_watermark
+    if settings_in.logo_base64 is not None:
+        tenant.settings.logo_base64 = settings_in.logo_base64
+    if settings_in.direccion is not None:
+        tenant.settings.direccion = settings_in.direccion
+    if settings_in.telefono is not None:
+        tenant.settings.telefono = settings_in.telefono
+        
+    await tenant.save()
+    return tenant
 
 # ─── Admin: Seed Plans ───────────────────────────────────────────────────────
 

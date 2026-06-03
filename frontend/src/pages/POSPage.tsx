@@ -45,7 +45,7 @@ function useStockMap(sucursalId: string) {
 }
 
 export default function POSPage() {
-    const { user } = useAuthStore();
+    const { user, tenantSettings } = useAuthStore();
     const qc = useQueryClient();
     const navigate = useNavigate();
     const sucursalId = user?.sucursal_id || 'CENTRAL';
@@ -999,6 +999,10 @@ export default function POSPage() {
                         sale={lastSale} 
                         tenantName={user?.tenant_id || "Mi Tienda"} 
                         sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
+                        ticketFooter={tenantSettings?.ticket_footer}
+                        logoBase64={tenantSettings?.logo_base64}
+                        direccion={tenantSettings?.direccion}
+                        telefono={tenantSettings?.telefono}
                     />
                 )}
             </div>

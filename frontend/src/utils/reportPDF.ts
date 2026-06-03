@@ -5,6 +5,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAuthStore } from '../store/authStore';
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const C = {
@@ -88,7 +89,9 @@ function addFooters(doc: jsPDF) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.setTextColor(...C.gray);
-        doc.text('Sales System  •  Confidencial', 14, ph - 6);
+        const { tenantSettings, user } = useAuthStore.getState();
+        const watermark = tenantSettings?.report_watermark || `${user?.tenant_id || 'Sales System'}  •  Confidencial`;
+        doc.text(watermark, 14, ph - 6);
         doc.text(`Pág. ${i} / ${pages}`, pw - 14, ph - 6, { align: 'right' });
     }
 }

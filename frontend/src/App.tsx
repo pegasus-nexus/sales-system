@@ -24,8 +24,9 @@ import CreditosPage from './pages/CreditosPage';
 import ClientesPage from './pages/ClientesPage';
 import ReclamosFabrica from './pages/b2b/ReclamosFabrica';
 import ComunidadPage from './pages/ComunidadPage';
+import ConfiguracionPage from './pages/ConfiguracionPage';
 import { useAuthStore } from './store/authStore';
-import { getMyFeatures } from './api/api';
+import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
 import { ErrorModalProvider, useErrorModal } from './components/ErrorModal';
 
@@ -55,18 +56,26 @@ function ErrorEventBridge() {
  * Se ejecuta una sola vez por sesión, persistido en el store.
  */
 function FeaturesFetcher() {
-  const { isAuthenticated, setFeatures, features } = useAuthStore();
+  const { isAuthenticated, setFeatures, features, setTenantSettings } = useAuthStore();
 
   useEffect(() => {
-    // Solo cargar si está autenticado y aún no tiene features cargados
     if (!isAuthenticated()) return;
-    if (features.length > 0) return;
+    
+    if (features.length === 0) {
+      getMyFeatures()
+        .then(res => setFeatures(res.features, res.plan_name))
+        .catch(() => {});
+    }
 
-    getMyFeatures()
-      .then(res => setFeatures(res.features, res.plan_name))
-      .catch(() => {
-        // Error de red → ignorar, el fallback en hasFeature() retorna true
-      });
+    // Siempre refrescar settings al iniciar
+    getMyTenant()
+      .then(tenant => {
+          if (tenant.settings) {
+              setTenantSettings(tenant.settings);
+          }
+      })
+      .catch(() => {});
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated()]);
 
@@ -235,6 +244,13 @@ function App() {
                 <Route path="/comunidad" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                     <ComunidadPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Configuración */}
+                <Route path="/configuracion" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                    <ConfiguracionPage />
                   </ProtectedRoute>
                 } />
 

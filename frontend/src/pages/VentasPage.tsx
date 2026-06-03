@@ -333,7 +333,7 @@ function AnularModal({
 
 export default function VentasPage() {
     const qc = useQueryClient();
-    const { user, role } = useAuthStore();
+    const { user, role, tenantSettings } = useAuthStore();
     const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'FACTURADOR'].includes(role || '');
 
     // Filtros
@@ -735,6 +735,10 @@ export default function VentasPage() {
                         sale={printSale} 
                         tenantName={user?.tenant_id || "Mi Tienda"} 
                         sucursalName={sucursales.find(s => s._id === printSale.sucursal_id)?.nombre}
+                        ticketFooter={tenantSettings?.ticket_footer}
+                        logoBase64={tenantSettings?.logo_base64}
+                        direccion={tenantSettings?.direccion}
+                        telefono={tenantSettings?.telefono}
                     />
                 )}
             </div>

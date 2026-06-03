@@ -3,7 +3,14 @@ from enum import Enum
 from beanie import Document
 from pydantic import Field
 from datetime import datetime
+from pydantic import Field, BaseModel
 
+class TenantSettings(BaseModel):
+    ticket_footer: Optional[str] = "¡Gracias por su preferencia!"
+    report_watermark: Optional[str] = "Sales System • Confidencial"
+    logo_base64: Optional[str] = None
+    direccion: Optional[str] = None
+    telefono: Optional[str] = None
 from .base import SoftDeleteMixin
 
 
@@ -20,6 +27,7 @@ class Tenant(Document, SoftDeleteMixin):
     plan_id: Optional[str] = None          # Ref to plans collection
     plan: PlanType = PlanType.BASICO
     plan_expires_at: Optional[datetime] = None
+    settings: TenantSettings = Field(default_factory=TenantSettings)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

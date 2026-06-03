@@ -10,11 +10,20 @@ export interface User {
     is_active?: boolean;
 }
 
+export interface TenantSettings {
+    ticket_footer?: string;
+    report_watermark?: string;
+    logo_base64?: string;
+    direccion?: string;
+    telefono?: string;
+}
+
 export interface Tenant {
     _id: string;
     name: string;
     plan: string;
     is_active: boolean;
+    settings?: TenantSettings;
     created_at: string;
 }
 

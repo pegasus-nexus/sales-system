@@ -9,6 +9,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAuthStore } from '../store/authStore';
 import type { CajaSesionResumen, ResumenCaja } from '../hooks/useCaja';
 
 // ─── Bolivia-aware date formatter ────────────────────────────────────────────
@@ -140,6 +141,8 @@ export function generarPDFSesion(
     sesion: CajaSesionResumen,
     resumen: ResumenCaja,
 ): void {
+    const { tenantSettings, user } = useAuthStore.getState();
+    const tenantName = user?.tenant_id || 'Sistema de Ventas';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const W      = doc.internal.pageSize.getWidth();
     const margin = 14;
@@ -179,7 +182,7 @@ export function generarPDFSesion(
     doc.setTextColor(...C.white);
     doc.setFontSize(17);
     doc.setFont('helvetica', 'bold');
-    doc.text('Sales System', margin, 11);
+    doc.text(tenantName.toUpperCase(), margin, 11);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -409,7 +412,8 @@ export function generarPDFSesion(
         doc.setFontSize(7);
         doc.setTextColor(...C.gray);
         doc.setFont('helvetica', 'normal');
-        doc.text('Sales System — Documento de uso interno. Horas en hora Bolivia (UTC-4).', margin, pageH - 8);
+        const watermark = tenantSettings?.report_watermark || `${tenantName} — Documento de uso interno. Horas en hora Bolivia (UTC-4).`;
+        doc.text(watermark, margin, pageH - 8);
         doc.text(`Página ${p} de ${totalPages}`, W - margin, pageH - 8, { align: 'right' });
 
         // Stamp on every page

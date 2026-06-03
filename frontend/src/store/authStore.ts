@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '../api/types';
-
+import type { User, TenantSettings } from '../api/types';
 // ─── Feature Flags ────────────────────────────────────────────────────────────
 export const FEATURES = {
     VENTAS:               'VENTAS',
@@ -33,6 +32,8 @@ interface AuthState {
     login: (token: string, user: User) => void;
     logout: () => void;
     setFeatures: (features: string[], planName?: string) => void;
+    tenantSettings: TenantSettings | null;
+    setTenantSettings: (settings: TenantSettings) => void;
     isAuthenticated: () => boolean;
     /** Verifica si el tenant tiene acceso a un módulo específico.
      *  Si features está vacío (aún no cargó), retorna true como fallback seguro. */
@@ -54,14 +55,16 @@ export const useAuthStore = create<AuthState>()(
             sucursal_id: null,
             features: [],
             planName: '',
+            tenantSettings: null,
             login: (token, user) => set({
                 token,
                 role: user.role,
                 user,
                 sucursal_id: user.sucursal_id ?? null,
             }),
-            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '' }),
+            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', tenantSettings: null }),
             setFeatures: (features, planName = '') => set({ features, planName }),
+            setTenantSettings: (settings) => set({ tenantSettings: settings }),
             isAuthenticated: () => !!get().token,
             hasFeature: (flag: string) => {
                 const { features, role } = get();

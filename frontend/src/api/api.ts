@@ -6,7 +6,7 @@ export { client } from './client';
 import { client } from './client';
 
 import type {
-    Tenant, TenantCreate, TenantUpdate,
+    Tenant, TenantCreate, TenantUpdate, TenantSettings,
     Product, ProductCreate,
     Category, CategoryCreate,
     Descuento, DescuentoCreate, DescuentoUpdate,
@@ -31,6 +31,8 @@ export const createTenant = (data: TenantCreate) => client<Tenant>('/tenants', {
 export const updateTenant = (id: string, data: TenantUpdate) => client<Tenant>(`/tenants/${id}`, { method: 'PUT', body: data });
 export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/${id}`, { method: 'DELETE' });
 export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string }>('/tenants/my-features');
+export const getMyTenant = () => client<Tenant>('/tenants/me');
+export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
 
 export const getTenantStats = () =>
     client<{ total_sales: number; active_products: number; active_employees: number }>('/tenants/stats');
