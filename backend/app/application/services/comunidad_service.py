@@ -82,15 +82,13 @@ class ComunidadService:
         """
         Obtiene estadísticas para el administrador.
         """
-        from beanie.operators import In
-        
-        total_registrados = await ComunidadUser.find(In(ComunidadUser.tenant_id, [tenant_id, "default"])).count()
+        total_registrados = await ComunidadUser.find(ComunidadUser.tenant_id == tenant_id).count()
         total_reclamados = await ComunidadUser.find(
-            In(ComunidadUser.tenant_id, [tenant_id, "default"]), 
+            ComunidadUser.tenant_id == tenant_id, 
             ComunidadUser.ha_reclamado == True
         ).count()
         
-        total_visitas_globales = await VisitaRegistro.find(In(VisitaRegistro.tenant_id, [tenant_id, "default"])).count()
+        total_visitas_globales = await VisitaRegistro.find(VisitaRegistro.tenant_id == tenant_id).count()
         
         return {
             "total_registrados": total_registrados,
@@ -101,7 +99,6 @@ class ComunidadService:
 
     @staticmethod
     async def get_users(tenant_id: str, limit: int = 100, skip: int = 0) -> List[ComunidadUser]:
-        from beanie.operators import In
         return await ComunidadUser.find(
-            In(ComunidadUser.tenant_id, [tenant_id, "default"])
+            ComunidadUser.tenant_id == tenant_id
         ).sort("-created_at").skip(skip).limit(limit).to_list()
