@@ -57,10 +57,11 @@ async def listar_mermas(
     
     # Calcular sumatoria global pendiente
     
-    deuda_pendiente_obj = await NotaDevolucionMerma.aggregate([
+    cursor = NotaDevolucionMerma.get_pymongo_collection().aggregate([
         {"$match": {"tenant_id": tenant_id, "estado_reclamo": "PENDIENTE"}},
         {"$group": {"_id": None, "total": {"$sum": "$costo_total_merma"}}}
-    ]).to_list()
+    ])
+    deuda_pendiente_obj = await cursor.to_list(length=None)
     deuda_pendiente = float(str(deuda_pendiente_obj[0]["total"])) if deuda_pendiente_obj else 0.0
 
     return {
