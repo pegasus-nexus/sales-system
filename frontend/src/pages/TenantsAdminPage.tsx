@@ -7,7 +7,7 @@ import type { Tenant, TenantCreate, TenantUpdate } from '../api/types';
 import { toast } from 'sonner';
 import PasswordField from '../components/PasswordField';
 import Pagination from '../components/Pagination';
-import PlanBuilder from '../components/admin/PlanBuilder';
+
 
 interface Plan {
     code: string;
@@ -43,7 +43,7 @@ const PlanBadge = ({ plan }: { plan: string }) => {
     );
 };
 
-export default function AdminDashboard() {
+export default function TenantsAdminPage() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -345,8 +345,7 @@ export default function AdminDashboard() {
                 )}
             </div>
 
-            {/* Constructor Atómico de Planes */}
-            <PlanBuilder existingPlans={plansList} />
+
 
             {/* Modal: Crear Empresa */}
             {isModalOpen && (

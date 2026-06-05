@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
-import AdminDashboard from './pages/AdminDashboard';
+import TenantsAdminPage from './pages/TenantsAdminPage';
+import PlanesAdminPage from './pages/PlanesAdminPage';
 import TenantDashboard from './pages/TenantDashboard';
 import SucursalesPage from './pages/SucursalesPage';
 import CatalogoPage from './pages/CatalogoPage';
@@ -147,11 +148,17 @@ function App() {
                 <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
 
                 {/* SuperAdmin */}
-                <Route path="/admin" element={
+                <Route path="/admin/empresas" element={
                   <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                    <AdminDashboard />
+                    <TenantsAdminPage />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/planes" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                    <PlanesAdminPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={<Navigate to="/admin/empresas" replace />} />
 
                 {/* Matriz Admin */}
                 <Route path="/dashboard" element={

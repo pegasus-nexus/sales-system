@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
-    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings
+    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -37,7 +37,8 @@ export default function Layout({ children }: LayoutProps) {
     const getNavItems = () => {
         if (role === 'SUPERADMIN') {
             return [
-                { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin' },
+                { icon: Building, label: 'Empresas', path: '/admin/empresas' },
+                { icon: Layers, label: 'Planes', path: '/admin/planes' },
             ];
         }
 
