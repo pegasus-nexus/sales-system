@@ -48,6 +48,7 @@ export default function TenantsAdminPage() {
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+    const [adminCreds, setAdminCreds] = useState({ username: '', password: '' });
     const [confirmPassword, setConfirmPassword] = useState('');
     const [credentials, setCredentials] = useState<{ username: string; password: string; name: string } | null>(null);
     const [copied, setCopied] = useState(false);
@@ -161,17 +162,58 @@ export default function TenantsAdminPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleUpdate = (e: React.FormEvent) => {
+    const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingTenant) return;
-        updateTenantMutation.mutate({
-            id: editingTenant._id,
-            data: {
-                name: editingTenant.name,
-                plan: editingTenant.plan,
-                is_active: editingTenant.is_active
+
+        let expires_at = null;
+        if (editingTenant.plan_expires_at) {
+            expires_at = new Date(editingTenant.plan_expires_at + "T12:00:00Z").toISOString();
+        }
+
+        try {
+            await updateTenantMutation.mutateAsync({
+                id: editingTenant._id,
+                data: {
+                    name: editingTenant.name,
+                    plan: editingTenant.plan,
+                    is_active: editingTenant.is_active,
+                    plan_expires_at: expires_at as any
+                }
+            });
+
+            if (adminCreds.password || adminCreds.username) {
+                const credsPayload: any = {};
+                if (adminCreds.username && !adminCreds.username.includes('Cargando')) credsPayload.username = adminCreds.username;
+                if (adminCreds.password) credsPayload.password = adminCreds.password;
+                
+                if (Object.keys(credsPayload).length > 0) {
+                    await client(`/tenants/${editingTenant._id}/admin-credentials`, {
+                        method: 'PUT',
+                        body: credsPayload
+                    });
+                    toast.success("Credenciales actualizadas");
+                }
             }
-        });
+        } catch (e: any) {
+            toast.error(e.message || "Error al actualizar");
+        }
+    };
+
+    const handleEditClick = async (tenant: Tenant) => {
+        let dateStr = "";
+        if (tenant.plan_expires_at) {
+            dateStr = new Date(tenant.plan_expires_at).toISOString().split('T')[0];
+        }
+        setEditingTenant({ ...tenant, plan_expires_at: dateStr as any });
+        
+        setAdminCreds({username: 'Cargando...', password: ''});
+        try {
+            const data = await client<{username: string, email: string}>(`/tenants/${tenant._id}/admin`);
+            setAdminCreds({username: data.email, password: ''});
+        } catch (e) {
+            setAdminCreds({username: '', password: ''});
+        }
     };
 
     const handleDelete = (tenant: Tenant) => {
@@ -315,7 +357,7 @@ export default function TenantsAdminPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => setEditingTenant(tenant)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
+                                    <button onClick={() => handleEditClick(tenant)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
                                         <Edit2 size={20} />
                                     </button>
                                     <button onClick={() => handleDelete(tenant)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all">
@@ -409,21 +451,40 @@ export default function TenantsAdminPage() {
                         </div>
 
                         <form onSubmit={handleUpdate} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-400 uppercase ml-1">Nombre Comercial</label>
-                                <input type="text" required className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={editingTenant.name} onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Nombre Comercial</label>
+                                    <input type="text" required className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={editingTenant.name} onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Plan Asignado</label>
+                                    <select className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none text-gray-900 font-black cursor-pointer" value={editingTenant.plan} onChange={e => setEditingTenant({ ...editingTenant, plan: e.target.value as any })}>
+                                        {plansList.map(p => (
+                                            <option key={p.code} value={p.code}>{p.name} {!p.is_public ? '(Interno)' : ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-400 uppercase ml-1">Ajustar Plan</label>
-                                <select className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none text-gray-900 font-black cursor-pointer" value={editingTenant.plan} onChange={e => setEditingTenant({ ...editingTenant, plan: e.target.value as any })}>
-                                    {plansList.map(p => (
-                                        <option key={p.code} value={p.code}>{p.name} {!p.is_public ? '(Interno)' : ''}</option>
-                                    ))}
-                                </select>
+                                <label className="text-xs font-black text-gray-400 uppercase ml-1">Fecha de Vencimiento de Pago</label>
+                                <input type="date" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={editingTenant.plan_expires_at as string || ''} onChange={e => setEditingTenant({ ...editingTenant, plan_expires_at: e.target.value as any })} />
                             </div>
 
-                            <div className="bg-gray-50 p-6 rounded-[28px] border border-gray-200 mt-4">
+                            <div className="p-6 bg-gray-50 rounded-[28px] border border-gray-100 space-y-4">
+                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2"><KeyRound size={16}/> Accesos del Administrador</h3>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Correo de Acceso</label>
+                                    <input type="email" required placeholder="admin@empresa.com" className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={adminCreds.username} onChange={e => setAdminCreds({ ...adminCreds, username: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Nueva Contraseña (Dejar en blanco para no cambiar)</label>
+                                    <input type="text" placeholder="Escribe la nueva contraseña..." className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold placeholder:text-gray-300" value={adminCreds.password} onChange={e => setAdminCreds({ ...adminCreds, password: e.target.value })} />
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-6 rounded-[28px] border border-gray-200">
                                 <label className="flex items-center gap-4 cursor-pointer group">
                                     <div className="relative">
                                         <input type="checkbox" className="sr-only peer" checked={editingTenant.is_active} onChange={e => setEditingTenant({ ...editingTenant, is_active: e.target.checked })} />
@@ -438,7 +499,7 @@ export default function TenantsAdminPage() {
                                 )}
                             </div>
 
-                            <button type="submit" disabled={updateTenantMutation.isPending} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-3 mt-4 shadow-xl shadow-black/10">
+                            <button type="submit" disabled={updateTenantMutation.isPending} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/10 disabled:opacity-50">
                                 {updateTenantMutation.isPending ? <Loader2 className="animate-spin" /> : <>Guardar Cambios <Check size={24} /></>}
                             </button>
                         </form>

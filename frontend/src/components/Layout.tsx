@@ -37,6 +37,7 @@ export default function Layout({ children }: LayoutProps) {
     const getNavItems = () => {
         if (role === 'SUPERADMIN') {
             return [
+                { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard' },
                 { icon: Building, label: 'Empresas', path: '/admin/empresas' },
                 { icon: Layers, label: 'Planes', path: '/admin/planes' },
             ];

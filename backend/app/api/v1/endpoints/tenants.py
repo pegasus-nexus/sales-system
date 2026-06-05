@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
@@ -44,6 +45,11 @@ class TenantUpdate(BaseModel):
     name: str | None = None
     plan: str | None = None
     is_active: bool | None = None
+    plan_expires_at: datetime | None = None
+
+class AdminCredentialsUpdate(BaseModel):
+    username: str | None = None
+    password: str | None = None
 
 class PlanCreate(BaseModel):
     name: str
@@ -176,33 +182,65 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from beanie import PydanticObjectId
-    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    tenant = await Tenant.get(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
-    if tenant_in.name is not None:
-        # Check if another tenant has this name
-        existing = await Tenant.find_one(Tenant.name == tenant_in.name)
-        if existing and str(existing.id) != tenant_id:
-            raise HTTPException(status_code=400, detail="Tenant name already exists")
-        tenant.name = tenant_in.name
         
+    if tenant_in.name is not None:
+        tenant.name = tenant_in.name
     if tenant_in.plan is not None:
-        plan_code = tenant_in.plan
         try:
-            plan_enum = PlanType(plan_code)
+            plan_enum = PlanType(tenant_in.plan)
         except ValueError:
             plan_enum = PlanType.PERSONALIZADO
             
-        plan_doc = await Plan.find_one(Plan.code == plan_code)
+        plan_doc = await Plan.find_one(Plan.code == tenant_in.plan)
         tenant.plan_id = str(plan_doc.id) if plan_doc else None
         tenant.plan = plan_enum
-        
     if tenant_in.is_active is not None:
         tenant.is_active = tenant_in.is_active
-        
+    if tenant_in.plan_expires_at is not None:
+        tenant.plan_expires_at = tenant_in.plan_expires_at
+
     await tenant.save()
     return tenant
+
+@router.get("/tenants/{tenant_id}/admin")
+async def get_tenant_admin(tenant_id: str, current_user: User = Depends(get_current_active_user)):
+    if current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN})
+    if not admin_user:
+        return {"username": "No asignado", "email": ""}
+    return {"username": admin_user.username, "email": admin_user.email}
+
+@router.put("/tenants/{tenant_id}/admin-credentials")
+async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate, current_user: User = Depends(get_current_active_user)):
+    if current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    tenant = await Tenant.get(tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
+    admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN})
+    if not admin_user:
+        raise HTTPException(status_code=404, detail="Admin user for this tenant not found")
+        
+    if creds.username:
+        admin_username_lower = creds.username.lower()
+        # Verificar que no exista otro usuario con este correo en todo el sistema
+        existing = await User.find_one({"username": admin_username_lower})
+        if existing and str(existing.id) != str(admin_user.id):
+            raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona")
+        admin_user.username = admin_username_lower
+        admin_user.email = admin_username_lower
+        
+    if creds.password:
+        admin_user.hashed_password = get_password_hash(creds.password)
+        
+    await admin_user.save()
+    return {"message": "Credenciales actualizadas exitosamente"}
 
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):

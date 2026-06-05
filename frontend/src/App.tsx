@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import TenantsAdminPage from './pages/TenantsAdminPage';
 import PlanesAdminPage from './pages/PlanesAdminPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import TenantDashboard from './pages/TenantDashboard';
 import SucursalesPage from './pages/SucursalesPage';
 import CatalogoPage from './pages/CatalogoPage';
@@ -148,6 +149,11 @@ function App() {
                 <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
 
                 {/* SuperAdmin */}
+                <Route path="/admin/dashboard" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                    <AdminDashboardPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/admin/empresas" element={
                   <ProtectedRoute allowedRoles={['SUPERADMIN']}>
                     <TenantsAdminPage />
@@ -158,7 +164,7 @@ function App() {
                     <PlanesAdminPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/admin" element={<Navigate to="/admin/empresas" replace />} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
                 {/* Matriz Admin */}
                 <Route path="/dashboard" element={
