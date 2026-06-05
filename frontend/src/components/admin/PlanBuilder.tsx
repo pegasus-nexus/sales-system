@@ -358,5 +358,6 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
                     </div>
                 </div>
             )}
+        </div>
     );
 }
