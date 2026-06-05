@@ -12,7 +12,10 @@ import PlanBuilder from '../components/admin/PlanBuilder';
 interface Plan {
     code: string;
     name: string;
+    max_sucursales?: number;
+    max_usuarios_por_sucursal?: number;
     is_public: boolean;
+    precio_mensual?: number;
     features: string[];
 }
 
@@ -57,7 +60,7 @@ export default function AdminDashboard() {
 
     const { data: dbPlans } = useQuery({
         queryKey: ['admin-plans'],
-        queryFn: () => client<Plan[]>('/tenants/admin/list-plans'),
+        queryFn: () => client<Plan[]>('/tenants/admin/plans'),
     });
 
     // Form State (Create)

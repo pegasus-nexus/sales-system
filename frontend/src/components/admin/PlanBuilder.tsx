@@ -33,6 +33,8 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
     const [name, setName] = useState('');
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
     const [manualPrice, setManualPrice] = useState<string>('');
+    const [maxSucursales, setMaxSucursales] = useState<string>('1');
+    const [maxUsuariosPorSucursal, setMaxUsuariosPorSucursal] = useState<string>('5');
 
     // Calculadora Automática
     const recommendedPrice = useMemo(() => {
@@ -61,6 +63,8 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
                 method: 'POST',
                 body: {
                     name: name.trim(),
+                    max_sucursales: parseInt(maxSucursales, 10),
+                    max_usuarios_por_sucursal: parseInt(maxUsuariosPorSucursal, 10),
                     features: selectedFeatures,
                     precio_mensual: finalPrice
                 }
@@ -72,6 +76,8 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
             setName('');
             setSelectedFeatures([]);
             setManualPrice('');
+            setMaxSucursales('1');
+            setMaxUsuariosPorSucursal('5');
         },
         onError: (err: any) => {
             toast.error(err.message || "Error al crear el plan");
@@ -113,6 +119,27 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
                             placeholder="Ej. Emprendedor Básico" 
                             className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl text-gray-900 font-bold focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Máx. Sucursales (-1 ilimitado)</label>
+                            <input 
+                                type="number" 
+                                value={maxSucursales} 
+                                onChange={e => setMaxSucursales(e.target.value)} 
+                                className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl text-gray-900 font-bold focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Personal por Sucursal (-1 ilim.)</label>
+                            <input 
+                                type="number" 
+                                value={maxUsuariosPorSucursal} 
+                                onChange={e => setMaxUsuariosPorSucursal(e.target.value)} 
+                                className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl text-gray-900 font-bold focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                            />
+                        </div>
                     </div>
 
                     <div>
@@ -214,6 +241,10 @@ export default function PlanBuilder({ existingPlans }: PlanBuilderProps) {
                                         <span className="bg-indigo-100 text-indigo-700 font-black font-mono text-xs px-2 py-1 rounded-lg">
                                             ${plan.precio_mensual}/mo
                                         </span>
+                                    </div>
+                                    <div className="flex gap-4 mb-3 text-xs text-gray-500 font-medium">
+                                        <span>Sucursales: {plan.max_sucursales === -1 ? '∞' : plan.max_sucursales}</span>
+                                        <span>Personal: {plan.max_usuarios_por_sucursal === -1 ? '∞' : plan.max_usuarios_por_sucursal} c/u</span>
                                     </div>
                                     <p className="text-xs text-gray-500 mb-3">{plan.features.length} módulos habilitados.</p>
                                     <div className="flex flex-wrap gap-1 mb-4">

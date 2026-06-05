@@ -9,7 +9,7 @@ class Plan(Document):
     code: str            # "BASICO", "PRO", "ENTERPRISE", "ILIMITADO"
     name: str
     max_sucursales: int  # -1 = ilimitado
-    max_usuarios: int    # -1 = ilimitado
+    max_usuarios_por_sucursal: int    # -1 = ilimitado
     features: List[PlanFeature] = []
     precio_mensual: DecimalMoney = DecimalMoney("0.0")
     is_active: bool = True

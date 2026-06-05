@@ -47,8 +47,18 @@ class TenantUpdate(BaseModel):
 
 class PlanCreate(BaseModel):
     name: str
+    max_sucursales: int
+    max_usuarios_por_sucursal: int
     features: List[PlanFeature]
     precio_mensual: float = 0.0
+
+class PlanUpdate(BaseModel):
+    name: str | None = None
+    max_sucursales: int | None = None
+    max_usuarios_por_sucursal: int | None = None
+    features: List[PlanFeature] | None = None
+    precio_mensual: float | None = None
+    is_public: bool | None = None
 
 # Endpoints
 @router.get("/tenants/my-features")
@@ -282,7 +292,7 @@ _PLAN_DEFINITIONS = [
         "code": "BASICO",
         "name": "Plan Básico",
         "max_sucursales": 1,
-        "max_usuarios": 5,
+        "max_usuarios_por_sucursal": 5,
         "precio_mensual": "150.00",
         "is_public": True,
         "features": [
@@ -294,7 +304,7 @@ _PLAN_DEFINITIONS = [
         "code": "PRO",
         "name": "Plan Profesional",
         "max_sucursales": 3,
-        "max_usuarios": 20,
+        "max_usuarios_por_sucursal": 20,
         "precio_mensual": "350.00",
         "is_public": True,
         "features": [
@@ -308,7 +318,7 @@ _PLAN_DEFINITIONS = [
         "code": "ENTERPRISE",
         "name": "Plan Enterprise",
         "max_sucursales": -1,
-        "max_usuarios": -1,
+        "max_usuarios_por_sucursal": -1,
         "precio_mensual": "800.00",
         "is_public": True,
         "features": [
@@ -324,7 +334,7 @@ _PLAN_DEFINITIONS = [
         "code": "ILIMITADO",
         "name": "Plan Ilimitado (Interno)",
         "max_sucursales": -1,
-        "max_usuarios": -1,
+        "max_usuarios_por_sucursal": -1,
         "precio_mensual": "0.00",
         "is_public": False,
         "features": list(PlanFeature),
@@ -348,7 +358,7 @@ async def seed_plans(current_user: User = Depends(get_current_active_user)):
         if existing:
             existing.name           = plan_data["name"]
             existing.max_sucursales = plan_data["max_sucursales"]
-            existing.max_usuarios   = plan_data["max_usuarios"]
+            existing.max_usuarios_por_sucursal   = plan_data["max_usuarios_por_sucursal"]
             existing.precio_mensual = Decimal(plan_data["precio_mensual"])
             existing.is_public      = plan_data["is_public"]
             existing.features       = plan_data["features"]
@@ -359,7 +369,7 @@ async def seed_plans(current_user: User = Depends(get_current_active_user)):
                 code            = plan_data["code"],
                 name            = plan_data["name"],
                 max_sucursales  = plan_data["max_sucursales"],
-                max_usuarios    = plan_data["max_usuarios"],
+                max_usuarios_por_sucursal    = plan_data["max_usuarios_por_sucursal"],
                 precio_mensual  = Decimal(plan_data["precio_mensual"]),
                 is_public       = plan_data["is_public"],
                 features        = plan_data["features"],
@@ -400,51 +410,90 @@ async def assign_ilimitado_to_matriz(current_user: User = Depends(get_current_ac
     }
 
 
-@router.get("/tenants/admin/list-plans")
+@router.get("/tenants/admin/plans")
 async def list_plans(current_user: User = Depends(get_current_active_user)):
-    """[SUPERADMIN] Lista todos los planes con sus features."""
+    """[SUPERADMIN] Lista todos los planes con sus features y limites."""
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
     plans = await Plan.find_all().to_list()
-    return [{"id": str(p.id), "code": p.code, "name": p.name, "is_public": p.is_public, "precio_mensual": float(p.precio_mensual), "features": [f.value for f in p.features]} for p in plans]
+    return [{
+        "id": str(p.id), 
+        "code": p.code, 
+        "name": p.name, 
+        "max_sucursales": p.max_sucursales,
+        "max_usuarios_por_sucursal": p.max_usuarios_por_sucursal,
+        "is_public": p.is_public, 
+        "precio_mensual": float(p.precio_mensual), 
+        "features": [f.value for f in p.features]
+    } for p in plans]
 
 @router.post("/tenants/admin/plans")
-async def create_custom_plan(plan_data: PlanCreate, current_user: User = Depends(get_current_active_user)):
-    """[SUPERADMIN] Crea un plan personalizado atómico."""
+async def create_plan(plan_data: PlanCreate, current_user: User = Depends(get_current_active_user)):
+    """[SUPERADMIN] Crea un plan nuevo atómico."""
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    from decimal import Decimal
     code = f"CUSTOM_{plan_data.name.upper().replace(' ', '_')}"
     new_plan = Plan(
         code=code,
         name=plan_data.name,
-        max_sucursales=-1,
-        max_usuarios=-1,
+        max_sucursales=plan_data.max_sucursales,
+        max_usuarios_por_sucursal=plan_data.max_usuarios_por_sucursal,
         features=plan_data.features,
-        precio_mensual=plan_data.precio_mensual,
+        precio_mensual=Decimal(str(plan_data.precio_mensual)),
         is_active=True,
         is_public=True
     )
     await new_plan.save()
     return {"message": "Plan creado con éxito", "plan_id": str(new_plan.id)}
 
-@router.delete("/tenants/admin/plans/{plan_id}")
-async def delete_custom_plan(plan_id: str, current_user: User = Depends(get_current_active_user)):
-    """[SUPERADMIN] Elimina un plan personalizado."""
+@router.put("/tenants/admin/plans/{plan_id}")
+async def update_plan(plan_id: str, plan_data: PlanUpdate, current_user: User = Depends(get_current_active_user)):
+    """[SUPERADMIN] Edita un plan existente."""
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    plan = await Plan.get(plan_id)
+    from beanie import PydanticObjectId
+    plan = await Plan.get(PydanticObjectId(plan_id))
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+        
+    from decimal import Decimal
+    if plan_data.name is not None:
+        plan.name = plan_data.name
+    if plan_data.max_sucursales is not None:
+        plan.max_sucursales = plan_data.max_sucursales
+    if plan_data.max_usuarios_por_sucursal is not None:
+        plan.max_usuarios_por_sucursal = plan_data.max_usuarios_por_sucursal
+    if plan_data.features is not None:
+        plan.features = plan_data.features
+    if plan_data.precio_mensual is not None:
+        plan.precio_mensual = Decimal(str(plan_data.precio_mensual))
+    if plan_data.is_public is not None:
+        plan.is_public = plan_data.is_public
+        
+    await plan.save()
+    return {"message": "Plan actualizado correctamente"}
+
+@router.delete("/tenants/admin/plans/{plan_id}")
+async def delete_plan(plan_id: str, current_user: User = Depends(get_current_active_user)):
+    """[SUPERADMIN] Elimina un plan si no está en uso."""
+    if current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from beanie import PydanticObjectId
+    plan = await Plan.get(PydanticObjectId(plan_id))
     if not plan:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
         
     if not plan.code.startswith("CUSTOM_"):
-        raise HTTPException(status_code=400, detail="No puedes eliminar los planes del sistema")
+        raise HTTPException(status_code=400, detail="No puedes eliminar los planes base del sistema. Edítalos en su lugar.")
         
     # Validar que ningún tenant lo esté usando
     in_use = await Tenant.find({"plan_id": plan_id}).count()
     if in_use > 0:
-        raise HTTPException(status_code=400, detail="El plan está en uso por uno o más tenants")
+        raise HTTPException(status_code=400, detail="El plan está en uso por una o más empresas.")
         
     await plan.delete()
     return {"message": "Plan eliminado correctamente"}
