@@ -35,6 +35,8 @@ class CajeroCreate(BaseModel):
         return v
 
 class EmployeeUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     role: Optional[str] = None
     password: Optional[str] = None
@@ -184,6 +186,21 @@ async def update_employee(
         
     if current_user.role == UserRole.ADMIN_SUCURSAL and target_user.sucursal_id != current_user.sucursal_id:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    import re
+    if data.username is not None:
+        username_lower = data.username.lower()
+        if username_lower != target_user.username:
+            if await User.find_one({"username": re.compile(f"^{username_lower}$", re.IGNORECASE)}):
+                raise HTTPException(status_code=400, detail="El nombre de usuario ya existe")
+            target_user.username = username_lower
+
+    if data.email is not None:
+        email_lower = data.email.lower()
+        if email_lower != target_user.email:
+            if await User.find_one({"email": re.compile(f"^{email_lower}$", re.IGNORECASE)}):
+                raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
+            target_user.email = email_lower
 
     if data.full_name is not None:
         target_user.full_name = data.full_name

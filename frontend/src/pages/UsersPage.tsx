@@ -278,7 +278,7 @@ export default function UsersPage() {
                         <form onSubmit={e => {
                             e.preventDefault();
                             if (form.password && !canSubmit) return;
-                            const payload: any = { full_name: form.full_name, role: form.role };
+                            const payload: any = { full_name: form.full_name, role: form.role, username: form.username, email: form.email };
                             if (form.password) payload.password = form.password;
                             updateMutation.mutate({ id: editingEmployee._id, data: payload });
                         }} className="space-y-4">
@@ -287,6 +287,20 @@ export default function UsersPage() {
                                 <input type="text" placeholder="Ej: Juan Pérez" required
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm text-gray-900 placeholder-gray-400"
                                     value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Usuario de Login</label>
+                                    <input type="text" placeholder="juan.perez" required
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm text-gray-900 placeholder-gray-400"
+                                        value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico</label>
+                                    <input type="email" placeholder="juan@empresa.com" required
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm text-gray-900 placeholder-gray-400"
+                                        value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">Rol / Puesto</label>
