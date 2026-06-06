@@ -6,7 +6,18 @@ from app.infrastructure.core.dependencies import require_roles
 
 router = APIRouter()
 
-@router.get("/", response_model=List[AuditLog])
+def serialize_mongo_types(obj):
+    if isinstance(obj, dict):
+        return {k: serialize_mongo_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_mongo_types(v) for v in obj]
+    elif str(type(obj)) == "<class 'bson.decimal128.Decimal128'>":
+        return float(str(obj))
+    elif str(type(obj)) == "<class 'decimal.Decimal'>":
+        return float(obj)
+    return obj
+
+@router.get("/", response_model=List[dict])
 async def get_audit_logs(
     current_user: User = Depends(require_roles(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ)),
     limit: int = 100,
@@ -27,4 +38,4 @@ async def get_audit_logs(
         query["username"] = {"$regex": username, "$options": "i"}
 
     logs = await AuditLog.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
-    return logs
+    return [serialize_mongo_types(log.model_dump()) for log in logs]
