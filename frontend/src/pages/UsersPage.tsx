@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, createEmployee, updateEmployee, toggleEmployeeStatus } from '../api/api';
-import { Users, Plus, Loader2, X, KeyRound, AlertTriangle, Copy, Check, Edit2, Lock, Unlock } from 'lucide-react';
+import { Users, Plus, Loader2, X, KeyRound, AlertTriangle, Copy, Check, Edit2, Trash2 } from 'lucide-react';
 import type { EmployeeCreate } from '../api/types';
 import PasswordField from '../components/PasswordField';
 import { toast } from 'sonner';
@@ -130,7 +130,11 @@ export default function UsersPage() {
                                 </div>
                                 <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
                                     <button 
-                                        onClick={() => { setEditingEmployee(emp); setForm({ ...emp, password: '' }); setConfirmPassword(''); }} 
+                                        onClick={() => { 
+                                            setEditingEmployee(emp); 
+                                            setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
+                                            setConfirmPassword(''); 
+                                        }} 
                                         className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
                                         <Edit2 size={14} /> Editar
                                     </button>
@@ -138,7 +142,7 @@ export default function UsersPage() {
                                         onClick={() => toggleStatusMutation.mutate({ id: emp._id, isActive: emp.is_active === false ? true : false })}
                                         disabled={toggleStatusMutation.isPending}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 ${emp.is_active === false ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
-                                        {emp.is_active === false ? <><Unlock size={14} /> Desbloquear</> : <><Lock size={14} /> Bloquear</>}
+                                        {emp.is_active === false ? <><Check size={14} /> Reactivar</> : <><Trash2 size={14} /> Desactivar</>}
                                     </button>
                                 </div>
                             </div>
