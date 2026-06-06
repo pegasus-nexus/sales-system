@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMyTenant, updateMyTenantSettings } from '../api/api';
+import { getMyTenant, updateMyTenantSettings, uploadImage } from '../api/api';
 import type { TenantSettings } from '../api/types';
 import { Loader2, Save, Image as ImageIcon, Store, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ export default function ConfiguracionPage() {
         direccion: '',
         telefono: ''
     });
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (tenant?.settings) {
@@ -44,20 +45,25 @@ export default function ConfiguracionPage() {
         }
     });
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 1024 * 1024) { // 1MB max
-            toast.error("La imagen es muy pesada. Debe ser menor a 1MB.");
+        if (file.size > 5 * 1024 * 1024) { 
+            toast.error("La imagen no debe superar los 5MB.");
             return;
         }
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setSettings(s => ({ ...s, logo_base64: reader.result as string }));
-        };
-        reader.readAsDataURL(file);
+        try {
+            setIsUploading(true);
+            const res = await uploadImage(file);
+            setSettings(s => ({ ...s, logo_base64: res.url }));
+            toast.success("Logo subido a la nube correctamente.");
+        } catch (error: any) {
+            toast.error(error.message || "Error al subir la imagen");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -90,10 +96,10 @@ export default function ConfiguracionPage() {
                                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Logo de la Empresa</label>
                                 <label className="flex items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-2xl appearance-none cursor-pointer hover:border-gray-400 focus:outline-none">
                                     <span className="flex items-center space-x-2 text-gray-600">
-                                        <ImageIcon className="w-6 h-6 text-gray-400" />
-                                        <span className="font-medium text-sm">Subir nueva imagen (Max 1MB)</span>
+                                        {isUploading ? <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" /> : <ImageIcon className="w-6 h-6 text-gray-400" />}
+                                        <span className="font-medium text-sm">{isUploading ? 'Subiendo a la nube...' : 'Subir nueva imagen (Max 5MB)'}</span>
                                     </span>
-                                    <input type="file" name="file_upload" className="hidden" accept="image/png, image/jpeg" onChange={handleImageUpload} />
+                                    <input type="file" name="file_upload" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} disabled={isUploading} />
                                 </label>
                             </div>
                             {settings.logo_base64 && (

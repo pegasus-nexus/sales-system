@@ -13,3 +13,4 @@ openpyxl
 reportlab
 slowapi
 httpx
+cloudinary

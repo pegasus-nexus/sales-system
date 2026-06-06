@@ -35,6 +35,29 @@ export const getMyFeatures = () => client<{ features: string[]; plan: string; pl
 export const getMyTenant = () => client<Tenant>('/tenants/me');
 export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
 
+export const uploadImage = async (file: File): Promise<{url: string}> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
+    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
+        ? 'https://sales-system-kappa.vercel.app/api/v1' 
+        : 'http://localhost:8000/api/v1');
+
+    const res = await fetch(`${CACHE_URL}/upload`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.detail || 'Error al subir la imagen');
+    }
+
+    return res.json();
+};
+
 export const getTenantStats = () =>
     client<{ total_sales: number; active_products: number; active_employees: number }>('/tenants/stats');
 

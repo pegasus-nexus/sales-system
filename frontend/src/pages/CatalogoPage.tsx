@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit2, Loader2, Package, Image as ImageIcon, Check, X, Tag, Upload, Download, FileSpreadsheet } from 'lucide-react';
-import { getProducts, getCategories, createProduct, updateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales } from '../api/api';
+import { getProducts, getCategories, createProduct, updateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage } from '../api/api';
 import { useDropzone } from 'react-dropzone';
+import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
 import type { Product, Category, ProductCreate, Sucursal } from '../api/types';
 import Pagination from '../components/Pagination';
@@ -480,6 +481,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
 function ProductModal({ onClose, product, categories, sucursales }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[] }) {
     const isEditing = !!product;
     const queryClient = useQueryClient();
+    const [isUploading, setIsUploading] = useState(false);
 
     const [formData, setFormData] = useState<ProductCreate>({
         descripcion: product?.descripcion || '',
@@ -492,6 +494,27 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
         image_url: product?.image_url || '',
         precios_sucursales: product?.precios_sucursales || {},
     });
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) { 
+            toast.error("La imagen no debe superar los 5MB.");
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            const res = await uploadImage(file);
+            setFormData({ ...formData, image_url: res.url });
+            toast.success("Foto del producto subida correctamente.");
+        } catch (error: any) {
+            toast.error(error.message || "Error al subir la foto");
+        } finally {
+            setIsUploading(false);
+        }
+    };
     
     const handlePriceChange = (sucursalId: string, val: string) => {
         const numVal = parseFloat(val);
@@ -612,15 +635,25 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">URL de Imagen (Opcional)</label>
-                        <input
-                            type="url"
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
-                            value={formData.image_url}
-                            onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                            placeholder="https://ejemplo.com/imagen.jpg"
-                        />
+                    <div className="flex gap-4 items-end">
+                        <div className="flex-1">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fotografía del Producto (Opcional)</label>
+                            <label className={`flex items-center justify-center w-full h-12 px-4 transition bg-white border-2 border-gray-200 border-dashed rounded-xl appearance-none cursor-pointer hover:border-indigo-400 focus:outline-none ${isUploading ? 'opacity-50' : ''}`}>
+                                <span className="flex items-center space-x-2 text-gray-600">
+                                    {isUploading ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <Upload className="w-5 h-5 text-gray-400" />}
+                                    <span className="font-medium text-sm">{isUploading ? 'Subiendo...' : 'Subir archivo (Max 5MB)'}</span>
+                                </span>
+                                <input type="file" name="file_upload" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} disabled={isUploading} />
+                            </label>
+                        </div>
+                        {formData.image_url && (
+                            <div className="shrink-0 relative group h-12 w-12 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                                <img src={formData.image_url} alt="Preview" className="h-full w-full object-cover" />
+                                <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {sucursales.length > 0 && (
