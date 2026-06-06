@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, Clock, Search, Filter } from 'lucide-react';
+import { Shield, Clock, Search } from 'lucide-react';
 import { getAuditLogs } from '../api/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function AuditLogsPage() {
     const [actionFilter, setActionFilter] = useState('');
-    const [entityFilter, setEntityFilter] = useState('');
+    const [entityFilter] = useState('');
     const [usernameFilter, setUsernameFilter] = useState('');
 
     const { data: logs, isLoading } = useQuery({

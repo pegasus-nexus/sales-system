@@ -302,6 +302,13 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                {/* Auditoria */}
+                <Route path="/auditoria" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN']}>
+                    <AuditLogsPage />
+                  </ProtectedRoute>
+                } />
+
                 {/* Descuentos */}
                 <Route path="/descuentos" element={
                   <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="DESCUENTOS_AVANZADOS">
