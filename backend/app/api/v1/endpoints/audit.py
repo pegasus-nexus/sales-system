@@ -15,6 +15,10 @@ def serialize_mongo_types(obj):
         return float(str(obj))
     elif str(type(obj)) == "<class 'decimal.Decimal'>":
         return float(obj)
+    elif "ObjectId" in str(type(obj)):
+        return str(obj)
+    elif "datetime" in str(type(obj)):
+        return obj.isoformat()
     return obj
 
 @router.get("/", response_model=List[dict])
