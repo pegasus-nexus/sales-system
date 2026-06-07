@@ -14,7 +14,7 @@ export default function EtiquetasSelector({ pedidoId, etiquetasIds }: Props) {
     const qc = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    useOnClickOutside(ref, () => setIsOpen(false));
+    useOnClickOutside(ref as any, () => setIsOpen(false));
 
     const { data: etiquetas = [] } = useQuery({
         queryKey: ['etiquetas'],
