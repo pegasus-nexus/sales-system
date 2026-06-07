@@ -4,7 +4,7 @@ import { getGeneralReports } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     BarChart3, Loader2, DollarSign, Package, TrendingUp, Calendar, 
-    AlertTriangle, ShoppingBag, Store, Layers, Building2, FileText, Clock, Users, Scale, Wallet
+    AlertTriangle, ShoppingBag, Store, Layers, Building2, FileText, Clock, Users, Scale, Wallet, Ban
 } from 'lucide-react';
 import DailyReportView from '../components/DailyReportView';
 import FinancialDetailView from '../components/FinancialDetailView';

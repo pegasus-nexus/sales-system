@@ -8,12 +8,6 @@ import {
     AlertTriangle, ScrollText
 } from 'lucide-react';
 import { formatFullDate as formatDate } from '../utils/dateUtils';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
 
 const MOTIVOS: Record<string, string> = {
     'ERROR_COBRO': 'Error de método de cobro',
