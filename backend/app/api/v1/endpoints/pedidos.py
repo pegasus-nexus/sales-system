@@ -40,6 +40,7 @@ class PedidoCreate(BaseModel):
     sucursal_destino_id: str
     items: List[PedidoItemCreate]
     notas: Optional[str] = None
+    etiquetas_ids: List[str] = []
     transferencia_directa: bool = False # If true, auto-resolves to RECIBIDO
 
 

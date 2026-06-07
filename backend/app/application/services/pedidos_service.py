@@ -79,6 +79,7 @@ class PedidosService:
                         estado=EstadoPedido.CREADO,
                         items=items,
                         notas=data.notas,
+                        etiquetas_ids=data.etiquetas_ids,
                         total_mayorista=sum(i.subtotal for i in items)
                     )
 

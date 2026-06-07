@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPedidos, createPedido, despacharPedido, recibirPedido, cancelarPedido, aceptarPedido, getSucursales, getInventario, getProducts, downloadPedidoPDF } from '../api/api';
+import { getPedidos, createPedido, despacharPedido, recibirPedido, cancelarPedido, aceptarPedido, getSucursales, getInventario, getProducts, downloadPedidoPDF, getEtiquetas } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 
 import {
@@ -49,12 +49,16 @@ export default function PedidosPage() {
     const [orderItems, setOrderItems] = useState<{ producto_id: string; cantidad: number }[]>([]);
     const [notas, setNotas] = useState('');
     const [searchProd, setSearchProd] = useState('');
+    const [selectedEtiquetas, setSelectedEtiquetas] = useState<string[]>([]);
+
+    const resetForm = () => { setSelectedSucursal(''); setOrderItems([]); setNotas(''); setSearchProd(''); setSelectedEtiquetas([]); };
 
     const { data: pedidos = [], isLoading } = useQuery({
         queryKey: ['pedidos', tab],
         queryFn: () => getPedidos(undefined, tab === 'todos' ? undefined : tab),
     });
     const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales });
+    const { data: etiquetasList = [] } = useQuery({ queryKey: ['etiquetas'], queryFn: getEtiquetas });
     
     // Determine the true source of merchandise based on user role and action
     const origenId = useMemo(() => {
@@ -136,7 +140,6 @@ export default function PedidosPage() {
         return availableProducts.filter((p: any) => p.producto_nombre.toLowerCase().includes(low));
     }, [availableProducts, searchProd]);
 
-    const resetForm = () => { setSelectedSucursal(''); setOrderItems([]); setNotas(''); setSearchProd(''); };
     const updateItem = (i: number, f: 'producto_id' | 'cantidad', v: string | number) =>
         setOrderItems(p => p.map((item, idx) => idx === i ? { ...item, [f]: v } : item));
     const removeItem = (i: number) => setOrderItems(p => p.filter((_, idx) => idx !== i));
@@ -353,7 +356,7 @@ export default function PedidosPage() {
                                 return;
                             }
                             
-                            let payload: any = { items: validItems, notas: notas || undefined };
+                            let payload: any = { items: validItems, notas: notas || undefined, etiquetas_ids: selectedEtiquetas };
                             
                             if (isMatriz() || user?.role === 'SUPERADMIN') {
                                 payload.sucursal_destino_id = selectedSucursal;
@@ -672,6 +675,39 @@ export default function PedidosPage() {
                                         </span>
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-4">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Etiquetas del Pedido</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {etiquetasList.map(e => {
+                                        const isSelected = selectedEtiquetas.includes(e._id);
+                                        return (
+                                            <button 
+                                                key={e._id}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setSelectedEtiquetas(prev => prev.filter(id => id !== e._id));
+                                                    } else {
+                                                        setSelectedEtiquetas(prev => [...prev, e._id]);
+                                                    }
+                                                }}
+                                                className={`text-xs px-3 py-1.5 rounded-full font-bold border transition-all flex items-center gap-1.5 ${
+                                                    isSelected
+                                                    ? e.color + ' ring-2 ring-offset-2 ring-indigo-500 scale-105' 
+                                                    : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-current' : e.color.split(' ')[0]}`} />
+                                                {e.nombre}
+                                            </button>
+                                        );
+                                    })}
+                                    {etiquetasList.length === 0 && (
+                                        <span className="text-[10px] text-gray-400 font-medium">No tienes etiquetas. Créalas desde el administrador principal.</span>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
