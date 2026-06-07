@@ -7,6 +7,7 @@ from app.api.v1.router import api_router
 from app.infrastructure.core.rate_limit import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from app.api.v1.endpoints import etiquetas
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -73,3 +74,4 @@ os.makedirs(os.path.join(STATIC_DIR, "images"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(etiquetas.router, prefix="/api/v1", tags=["etiquetas"])

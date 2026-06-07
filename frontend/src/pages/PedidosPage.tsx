@@ -6,9 +6,12 @@ import { useAuthStore } from '../store/authStore';
 import {
     ClipboardList, Plus, Truck, CheckCircle2, Clock,
     X, Check, Loader2, ChevronDown, ChevronRight, Package,
-    CheckSquare, Ban, AlertTriangle, Download, Search
+    CheckSquare, Ban, AlertTriangle, Download, Search, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import EtiquetasManager from '../components/EtiquetasManager';
+import EtiquetasSelector from '../components/EtiquetasSelector';
+import OrderTimeline from '../components/OrderTimeline';
 
 type TabType = 'todos' | 'CREADO' | 'ACEPTADO' | 'DESPACHADO' | 'RECIBIDO' | 'CANCELADO';
 
@@ -39,6 +42,7 @@ export default function PedidosPage() {
         type: 'danger' | 'info' | 'success';
     }>({ isOpen: false, title: '', message: '', action: () => {}, type: 'info' });
     const [receptionModal, setReceptionModal] = useState<{ isOpen: boolean; pedido: any }>({ isOpen: false, pedido: null });
+    const [showEtiquetasManager, setShowEtiquetasManager] = useState(false);
 
     const [selectedSucursal, setSelectedSucursal] = useState('');
     const [supervisorAction, setSupervisorAction] = useState<'PEDIR' | 'TRANSFERIR' | 'DEVOLVER'>('PEDIR');
@@ -145,12 +149,18 @@ export default function PedidosPage() {
                     <h1 className="text-xl font-bold text-gray-900">Pedidos Internos</h1>
                     <p className="text-gray-500 text-xs mt-1">Gestión de transferencias de inventario</p>
                 </div>
-                {!isCajero() && (
-                    <button onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
-                        <Plus size={14} /> Nuevo Pedido
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setShowEtiquetasManager(true)}
+                        className="flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
+                        <Tag size={14} className="text-gray-400" /> Etiquetas
                     </button>
-                )}
+                    {!isCajero() && (
+                        <button onClick={() => setShowCreate(true)}
+                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
+                            <Plus size={14} /> Nuevo Pedido
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Tabs */}
@@ -200,8 +210,11 @@ export default function PedidosPage() {
                                                     <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-bold tracking-wider uppercase border border-sky-200">Traslado Operativo</span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500">
-                                                {formatDate(pedido.created_at)} · {pedido.items.length} producto(s)
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <div className="text-xs text-gray-500 font-medium">
+                                                    {formatDate(pedido.created_at)} · {pedido.items.length} producto(s)
+                                                </div>
+                                                <EtiquetasSelector pedidoId={pedido._id} etiquetasIds={pedido.etiquetas_ids || []} />
                                             </div>
                                         </div>
                                     </div>
@@ -244,8 +257,12 @@ export default function PedidosPage() {
                                         {pedido.notas && (
                                             <p className="text-sm text-gray-700 mt-3 italic font-medium bg-white/50 p-2 rounded-lg">Notas: {pedido.notas}</p>
                                         )}
+                                        
+                                        <div className="mt-4 border-t border-gray-100 pt-2">
+                                            <OrderTimeline pedido={pedido} />
+                                        </div>
 
-                                        <div className="flex justify-end gap-2 mt-3">
+                                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                             {pedido.estado === 'CREADO' && (
                                                 <button onClick={() => setConfirmModal({
                                                     isOpen: true, title: 'Cancelar Pedido',
@@ -303,6 +320,8 @@ export default function PedidosPage() {
                     })}
                 </div>
             )}
+            
+            {showEtiquetasManager && <EtiquetasManager onClose={() => setShowEtiquetasManager(false)} />}
 
             {/* Create Pedido Modal */}
             {showCreate && (

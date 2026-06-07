@@ -158,16 +158,37 @@ export interface PedidoInterno {
     sucursal_id: string;
     sucursal_origen_id?: string;
     sucursal_destino_id?: string;
-    tipo_pedido?: string;
+    tipo_pedido: string;
     estado: 'CREADO' | 'ACEPTADO' | 'DESPACHADO' | 'RECIBIDO' | 'CANCELADO';
     items: PedidoItem[];
     notas?: string;
+    etiquetas_ids?: string[];
     total_mayorista: number;
     created_at: string;
+    aceptado_at?: string;
     despachado_at?: string;
     recibido_at?: string;
-    aceptado_at?: string;
     cancelado_at?: string;
+}
+
+export interface Etiqueta {
+    _id: string;
+    tenant_id: string;
+    nombre: string;
+    color: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface EtiquetaCreate {
+    nombre: string;
+    color: string;
+}
+
+export interface EtiquetaUpdate {
+    nombre?: string;
+    color?: string;
+    is_active?: boolean;
 }
 
 export interface PedidoCreate {

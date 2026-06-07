@@ -141,6 +141,30 @@ async def recibir_pedido(
     return await PedidosService.recibir_pedido(pedido_id, data, current_user)
 
 
+# ── Etiquetas ────────────────────────────────────────────────────────────────
+
+class PedidoEtiquetasUpdate(BaseModel):
+    etiquetas_ids: List[str]
+
+@router.patch("/pedidos/{pedido_id}/etiquetas", response_model=PedidoInterno)
+async def actualizar_etiquetas_pedido(
+    pedido_id: str,
+    data: PedidoEtiquetasUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Actualiza la lista de etiquetas asignadas a un pedido."""
+    pedido = await PedidoInterno.get(pedido_id)
+    if not pedido or pedido.tenant_id != (current_user.tenant_id or ""):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR] and pedido.sucursal_id != current_user.sucursal_id:
+        raise HTTPException(status_code=403, detail="No autorizado para editar este pedido")
+
+    pedido.etiquetas_ids = data.etiquetas_ids
+    await pedido.save()
+    return pedido
+
+
 # ── Report (Generar PDF) ────────────────────────────────────────────────────
 
 @router.get("/pedidos/{pedido_id}/pdf")

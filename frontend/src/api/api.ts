@@ -15,7 +15,8 @@ import type {
     Sucursal, SucursalCreate,
     InventarioItem, AjusteInventario, InventoryLog, AjusteInventarioMasivoRequest,
     PedidoInterno, PedidoCreate,
-    PriceChangeRequest, PriceRequestCreate, ReportStats
+    PriceChangeRequest, PriceRequestCreate, ReportStats,
+    Etiqueta, EtiquetaCreate, EtiquetaUpdate
 } from './types';
 import type {
     CajaSesion, CajaMovimiento, CajaGastoCategoria,
@@ -458,6 +459,11 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
 };
 
 // ─── Pedidos Internos ─────────────────────────────────────────────────────
+export const getEtiquetas = () => client<Etiqueta[]>('/etiquetas');
+export const createEtiqueta = (data: EtiquetaCreate) => client<Etiqueta>('/etiquetas', { method: 'POST', body: data });
+export const updateEtiqueta = (id: string, data: EtiquetaUpdate) => client<Etiqueta>(`/etiquetas/${id}`, { method: 'PUT', body: data });
+export const actualizarEtiquetasPedido = (pedido_id: string, etiquetas_ids: string[]) => client<PedidoInterno>(`/pedidos/${pedido_id}/etiquetas`, { method: 'PATCH', body: { etiquetas_ids } });
+
 export const getPedidos = (sucursal_id?: string, estado?: string) => {
     const params = new URLSearchParams();
     if (sucursal_id) params.set('sucursal_id', sucursal_id);
