@@ -492,7 +492,7 @@ export const downloadPedidoPDF = async (pedido_id: string) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recepcion_${pedido_id}.pdf`;
+    a.download = `pedido_${pedido_id}.pdf`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);

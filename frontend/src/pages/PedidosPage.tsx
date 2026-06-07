@@ -286,17 +286,15 @@ export default function PedidosPage() {
                                                     Confirmar Recepción
                                                 </button>
                                             )}
-                                            {pedido.estado === 'RECIBIDO' && (
-                                                <button onClick={async () => {
-                                                    try {
-                                                        await downloadPedidoPDF(pedido._id);
-                                                    } catch (err: any) { alert(err.message); }
-                                                }}
-                                                    className="flex items-center gap-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ml-auto shadow-sm">
-                                                    <Download size={14} />
-                                                    Descargar Comprobante PDF
-                                                </button>
-                                            )}
+                                            <button onClick={async () => {
+                                                try {
+                                                    await downloadPedidoPDF(pedido._id);
+                                                } catch (err: any) { alert(err.message); }
+                                            }}
+                                                className="flex items-center gap-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ml-auto shadow-sm">
+                                                <Download size={14} />
+                                                Descargar PDF
+                                            </button>
                                         </div>
                                     </div>
                                 )}
