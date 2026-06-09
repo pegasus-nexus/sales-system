@@ -132,7 +132,7 @@ async def responder_solicitud_precio(
                 "created_at": datetime.utcnow()
             }
         }
-        await Inventario.get_motor_collection().find_one_and_update(query, update, upsert=True)
+        await Inventario.get_pymongo_collection().find_one_and_update(query, update, upsert=True)
 
     await request.save()
     return request
@@ -176,6 +176,6 @@ async def override_branch_price(
             }
         }
         
-    await Inventario.get_motor_collection().find_one_and_update(query, update, upsert=True)
+    await Inventario.get_pymongo_collection().find_one_and_update(query, update, upsert=True)
         
     return {"message": "Price updated successfully", "precio_sucursal": nuevo_precio}

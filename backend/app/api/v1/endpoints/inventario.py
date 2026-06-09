@@ -163,7 +163,7 @@ async def ajustar_inventario(
     from datetime import datetime
     import pymongo
 
-    motor_coll = Inventario.get_motor_collection()
+    motor_coll = Inventario.get_pymongo_collection()
     
     query = {
         "tenant_id": tenant_id,
@@ -291,7 +291,7 @@ async def ajustar_inventario_masivo(
         from pymongo import ReturnDocument
         from datetime import datetime
 
-        motor_coll = Inventario.get_motor_collection()
+        motor_coll = Inventario.get_pymongo_collection()
         
         query = {
             "tenant_id": tenant_id,

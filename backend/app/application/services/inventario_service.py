@@ -34,7 +34,7 @@ class InventarioService:
                 from pymongo import ReturnDocument
                 from datetime import datetime
 
-                motor_coll = Inventario.get_motor_collection()
+                motor_coll = Inventario.get_pymongo_collection()
                 query = {
                     "tenant_id": tenant_id,
                     "sucursal_id": sucursal_id,
