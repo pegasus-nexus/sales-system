@@ -196,7 +196,33 @@ async def ajustar_inventario(
             producto_id=ajuste.producto_id,
             cantidad=nuevo_stock,
         )
-        await entry.create()
+        try:
+            await entry.create()
+        except Exception as e:
+            # Check for DuplicateKeyError (code 11000)
+            if "11000" in str(e):
+                entry = await Inventario.find_one(
+                    Inventario.tenant_id == tenant_id,
+                    Inventario.sucursal_id == sucursal_id,
+                    Inventario.producto_id == ajuste.producto_id,
+                )
+                if not entry: raise e
+                
+                # Recalculate based on newly found entry
+                if ajuste.tipo == "ENTRADA":
+                    nuevo_stock = entry.cantidad + ajuste.cantidad
+                    cantidad_cambio = ajuste.cantidad
+                elif ajuste.tipo == "SALIDA":
+                    nuevo_stock = max(0, entry.cantidad - ajuste.cantidad)
+                    cantidad_cambio = nuevo_stock - entry.cantidad
+                else:
+                    nuevo_stock = ajuste.cantidad
+                    cantidad_cambio = nuevo_stock - entry.cantidad
+                    
+                entry.cantidad = nuevo_stock
+                await entry.save()
+            else:
+                raise e
 
     # Guardar en Kárdex (Log Inmutable)
     if cantidad_cambio != 0:
