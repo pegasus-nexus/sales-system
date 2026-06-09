@@ -140,6 +140,11 @@ export default function POSPage() {
                 return;
             }
 
+            // Ignorar escáner si hay un modal abierto o la venta ya finalizó
+            if (confirmSale || lastSale) {
+                return;
+            }
+
             // Ignorar escáner si el usuario está tipeando en un input o textarea (ej. buscador)
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;

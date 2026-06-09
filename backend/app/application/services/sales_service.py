@@ -188,6 +188,11 @@ class SalesService:
                         else:
                             estado_pago = EstadoPago.PAGADO
                     else:
+                        if total_pagado < computed_total:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"El total pagado (Bs. {total_pagado}) es menor al total de la venta (Bs. {computed_total}). Faltan pagos por Bs. {computed_total - total_pagado} y no se solicitó crédito."
+                            )
                         estado_pago = EstadoPago.PAGADO
 
                     cliente_snap = ClienteInfo(**sale_in.cliente.model_dump()) if sale_in.cliente else None
