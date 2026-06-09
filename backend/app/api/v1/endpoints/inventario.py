@@ -158,71 +158,79 @@ async def ajustar_inventario(
     if not product or (current_user.role != UserRole.SUPERADMIN and product.tenant_id != tenant_id):
         raise HTTPException(status_code=404, detail="Product not found")
 
-    entry = await Inventario.find_one(
-        Inventario.tenant_id == tenant_id,
-        Inventario.sucursal_id == sucursal_id,
-        Inventario.almacen_id == almacen_id,
-        Inventario.producto_id == ajuste.producto_id,
-    )
+    # Implementación Atómica con pymongo para evitar DuplicateKeyError y Condiciones de Carrera
+    from pymongo import ReturnDocument
+    from datetime import datetime
+    import pymongo
 
-    stock_anterior = entry.cantidad if entry else 0
-    cantidad_cambio = 0
+    motor_coll = Inventario.get_motor_collection()
     
+    query = {
+        "tenant_id": tenant_id,
+        "sucursal_id": sucursal_id,
+        "almacen_id": almacen_id,
+        "producto_id": ajuste.producto_id,
+    }
+
+    # Fetch previous stock to calculate 'cantidad_cambio'
+    # We do a read first just to know the old stock for the Kardex log, 
+    # but the actual update is atomic.
+    entry_before = await motor_coll.find_one(query)
+    stock_anterior = entry_before["cantidad"] if entry_before else 0
+
     from app.domain.models.inventario import TipoMovimiento, InventoryLog
 
+    now = datetime.utcnow()
+    set_on_insert = {
+        "tenant_id": tenant_id,
+        "sucursal_id": sucursal_id,
+        "almacen_id": almacen_id,
+        "producto_id": ajuste.producto_id,
+        "created_at": now,
+    }
+
     if ajuste.tipo == "ENTRADA":
-        nuevo_stock = stock_anterior + ajuste.cantidad
-        cantidad_cambio = ajuste.cantidad
+        update = {
+            "$inc": {"cantidad": ajuste.cantidad},
+            "$set": {"updated_at": now},
+            "$setOnInsert": set_on_insert
+        }
         tipo_mov = TipoMovimiento.ENTRADA_MANUAL
     elif ajuste.tipo == "SALIDA":
-        nuevo_stock = max(0, stock_anterior - ajuste.cantidad)
-        cantidad_cambio = nuevo_stock - stock_anterior  # will be negative
+        # Para evitar saldos negativos en salidas atómicas, usamos pipeline update (MongoDB 4.2+)
+        update = [
+            {
+                "$set": {
+                    "cantidad": {"$max": [0, {"$subtract": [{"$ifNull": ["$cantidad", 0]}, ajuste.cantidad]}]},
+                    "updated_at": now,
+                    "tenant_id": tenant_id,
+                    "sucursal_id": sucursal_id,
+                    "almacen_id": almacen_id,
+                    "producto_id": ajuste.producto_id,
+                    "created_at": {"$ifNull": ["$created_at", now]}
+                }
+            }
+        ]
         tipo_mov = TipoMovimiento.SALIDA_MANUAL
     elif ajuste.tipo == "AJUSTE":
-        nuevo_stock = ajuste.cantidad
-        cantidad_cambio = nuevo_stock - stock_anterior
+        update = {
+            "$set": {"cantidad": ajuste.cantidad, "updated_at": now},
+            "$setOnInsert": set_on_insert
+        }
         tipo_mov = TipoMovimiento.AJUSTE_FISICO
     else:
-        raise HTTPException(status_code=400, detail="Tipo de ajuste inválido (ENTRADA, SALIDA, AJUSTE)")
+        raise HTTPException(status_code=400, detail="Tipo de ajuste inválido")
 
-    if entry:
-        entry.cantidad = nuevo_stock
-        await entry.save()
-    else:
-        entry = Inventario(
-            tenant_id=tenant_id,
-            sucursal_id=sucursal_id,
-            almacen_id=almacen_id,
-            producto_id=ajuste.producto_id,
-            cantidad=nuevo_stock,
-        )
-        try:
-            await entry.create()
-        except Exception as e:
-            # Check for DuplicateKeyError (code 11000)
-            if "11000" in str(e):
-                entry = await Inventario.find_one(
-                    Inventario.tenant_id == tenant_id,
-                    Inventario.sucursal_id == sucursal_id,
-                    Inventario.producto_id == ajuste.producto_id,
-                )
-                if not entry: raise e
-                
-                # Recalculate based on newly found entry
-                if ajuste.tipo == "ENTRADA":
-                    nuevo_stock = entry.cantidad + ajuste.cantidad
-                    cantidad_cambio = ajuste.cantidad
-                elif ajuste.tipo == "SALIDA":
-                    nuevo_stock = max(0, entry.cantidad - ajuste.cantidad)
-                    cantidad_cambio = nuevo_stock - entry.cantidad
-                else:
-                    nuevo_stock = ajuste.cantidad
-                    cantidad_cambio = nuevo_stock - entry.cantidad
-                    
-                entry.cantidad = nuevo_stock
-                await entry.save()
-            else:
-                raise e
+    # Ejecutar operación atómica
+    updated_doc = await motor_coll.find_one_and_update(
+        query,
+        update,
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    
+    nuevo_stock = updated_doc["cantidad"]
+    cantidad_cambio = nuevo_stock - stock_anterior
 
     # Guardar en Kárdex (Log Inmutable)
     if cantidad_cambio != 0:
@@ -251,7 +259,7 @@ async def ajustar_inventario(
         )
         await log.create()
 
-    return {"sucursal_id": sucursal_id, "producto_id": ajuste.producto_id, "cantidad": entry.cantidad, "movimiento": cantidad_cambio}
+    return {"sucursal_id": sucursal_id, "almacen_id": almacen_id, "producto_id": ajuste.producto_id, "cantidad": nuevo_stock, "movimiento": cantidad_cambio}
 
 
 @router.post("/inventario/ajuste-masivo")
