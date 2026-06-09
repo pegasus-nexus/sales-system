@@ -715,3 +715,17 @@ export const getMermasReclamos = (page: number = 1, limit: number = 50, estado?:
 export const compensarMermaReclamo = (merma_id: string) => {
     return client<any>(`/b2b/mermas/${merma_id}/compensar`, { method: 'POST' });
 };
+
+// ── Estadísticas de Productos ────────────────────────────────────────────
+export interface ProductStatsRequest {
+    producto_ids: string[];
+    start_date: string;
+    end_date: string;
+    intervalo: 'dia' | 'semana' | 'mes';
+    sucursal_id?: string;
+}
+
+export const getProductStatsReport = (data: ProductStatsRequest) => {
+    return client<any[]>(`/reports/product-stats`, { method: 'POST', body: data });
+};
+

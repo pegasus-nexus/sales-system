@@ -17,6 +17,7 @@ import ExpensesReportView from '../components/ExpensesReportView';
 import CashSalesSummaryView from '../components/CashSalesSummaryView';
 import AnulacionesReportView from '../components/AnulacionesReportView';
 import ProductTrendsView from '../components/ProductTrendsView';
+import ProductStatsView from '../components/ProductStatsView';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, BarChart, Bar, Legend
@@ -30,7 +31,7 @@ function cn(...inputs: ClassValue[]) {
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones';
+type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
@@ -109,6 +110,7 @@ export default function ReportsPage() {
                     { id: 'staff', label: 'Desempeño Staff', icon: <Users size={16} /> },
                     { id: 'matrix', label: 'Matriz de Ventas', icon: <BarChart3 size={16} /> },
                     { id: 'tendencias', label: 'Tendencias', icon: <TrendingUp size={16} /> },
+                    { id: 'product_stats', label: 'Estadísticas de Producto', icon: <BarChart3 size={16} /> },
                     { id: 'caja_ventas', label: 'Ventas por Caja', icon: <Wallet size={16} /> },
                     { id: 'inventario_valorado', label: 'Inventario Valorado', icon: <Package size={16} /> },
                     { id: 'gastos', label: 'Gastos', icon: <DollarSign size={16} /> },
@@ -143,6 +145,8 @@ export default function ReportsPage() {
                 <SalesMatrixView />
             ) : activeTab === 'tendencias' ? (
                 <ProductTrendsView />
+            ) : activeTab === 'product_stats' ? (
+                <ProductStatsView />
             ) : activeTab === 'conciliacion' ? (
                 <InventoryReconciliationView />
             ) : activeTab === 'gastos' ? (

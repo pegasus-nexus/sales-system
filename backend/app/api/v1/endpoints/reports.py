@@ -1452,3 +1452,108 @@ async def get_expenses_report(
         "detalle": detalle,
         "por_categoria": por_categoria
     }
+
+from pydantic import BaseModel
+from typing import List, Literal
+
+class ProductStatsRequest(BaseModel):
+    producto_ids: List[str]
+    start_date: str # YYYY-MM-DD
+    end_date: str   # YYYY-MM-DD
+    intervalo: Literal["dia", "semana", "mes"] = "dia"
+    sucursal_id: Optional[str] = "all"
+
+@router.post("/product-stats")
+async def get_product_stats(
+    req: ProductStatsRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    tenant_id = current_user.tenant_id or "default"
+    
+    # Permission check for branch
+    target_sucursal = req.sucursal_id
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+        target_sucursal = current_user.sucursal_id
+
+    try:
+        start_dt, _ = get_day_range_bolivia(req.start_date)
+        _, end_dt = get_day_range_bolivia(req.end_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
+
+    if not req.producto_ids:
+        return []
+
+    # Format string for Mongo dateToString based on interval
+    if req.intervalo == "dia":
+        date_format = "%Y-%m-%d"
+    elif req.intervalo == "semana":
+        date_format = "%Y-%U" # Year and Week number
+    elif req.intervalo == "mes":
+        date_format = "%Y-%m"
+    else:
+        date_format = "%Y-%m-%d"
+
+    match_filter = {
+        "tenant_id": tenant_id,
+        "sale_date": {"$gte": start_dt, "$lte": end_dt}
+    }
+    
+    if target_sucursal and target_sucursal != "all":
+        match_filter["sucursal_id"] = target_sucursal
+
+    pipeline = [
+        {"$match": match_filter},
+        {
+            "$lookup": {
+                "from": "sales",
+                "let": {"sid": "$sale_id"},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": [{"$toString": "$_id"}, "$$sid"]}, "anulada": False}}
+                ],
+                "as": "sale_parent"
+            }
+        },
+        {"$match": {"sale_parent": {"$ne": []}}},
+        {"$match": {"producto_id": {"$in": req.producto_ids}}},
+        {
+            "$group": {
+                "_id": {
+                    "fecha": { "$dateToString": { "format": date_format, "date": "$sale_date", "timezone": "-04:00" } },
+                    "producto_id": "$producto_id",
+                    "descripcion": "$descripcion"
+                },
+                "cantidad": {"$sum": "$cantidad"},
+                "subtotal": {"$sum": "$subtotal"}
+            }
+        },
+        {
+            "$project": {
+                "fecha": "$_id.fecha",
+                "producto_id": "$_id.producto_id",
+                "producto_nombre": "$_id.descripcion",
+                "cantidad": 1,
+                "ingreso_bruto": "$subtotal",
+                "_id": 0
+            }
+        },
+        {"$sort": {"fecha": 1}}
+    ]
+
+    cursor = SaleItem.get_pymongo_collection().aggregate(pipeline)
+    raw_results = await cursor.to_list(length=5000)
+    
+    # We must format the data in a way that is easily consumable by Recharts.
+    # Typically: [{ fecha: "2023-01-01", "Prod A Unidades": 5, "Prod A Ingreso": 100, "Prod B Unidades": 2 ... }]
+    # But we can just return the raw aggregated list and let the frontend pivot it, or we can pivot it here.
+    # Returning raw is often better so the frontend has full flexibility.
+    
+    results = []
+    for r in raw_results:
+        norm = normalize_bson(r)
+        norm["cantidad"] = int(norm.get("cantidad", 0))
+        norm["ingreso_bruto"] = float(str(norm.get("ingreso_bruto", 0)))
+        results.append(norm)
+
+    return results
+
