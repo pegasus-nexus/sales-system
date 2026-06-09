@@ -42,14 +42,21 @@ class SalesService:
                         if not product or product.tenant_id != tenant_id:
                             raise HTTPException(status_code=404, detail=f"Producto {item.producto_id} no encontrado")
 
+                        inv_query = {
+                            "tenant_id": tenant_id,
+                            "sucursal_id": sucursal_id,
+                            "producto_id": item.producto_id,
+                        }
+                        if sale_in.almacen_id == "default":
+                            inv_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                        else:
+                            inv_query["almacen_id"] = sale_in.almacen_id
+                            
+                        update_query = dict(inv_query)
+                        update_query["cantidad"] = {"$gte": item.cantidad}
+
                         updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                            {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": sucursal_id,
-                                "almacen_id": sale_in.almacen_id,
-                                "producto_id": item.producto_id,
-                                "cantidad": {"$gte": item.cantidad}
-                            },
+                            update_query,
                             {
                                 "$inc": {"cantidad": -item.cantidad}
                             },
@@ -58,14 +65,12 @@ class SalesService:
                         )
 
                         if not updated_inv:
-                            inv_check = await Inventario.find_one(
-                                Inventario.tenant_id == tenant_id,
-                                Inventario.sucursal_id == sucursal_id,
-                                Inventario.almacen_id == sale_in.almacen_id,
-                                Inventario.producto_id == item.producto_id,
-                                session=session
+                            # For the error message, just check what we have
+                            inv_check = await Inventario.get_pymongo_collection().find_one(
+                                inv_query,
+                                session=session.client_session if hasattr(session, "client_session") else session
                             )
-                            available = inv_check.cantidad if inv_check else 0
+                            available = inv_check["cantidad"] if inv_check else 0
                             raise HTTPException(
                                 status_code=400,
                                 detail=f"Stock insuficiente para '{product.descripcion}'. Disponible: {available}, solicitado: {item.cantidad}",
@@ -384,13 +389,18 @@ class SalesService:
 
                     # ── 1. Revertir stock (siempre) ──────────────────────────────
                     for item in sale.items:
+                        inv_query_anul = {
+                            "tenant_id": tenant_id,
+                            "sucursal_id": sucursal_id,
+                            "producto_id": item.producto_id,
+                        }
+                        if sale.almacen_id == "default":
+                            inv_query_anul["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                        else:
+                            inv_query_anul["almacen_id"] = sale.almacen_id
+
                         updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                            {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": sucursal_id,
-                                "almacen_id": sale.almacen_id,
-                                "producto_id": item.producto_id,
-                            },
+                            inv_query_anul,
                             {"$inc": {"cantidad": item.cantidad}},
                             return_document=ReturnDocument.AFTER,
                             session=session.client_session if hasattr(session, "client_session") else session
@@ -553,13 +563,18 @@ class SalesService:
                         
                         # A. Descontar stock para la nueva venta y registrar logs
                         for item in sale.items:
+                            inv_query_corr = {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": sucursal_id,
+                                "producto_id": item.producto_id,
+                            }
+                            if sale.almacen_id == "default":
+                                inv_query_corr["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                            else:
+                                inv_query_corr["almacen_id"] = sale.almacen_id
+
                             updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {
-                                    "tenant_id": tenant_id,
-                                    "sucursal_id": sucursal_id,
-                                    "almacen_id": sale.almacen_id,
-                                    "producto_id": item.producto_id,
-                                },
+                                inv_query_corr,
                                 {"$inc": {"cantidad": -item.cantidad}},
                                 return_document=ReturnDocument.AFTER,
                                 session=session.client_session if hasattr(session, "client_session") else session

@@ -47,18 +47,28 @@ async def get_inventario(
     pipeline = [{"$match": prod_match}]
     
     # Lookup the inventory for this specific branch
+    # Prepare the lookup match conditions
+    lookup_match = {
+        "$expr": {"$eq": ["$producto_id", "$$pid"]},
+        "sucursal_id": sucursal_id,
+        "tenant_id": tenant_id
+    }
+    
+    if almacen_id == "default":
+        lookup_match["$or"] = [
+            {"almacen_id": "default"},
+            {"almacen_id": {"$exists": False}}
+        ]
+    else:
+        lookup_match["almacen_id"] = almacen_id
+
     inv_coll = Inventario.get_collection_name()
     pipeline.append({
         "$lookup": {
             "from": inv_coll,
             "let": {"pid": {"$toString": "$_id"}},
             "pipeline": [
-                {"$match": {
-                    "$expr": {"$eq": ["$producto_id", "$$pid"]},
-                    "sucursal_id": sucursal_id,
-                    "almacen_id": almacen_id,
-                    "tenant_id": tenant_id
-                }}
+                {"$match": lookup_match}
             ],
             "as": "inventory"
         }
