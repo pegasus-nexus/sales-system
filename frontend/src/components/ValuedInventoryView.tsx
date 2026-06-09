@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getValuedInventory, exportValuedInventory } from '../api/api';
+import { getValuedInventory, exportValuedInventory, getSucursales } from '../api/api';
+import { useAuthStore } from '../store/authStore';
 import { Loader2, Package, Store, AlertTriangle, ChevronDown, ChevronUp, DollarSign, Gem, ShieldCheck, Tag, Calendar, History, Download, FileDown } from 'lucide-react';
 import { descargarPDFInventario } from '../utils/reportPDF';
 
@@ -20,9 +21,19 @@ export default function ValuedInventoryView() {
         setSearchParams(newParams);
     };
 
+    const { role } = useAuthStore();
+    const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
+    const [selectedSucursalId, setSelectedSucursalId] = useState<string>('all');
+    
+    const { data: sucursales = [] } = useQuery({
+        queryKey: ['sucursales'],
+        queryFn: getSucursales,
+        enabled: esMatriz
+    });
+
     const { data: valuatedData, isLoading, isError } = useQuery({
-        queryKey: ['valued-inventory', selectedDate],
-        queryFn: () => getValuedInventory(selectedDate),
+        queryKey: ['valued-inventory', selectedDate, selectedSucursalId],
+        queryFn: () => getValuedInventory(selectedDate, selectedSucursalId),
         staleTime: 5 * 60 * 1000 // 5 minutes cache
     });
 
@@ -68,7 +79,24 @@ export default function ValuedInventoryView() {
                             : 'Valorización en tiempo real basada en el stock físico actual en todas las sucursales.'}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
+                    {esMatriz && (
+                        <div className="relative">
+                            <Store size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <select 
+                                value={selectedSucursalId}
+                                onChange={(e) => setSelectedSucursalId(e.target.value)}
+                                className="pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer appearance-none"
+                            >
+                                <option value="all">Todas las Sucursales</option>
+                                <option value="CENTRAL">Central</option>
+                                {sucursales.map(s => (
+                                    <option key={s.id} value={s.id}>{s.nombre}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+                    )}
                     <div className="relative">
                         <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
@@ -88,8 +116,8 @@ export default function ValuedInventoryView() {
                         </button>
                     )}
                     <button 
-                        onClick={() => exportValuedInventory(selectedDate)}
-                        className="ml-2 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold transition-all"
+                        onClick={() => exportValuedInventory(selectedDate, selectedSucursalId)}
+                        className="ml-0 md:ml-2 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold transition-all"
                     >
                         <Download size={16} />
                         Excel

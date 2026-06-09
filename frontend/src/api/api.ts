@@ -80,13 +80,14 @@ export const getDailyReport = (date: string, sucursal_id?: string) => {
     return client<any>(`/reports/daily-report?${params.toString()}`);
 };
 
-export const getValuedInventory = (date?: string) => {
+export const getValuedInventory = async (date?: string, sucursal_id?: string) => {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
-    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${date ? '?' + params.toString() : ''}`);
+    if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
+    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${params.toString() ? '?' + params.toString() : ''}`);
 };
 
-export const exportValuedInventory = async (date?: string) => {
+export const exportValuedInventory = async (date?: string, sucursal_id?: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
@@ -94,6 +95,7 @@ export const exportValuedInventory = async (date?: string) => {
         
     const params = new URLSearchParams();
     if (date) params.append('date', date);
+    if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
     const qs = params.toString();
     
     const response = await fetch(`${CACHE_URL}/reports/valued-inventory/export${qs ? '?' + qs : ''}`, {
@@ -107,7 +109,7 @@ export const exportValuedInventory = async (date?: string) => {
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = `inventario_valorado_${date || new Date().toISOString().split('T')[0]}.xlsx`;
+    a.download = `inventario_valorado_${sucursal_id && sucursal_id !== 'all' ? sucursal_id + '_' : ''}${date || new Date().toISOString().split('T')[0]}.xlsx`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);

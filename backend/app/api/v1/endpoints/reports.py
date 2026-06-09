@@ -566,6 +566,7 @@ async def get_anulaciones_report(
 @router.get("/valued-inventory")
 async def get_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
+    sucursal_id: Optional[str] = "all",
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -578,6 +579,8 @@ async def get_valued_inventory(
     match_filter = {"tenant_id": tenant_id}
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
         match_filter["sucursal_id"] = current_user.sucursal_id
+    elif sucursal_id and sucursal_id != "all":
+        match_filter["sucursal_id"] = sucursal_id
 
     if date:
         # ─── HISTORICAL MODE (Using InventoryLogs) ──────────────────────────
@@ -771,12 +774,13 @@ from fastapi.responses import StreamingResponse
 @router.get("/valued-inventory/export")
 async def export_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
+    sucursal_id: Optional[str] = "all",
     current_user: User = Depends(get_current_active_user)
 ):
     """
     Exports the valued inventory report to Excel.
     """
-    report_data = await get_valued_inventory(date=date, current_user=current_user)
+    report_data = await get_valued_inventory(date=date, sucursal_id=sucursal_id, current_user=current_user)
     
     rows = []
     for sucursal in report_data.get("por_sucursal", []):
