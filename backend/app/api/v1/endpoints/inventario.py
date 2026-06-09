@@ -381,7 +381,7 @@ async def ajustar_inventario_masivo(
             
         resultados.append({
             "producto_id": ajuste.producto_id,
-            "cantidad": entry.cantidad,
+            "cantidad": nuevo_stock,
             "movimiento": cantidad_cambio
         })
 
