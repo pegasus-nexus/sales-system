@@ -305,6 +305,8 @@ async def ajustar_inventario_masivo(
         })
 
     return {"message": "Ajuste masivo procesado exitosamente", "procesados": len(resultados)}
+
+@router.get("/inventario/movimientos")
 async def get_movimientos(
     producto_id: str = None,
     sucursal_id: str = "CENTRAL",
