@@ -111,6 +111,7 @@ async def get_sales(
     end_date: Optional[str] = None,
     solo_facturas: bool = False,
     qr_confirmed: Optional[bool] = None,
+    solo_anomalias: bool = False,
     search: Optional[str] = None,
     page: int = 1,
     limit: int = 50,
@@ -169,6 +170,12 @@ async def get_sales(
             And(Sale.cliente.nit != None, Sale.cliente.nit != ""),
             Sale.cliente.es_factura == True
         ))
+
+    if solo_anomalias:
+        filters.append(Sale.anulada == False)
+        filters.append({"pagos.metodo": {"$ne": "CREDITO"}})
+        filters.append({"$expr": {"$lt": [{"$sum": "$pagos.monto"}, {"$subtract": ["$total", 0.1]}]}})
+
         
     # Superadmins / Matriz see all based on filter, Sucursal sees only theirs
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:

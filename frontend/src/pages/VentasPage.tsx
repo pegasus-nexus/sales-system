@@ -343,6 +343,7 @@ export default function VentasPage() {
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
     const [searchTerm, setSearchTerm] = useState(searchId);
     const [soloFacturas, setSoloFacturas] = useState(role === 'FACTURADOR');
+    const [soloAnomalias, setSoloAnomalias] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [metodoPago, setMetodoPago] = useState('');
@@ -376,8 +377,8 @@ export default function VentasPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, startDate, endDate, metodoPago, debouncedSearch, limit],
-        queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined)
+        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, soloAnomalias, startDate, endDate, metodoPago, debouncedSearch, limit],
+        queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined, soloAnomalias)
     });
 
     const ventas = ventasRes?.items || [];
