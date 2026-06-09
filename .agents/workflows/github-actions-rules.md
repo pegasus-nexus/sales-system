@@ -32,8 +32,9 @@ git rm -r --cached .pytest_cache/
 git rm -r --cached __pycache__/
 ```
 
-1. `pytest tests/` (Verificar tests exitosos)
-2. `python -c "from app.main import app; print('App syntax OK')"` (Verificar compilación e integridad de ruteadores)
+1. **Backend:** `pytest tests/` (Verificar tests exitosos)
+2. **Backend:** `python -c "from app.main import app; print('App syntax OK')"` (Verificar compilación e integridad de ruteadores)
+3. **Frontend:** `cd frontend && npm run build` o `tsc -b` (Asegurar que no existan errores de tipado de TypeScript que rompan Vercel).
 
 ## 4. Control Estricto de Dependencias Acopladas (Pip)
 **LA REGLA ABSOLUTA:** Cualquier librería nueva que se instale en local (`pip install libreria_equis`) **DEBE SER ANOTADA INMEDIATAMENTE** en `backend/requirements.txt` (y `frontend/package.json` en JS).

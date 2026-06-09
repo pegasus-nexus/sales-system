@@ -91,7 +91,7 @@ export default function ValuedInventoryView() {
                                 <option value="all">Todas las Sucursales</option>
                                 <option value="CENTRAL">Central</option>
                                 {sucursales.map(s => (
-                                    <option key={s.id} value={s.id}>{s.nombre}</option>
+                                    <option key={s._id} value={s._id}>{s.nombre}</option>
                                 ))}
                             </select>
                             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
