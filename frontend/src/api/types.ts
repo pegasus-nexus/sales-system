@@ -384,6 +384,7 @@ export interface Sale {
         costo_unitario: number;
         descuento_unitario: number;
         subtotal: number;
+        almacen_id?: string;  // Almacén de origen del stock (puede ser undefined en ventas antiguas)
     }[];
     total: number;
     pagos: PagoItem[];

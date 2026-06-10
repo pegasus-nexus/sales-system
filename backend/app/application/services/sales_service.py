@@ -42,16 +42,19 @@ class SalesService:
                         if not product or product.tenant_id != tenant_id:
                             raise HTTPException(status_code=404, detail=f"Producto {item.producto_id} no encontrado")
 
+                        # Resolver almacen_id: el ítem tiene precedencia sobre el global de la venta
+                        item_almacen_id = item.almacen_id or sale_in.almacen_id or "default"
+
                         inv_query = {
                             "tenant_id": tenant_id,
                             "sucursal_id": sucursal_id,
                             "producto_id": item.producto_id,
                         }
-                        if sale_in.almacen_id == "default":
+                        if item_almacen_id == "default":
                             inv_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
                         else:
-                            inv_query["almacen_id"] = sale_in.almacen_id
-                            
+                            inv_query["almacen_id"] = item_almacen_id
+
                         update_query = dict(inv_query)
                         update_query["cantidad"] = {"$gte": item.cantidad}
 
@@ -104,12 +107,13 @@ class SalesService:
                             costo_unitario=product.costo_producto,
                             descuento_unitario=desc,
                             subtotal=subtotal,
+                            almacen_id=item_almacen_id,  # Snapshot del almacén real usado
                         ))
 
                         await InventoryLog(
                             tenant_id=tenant_id,
                             sucursal_id=sucursal_id,
-                            almacen_id=sale_in.almacen_id,
+                            almacen_id=item_almacen_id,  # Almacén real por ítem
                             producto_id=item.producto_id,
                             descripcion=product.descripcion,
                             tipo_movimiento=TipoMovimiento.VENTA,
@@ -392,17 +396,21 @@ class SalesService:
 
                     sucursal_id = sale.sucursal_id
 
-                    # ── 1. Revertir stock (siempre) ──────────────────────────────
+                    # ── 1. Revertir stock (siempre, por almacén específico del ítem) ──
                     for item in sale.items:
+                        # Usar el almacen_id guardado en el ítem (snapshot del momento de venta).
+                        # Fallback al almacen_id global de la venta para ventas antiguas.
+                        item_almacen_id_anul = getattr(item, "almacen_id", None) or sale.almacen_id or "default"
+
                         inv_query_anul = {
                             "tenant_id": tenant_id,
                             "sucursal_id": sucursal_id,
                             "producto_id": item.producto_id,
                         }
-                        if sale.almacen_id == "default":
+                        if item_almacen_id_anul == "default":
                             inv_query_anul["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
                         else:
-                            inv_query_anul["almacen_id"] = sale.almacen_id
+                            inv_query_anul["almacen_id"] = item_almacen_id_anul
 
                         updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
                             inv_query_anul,
@@ -414,7 +422,7 @@ class SalesService:
                             await InventoryLog(
                                 tenant_id=tenant_id,
                                 sucursal_id=sucursal_id,
-                                almacen_id=sale.almacen_id,
+                                almacen_id=item_almacen_id_anul,  # Revertir al almacén exacto de origen
                                 producto_id=item.producto_id,
                                 descripcion=item.descripcion,
                                 tipo_movimiento=TipoMovimiento.ENTRADA_MANUAL,

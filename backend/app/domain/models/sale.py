@@ -19,6 +19,7 @@ class SaleItem(BaseModel):
     costo_unitario: DecimalMoney
     descuento_unitario: DecimalMoney = DecimalMoney("0")
     subtotal: DecimalMoney
+    almacen_id: str = "default"  # Almacén de origen del stock descontado (auditoría + anulación correcta)
 
 
 class PagoItem(BaseModel):

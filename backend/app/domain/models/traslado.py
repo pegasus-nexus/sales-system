@@ -21,6 +21,7 @@ class TrasladoItem(BaseModel):
     cantidad_recibida: Optional[int] = None
     costo_unitario: DecimalMoney
     valor_total: DecimalMoney
+    almacen_origen_id: str = "default"  # Almacén de origen del stock (snapshot para cancelación correcta)
 
 class TrasladoInventario(Document):
     tenant_id: str
@@ -34,6 +35,8 @@ class TrasladoInventario(Document):
     
     estado: EstadoTraslado = EstadoTraslado.EN_TRANSITO
     items: List[TrasladoItem]
+    almacen_origen_id: str = "default"  # Almacén de origen (default = almacén principal de la sucursal)
+    almacen_destino_id: str = "default"  # Almacén destino donde recibirán el stock
     
     valor_total_enviado: DecimalMoney = DecimalMoney("0.0")
     valor_total_recibido: DecimalMoney = DecimalMoney("0.0")

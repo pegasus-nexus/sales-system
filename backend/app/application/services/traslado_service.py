@@ -62,14 +62,23 @@ class TrasladoService:
                         if not product or product.tenant_id != tenant_id:
                             raise HTTPException(status_code=404, detail=f"Producto {item_in.producto_id} no encontrado")
 
-                        # Descontar stock de origen (atomic check)
+                        # Resolver almacén origen: el especificado en el body o 'default'
+                        almacen_origen = body.almacen_id or "default"
+
+                        # Descontar stock de origen (atomic check) — respeta almacén
+                        inv_query_origen = {
+                            "tenant_id": tenant_id,
+                            "sucursal_id": sucursal_origen_id,
+                            "producto_id": item_in.producto_id,
+                            "cantidad": {"$gte": item_in.cantidad}
+                        }
+                        if almacen_origen == "default":
+                            inv_query_origen["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                        else:
+                            inv_query_origen["almacen_id"] = almacen_origen
+
                         updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                            {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": sucursal_origen_id,
-                                "producto_id": item_in.producto_id,
-                                "cantidad": {"$gte": item_in.cantidad}
-                            },
+                            inv_query_origen,
                             {"$inc": {"cantidad": -item_in.cantidad}},
                             return_document=ReturnDocument.AFTER,
                             session=session.client_session if hasattr(session, "client_session") else session
@@ -78,7 +87,7 @@ class TrasladoService:
                         if not updated_inv:
                             raise HTTPException(
                                 status_code=400,
-                                detail=f"Stock insuficiente para '{product.descripcion}' en origen."
+                                detail=f"Stock insuficiente para '{product.descripcion}' en almacén '{almacen_origen}'."
                             )
 
                         costo_u = product.costo_producto
@@ -90,7 +99,8 @@ class TrasladoService:
                             descripcion=product.descripcion,
                             cantidad_enviada=item_in.cantidad,
                             costo_unitario=costo_u,
-                            valor_total=subtotal
+                            valor_total=subtotal,
+                            almacen_origen_id=almacen_origen,  # Snapshot del almacén real
                         ))
 
                         # Log Kárdex Origen
@@ -131,6 +141,8 @@ class TrasladoService:
                         cliente_destino_nombre=body.cliente_destino_nombre if destino_tipo == "CLIENTE" else None,
                         estado=estado_inicial,
                         items=traslado_items,
+                        almacen_origen_id=body.almacen_id or "default",
+                        almacen_destino_id=body.almacen_destino_id or "default",
                         valor_total_enviado=valor_total,
                         valor_total_recibido=valor_total if destino_tipo == "CLIENTE" else DecimalMoney("0.0"),
                         notas=body.notas,
@@ -190,16 +202,25 @@ class TrasladoService:
                         valor_total_recibido += subtotal_recibido
 
                         if qty_recibida > 0:
-                            # Aumentar stock en destino
+                            # Aumentar stock en destino — en el almacén destino especificado
+                            almacen_destino = traslado.almacen_destino_id or "default"
+                            inv_query_dest = {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": traslado.sucursal_destino_id,
+                                "producto_id": t_item.producto_id
+                            }
+                            if almacen_destino == "default":
+                                # Upsert en almacén default
+                                inv_query_dest["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                            else:
+                                inv_query_dest["almacen_id"] = almacen_destino
+
                             updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {
-                                    "tenant_id": tenant_id,
-                                    "sucursal_id": traslado.sucursal_destino_id,
-                                    "producto_id": t_item.producto_id
-                                },
+                                inv_query_dest,
                                 {
                                     "$inc": {"cantidad": qty_recibida},
                                     "$setOnInsert": {
+                                        "almacen_id": almacen_destino,
                                         "created_at": datetime.utcnow(),
                                         "updated_at": datetime.utcnow()
                                     }
@@ -254,17 +275,22 @@ class TrasladoService:
                     if traslado.estado != EstadoTraslado.EN_TRANSITO:
                         raise HTTPException(status_code=400, detail=f"Solo se pueden cancelar traslados EN_TRANSITO.")
 
-                    # Devolver stock a origen
+                    # Devolver stock a origen — al almacén exacto de cada ítem (snapshot)
                     for t_item in traslado.items:
+                        almacen_origen_item = getattr(t_item, 'almacen_origen_id', None) or traslado.almacen_origen_id or "default"
+                        inv_query_cancel = {
+                            "tenant_id": tenant_id,
+                            "sucursal_id": traslado.sucursal_origen_id,
+                            "producto_id": t_item.producto_id
+                        }
+                        if almacen_origen_item == "default":
+                            inv_query_cancel["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                        else:
+                            inv_query_cancel["almacen_id"] = almacen_origen_item
+
                         updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                            {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": traslado.sucursal_origen_id,
-                                "producto_id": t_item.producto_id
-                            },
-                            {
-                                "$inc": {"cantidad": t_item.cantidad_enviada}
-                            },
+                            inv_query_cancel,
+                            {"$inc": {"cantidad": t_item.cantidad_enviada}},
                             return_document=ReturnDocument.AFTER,
                             session=session.client_session if hasattr(session, "client_session") else session
                         )

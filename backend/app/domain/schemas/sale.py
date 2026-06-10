@@ -18,6 +18,7 @@ class SaleItemIn(BaseModel):
     cantidad: int
     precio_unitario: float = 0.0   # if 0, falls back to product.precio_venta
     descuento_unitario: float = 0.0
+    almacen_id: Optional[str] = None  # Override por-ítem. Si None, hereda almacen_id global de SaleCreate
 
 
 class PagoIn(BaseModel):
