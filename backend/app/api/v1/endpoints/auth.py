@@ -13,13 +13,20 @@ from app.infrastructure.core.rate_limit import limiter
 
 router = APIRouter()
 
+# Hash falso pre-generado (bcrypt tarda ~300ms en procesarlo)
+DUMMY_HASH = "$2b$12$EP.cEit4Tq3J2kI4kC/uFOq/jN0uC.P0oW.Hl0Qy5W7u3l/L8Q0H2"
+
 @router.post("/token")
 @limiter.limit("5/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     import re
     # Use native re case-insensitive regex match — re.escape() prevents dots/@ in emails from breaking the pattern
     user = await User.find_one({"username": re.compile(f"^{re.escape(form_data.username)}$", re.IGNORECASE)})
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    
+    # Prevenimos el Timing Attack: Siempre evaluamos un hash, exista el usuario o no
+    password_valid = verify_password(form_data.password, user.hashed_password if user else DUMMY_HASH)
+    
+    if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
