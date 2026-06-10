@@ -36,11 +36,15 @@ class SalesService:
                 async with session.start_transaction():
                     sale_items: List[SaleItem] = []
                     computed_total = Decimal("0.0")
+                    meal_plans_to_create = []
 
                     for item in sale_in.items:
                         product = await Product.get(item.producto_id, session=session)
                         if not product or product.tenant_id != tenant_id:
                             raise HTTPException(status_code=404, detail=f"Producto {item.producto_id} no encontrado")
+
+                        if getattr(product, "meal_plan_template_id", None):
+                            meal_plans_to_create.append((product.meal_plan_template_id, item.cantidad))
 
                         # Resolver almacen_id: el ítem tiene precedencia sobre el global de la venta
                         item_almacen_id = item.almacen_id or sale_in.almacen_id or "default"
@@ -273,6 +277,30 @@ class SalesService:
                             from app.application.services.credito_service import CreditoService
                             monto_deuda = computed_total - total_pagado
                             await CreditoService.registrar_deuda_desde_venta(sale, monto_deuda, sale.cliente_id, session=session)
+
+                    if meal_plans_to_create:
+                        if not sale.cliente_id:
+                            raise HTTPException(status_code=400, detail="No puedes vender un Plan sin asignar la venta a un cliente.")
+                        from app.domain.models.meal_plan_template import MealPlanTemplate
+                        from app.domain.models.client_meal_plan import ClientMealPlan
+                        from datetime import timedelta
+                        for template_id, cantidad_vendida in meal_plans_to_create:
+                            template = await MealPlanTemplate.get(template_id, session=session)
+                            if not template:
+                                raise HTTPException(status_code=404, detail=f"Plantilla de Plan {template_id} no encontrada.")
+                            
+                            for _ in range(cantidad_vendida):
+                                new_plan = ClientMealPlan(
+                                    tenant_id=tenant_id,
+                                    cliente_id=sale.cliente_id,
+                                    template_id=template_id,
+                                    sale_id=str(sale.id),
+                                    fecha_inicio=datetime.utcnow(),
+                                    fecha_fin_estimada=datetime.utcnow() + timedelta(days=template.dias_vigencia),
+                                    comidas_totales=template.cantidad_comidas,
+                                    comidas_consumidas=0
+                                )
+                                await new_plan.insert(session=session)
 
                     _SUBTIPO_MAP = {
                         "EFECTIVO": SubtipoMovimiento.VENTA_EFECTIVO,

@@ -25,6 +25,11 @@ from app.domain.models.comunidad import ComunidadUser, VisitaRegistro
 from app.domain.models.traslado import TrasladoInventario
 from app.domain.models.etiqueta import Etiqueta
 from app.domain.models.almacen import Almacen
+from app.domain.models.recipe import Recipe
+from app.domain.models.recipe_ingredient import RecipeIngredient
+from app.domain.models.meal_plan_template import MealPlanTemplate
+from app.domain.models.client_meal_plan import ClientMealPlan
+from app.domain.models.meal_schedule import MealSchedule
 
 from app.infrastructure.core.config import settings
 
@@ -69,7 +74,12 @@ async def init_db():
             VisitaRegistro,
             TrasladoInventario,
             Etiqueta,
-            Almacen
+            Almacen,
+            Recipe,
+            RecipeIngredient,
+            MealPlanTemplate,
+            ClientMealPlan,
+            MealSchedule
         ]
     )
 
