@@ -12,19 +12,18 @@ from app.api.v1.endpoints import etiquetas
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os
+    import sys
     env_keys = list(os.environ.keys())
     
     if settings.ENVIRONMENT == "production" and ("localhost" in settings.MONGODB_URL or "127.0.0.1" in settings.MONGODB_URL):
-        print(f"FATAL: MONGODB_URL IS LOCALHOST. ENV VARS IN VERCEL: {env_keys}")
+        print(f"FATAL: MONGODB_URL IS LOCALHOST. ENV VARS IN VERCEL: {env_keys}", file=sys.stderr, flush=True)
         raise ValueError(f"Missing MONGODB_URL in Vercel Environment Variables! Re-check your Vercel Project Settings. Env keys found: {env_keys}")
         
-    try:
-        await init_db()
-        print("Database initialized successfully.")
-    except Exception as e:
-        print(f"Failed to initialize database: {e}")
+    # No capturar excepciones aquí para que la app se detenga inmediatamente si no hay conexión a base de datos.
+    # Esto evita el estado zombi "CollectionWasNotInitialized".
+    await init_db()
+    print("Database initialized successfully.", flush=True)
     
-    # User initialization should be done via a dedicated script or secure endpoint
     yield
 
 app = FastAPI(
