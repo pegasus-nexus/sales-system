@@ -24,7 +24,7 @@ async def test_inventario_model_validation():
         )
         
         assert inventario.cantidad == 100.5
-        assert inventario.precio_sucursal.to_decimal() == Decimal("15.50")
+        assert inventario.precio_sucursal == Decimal("15.50")
     except Exception as e:
         pytest.fail(f"Falló la instanciación de Inventario: {e}")
 

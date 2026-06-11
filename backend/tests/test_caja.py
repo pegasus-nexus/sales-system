@@ -32,15 +32,13 @@ async def test_apertura_caja_model(mock_user):
             sucursal_id=mock_user.sucursal_id,
             cajero_id=str(mock_user.id),
             cajero_name=mock_user.username,
-            saldo_apertura=DecimalMoney("150.50"),
-            saldo_esperado=DecimalMoney("150.50"),
+            monto_inicial=DecimalMoney("150.50"),
             estado=EstadoSesion.ABIERTA,
-            opened_at=datetime.utcnow()
+            abierta_at=datetime.utcnow()
         )
         
         assert sesion.estado == EstadoSesion.ABIERTA
-        assert sesion.saldo_apertura.to_decimal() == Decimal("150.50")
-        assert sesion.saldo_esperado.to_decimal() == Decimal("150.50")
+        assert sesion.monto_inicial == Decimal("150.50")
     except Exception as e:
         pytest.fail(f"Falló la instanciación de CajaSesion: {e}")
 
@@ -64,6 +62,6 @@ async def test_movimiento_caja_model(mock_user):
         
         assert movimiento.tipo == "INGRESO"
         assert movimiento.subtipo == SubtipoMovimiento.VENTA_EFECTIVO
-        assert movimiento.monto.to_decimal() == Decimal("50.00")
+        assert movimiento.monto == Decimal("50.00")
     except Exception as e:
         pytest.fail(f"Falló la instanciación de CajaMovimiento: {e}")

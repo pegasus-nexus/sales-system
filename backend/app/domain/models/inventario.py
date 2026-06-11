@@ -17,7 +17,7 @@ class Inventario(Document):
     sucursal_id: str      # "CENTRAL" or a Sucursal._id string
     almacen_id: str = "default"  # Specifies which physical/virtual warehouse inside the branch
     producto_id: str      # Product._id
-    cantidad: int = 0
+    cantidad: float = 0.0
     precio_sucursal: Optional[DecimalMoney] = None  # Branch-specific price override
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -59,8 +59,8 @@ class InventoryLog(Document):
     producto_id: str
     descripcion: str = ""        # Snapshot of product name
     tipo_movimiento: TipoMovimiento
-    cantidad_movida: int         # Can be negative for exits
-    stock_resultante: int        # Snapshot of stock after movement
+    cantidad_movida: float       # Can be negative for exits
+    stock_resultante: float      # Snapshot of stock after movement
     costo_unitario_momento: DecimalMoney = DecimalMoney("0.0") # Costo al momento del movimiento
     precio_venta_momento: DecimalMoney = DecimalMoney("0.0")   # Precio al momento del movimiento
     usuario_id: str
