@@ -23,6 +23,7 @@ class ProductCreate(BaseModel):
     proveedor: Optional[str] = None
     image_url: Optional[str] = None
     precios_sucursales: Optional[dict[str, float]] = None
+    meal_plan_template_id: Optional[str] = None
 
 
 class ProductUpdate(BaseModel):
@@ -37,3 +38,4 @@ class ProductUpdate(BaseModel):
     image_url: Optional[str] = None
     is_active: Optional[bool] = None
     precios_sucursales: Optional[dict[str, float]] = None
+    meal_plan_template_id: Optional[str] = None

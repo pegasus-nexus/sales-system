@@ -15,8 +15,9 @@ class Inventario(Document):
     """
     tenant_id: str
     sucursal_id: str      # "CENTRAL" or a Sucursal._id string
+    almacen_id: str = "default"  # Specifies which physical/virtual warehouse inside the branch
     producto_id: str      # Product._id
-    cantidad: int = 0
+    cantidad: float = 0.0
     precio_sucursal: Optional[DecimalMoney] = None  # Branch-specific price override
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -26,11 +27,12 @@ class Inventario(Document):
         indexes = [
             "tenant_id",
             "sucursal_id",
+            "almacen_id",
             "producto_id",
             IndexModel(
-                [("tenant_id", 1), ("sucursal_id", 1), ("producto_id", 1)],
+                [("tenant_id", 1), ("sucursal_id", 1), ("almacen_id", 1), ("producto_id", 1)],
                 unique=True,
-                name="tenant_branch_product_unique"
+                name="tenant_branch_warehouse_product_unique"
             ),
             [("sucursal_id", 1), ("producto_id", 1)],
         ]
@@ -53,11 +55,12 @@ class InventoryLog(Document):
     """
     tenant_id: str
     sucursal_id: str
+    almacen_id: str = "default"
     producto_id: str
     descripcion: str = ""        # Snapshot of product name
     tipo_movimiento: TipoMovimiento
-    cantidad_movida: int         # Can be negative for exits
-    stock_resultante: int        # Snapshot of stock after movement
+    cantidad_movida: float       # Can be negative for exits
+    stock_resultante: float      # Snapshot of stock after movement
     costo_unitario_momento: DecimalMoney = DecimalMoney("0.0") # Costo al momento del movimiento
     precio_venta_momento: DecimalMoney = DecimalMoney("0.0")   # Precio al momento del movimiento
     usuario_id: str
@@ -71,11 +74,12 @@ class InventoryLog(Document):
         indexes = [
             "tenant_id",
             "sucursal_id",
+            "almacen_id",
             "producto_id",
             "tipo_movimiento",
             "usuario_id",
             "created_at",
             [("tenant_id", 1), ("created_at", -1)],
-            [("tenant_id", 1), ("sucursal_id", 1), ("created_at", -1)],
+            [("tenant_id", 1), ("sucursal_id", 1), ("almacen_id", 1), ("created_at", -1)],
             [("tenant_id", 1), ("producto_id", 1), ("created_at", -1)],
         ]

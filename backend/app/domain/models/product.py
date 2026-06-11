@@ -33,6 +33,7 @@ class Product(Document, SoftDeleteMixin):
     proveedor: Optional[str] = None              # supplier/provider
     costo_producto: DecimalMoney = DecimalMoney("0.0")                  # production/purchase cost
     precio_venta: DecimalMoney = DecimalMoney("0.0")                    # retail price (deprecated for MATRIZ, mapped from sucursal)
+    meal_plan_template_id: Optional[str] = None  # Si está seteado, vender este producto activa un plan de comida B2C
 
     # optional enrichment (resolved at query time, not stored)
     categoria_nombre: Optional[str] = None

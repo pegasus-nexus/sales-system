@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSales, anularSale, getSucursales, toggleFacturaEmitida, checkPosibleDuplicado, getSesionesAbiertas, type MotivoAnulacion } from '../api/api';
 import { useAuthStore } from '../store/authStore';
@@ -333,17 +334,20 @@ function AnularModal({
 
 export default function VentasPage() {
     const qc = useQueryClient();
-    const { user, role } = useAuthStore();
+    const [searchParams] = useSearchParams();
+    const { user, role, tenantSettings } = useAuthStore();
     const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'FACTURADOR'].includes(role || '');
 
     // Filtros
+    const searchId = searchParams.get('search') || '';
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(searchId);
     const [soloFacturas, setSoloFacturas] = useState(role === 'FACTURADOR');
+    const [soloAnomalias, setSoloAnomalias] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [metodoPago, setMetodoPago] = useState('');
-    const [expanded, setExpanded] = useState<string | null>(null);
+    const [expanded, setExpanded] = useState<string | null>(searchId ? searchId : null);
     const [printSale, setPrintSale] = useState<Sale | null>(null);
     const [page, setPage] = useState(1);
     const limit = role === 'FACTURADOR' ? 10 : 50;
@@ -373,8 +377,8 @@ export default function VentasPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, startDate, endDate, metodoPago, debouncedSearch, limit],
-        queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined)
+        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, soloAnomalias, startDate, endDate, metodoPago, debouncedSearch, limit],
+        queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined, soloAnomalias)
     });
 
     const ventas = ventasRes?.items || [];
@@ -445,6 +449,21 @@ export default function VentasPage() {
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
                             <span className="text-xs font-semibold text-gray-700">Solo Facturas</span>
+                        </label>
+                    )}
+
+                    {esMatriz && (
+                        <label className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-red-100 transition-colors h-[32px] shrink-0">
+                            <input 
+                                type="checkbox" 
+                                checked={soloAnomalias} 
+                                onChange={e => {
+                                    setSoloAnomalias(e.target.checked);
+                                    setPage(1);
+                                }}
+                                className="w-3.5 h-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-xs font-semibold text-red-700">Anomalías</span>
                         </label>
                     )}
                 </div>
@@ -616,18 +635,23 @@ export default function VentasPage() {
                                             </div>
                                         )}
 
-                                        {/* Log de auditoría en ventas anuladas */}
-                                        {isAnulado && (venta as any).motivo_anulacion && (
-                                            <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
-                                                <div className="p-1.5 bg-red-100 rounded-lg shrink-0">
-                                                    <AlertTriangle size={14} className="text-red-600" />
+                                        {/* Log de auditoría en ventas corregidas o anuladas */}
+                                        {(isAnulado || (venta as any).metodo_pago_correcto) && (venta as any).motivo_anulacion && (
+                                            <div className={`mb-4 border rounded-xl p-3 flex items-start gap-3 ${
+                                                isAnulado ? 'bg-red-50 border-red-200 text-red-800' : 'bg-sky-50 border-sky-200 text-sky-800'
+                                            }`}>
+                                                <div className={`p-1.5 rounded-lg shrink-0 ${isAnulado ? 'bg-red-100' : 'bg-sky-100'}`}>
+                                                    <AlertTriangle size={14} className={isAnulado ? 'text-red-600' : 'text-sky-600'} />
                                                 </div>
                                                 <div className="text-xs">
-                                                    <p className="font-black text-red-900 uppercase tracking-wide mb-1">Registro de Anulación</p>
-                                                    <div className="space-y-0.5 text-red-800">
-                                                        <p><span className="font-bold">Motivo:</span> {MOTIVOS.find(m => m.value === (venta as any).motivo_anulacion)?.label || (venta as any).motivo_anulacion}</p>
+                                                    <p className={`font-black uppercase tracking-wide mb-1 ${isAnulado ? 'text-red-900' : 'text-sky-900'}`}>
+                                                        {isAnulado ? 'Registro de Anulación' : 'Registro de Corrección de Pago'}
+                                                    </p>
+                                                    <div className={`space-y-0.5 ${isAnulado ? 'text-red-800' : 'text-sky-800'}`}>
+                                                        <p><span className="font-bold">{isAnulado ? 'Motivo' : 'Detalle'}:</span> {MOTIVOS.find(m => m.value === (venta as any).motivo_anulacion)?.label || (venta as any).motivo_anulacion}</p>
+                                                        {(venta as any).metodo_pago_correcto && <p><span className="font-bold">Método Correcto:</span> {(venta as any).metodo_pago_correcto}</p>}
                                                         {(venta as any).notas_anulacion && <p><span className="font-bold">Notas:</span> {(venta as any).notas_anulacion}</p>}
-                                                        {(venta as any).anulada_por_nombre && <p><span className="font-bold">Autorizado por:</span> {(venta as any).anulada_por_nombre}</p>}
+                                                        {(venta as any).anulada_por_nombre && <p><span className="font-bold">{isAnulado ? 'Autorizado por' : 'Corregido por'}:</span> {(venta as any).anulada_por_nombre}</p>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -730,6 +754,10 @@ export default function VentasPage() {
                         sale={printSale} 
                         tenantName={user?.tenant_id || "Mi Tienda"} 
                         sucursalName={sucursales.find(s => s._id === printSale.sucursal_id)?.nombre}
+                        ticketFooter={tenantSettings?.ticket_footer}
+                        logoBase64={tenantSettings?.logo_base64}
+                        direccion={tenantSettings?.direccion}
+                        telefono={tenantSettings?.telefono}
                     />
                 )}
             </div>

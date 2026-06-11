@@ -12,6 +12,9 @@ class TrasladoCreate(BaseModel):
     cliente_destino_nombre: Optional[str] = None
     notas: Optional[str] = None
     items: List[TrasladoItemCreate] = Field(..., min_length=1)
+    almacen_id: str = "default"          # Almacén ORIGEN del que sale el stock
+    almacen_destino_id: str = "default"  # Almacén DESTINO donde recibirán el stock
+
 
 class TrasladoItemReceive(BaseModel):
     producto_id: str

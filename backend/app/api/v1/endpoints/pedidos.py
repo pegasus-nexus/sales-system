@@ -40,6 +40,7 @@ class PedidoCreate(BaseModel):
     sucursal_destino_id: str
     items: List[PedidoItemCreate]
     notas: Optional[str] = None
+    etiquetas_ids: List[str] = []
     transferencia_directa: bool = False # If true, auto-resolves to RECIBIDO
 
 
@@ -141,6 +142,30 @@ async def recibir_pedido(
     return await PedidosService.recibir_pedido(pedido_id, data, current_user)
 
 
+# ── Etiquetas ────────────────────────────────────────────────────────────────
+
+class PedidoEtiquetasUpdate(BaseModel):
+    etiquetas_ids: List[str]
+
+@router.patch("/pedidos/{pedido_id}/etiquetas", response_model=PedidoInterno)
+async def actualizar_etiquetas_pedido(
+    pedido_id: str,
+    data: PedidoEtiquetasUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Actualiza la lista de etiquetas asignadas a un pedido."""
+    pedido = await PedidoInterno.get(pedido_id)
+    if not pedido or pedido.tenant_id != (current_user.tenant_id or ""):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR] and pedido.sucursal_id != current_user.sucursal_id:
+        raise HTTPException(status_code=403, detail="No autorizado para editar este pedido")
+
+    pedido.etiquetas_ids = data.etiquetas_ids
+    await pedido.save()
+    return pedido
+
+
 # ── Report (Generar PDF) ────────────────────────────────────────────────────
 
 @router.get("/pedidos/{pedido_id}/pdf")
@@ -169,15 +194,21 @@ async def descargar_pdf_pedido(
     title_style = styles['Title']
     normal_style = styles['Normal']
     
-    Story.append(Paragraph("Comprobante de Recepción de Pedido", title_style))
+    Story.append(Paragraph("Comprobante de Pedido", title_style))
     Story.append(Spacer(1, 12))
     
-    Story.append(Paragraph(f"<b>Sucursal:</b> {pedido.sucursal_id}", normal_style))
+    Story.append(Paragraph(f"<b>ID:</b> {str(pedido.id)[-6:].upper()}", normal_style))
     Story.append(Paragraph(f"<b>Estado:</b> {pedido.estado}", normal_style))
+    Story.append(Paragraph(f"<b>Origen:</b> {pedido.sucursal_origen_id or 'CENTRAL'}", normal_style))
+    Story.append(Paragraph(f"<b>Destino:</b> {pedido.sucursal_destino_id or pedido.sucursal_id}", normal_style))
     
-    fecha_recibido = convert_to_bolivia(pedido.recibido_at).strftime("%Y-%m-%d %H:%M") if pedido.recibido_at else "Pendiente"
+    fecha = convert_to_bolivia(pedido.created_at).strftime("%Y-%m-%d %H:%M")
+    Story.append(Paragraph(f"<b>Fecha Creado:</b> {fecha}", normal_style))
 
-    Story.append(Paragraph(f"<b>Fecha Recibido:</b> {fecha_recibido}", normal_style))
+    if pedido.recibido_at:
+        fecha_recibido = convert_to_bolivia(pedido.recibido_at).strftime("%Y-%m-%d %H:%M")
+        Story.append(Paragraph(f"<b>Fecha Recibido:</b> {fecha_recibido}", normal_style))
+
     Story.append(Spacer(1, 20))
     
     # Table data
@@ -214,6 +245,6 @@ async def descargar_pdf_pedido(
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=recepcion_{pedido_id}.pdf"}
+        headers={"Content-Disposition": f"attachment; filename=pedido_{pedido_id}.pdf"}
     )
 

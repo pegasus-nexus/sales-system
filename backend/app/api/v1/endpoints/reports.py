@@ -500,9 +500,73 @@ async def get_financial_report(
 
 from app.domain.models.inventario import Inventario, InventoryLog
 
+@router.get("/anulaciones")
+async def get_anulaciones_report(
+    start_date: str, # YYYY-MM-DD
+    end_date: str,   # YYYY-MM-DD
+    sucursal_id: Optional[str] = "all",
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Returns a detailed report of all cancelled (anulada) sales.
+    """
+    tenant_id = current_user.tenant_id or "default"
+    
+    target_sucursal = sucursal_id
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+        target_sucursal = current_user.sucursal_id
+
+    try:
+        start_dt, _ = get_day_range_bolivia(start_date)
+        _, end_dt = get_day_range_bolivia(end_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
+
+    match_filter = {
+        "tenant_id": tenant_id,
+        "anulada": True,
+        "created_at": {"$gte": start_dt, "$lte": end_dt}
+    }
+    
+    if target_sucursal and target_sucursal != "all":
+        match_filter["sucursal_id"] = target_sucursal
+
+    pipeline = [
+        {"$match": match_filter},
+        {"$sort": {"created_at": -1}}
+    ]
+
+    cursor = Sale.get_pymongo_collection().aggregate(pipeline)
+    raw_results = await cursor.to_list(length=2000)
+    
+    # Resolve sucursal names
+    todas_sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
+    map_sucursales = {str(s.id): s.nombre for s in todas_sucursales}
+    map_sucursales["CENTRAL"] = "Almacén Central (Matriz)"
+
+    results = []
+    for r in raw_results:
+        norm = normalize_bson(r)
+        sid = norm.get("sucursal_id")
+        
+        results.append({
+            "_id": norm["_id"],
+            "created_at": norm["created_at"],
+            "total": float(str(norm.get("total", 0))),
+            "sucursal_nombre": map_sucursales.get(str(sid), str(sid)),
+            "cashier_name": norm.get("cashier_name", "Desconocido"),
+            "anulada_por_nombre": norm.get("anulada_por_nombre", "N/A"),
+            "motivo_anulacion": norm.get("motivo_anulacion", "Sin motivo especificado"),
+            "notas_anulacion": norm.get("notas_anulacion", ""),
+            "cliente": norm.get("cliente", {})
+        })
+
+    return results
+
 @router.get("/valued-inventory")
 async def get_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
+    sucursal_id: Optional[str] = "all",
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -515,6 +579,8 @@ async def get_valued_inventory(
     match_filter = {"tenant_id": tenant_id}
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
         match_filter["sucursal_id"] = current_user.sucursal_id
+    elif sucursal_id and sucursal_id != "all":
+        match_filter["sucursal_id"] = sucursal_id
 
     if date:
         # ─── HISTORICAL MODE (Using InventoryLogs) ──────────────────────────
@@ -572,6 +638,19 @@ async def get_valued_inventory(
             },
             {"$unwind": { "path": "$product_info", "preserveNullAndEmptyArrays": True }},
             {
+                "$lookup": {
+                    "from": "categories",
+                    "let": {"cid": "$product_info.categoria_id"},
+                    "pipeline": [
+                        {"$match": {
+                            "$expr": {"$eq": [{"$toString": "$_id"}, "$$cid"]}
+                        }}
+                    ],
+                    "as": "category_info"
+                }
+            },
+            {"$unwind": { "path": "$category_info", "preserveNullAndEmptyArrays": True }},
+            {
                 "$addFields": {
                     "producto_nombre": {
                         "$cond": [
@@ -579,7 +658,8 @@ async def get_valued_inventory(
                             "$producto_nombre",
                             {"$ifNull": ["$product_info.descripcion", "Producto Desconocido"]}
                         ]
-                    }
+                    },
+                    "categoria_nombre": {"$ifNull": ["$category_info.nombre", "Sin Categoría"]}
                 }
             },
             {
@@ -592,6 +672,7 @@ async def get_valued_inventory(
                         "$push": {
                             "producto_id": "$producto_id",
                             "producto_nombre": "$producto_nombre",
+                            "categoria_nombre": "$categoria_nombre",
                             "cantidad": "$cantidad",
                             "costo_unitario": "$costo_producto",
                             "precio_publico_unitario": "$precio_venta",
@@ -622,11 +703,25 @@ async def get_valued_inventory(
             },
             {"$unwind": { "path": "$product_info", "preserveNullAndEmptyArrays": True }},
             {
+                "$lookup": {
+                    "from": "categories",
+                    "let": {"cid": "$product_info.categoria_id"},
+                    "pipeline": [
+                        {"$match": {
+                            "$expr": {"$eq": [{"$toString": "$_id"}, "$$cid"]}
+                        }}
+                    ],
+                    "as": "category_info"
+                }
+            },
+            {"$unwind": { "path": "$category_info", "preserveNullAndEmptyArrays": True }},
+            {
                 "$project": {
                     "sucursal_id": 1,
                     "producto_id": 1,
                     "cantidad": 1,
                     "producto_nombre": {"$ifNull": ["$product_info.descripcion", "Producto Desconocido"]},
+                    "categoria_nombre": {"$ifNull": ["$category_info.nombre", "Sin Categoría"]},
                     "costo_producto": {"$ifNull": ["$product_info.costo_producto", 0]},
                     "precio_venta": {
                         "$ifNull": [
@@ -659,6 +754,7 @@ async def get_valued_inventory(
                     "$push": {
                         "producto_id": "$producto_id",
                         "producto_nombre": "$producto_nombre",
+                        "categoria_nombre": "$categoria_nombre",
                         "cantidad": "$cantidad",
                         "costo_unitario": "$costo_producto",
                         "precio_publico_unitario": "$precio_venta",
@@ -708,12 +804,13 @@ from fastapi.responses import StreamingResponse
 @router.get("/valued-inventory/export")
 async def export_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
+    sucursal_id: Optional[str] = "all",
     current_user: User = Depends(get_current_active_user)
 ):
     """
     Exports the valued inventory report to Excel.
     """
-    report_data = await get_valued_inventory(date=date, current_user=current_user)
+    report_data = await get_valued_inventory(date=date, sucursal_id=sucursal_id, current_user=current_user)
     
     rows = []
     for sucursal in report_data.get("por_sucursal", []):
@@ -730,9 +827,26 @@ async def export_valued_inventory(
             })
             
     df = pd.DataFrame(rows)
+    
+    if not df.empty:
+        pivot_df = df.pivot_table(
+            index=['PRODUCTO', 'P. COSTO', 'P. PÚBLICO'],
+            columns='SUCURSAL',
+            values='CANTIDAD',
+            aggfunc='sum',
+            fill_value=0
+        ).reset_index()
+        sucursales_cols = df['SUCURSAL'].unique().tolist()
+        pivot_df['TOTAL CANTIDAD'] = pivot_df[sucursales_cols].sum(axis=1)
+        pivot_df['VALOR COSTO TOTAL'] = pivot_df['TOTAL CANTIDAD'] * pivot_df['P. COSTO']
+        pivot_df['VALOR PÚBLICO TOTAL'] = pivot_df['TOTAL CANTIDAD'] * pivot_df['P. PÚBLICO']
+    else:
+        pivot_df = pd.DataFrame(columns=["PRODUCTO", "P. COSTO", "P. PÚBLICO", "TOTAL CANTIDAD", "VALOR COSTO TOTAL", "VALOR PÚBLICO TOTAL"])
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Inventario Valorado', index=False)
+        df.to_excel(writer, sheet_name='Inventario Detallado', index=False)
+        pivot_df.to_excel(writer, sheet_name='Saldos por Sucursal', index=False)
         
     output.seek(0)
     
@@ -1338,3 +1452,108 @@ async def get_expenses_report(
         "detalle": detalle,
         "por_categoria": por_categoria
     }
+
+from pydantic import BaseModel
+from typing import List, Literal
+
+class ProductStatsRequest(BaseModel):
+    producto_ids: List[str]
+    start_date: str # YYYY-MM-DD
+    end_date: str   # YYYY-MM-DD
+    intervalo: Literal["dia", "semana", "mes"] = "dia"
+    sucursal_id: Optional[str] = "all"
+
+@router.post("/product-stats")
+async def get_product_stats(
+    req: ProductStatsRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    tenant_id = current_user.tenant_id or "default"
+    
+    # Permission check for branch
+    target_sucursal = req.sucursal_id
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+        target_sucursal = current_user.sucursal_id
+
+    try:
+        start_dt, _ = get_day_range_bolivia(req.start_date)
+        _, end_dt = get_day_range_bolivia(req.end_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
+
+    if not req.producto_ids:
+        return []
+
+    # Format string for Mongo dateToString based on interval
+    if req.intervalo == "dia":
+        date_format = "%Y-%m-%d"
+    elif req.intervalo == "semana":
+        date_format = "%Y-%U" # Year and Week number
+    elif req.intervalo == "mes":
+        date_format = "%Y-%m"
+    else:
+        date_format = "%Y-%m-%d"
+
+    match_filter = {
+        "tenant_id": tenant_id,
+        "sale_date": {"$gte": start_dt, "$lte": end_dt}
+    }
+    
+    if target_sucursal and target_sucursal != "all":
+        match_filter["sucursal_id"] = target_sucursal
+
+    pipeline = [
+        {"$match": match_filter},
+        {
+            "$lookup": {
+                "from": "sales",
+                "let": {"sid": "$sale_id"},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": [{"$toString": "$_id"}, "$$sid"]}, "anulada": False}}
+                ],
+                "as": "sale_parent"
+            }
+        },
+        {"$match": {"sale_parent": {"$ne": []}}},
+        {"$match": {"producto_id": {"$in": req.producto_ids}}},
+        {
+            "$group": {
+                "_id": {
+                    "fecha": { "$dateToString": { "format": date_format, "date": "$sale_date", "timezone": "-04:00" } },
+                    "producto_id": "$producto_id",
+                    "descripcion": "$descripcion"
+                },
+                "cantidad": {"$sum": "$cantidad"},
+                "subtotal": {"$sum": "$subtotal"}
+            }
+        },
+        {
+            "$project": {
+                "fecha": "$_id.fecha",
+                "producto_id": "$_id.producto_id",
+                "producto_nombre": "$_id.descripcion",
+                "cantidad": 1,
+                "ingreso_bruto": "$subtotal",
+                "_id": 0
+            }
+        },
+        {"$sort": {"fecha": 1}}
+    ]
+
+    cursor = SaleItem.get_pymongo_collection().aggregate(pipeline)
+    raw_results = await cursor.to_list(length=5000)
+    
+    # We must format the data in a way that is easily consumable by Recharts.
+    # Typically: [{ fecha: "2023-01-01", "Prod A Unidades": 5, "Prod A Ingreso": 100, "Prod B Unidades": 2 ... }]
+    # But we can just return the raw aggregated list and let the frontend pivot it, or we can pivot it here.
+    # Returning raw is often better so the frontend has full flexibility.
+    
+    results = []
+    for r in raw_results:
+        norm = normalize_bson(r)
+        norm["cantidad"] = int(norm.get("cantidad", 0))
+        norm["ingreso_bruto"] = float(str(norm.get("ingreso_bruto", 0)))
+        results.append(norm)
+
+    return results
+

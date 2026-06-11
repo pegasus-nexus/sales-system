@@ -40,6 +40,7 @@ class PedidoInterno(Document):
     estado: EstadoPedido = EstadoPedido.CREADO
     items: List[PedidoItem]
     notas: Optional[str] = None
+    etiquetas_ids: List[str] = Field(default_factory=list)
     total_mayorista: DecimalMoney = DecimalMoney("0.0")        # calculated on despacho
 
     created_at: datetime = Field(default_factory=datetime.utcnow)

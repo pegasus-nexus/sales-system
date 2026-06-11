@@ -9,7 +9,7 @@ from pydantic import BeforeValidator
 # Helper to capture ObjectId and convert to string for the API response
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
-from app.domain.models.cliente import Cliente
+from app.domain.models.cliente import Cliente, TipoCliente
 from app.domain.models.user import User
 from app.infrastructure.auth import get_current_active_user
 
@@ -23,6 +23,9 @@ class ClienteCreate(BaseModel):
     direccion: Optional[str] = None
     notas: Optional[str] = None
     lista_precio_id: Optional[str] = None
+    tipo_cliente: TipoCliente = TipoCliente.ACTIVO
+    preferencias_alimenticias: List[str] = Field(default_factory=list)
+    datos_crm: dict = Field(default_factory=dict)
 
 class ClienteUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -33,6 +36,9 @@ class ClienteUpdate(BaseModel):
     notas: Optional[str] = None
     lista_precio_id: Optional[str] = None
     is_active: Optional[bool] = None
+    tipo_cliente: Optional[TipoCliente] = None
+    preferencias_alimenticias: Optional[List[str]] = None
+    datos_crm: Optional[dict] = None
 
 class ClienteResponse(BaseModel):
     id: PyObjectId = Field(..., alias="_id")
@@ -44,6 +50,9 @@ class ClienteResponse(BaseModel):
     direccion: Optional[str] = None
     notas: Optional[str] = None
     lista_precio_id: Optional[str] = None
+    tipo_cliente: TipoCliente
+    preferencias_alimenticias: List[str]
+    datos_crm: dict
     total_compras: float
     cantidad_compras: int
     ultima_compra_at: Optional[datetime] = None
@@ -104,7 +113,10 @@ async def crear_cliente(
         nit_ci=data.nit_ci,
         direccion=data.direccion,
         notas=data.notas,
-        lista_precio_id=data.lista_precio_id
+        lista_precio_id=data.lista_precio_id,
+        tipo_cliente=data.tipo_cliente,
+        preferencias_alimenticias=data.preferencias_alimenticias,
+        datos_crm=data.datos_crm
     )
     await cliente.create()
     return cliente

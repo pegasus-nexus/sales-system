@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Truck, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText, Search, Download, Eye, User2, Building2 } from 'lucide-react';
+import { Truck, Plus, ArrowRight, Package, CheckCircle2, Clock, XCircle, FileText, Search, Download, Eye, User2, Building2, Warehouse } from 'lucide-react';
 import { getTraslados, despacharTraslado, recibirTraslado, cancelarTraslado } from '../api/traslados';
-import { getSucursales, getInventario, getClientes, createCliente } from '../api/api';
+import { getSucursales, getInventario, getClientes, createCliente, getAlmacenes } from '../api/api';
+import type { Almacen } from '../api/types';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { formatFullDate } from '../utils/dateUtils';
@@ -307,7 +308,7 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
             doc.setPage(i);
             doc.setFontSize(7);
             doc.setTextColor(160, 170, 185);
-            doc.text(`Taboada System • Traslado de Inventario • Pág. ${i}/${pageCount}`, pw / 2, 290, { align: 'center' });
+            doc.text(`Sales System • Traslado de Inventario • Pág. ${i}/${pageCount}`, pw / 2, 290, { align: 'center' });
         }
 
         const fecha = new Date(t.created_at).toISOString().split('T')[0];
@@ -478,12 +479,43 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const [showNuevoCliente, setShowNuevoCliente] = useState(false);
     const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', telefono: '', ci: '' });
     const [confirmando, setConfirmando] = useState(false);
+    const [almacenOrigenId, setAlmacenOrigenId] = useState<string>('default');
+    const [almacenDestinoId, setAlmacenDestinoId] = useState<string>('default');
 
     const sucursalId = user?.sucursal_id || 'CENTRAL';
 
+    // Cargar almacenes de la sucursal origen
+    const { data: almacenesOrigen = [] } = useQuery<Almacen[]>({
+        queryKey: ['almacenes', sucursalId],
+        queryFn: () => getAlmacenes(sucursalId),
+    });
+    useEffect(() => {
+        if (almacenesOrigen.length > 0) {
+            const def = almacenesOrigen.find((a: Almacen) => a.is_default);
+            setAlmacenOrigenId(def?.id ?? almacenesOrigen[0].id ?? 'default');
+        }
+    }, [almacenesOrigen]);
+
+    // Cargar almacenes de la sucursal destino (cuando sea SUCURSAL y esté seleccionada)
+    const { data: almacenesDestino = [] } = useQuery<Almacen[]>({
+        queryKey: ['almacenes', destinoId],
+        queryFn: () => getAlmacenes(destinoId),
+        enabled: destinoTipo === 'SUCURSAL' && !!destinoId,
+    });
+    useEffect(() => {
+        if (destinoId) {
+            if (almacenesDestino.length > 0) {
+                const def = almacenesDestino.find((a: Almacen) => a.is_default);
+                setAlmacenDestinoId(def?.id ?? almacenesDestino[0].id ?? 'default');
+            } else {
+                setAlmacenDestinoId('default');
+            }
+        }
+    }, [almacenesDestino, destinoId]);
+
     const { data: inventarioResponse, isLoading: isLoadingInventario } = useQuery({
-        queryKey: ['inventario-traslado', sucursalId, search],
-        queryFn: () => getInventario(sucursalId, 1, 100, search || undefined),
+        queryKey: ['inventario-traslado', sucursalId, almacenOrigenId, search],
+        queryFn: () => getInventario(sucursalId, almacenOrigenId, 1, 100, search || undefined),
     });
     const inventario = (inventarioResponse as any)?.items || [];
     const productosDisponibles = inventario.filter((inv: any) =>
@@ -563,6 +595,8 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
             cliente_destino_id: destinoTipo === 'CLIENTE' ? clienteSeleccionado?._id : undefined,
             cliente_destino_nombre: destinoTipo === 'CLIENTE' ? clienteSeleccionado?.nombre : undefined,
             notas,
+            almacen_id: almacenOrigenId,           // Almacén de donde sale el stock
+            almacen_destino_id: almacenDestinoId,  // Almacén donde llega el stock
             items: items.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad }))
         });
     };
@@ -688,7 +722,7 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                             <label className="block text-sm font-bold text-gray-700 mb-2">Sucursal Destino</label>
                             <select
                                 value={destinoId}
-                                onChange={(e) => setDestinoId(e.target.value)}
+                                onChange={(e) => { setDestinoId(e.target.value); setAlmacenDestinoId('default'); }}
                                 className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-black"
                             >
                                 <option value="">-- Seleccionar Sucursal --</option>
@@ -698,6 +732,44 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                             </select>
                         </div>
                     )}
+
+                    {/* Selectores de Almacén */}
+                    <div className={`grid gap-3 ${destinoTipo === 'SUCURSAL' && destinoId && almacenesDestino.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {/* Almacén Origen */}
+                        {(almacenesOrigen as any[]).length > 1 && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1">
+                                    <Warehouse size={12} /> Almacén Origen
+                                </label>
+                                <select
+                                    value={almacenOrigenId}
+                                    onChange={(e) => { setAlmacenOrigenId(e.target.value); setItems([]); }}
+                                    className="w-full p-2.5 rounded-xl border border-gray-200 bg-amber-50 border-amber-200 focus:bg-white focus:ring-2 focus:ring-amber-400 transition-all outline-none text-black text-sm font-bold"
+                                >
+                                    {(almacenesOrigen as any[]).map((a: any) => (
+                                        <option key={a.id} value={a.id}>{a.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        {/* Almacén Destino (solo si la sucursal destino tiene múltiples almacenes) */}
+                        {destinoTipo === 'SUCURSAL' && destinoId && (almacenesDestino as any[]).length > 1 && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1">
+                                    <Warehouse size={12} /> Almacén Destino
+                                </label>
+                                <select
+                                    value={almacenDestinoId}
+                                    onChange={(e) => setAlmacenDestinoId(e.target.value)}
+                                    className="w-full p-2.5 rounded-xl border border-indigo-200 bg-indigo-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 transition-all outline-none text-black text-sm font-bold"
+                                >
+                                    {(almacenesDestino as any[]).map((a: any) => (
+                                        <option key={a.id} value={a.id}>{a.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Client selector */}
                     {destinoTipo === 'CLIENTE' && (

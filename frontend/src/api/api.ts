@@ -6,17 +6,19 @@ export { client } from './client';
 import { client } from './client';
 
 import type {
-    Tenant, TenantCreate, TenantUpdate,
+    Tenant, TenantCreate, TenantUpdate, TenantSettings,
     Product, ProductCreate,
     Category, CategoryCreate,
     Descuento, DescuentoCreate, DescuentoUpdate,
     User, EmployeeCreate,
     SaleCreate, Sale, SalesPaginated,
     Sucursal, SucursalCreate,
-    InventarioItem, AjusteInventario, InventoryLog,
+    Almacen, AlmacenCreate, AlmacenUpdate,
+    InventarioItem, AjusteInventario, InventoryLog, AjusteInventarioMasivoRequest,
     PedidoInterno, PedidoCreate,
     PriceChangeRequest, PriceRequestCreate, ReportStats,
-    OrchestrationResponse, DemandPredictionResponse
+    OrchestrationResponse, DemandPredictionResponse,
+    Etiqueta, EtiquetaCreate, EtiquetaUpdate
 } from './types';
 import type {
     CajaSesion, CajaMovimiento, CajaGastoCategoria,
@@ -25,6 +27,7 @@ import type {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────
 export const getMe = () => client<User>('/users/me');
+export const impersonateTenant = (tenant_id: string) => client<{access_token: string, token_type: string, role: string}>(`/impersonate/${tenant_id}`, { method: 'POST' });
 
 // ─── Tenants ──────────────────────────────────────────────────────────────
 export const getTenants = () => client<Tenant[]>('/tenants');
@@ -32,6 +35,39 @@ export const createTenant = (data: TenantCreate) => client<Tenant>('/tenants', {
 export const updateTenant = (id: string, data: TenantUpdate) => client<Tenant>(`/tenants/${id}`, { method: 'PUT', body: data });
 export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/${id}`, { method: 'DELETE' });
 export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string }>('/tenants/my-features');
+export const getMyTenant = () => client<Tenant>('/tenants/me');
+export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
+
+export const getAuditLogs = (limit: number = 100, skip: number = 0, action?: string, entity?: string, username?: string) => {
+    const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
+    if (action) params.append('action', action);
+    if (entity) params.append('entity', entity);
+    if (username) params.append('username', username);
+    return client<any[]>(`/audit-logs?${params.toString()}`);
+};
+
+export const uploadImage = async (file: File): Promise<{url: string}> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
+    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
+        ? 'https://sales-system-kappa.vercel.app/api/v1' 
+        : 'http://localhost:8000/api/v1');
+
+    const res = await fetch(`${CACHE_URL}/upload`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.detail || 'Error al subir la imagen');
+    }
+
+    return res.json();
+};
 
 export const getTenantStats = () =>
     client<{ total_sales: number; active_products: number; active_employees: number }>('/tenants/stats');
@@ -46,13 +82,14 @@ export const getDailyReport = (date: string, sucursal_id?: string) => {
     return client<any>(`/reports/daily-report?${params.toString()}`);
 };
 
-export const getValuedInventory = (date?: string) => {
+export const getValuedInventory = async (date?: string, sucursal_id?: string) => {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
-    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${date ? '?' + params.toString() : ''}`);
+    if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
+    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${params.toString() ? '?' + params.toString() : ''}`);
 };
 
-export const exportValuedInventory = async (date?: string) => {
+export const exportValuedInventory = async (date?: string, sucursal_id?: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
@@ -60,6 +97,7 @@ export const exportValuedInventory = async (date?: string) => {
         
     const params = new URLSearchParams();
     if (date) params.append('date', date);
+    if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
     const qs = params.toString();
     
     const response = await fetch(`${CACHE_URL}/reports/valued-inventory/export${qs ? '?' + qs : ''}`, {
@@ -73,7 +111,7 @@ export const exportValuedInventory = async (date?: string) => {
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = `inventario_valorado_${date || new Date().toISOString().split('T')[0]}.xlsx`;
+    a.download = `inventario_valorado_${sucursal_id && sucursal_id !== 'all' ? sucursal_id + '_' : ''}${date || new Date().toISOString().split('T')[0]}.xlsx`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -195,6 +233,12 @@ export const getStaffPerformanceReport = (date?: string, sucursal_id?: string, s
     }>(`/reports/staff-performance?${params.toString()}`);
 };
 
+export const getAnulacionesReport = (startDate: string, endDate: string, sucursalId?: string) => {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+    return client<any[]>(`/reports/anulaciones?${params.toString()}`);
+};
+
 export const getVentasMatrix = (startDate: string, endDate: string, sucursalId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (sucursalId && sucursalId !== 'all') params.set('sucursal_id', sucursalId);
@@ -224,8 +268,13 @@ export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id
 // ─── Sucursales ───────────────────────────────────────────────────────────
 export const getSucursales = () => client<Sucursal[]>('/sucursales');
 export const createSucursal = (data: SucursalCreate) => client<Sucursal>('/sucursales', { body: data });
-export const updateSucursal = (id: string, data: Partial<SucursalCreate>) =>
-    client<Sucursal>(`/sucursales/${id}`, { method: 'PUT', body: data });
+export const updateSucursal = (id: string, data: Partial<SucursalCreate>) => client<Sucursal>(`/sucursales/${id}`, { method: 'PATCH', body: data });
+
+// ─── Almacenes ────────────────────────────────────────────────────────────
+export const getAlmacenes = (sucursal_id: string) => client<Almacen[]>(`/almacenes/${sucursal_id}`);
+export const createAlmacen = (sucursal_id: string, data: AlmacenCreate) => client<Almacen>(`/almacenes/${sucursal_id}`, { method: 'POST', body: data });
+export const updateAlmacen = (almacen_id: string, data: AlmacenUpdate) => client<Almacen>(`/almacenes/${almacen_id}`, { method: 'PATCH', body: data });
+export const deleteAlmacen = (almacen_id: string) => client<{message: string}>(`/almacenes/${almacen_id}`, { method: 'DELETE' });
 export const deleteSucursal = (id: string) =>
     client<{message: string}>(`/sucursales/${id}`, { method: 'DELETE' });
 
@@ -366,17 +415,26 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
 
 
 // ─── Inventario ───────────────────────────────────────────────────────────
-export const getInventario = (sucursal_id = 'CENTRAL', page: number = 1, limit: number = 50, search?: string, categoria_id?: string, stock_bajo: boolean = false) => {
-    const params = new URLSearchParams({ sucursal_id, page: String(page), limit: String(limit) });
+export const getInventario = (sucursal_id = 'CENTRAL', almacen_id = 'default', page: number = 1, limit: number = 50, search?: string, categoria_id?: string, stock_bajo: boolean = false) => {
+    const params = new URLSearchParams({ sucursal_id, almacen_id, page: String(page), limit: String(limit) });
     if (search) params.append('search', search);
     if (categoria_id) params.append('categoria_id', categoria_id);
     if (stock_bajo) params.append('stock_bajo', 'true');
     return client<{ items: InventarioItem[], total: number, page: number, pages: number }>(`/inventario?${params.toString()}`);
 };
-export const ajustarInventario = (sucursal_id: string, data: AjusteInventario) =>
-    client(`/inventario/ajuste?sucursal_id=${sucursal_id}`, { method: 'POST', body: data });
-export const getMovimientosInventario = (sucursal_id = 'CENTRAL', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
-    const params = new URLSearchParams({ sucursal_id });
+export const ajustarInventario = (sucursal_id: string, almacen_id: string, data: AjusteInventario) =>
+    client<{ cantidad: number, movimiento: number }>(`/inventario/ajuste?sucursal_id=${sucursal_id}&almacen_id=${almacen_id}`, {
+        method: 'POST',
+        body: data
+    });
+
+export const ajustarInventarioMasivo = (data: AjusteInventarioMasivoRequest) =>
+    client<{ message: string, procesados: number }>('/inventario/ajuste-masivo', {
+        method: 'POST',
+        body: data,
+    });
+export const getMovimientosInventario = (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
+    const params = new URLSearchParams({ sucursal_id, almacen_id });
     if (producto_id) params.set('producto_id', producto_id);
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
@@ -385,13 +443,13 @@ export const getMovimientosInventario = (sucursal_id = 'CENTRAL', producto_id?: 
     return client<InventoryLog[]>(`/inventario/movimientos?${params.toString()}`);
 };
 
-export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
+export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
         : 'http://localhost:8001/api/v1');
         
-    const params = new URLSearchParams({ sucursal_id });
+    const params = new URLSearchParams({ sucursal_id, almacen_id });
     if (producto_id) params.set('producto_id', producto_id);
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
@@ -488,6 +546,11 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
 };
 
 // ─── Pedidos Internos ─────────────────────────────────────────────────────
+export const getEtiquetas = () => client<Etiqueta[]>('/etiquetas');
+export const createEtiqueta = (data: EtiquetaCreate) => client<Etiqueta>('/etiquetas', { method: 'POST', body: data });
+export const updateEtiqueta = (id: string, data: EtiquetaUpdate) => client<Etiqueta>(`/etiquetas/${id}`, { method: 'PUT', body: data });
+export const actualizarEtiquetasPedido = (pedido_id: string, etiquetas_ids: string[]) => client<PedidoInterno>(`/pedidos/${pedido_id}/etiquetas`, { method: 'PATCH', body: { etiquetas_ids } });
+
 export const getPedidos = (sucursal_id?: string, estado?: string) => {
     const params = new URLSearchParams();
     if (sucursal_id) params.set('sucursal_id', sucursal_id);
@@ -522,7 +585,7 @@ export const downloadPedidoPDF = async (pedido_id: string) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recepcion_${pedido_id}.pdf`;
+    a.download = `pedido_${pedido_id}.pdf`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -537,14 +600,19 @@ export const createCategory = (data: CategoryCreate) =>
 export const getUsers = () => client<User[]>('/users');
 export const createEmployee = (data: EmployeeCreate) =>
     client<User>('/users/employee', { body: data });
+export const updateEmployee = (id: string, data: any) =>
+    client<User>(`/users/${id}`, { method: 'PUT', body: data });
+export const toggleEmployeeStatus = (id: string, is_active: boolean) =>
+    client<{message: string, is_active: boolean}>(`/users/${id}/status?is_active=${is_active}`, { method: 'PATCH' });
 
 // ─── Sales ────────────────────────────────────────────────────────────────
 export const createSale = (data: SaleCreate) => client('/sales', { method: 'POST', body: data });
-export const getSales = (sucursal_id?: string, page: number = 1, limit: number = 50, metodo_pago?: string, solo_facturas?: boolean, qr_confirmed?: boolean, estado_pago?: string, startDate?: string, endDate?: string, search?: string) => {
+export const getSales = (sucursal_id?: string, page: number = 1, limit: number = 50, metodo_pago?: string, solo_facturas?: boolean, qr_confirmed?: boolean, estado_pago?: string, startDate?: string, endDate?: string, search?: string, solo_anomalias?: boolean) => {
     const params = new URLSearchParams();
     if (sucursal_id) params.set('sucursal_id', sucursal_id);
     if (metodo_pago) params.set('metodo_pago', metodo_pago);
     if (solo_facturas) params.set('solo_facturas', 'true');
+    if (solo_anomalias) params.set('solo_anomalias', 'true');
     if (qr_confirmed !== undefined) params.set('qr_confirmed', String(qr_confirmed));
     if (estado_pago) params.set('estado_pago', estado_pago);
     if (startDate) params.set('start_date', startDate);
@@ -727,3 +795,68 @@ export const getMermasReclamos = (page: number = 1, limit: number = 50, estado?:
 export const compensarMermaReclamo = (merma_id: string) => {
     return client<any>(`/b2b/mermas/${merma_id}/compensar`, { method: 'POST' });
 };
+
+// ── Estadísticas de Productos ────────────────────────────────────────────
+export interface ProductStatsRequest {
+    producto_ids: string[];
+    start_date: string;
+    end_date: string;
+    intervalo: 'dia' | 'semana' | 'mes';
+    sucursal_id?: string;
+}
+
+export const getProductStatsReport = (data: ProductStatsRequest) => {
+    return client<any[]>(`/reports/product-stats`, { method: 'POST', body: data });
+};
+
+// ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
+
+import type {
+    Recipe, RecipeCreate, MealPlanTemplate, MealPlanTemplateCreate,
+    ClientMealPlan, MealSchedule, MealScheduleStatus
+} from './types';
+
+// Recipes CRUD
+export const getRecipes = () => client<Recipe[]>('/recipes');
+export const getRecipeById = (id: string) => client<Recipe>(`/recipes/${id}`);
+export const createRecipe = (data: RecipeCreate) => client<Recipe>('/recipes', { method: 'POST', body: data });
+export const updateRecipe = (id: string, data: Partial<RecipeCreate>) => client<Recipe>(`/recipes/${id}`, { method: 'PUT', body: data });
+export const deleteRecipe = (id: string) => client<{message: string}>(`/recipes/${id}`, { method: 'DELETE' });
+
+// Meal Plan Templates CRUD
+export const getMealPlanTemplates = () => client<MealPlanTemplate[]>('/meal-plans/templates');
+export const createMealPlanTemplate = (data: MealPlanTemplateCreate) => client<MealPlanTemplate>('/meal-plans/templates', { method: 'POST', body: data });
+export const updateMealPlanTemplate = (id: string, data: Partial<MealPlanTemplateCreate>) => client<MealPlanTemplate>(`/meal-plans/templates/${id}`, { method: 'PUT', body: data });
+export const deleteMealPlanTemplate = (id: string) => client<{message: string}>(`/meal-plans/templates/${id}`, { method: 'DELETE' });
+
+// Client Plan Assignments
+export const getClientMealPlans = (clienteId: string) => client<ClientMealPlan[]>(`/clientes/${clienteId}/meal-plans`);
+export const assignPlanToClient = (clienteId: string, templateId: string, fechaInicio?: string) => 
+    client<ClientMealPlan>(`/clientes/${clienteId}/meal-plans`, { 
+        method: 'POST', 
+        body: { template_id: templateId, fecha_inicio: fechaInicio } 
+    });
+
+// Production Schedules
+export const getDailyProductionReport = (fecha: string) => 
+    client<{schedules_count: number; ingredients: any[]}>(`/production/daily-report?fecha=${fecha}`);
+
+export const getMealSchedules = (params: { cliente_id?: string; fecha_programada?: string; estado?: string; parent_id?: string }) => {
+    const qParams = new URLSearchParams();
+    if (params.cliente_id) qParams.set('cliente_id', params.cliente_id);
+    if (params.fecha_programada) qParams.set('fecha_programada', params.fecha_programada);
+    if (params.parent_id) qParams.set('parent_id', params.parent_id); // Compatibility / just in case
+    if (params.estado) qParams.set('estado', params.estado);
+    const qs = qParams.toString();
+    return client<MealSchedule[]>(`/production/schedules${qs ? '?' + qs : ''}`);
+};
+
+export const createMealSchedule = (data: { cliente_id: string; client_meal_plan_id: string; fecha_programada: string; recetas_ids: string[] }) =>
+    client<MealSchedule>('/production/schedules', { method: 'POST', body: data });
+
+export const updateMealSchedule = (id: string, data: { recetas_ids?: string[]; estado?: MealScheduleStatus; motivo_postergacion?: string }) =>
+    client<MealSchedule>(`/production/schedules/${id}`, { method: 'PUT', body: data });
+
+export const markScheduleAsDelivered = (id: string) =>
+    client<MealSchedule>(`/production/schedules/${id}/deliver`, { method: 'POST' });
+

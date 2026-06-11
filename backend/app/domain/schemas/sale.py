@@ -18,6 +18,7 @@ class SaleItemIn(BaseModel):
     cantidad: int
     precio_unitario: float = 0.0   # if 0, falls back to product.precio_venta
     descuento_unitario: float = 0.0
+    almacen_id: Optional[str] = None  # Override por-ítem. Si None, hereda almacen_id global de SaleCreate
 
 
 class PagoIn(BaseModel):
@@ -43,6 +44,7 @@ class ClienteIn(BaseModel):
 class SaleCreate(BaseModel):
     """Request body for creating a new sale."""
     sucursal_id: Optional[str] = None
+    almacen_id: str = "default"
     items: List[SaleItemIn]
     pagos: List[PagoIn] = []
     descuento: Optional[DescuentoInfo] = None
@@ -50,6 +52,7 @@ class SaleCreate(BaseModel):
     cliente: Optional[ClienteIn] = None
     vendedor_id: Optional[str] = None
     vendedor_name: Optional[str] = None
+    send_whatsapp: bool = False
 
 
 class SalesPaginated(BaseModel):

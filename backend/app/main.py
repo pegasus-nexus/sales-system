@@ -7,23 +7,23 @@ from app.api.v1.router import api_router
 from app.infrastructure.core.rate_limit import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from app.api.v1.endpoints import etiquetas
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os
+    import sys
     env_keys = list(os.environ.keys())
     
-    if ("localhost" in settings.MONGODB_URL or "127.0.0.1" in settings.MONGODB_URL) and settings.ENVIRONMENT == "production":
-        print(f"FATAL: MONGODB_URL IS LOCALHOST. ENV VARS IN VERCEL: {env_keys}")
+    if settings.ENVIRONMENT == "production" and ("localhost" in settings.MONGODB_URL or "127.0.0.1" in settings.MONGODB_URL):
+        print(f"FATAL: MONGODB_URL IS LOCALHOST. ENV VARS IN VERCEL: {env_keys}", file=sys.stderr, flush=True)
         raise ValueError(f"Missing MONGODB_URL in Vercel Environment Variables! Re-check your Vercel Project Settings. Env keys found: {env_keys}")
         
-    try:
-        await init_db()
-        print("Database initialized successfully.")
-    except Exception as e:
-        print(f"Failed to initialize database: {e}")
+    # No capturar excepciones aquí para que la app se detenga inmediatamente si no hay conexión a base de datos.
+    # Esto evita el estado zombi "CollectionWasNotInitialized".
+    await init_db()
+    print("Database initialized successfully.", flush=True)
     
-    # User initialization should be done via a dedicated script or secure endpoint
     yield
 
 app = FastAPI(
@@ -46,10 +46,12 @@ def health():
     """Safe health check — does not expose any environment variables."""
     return {"status": "ok", "environment": settings.ENVIRONMENT}
 
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# Parse allowed origins from comma-separated env var
+origins = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",") if origin.strip() and origin.strip() != "*"]
+if not origins or settings.ENVIRONMENT != "production":
+    for local_origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+        if local_origin not in origins:
+            origins.append(local_origin)
 
 # Permitir siempre la landing page de FEXCO
 if "https://taboada-fexco.vercel.app" not in origins:
@@ -75,3 +77,4 @@ os.makedirs(os.path.join(STATIC_DIR, "images"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(etiquetas.router, prefix="/api/v1", tags=["etiquetas"])

@@ -19,6 +19,7 @@ class SaleItem(BaseModel):
     costo_unitario: DecimalMoney
     descuento_unitario: DecimalMoney = DecimalMoney("0")
     subtotal: DecimalMoney
+    almacen_id: str = "default"  # Almacén de origen del stock descontado (auditoría + anulación correcta)
 
 
 class PagoItem(BaseModel):
@@ -55,6 +56,7 @@ class QRInfo(BaseModel):
 class Sale(Document):
     tenant_id: str
     sucursal_id: str = "CENTRAL"
+    almacen_id: str = "default"
     items: List[SaleItem]
     total: DecimalMoney
     pagos: List[PagoItem] = []

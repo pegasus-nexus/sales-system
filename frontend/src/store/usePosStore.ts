@@ -8,6 +8,10 @@ export interface CartItem {
     quantity: number;
     /** unit price locked at the moment of adding to cart */
     precio: number;
+    /** warehouse this item was taken from */
+    almacen_id: string;
+    /** human-readable warehouse name for display in cart */
+    almacen_nombre?: string;
 }
 
 export type MetodoPago = 'EFECTIVO' | 'QR' | 'TARJETA' | 'CREDITO';
@@ -45,11 +49,13 @@ export interface ParkedTicket {
 
 interface PosState {
     // Cart
+    almacen_id: string;
+    setAlmacenId: (id: string) => void;
     items: CartItem[];
-    addItem: (product: Product) => void;
-    removeItem: (productId: string) => void;
-    updateQty: (productId: string, delta: number) => void;
-    setQty: (productId: string, qty: number) => void;
+    addItem: (product: Product, almacen_id?: string, almacen_nombre?: string) => void;
+    removeItem: (productId: string, almacen_id: string) => void;
+    updateQty: (productId: string, almacen_id: string, delta: number) => void;
+    setQty: (productId: string, almacen_id: string, qty: number) => void;
     clearCart: () => void;
 
     // Invoice / Client
@@ -87,6 +93,9 @@ interface PosState {
 
     // Full reset
     reset: () => void;
+
+    sendWhatsApp: boolean;
+    setSendWhatsApp: (enabled: boolean) => void;
 }
 
 const DEFAULT_CLIENTE: ClienteData = { cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false };
@@ -95,26 +104,42 @@ const DEFAULT_PENDING: PosState['pendingPago'] = { metodo: 'EFECTIVO', monto: ''
 const DEFAULT_DESC: PosState['descuento'] = { tipo: 'MONTO', valor: '', nombre: '' };
 
 export const usePosStore = create<PosState>()((set, get) => ({
+    almacen_id: 'default',
+    setAlmacenId: (id) => set({ almacen_id: id }),
+
     // ── Cart ──────────────────────────────────────────────────────────────────
     items: [],
 
-    addItem: (product) => set((s) => {
-        const existing = s.items.find(i => i.product._id === product._id);
+    addItem: (product, almacen_id, almacen_nombre) => set((s) => {
+        // Clave única = producto + almacén (mismo producto puede estar en 2 almacenes distintos)
+        const resolved_almacen_id = almacen_id ?? s.almacen_id;
+        const existing = s.items.find(
+            i => i.product._id === product._id && i.almacen_id === resolved_almacen_id
+        );
         if (existing) {
             return {
                 items: s.items.map(i =>
-                    i.product._id === product._id ? { ...i, quantity: i.quantity + 1 } : i
+                    (i.product._id === product._id && i.almacen_id === resolved_almacen_id)
+                        ? { ...i, quantity: i.quantity + 1 }
+                        : i
                 ),
             };
         }
-        return { items: [...s.items, { product, quantity: 1, precio: product.precio_venta }] };
+        return {
+            items: [
+                ...s.items,
+                { product, quantity: 1, precio: product.precio_venta, almacen_id: resolved_almacen_id, almacen_nombre },
+            ],
+        };
     }),
 
-    removeItem: (productId) => set(s => ({ items: s.items.filter(i => i.product._id !== productId) })),
+    removeItem: (productId, almacen_id) => set(s => ({
+        items: s.items.filter(i => !(i.product._id === productId && i.almacen_id === almacen_id))
+    })),
 
-    updateQty: (productId, delta) => set(s => {
+    updateQty: (productId, almacen_id, delta) => set(s => {
         const newItems = s.items.map(i => {
-            if (i.product._id === productId) {
+            if (i.product._id === productId && i.almacen_id === almacen_id) {
                 return { ...i, quantity: i.quantity + delta };
             }
             return i;
@@ -122,8 +147,12 @@ export const usePosStore = create<PosState>()((set, get) => ({
         return { items: newItems };
     }),
 
-    setQty: (productId, qty) => set(s => ({
-        items: s.items.map(i => i.product._id === productId ? { ...i, quantity: Math.max(1, qty) } : i),
+    setQty: (productId, almacen_id, qty) => set(s => ({
+        items: s.items.map(i =>
+            (i.product._id === productId && i.almacen_id === almacen_id)
+                ? { ...i, quantity: Math.max(1, qty) }
+                : i
+        ),
     })),
 
     clearCart: () => set({ items: [] }),
@@ -237,6 +266,9 @@ export const usePosStore = create<PosState>()((set, get) => ({
         parkedTickets: s.parkedTickets.filter((_, i) => i !== index)
     })),
 
+    sendWhatsApp: true,
+    setSendWhatsApp: (b) => set({ sendWhatsApp: b }),
+
     // ── Reset ─────────────────────────────────────────────────────────────────
-    reset: () => set({ items: [], cliente: DEFAULT_CLIENTE, vendedor: DEFAULT_VENDEDOR, pagos: [], pendingPago: DEFAULT_PENDING, descuento: DEFAULT_DESC }),
+    reset: () => set({ items: [], cliente: DEFAULT_CLIENTE, vendedor: DEFAULT_VENDEDOR, pagos: [], pendingPago: DEFAULT_PENDING, descuento: DEFAULT_DESC, sendWhatsApp: true }),
 }));

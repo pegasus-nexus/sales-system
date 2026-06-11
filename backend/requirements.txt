@@ -2,6 +2,7 @@ fastapi
 uvicorn
 beanie
 motor
+pymongo<4.9.0
 pydantic-settings
 python-multipart
 passlib[bcrypt]
@@ -21,3 +22,4 @@ langchain-google-genai
 langchain-experimental
 slowapi
 httpx
+cloudinary

@@ -23,6 +23,13 @@ from app.domain.models.credito import CuentaCredito, Deuda, TransaccionCredito
 from app.domain.models.b2b import NotaDevolucionMerma, NotaTraspaso, InventarioMovil
 from app.domain.models.comunidad import ComunidadUser, VisitaRegistro
 from app.domain.models.traslado import TrasladoInventario
+from app.domain.models.etiqueta import Etiqueta
+from app.domain.models.almacen import Almacen
+from app.domain.models.recipe import Recipe
+from app.domain.models.recipe_ingredient import RecipeIngredient
+from app.domain.models.meal_plan_template import MealPlanTemplate
+from app.domain.models.client_meal_plan import ClientMealPlan
+from app.domain.models.meal_schedule import MealSchedule
 
 from app.infrastructure.core.config import settings
 
@@ -49,8 +56,15 @@ _client = None
 async def init_db():
     global _client
     _client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URL)
+    
+    # Resolver dinámicamente la base de datos por defecto de la URI (evita problemas de permisos en Atlas)
+    try:
+        database = _client.get_default_database()
+    except Exception:
+        database = _client.salessystem
+
     await init_beanie(
-        database=BeanieFixWrapper(_client.salessystem),
+        database=BeanieFixWrapper(database),
         document_models=[
             User,
             Tenant,
@@ -83,7 +97,14 @@ async def init_db():
             InventarioMovil,
             ComunidadUser,
             VisitaRegistro,
-            TrasladoInventario
+            TrasladoInventario,
+            Etiqueta,
+            Almacen,
+            Recipe,
+            RecipeIngredient,
+            MealPlanTemplate,
+            ClientMealPlan,
+            MealSchedule
         ]
     )
 

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
-    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck
+    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
+    Utensils, CalendarRange, Calendar
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -37,7 +38,9 @@ export default function Layout({ children }: LayoutProps) {
     const getNavItems = () => {
         if (role === 'SUPERADMIN') {
             return [
-                { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin' },
+                { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard' },
+                { icon: Building, label: 'Empresas', path: '/admin/empresas' },
+                { icon: Layers, label: 'Planes', path: '/admin/planes' },
             ];
         }
 
@@ -54,8 +57,13 @@ export default function Layout({ children }: LayoutProps) {
             { icon: Package,         label: 'Catálogo',     path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Warehouse,       label: 'Inventario',   path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Truck,           label: 'Traslados',    path: '/traslados',          feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+            // Dark Kitchen Module
+            { icon: Utensils,        label: 'Recetas',      path: '/recetas',            feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: CalendarRange,   label: 'Planes Comida',path: '/planes-comida',      feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: Calendar,        label: 'Producción',   path: '/produccion',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'SUPERVISOR'] },
+            
             { icon: Banknote,        label: 'Créditos',     path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            {icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: 'REPORTES_AVANZADOS',   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN', 'CAJERO'] },
+            { icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: 'REPORTES_AVANZADOS',   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
             { icon: Percent,         label: 'Descuentos',   path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
             { icon: Tag,             label: 'Precios',      path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
             { icon: Tag,             label: 'Categorías',   path: '/categories',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
@@ -65,7 +73,9 @@ export default function Layout({ children }: LayoutProps) {
             { icon: Users,           label: 'Clientes',     path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: QrCode,          label: 'Control QR',   path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
             { icon: Users,           label: 'Comunidad',    path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: Warehouse,       label: 'Deuda Taboada',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            // { icon: Warehouse,       label: 'Deuda Fábrica',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            { icon: Settings,        label: 'Configuración',path: '/configuracion',      feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: Shield,          label: 'Auditoría',    path: '/auditoria',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
         ];
 
         return allItems
@@ -92,7 +102,7 @@ export default function Layout({ children }: LayoutProps) {
                         <Menu size={20} />
                     </button>
                     <div className={cn("flex items-center overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-                        <span className="text-base font-bold tracking-tight whitespace-nowrap">Taboada System</span>
+                        <span className="text-base font-bold tracking-tight whitespace-nowrap">Sales System</span>
                     </div>
                 </div>
 
@@ -152,7 +162,7 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
                     {/* Mobile Top Bar */}
                     <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shrink-0">
-                        <img src="/logoTaboada.png" alt="Taboada System" className="h-7 w-auto object-contain" />
+                        <img src="/vite.svg" alt="Sales System" className="h-7 w-auto object-contain" />
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600"
@@ -222,7 +232,7 @@ export default function Layout({ children }: LayoutProps) {
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <img src="/logoTaboada.png" alt="Taboada System" className="h-8 w-auto object-contain" />
+                                <img src="/vite.svg" alt="Sales System" className="h-8 w-auto object-contain" />
                                 <button
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-gray-400"

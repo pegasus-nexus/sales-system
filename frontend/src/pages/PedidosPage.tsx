@@ -1,14 +1,17 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPedidos, createPedido, despacharPedido, recibirPedido, cancelarPedido, aceptarPedido, getSucursales, getInventario, getProducts, downloadPedidoPDF } from '../api/api';
+import { getPedidos, createPedido, despacharPedido, recibirPedido, cancelarPedido, aceptarPedido, getSucursales, getInventario, getProducts, downloadPedidoPDF, getEtiquetas } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 
 import {
     ClipboardList, Plus, Truck, CheckCircle2, Clock,
     X, Check, Loader2, ChevronDown, ChevronRight, Package,
-    CheckSquare, Ban, AlertTriangle, Download, Search
+    CheckSquare, Ban, AlertTriangle, Download, Search, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import EtiquetasManager from '../components/EtiquetasManager';
+import EtiquetasSelector from '../components/EtiquetasSelector';
+import OrderTimeline from '../components/OrderTimeline';
 
 type TabType = 'todos' | 'CREADO' | 'ACEPTADO' | 'DESPACHADO' | 'RECIBIDO' | 'CANCELADO';
 
@@ -39,18 +42,23 @@ export default function PedidosPage() {
         type: 'danger' | 'info' | 'success';
     }>({ isOpen: false, title: '', message: '', action: () => {}, type: 'info' });
     const [receptionModal, setReceptionModal] = useState<{ isOpen: boolean; pedido: any }>({ isOpen: false, pedido: null });
+    const [showEtiquetasManager, setShowEtiquetasManager] = useState(false);
 
     const [selectedSucursal, setSelectedSucursal] = useState('');
     const [supervisorAction, setSupervisorAction] = useState<'PEDIR' | 'TRANSFERIR' | 'DEVOLVER'>('PEDIR');
     const [orderItems, setOrderItems] = useState<{ producto_id: string; cantidad: number }[]>([]);
     const [notas, setNotas] = useState('');
     const [searchProd, setSearchProd] = useState('');
+    const [selectedEtiquetas, setSelectedEtiquetas] = useState<string[]>([]);
+
+    const resetForm = () => { setSelectedSucursal(''); setOrderItems([]); setNotas(''); setSearchProd(''); setSelectedEtiquetas([]); };
 
     const { data: pedidos = [], isLoading } = useQuery({
         queryKey: ['pedidos', tab],
         queryFn: () => getPedidos(undefined, tab === 'todos' ? undefined : tab),
     });
     const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales });
+    const { data: etiquetasList = [] } = useQuery({ queryKey: ['etiquetas'], queryFn: getEtiquetas });
     
     // Determine the true source of merchandise based on user role and action
     const origenId = useMemo(() => {
@@ -70,7 +78,7 @@ export default function PedidosPage() {
 
     const { data: invData } = useQuery({
         queryKey: ['inventario-for-order', origenId],
-        queryFn: () => getInventario(origenId, 1, 1000),
+        queryFn: () => getInventario(origenId, 'default', 1, 1000),
         enabled: showCreate && !!origenId && origenId !== 'CENTRAL'
     });
     
@@ -132,7 +140,6 @@ export default function PedidosPage() {
         return availableProducts.filter((p: any) => p.producto_nombre.toLowerCase().includes(low));
     }, [availableProducts, searchProd]);
 
-    const resetForm = () => { setSelectedSucursal(''); setOrderItems([]); setNotas(''); setSearchProd(''); };
     const updateItem = (i: number, f: 'producto_id' | 'cantidad', v: string | number) =>
         setOrderItems(p => p.map((item, idx) => idx === i ? { ...item, [f]: v } : item));
     const removeItem = (i: number) => setOrderItems(p => p.filter((_, idx) => idx !== i));
@@ -145,12 +152,18 @@ export default function PedidosPage() {
                     <h1 className="text-xl font-bold text-gray-900">Pedidos Internos</h1>
                     <p className="text-gray-500 text-xs mt-1">Gestión de transferencias de inventario</p>
                 </div>
-                {!isCajero() && (
-                    <button onClick={() => setShowCreate(true)}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
-                        <Plus size={14} /> Nuevo Pedido
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setShowEtiquetasManager(true)}
+                        className="flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
+                        <Tag size={14} className="text-gray-400" /> Etiquetas
                     </button>
-                )}
+                    {!isCajero() && (
+                        <button onClick={() => setShowCreate(true)}
+                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs shadow-sm transition-colors">
+                            <Plus size={14} /> Nuevo Pedido
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Tabs */}
@@ -200,8 +213,11 @@ export default function PedidosPage() {
                                                     <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-bold tracking-wider uppercase border border-sky-200">Traslado Operativo</span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500">
-                                                {formatDate(pedido.created_at)} · {pedido.items.length} producto(s)
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <div className="text-xs text-gray-500 font-medium">
+                                                    {formatDate(pedido.created_at)} · {pedido.items.length} producto(s)
+                                                </div>
+                                                <EtiquetasSelector pedidoId={pedido._id} etiquetasIds={pedido.etiquetas_ids || []} />
                                             </div>
                                         </div>
                                     </div>
@@ -244,8 +260,12 @@ export default function PedidosPage() {
                                         {pedido.notas && (
                                             <p className="text-sm text-gray-700 mt-3 italic font-medium bg-white/50 p-2 rounded-lg">Notas: {pedido.notas}</p>
                                         )}
+                                        
+                                        <div className="mt-4 border-t border-gray-100 pt-2">
+                                            <OrderTimeline pedido={pedido} />
+                                        </div>
 
-                                        <div className="flex justify-end gap-2 mt-3">
+                                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                             {pedido.estado === 'CREADO' && (
                                                 <button onClick={() => setConfirmModal({
                                                     isOpen: true, title: 'Cancelar Pedido',
@@ -286,17 +306,15 @@ export default function PedidosPage() {
                                                     Confirmar Recepción
                                                 </button>
                                             )}
-                                            {pedido.estado === 'RECIBIDO' && (
-                                                <button onClick={async () => {
-                                                    try {
-                                                        await downloadPedidoPDF(pedido._id);
-                                                    } catch (err: any) { alert(err.message); }
-                                                }}
-                                                    className="flex items-center gap-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ml-auto shadow-sm">
-                                                    <Download size={14} />
-                                                    Descargar Comprobante PDF
-                                                </button>
-                                            )}
+                                            <button onClick={async () => {
+                                                try {
+                                                    await downloadPedidoPDF(pedido._id);
+                                                } catch (err: any) { alert(err.message); }
+                                            }}
+                                                className="flex items-center gap-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ml-auto shadow-sm">
+                                                <Download size={14} />
+                                                Descargar PDF
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -305,6 +323,8 @@ export default function PedidosPage() {
                     })}
                 </div>
             )}
+            
+            {showEtiquetasManager && <EtiquetasManager onClose={() => setShowEtiquetasManager(false)} />}
 
             {/* Create Pedido Modal */}
             {showCreate && (
@@ -336,7 +356,7 @@ export default function PedidosPage() {
                                 return;
                             }
                             
-                            let payload: any = { items: validItems, notas: notas || undefined };
+                            let payload: any = { items: validItems, notas: notas || undefined, etiquetas_ids: selectedEtiquetas };
                             
                             if (isMatriz() || user?.role === 'SUPERADMIN') {
                                 payload.sucursal_destino_id = selectedSucursal;
@@ -655,6 +675,39 @@ export default function PedidosPage() {
                                         </span>
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-4">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Etiquetas del Pedido</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {etiquetasList.map(e => {
+                                        const isSelected = selectedEtiquetas.includes(e._id);
+                                        return (
+                                            <button 
+                                                key={e._id}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setSelectedEtiquetas(prev => prev.filter(id => id !== e._id));
+                                                    } else {
+                                                        setSelectedEtiquetas(prev => [...prev, e._id]);
+                                                    }
+                                                }}
+                                                className={`text-xs px-3 py-1.5 rounded-full font-bold border transition-all flex items-center gap-1.5 ${
+                                                    isSelected
+                                                    ? e.color + ' ring-2 ring-offset-2 ring-indigo-500 scale-105' 
+                                                    : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-current' : e.color.split(' ')[0]}`} />
+                                                {e.nombre}
+                                            </button>
+                                        );
+                                    })}
+                                    {etiquetasList.length === 0 && (
+                                        <span className="text-[10px] text-gray-400 font-medium">No tienes etiquetas. Créalas desde el administrador principal.</span>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">

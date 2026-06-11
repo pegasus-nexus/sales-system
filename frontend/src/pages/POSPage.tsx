@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProducts, getInventario, getCategories, getSaleStatsToday, getUsers, getSucursales } from '../api/api';
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
+import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { usePosStore, type MetodoPago } from '../store/usePosStore';
 import { useDescuentos } from '../hooks/useDescuentos';
@@ -10,7 +10,7 @@ import { client } from '../api/client';
 import {
     ShoppingCart, Search, Plus, Minus, Trash2,
     CreditCard, DollarSign, QrCode, X, CheckCircle2,
-    Loader2, Tag, BarChart3, Package, ChevronUp, ChevronDown,
+    Loader2, Tag, Package, ChevronUp, ChevronDown,
     Lock, User as UserIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,10 +30,10 @@ const METODO_META: Record<string, { icon: React.ReactNode; color: string; bg: st
     CREDITO: { icon: <Lock size={14} />, color: 'text-amber-700', bg: 'bg-amber-100 border-amber-300' },
 };
 
-function useStockMap(sucursalId: string) {
+function useStockMap(sucursalId: string, almacenId: string) {
     const { data: invData } = useQuery({
-        queryKey: ['inventario', sucursalId],
-        queryFn: () => getInventario(sucursalId, 1, 1000),
+        queryKey: ['inventario', sucursalId, almacenId],
+        queryFn: () => getInventario(sucursalId, almacenId, 1, 1000),
         staleTime: 30_000,
     });
     const inv = invData?.items || [];
@@ -45,7 +45,7 @@ function useStockMap(sucursalId: string) {
 }
 
 export default function POSPage() {
-    const { user } = useAuthStore();
+    const { user, tenantSettings } = useAuthStore();
     const qc = useQueryClient();
     const navigate = useNavigate();
     const sucursalId = user?.sucursal_id || 'CENTRAL';
@@ -54,6 +54,7 @@ export default function POSPage() {
     const { data: sesionActiva, isLoading: loadingSesion } = useSesionActiva();
 
     const {
+        almacen_id, setAlmacenId,
         items, addItem, removeItem, updateQty,
         cliente, setCliente,
         vendedor, setVendedor,
@@ -61,7 +62,8 @@ export default function POSPage() {
         descuento, setDescuento,
         total, totalCubierto, restante, cambio, canFinalize,
         reset,
-        parkedTickets, parkTicket, restoreTicket, removeParkedTicket
+        parkedTickets, parkTicket, restoreTicket, removeParkedTicket,
+        sendWhatsApp, setSendWhatsApp
     } = usePosStore();
 
     const [search, setSearch] = useLocalStorage('pos-search', '');
@@ -71,14 +73,25 @@ export default function POSPage() {
     const [confirmSale, setConfirmSale] = useState(false);
     const [panelOpen, setPanelOpen] = useLocalStorage('pos-panel-open', true); // factura+pagos+totals visible
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
+    const [almacenSelectorProduct, setAlmacenSelectorProduct] = useState<any | null>(null);
 
     const { data: productsData, isLoading: loadingP } = useQuery({ queryKey: ['products'], queryFn: () => getProducts(1, 1000) });
     const products = productsData?.items || [];
     const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
-    const { data: stats } = useQuery({ queryKey: ['pos-stats'], queryFn: () => getSaleStatsToday(), refetchInterval: 60_000 });
+
     const { data: descuentosDisponibles = [], isLoading: loadingD } = useDescuentos();
     const { data: usersData = [] } = useQuery({ queryKey: ['users'], queryFn: getUsers });
     const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales });
+    const { data: almacenes = [] } = useQuery({ queryKey: ['almacenes', sucursalId], queryFn: () => getAlmacenes(sucursalId) });
+    
+    // Set default almacen if not set
+    useEffect(() => {
+        if (almacenes.length > 0 && (almacen_id === 'default' || !almacenes.find(a => a.id === almacen_id))) {
+            const def = almacenes.find(a => a.is_default);
+            if (def) setAlmacenId(def.id!);
+            else setAlmacenId(almacenes[0].id!);
+        }
+    }, [almacenes, almacen_id, setAlmacenId]);
     
     // Filtrar usuarios que pueden ser vendedores (de la misma sucursal)
     const vendedores = useMemo(() => {
@@ -89,7 +102,26 @@ export default function POSPage() {
         );
     }, [usersData, sucursalId]);
 
-    const stockMap = useStockMap(sucursalId);
+    const stockMap = useStockMap(sucursalId, almacen_id);
+
+    // Stock de TODOS los almacenes en paralelo (para el modal selector de almacén)
+    const almacenesStockQueries = useQueries({
+        queries: almacenes.map(a => ({
+            queryKey: ['inventario', sucursalId, a.id],
+            queryFn: () => getInventario(sucursalId, a.id, 1, 1000),
+            staleTime: 30_000,
+        })),
+    });
+    // Mapa: { almacen_id -> { producto_id -> cantidad } }
+    const allAlmacenesStockMap = useMemo(() => {
+        const result: Record<string, Record<string, number>> = {};
+        almacenes.forEach((a, idx) => {
+            const items = almacenesStockQueries[idx]?.data?.items || [];
+            result[a.id!] = {};
+            for (const inv of items) result[a.id!][inv.producto_id] = inv.cantidad;
+        });
+        return result;
+    }, [almacenes, almacenesStockQueries]);
 
     // BARCODE SCANNER DETECTOR
     // Los escáneres funcionan como un teclado muy rápido que termina con "Enter".
@@ -128,6 +160,11 @@ export default function POSPage() {
                 return;
             }
 
+            // Ignorar escáner si hay un modal abierto o la venta ya finalizó
+            if (confirmSale || lastSale) {
+                return;
+            }
+
             // Ignorar escáner si el usuario está tipeando en un input o textarea (ej. buscador)
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;
@@ -148,7 +185,7 @@ export default function POSPage() {
                     if (match && match.is_active !== false) {
                         const stock = stockMap[match._id] ?? 0;
                         if (stock > 0) {
-                            addItem(match);
+                            addItem(match, almacen_id, almacenes.find(a => a.id === almacen_id)?.nombre);
                         } else {
                             // Opcionalmente se podría lanzar una alerta de sin stock.
                             console.warn('Producto sin stock escaneado:', match.descripcion);
@@ -163,7 +200,7 @@ export default function POSPage() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [products, stockMap, addItem]);
+    }, [products, stockMap, addItem, almacen_id, almacenes]);
 
     const filtered = useMemo(() => products.filter(p => {
         const q = search.toLowerCase();
@@ -187,7 +224,13 @@ export default function POSPage() {
         mutationFn: () => client<Sale>('/ventas', {
             body: {
                 sucursal_id: sucursalId,
-                items: items.map(i => ({ producto_id: i.product._id, cantidad: i.quantity, precio: i.precio })),
+                almacen_id: almacen_id,
+                items: items.map(i => ({
+                    producto_id: i.product._id,
+                    cantidad: i.quantity,
+                    precio_unitario: i.precio,
+                    almacen_id: i.almacen_id,   // ← Enviar almacén por ítem
+                })),
                 pagos: pagos.map(p => ({ metodo: p.metodo, monto: p.monto })),
                 descuento: descuento.valor ? { nombre: descuento.nombre, tipo: descuento.tipo, valor: parseFloat(descuento.valor) } : undefined,
                 cliente_id: cliente.cliente_id || undefined,
@@ -200,10 +243,14 @@ export default function POSPage() {
                 } : undefined,
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
+                send_whatsapp: sendWhatsApp && (!!cliente.telefono || !!cliente.cliente_id),
             },
         }),
         onSuccess: (data) => {
-            qc.invalidateQueries({ queryKey: ['inventario', sucursalId] });
+            // Invalidar todos los almacenes de la sucursal para actualizar stock
+            almacenes.forEach(a => {
+                qc.invalidateQueries({ queryKey: ['inventario', sucursalId, a.id] });
+            });
             qc.invalidateQueries({ queryKey: ['pos-stats'] });
             setLastSale(data);
             setSuccess(true);
@@ -265,6 +312,58 @@ export default function POSPage() {
 
     return (
         <div className="flex flex-col md:flex-row h-full bg-gray-100 overflow-hidden">
+            
+            {/* Modal Selector Almacén */}
+            <AnimatePresence>
+                {almacenSelectorProduct && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+                            {/* Header */}
+                            <div className="flex justify-between items-start px-5 py-4 border-b border-gray-100">
+                                <div>
+                                    <h3 className="font-black text-base text-gray-900">¿De qué almacén?</h3>
+                                    <p className="text-[11px] text-gray-500 mt-0.5 font-medium truncate max-w-[220px]">{almacenSelectorProduct.descripcion}</p>
+                                </div>
+                                <button onClick={() => setAlmacenSelectorProduct(null)} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                                    <X size={18}/>
+                                </button>
+                            </div>
+                            {/* Almacenes */}
+                            <div className="p-3 space-y-2">
+                                {almacenes.map(a => {
+                                    const stockEnAlmacen = allAlmacenesStockMap[a.id!]?.[almacenSelectorProduct._id] ?? 0;
+                                    const sinStock = stockEnAlmacen <= 0;
+                                    return (
+                                        <button key={a.id} onClick={() => {
+                                            if (sinStock) return;
+                                            addItem(almacenSelectorProduct, a.id, a.nombre);
+                                            setAlmacenSelectorProduct(null);
+                                        }} disabled={sinStock} className={`w-full flex justify-between items-center p-3.5 border rounded-xl transition-all ${
+                                            sinStock
+                                                ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                                                : 'border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 active:scale-[0.98] cursor-pointer'
+                                        }`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${sinStock ? 'bg-gray-100' : 'bg-indigo-100'}`}>
+                                                    <Package size={16} className={sinStock ? 'text-gray-400' : 'text-indigo-600'} />
+                                                </div>
+                                                <span className="font-bold text-sm text-gray-900">{a.nombre}</span>
+                                            </div>
+                                            <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
+                                                sinStock ? 'bg-red-100 text-red-600' :
+                                                stockEnAlmacen > 10 ? 'bg-green-100 text-green-700' :
+                                                'bg-amber-100 text-amber-700'
+                                            }`}>
+                                                {sinStock ? 'Agotado' : `${stockEnAlmacen} u.`}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Mobile Tab Switcher (only on small screens) */}
             <div className="md:hidden shrink-0 flex border-b border-gray-200 bg-white">
@@ -316,11 +415,20 @@ export default function POSPage() {
                             }}
                         />
                     </div>
-                    <div className="flex items-center gap-1.5 text-sm bg-green-50 border border-green-200 text-green-700 px-3 py-1.5 rounded-xl shrink-0">
-                        <BarChart3 size={14} />
-                        <span className="font-bold">${fmt(stats?.today_sales ?? 0)}</span>
-                        <span className="text-[11px] text-green-500">hoy</span>
-                    </div>
+                    {almacenes.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-sm bg-indigo-50 border border-indigo-200 text-indigo-700 pl-3 pr-2 py-1.5 rounded-xl shrink-0">
+                            <Package size={14} />
+                            <select
+                                value={almacen_id}
+                                onChange={(e) => setAlmacenId(e.target.value)}
+                                className="bg-transparent border-none text-sm font-bold text-indigo-800 py-0 pl-0 pr-6 focus:ring-0 cursor-pointer"
+                            >
+                                {almacenes.map(a => (
+                                    <option key={a.id} value={a.id}>{a.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 {/* Category chips */}
@@ -351,10 +459,20 @@ export default function POSPage() {
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-4">
                                 {paginatedFiltered.map((p, idx) => {
                                     const stock = stockMap[p._id] ?? 0;
-                                    const inCart = items.find(i => i.product._id === p._id)?.quantity ?? 0;
+                                    const inCart = items.filter(i => i.product._id === p._id).reduce((s, i) => s + i.quantity, 0);
                                     const noStock = stock <= 0;
+                                    
+                                    const handleProductClick = () => {
+                                        if (noStock) return;
+                                        if (almacenes.length <= 1) {
+                                            addItem(p, almacen_id, almacenes[0]?.nombre);
+                                        } else {
+                                            setAlmacenSelectorProduct(p);
+                                        }
+                                    };
+
                                     return (
-                                        <button key={p._id} onClick={() => !noStock && addItem(p)} disabled={noStock}
+                                        <button key={p._id} onClick={handleProductClick} disabled={noStock}
                                             data-product-idx={idx}
                                             onKeyDown={(e) => {
                                                 if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
@@ -484,7 +602,7 @@ export default function POSPage() {
                             <AnimatePresence initial={false}>
                                 {items.map(item => (
                                     <motion.div
-                                        key={item.product._id}
+                                        key={`${item.product._id}-${item.almacen_id}`}
                                         layout
                                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -494,20 +612,26 @@ export default function POSPage() {
                                     >
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-semibold text-gray-900">{item.product.descripcion}</p>
+                                            {/* Etiqueta de almacén de origen */}
+                                            {item.almacen_nombre && almacenes.length > 1 && (
+                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-1.5 py-0.5 mb-0.5">
+                                                    <Package size={8} /> {item.almacen_nombre}
+                                                </span>
+                                            )}
                                             <p className="text-[11px] text-gray-400">
                                                 ${fmt(item.precio)} × {item.quantity} =&nbsp;
                                                 <span className="font-bold text-gray-700">${fmt(item.precio * item.quantity)}</span>
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
-                                            <button onClick={() => updateQty(item.product._id, -1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+                                            <button onClick={() => updateQty(item.product._id, item.almacen_id, -1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
                                                 <Minus size={11} />
                                             </button>
                                             <span className="w-5 text-center text-xs font-bold text-gray-900">{item.quantity}</span>
-                                            <button onClick={() => updateQty(item.product._id, 1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+                                            <button onClick={() => updateQty(item.product._id, item.almacen_id, 1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
                                                 <Plus size={11} />
                                             </button>
-                                            <button onClick={() => removeItem(item.product._id)} className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors ml-0.5">
+                                            <button onClick={() => removeItem(item.product._id, item.almacen_id)} className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors ml-0.5">
                                                 <Trash2 size={11} />
                                             </button>
                                         </div>
@@ -600,6 +724,18 @@ export default function POSPage() {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+
+                                {/* Toggle WhatsApp */}
+                                {tenantSettings?.whatsapp?.enabled && (
+                                    <div className="flex items-center justify-between mt-1">
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" checked={sendWhatsApp}
+                                                onChange={e => setSendWhatsApp(e.target.checked)}
+                                                className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 shrink-0" />
+                                            <span className="text-[11px] text-gray-600 font-medium">Enviar comprobante por WhatsApp</span>
+                                        </label>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Vendedor */}
@@ -999,6 +1135,10 @@ export default function POSPage() {
                         sale={lastSale} 
                         tenantName={user?.tenant_id || "Mi Tienda"} 
                         sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
+                        ticketFooter={tenantSettings?.ticket_footer}
+                        logoBase64={tenantSettings?.logo_base64}
+                        direccion={tenantSettings?.direccion}
+                        telefono={tenantSettings?.telefono}
                     />
                 )}
             </div>

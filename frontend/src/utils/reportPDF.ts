@@ -5,6 +5,7 @@
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAuthStore } from '../store/authStore';
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const C = {
@@ -88,7 +89,9 @@ function addFooters(doc: jsPDF) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.setTextColor(...C.gray);
-        doc.text('Sistema Taboada  •  Confidencial', 14, ph - 6);
+        const { tenantSettings, user } = useAuthStore.getState();
+        const watermark = tenantSettings?.report_watermark || `${user?.tenant_id || 'Sales System'}  •  Confidencial`;
+        doc.text(watermark, 14, ph - 6);
         doc.text(`Pág. ${i} / ${pages}`, pw - 14, ph - 6, { align: 'right' });
     }
 }
@@ -283,21 +286,18 @@ export function descargarPDFStaff(data: any, periodo: string, sucursalNombre: st
 // 4. MATRIZ DE VENTAS (por producto / por día)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function descargarPDFMatriz(data: any, dateList: string[], startDate: string, endDate: string, sucursalNombre: string) {
+export function descargarPDFMatriz(data: any, columns: {key: string, label: string}[], startDate: string, endDate: string, sucursalNombre: string) {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-    let y = drawHeader(doc, 'Matriz de Ventas por Día', `${sucursalNombre}  •  ${startDate} al ${endDate}`);
+    let y = drawHeader(doc, 'Matriz de Ventas', `${sucursalNombre}  •  ${startDate} al ${endDate}`);
 
-    const shortDates = dateList.map(d => {
-        const p = d.split('-');
-        return `${p[2]}/${p[1]}`;
-    });
+    const shortDates = columns.map(c => c.label);
 
     const head = [['Producto', ...shortDates, 'Total']];
-    const body = (data?.products || []).map((p: any) => {
+    const body = data.map((p: any) => {
         let total = 0;
-        const dayCells = dateList.map(d => {
-            const qty = p.days[d] || 0;
+        const dayCells = columns.map(c => {
+            const qty = p.aggs[c.key] || 0;
             total += qty;
             return qty > 0 ? qty.toString() : '-';
         });
@@ -313,7 +313,7 @@ export function descargarPDFMatriz(data: any, dateList: string[], startDate: str
         alternateRowStyles: { fillColor: C.light },
         columnStyles: {
             0: { cellWidth: 50, fontStyle: 'bold' },
-            [dateList.length + 1]: { fillColor: [238, 242, 255], textColor: C.primary, fontStyle: 'bold', halign: 'center' },
+            [columns.length + 1]: { fillColor: [238, 242, 255], textColor: C.primary, fontStyle: 'bold', halign: 'center' },
         },
         margin: { left: 10, right: 10 },
     });

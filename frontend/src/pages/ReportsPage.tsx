@@ -4,7 +4,7 @@ import { getGeneralReports } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     BarChart3, Loader2, DollarSign, Package, TrendingUp, Calendar, 
-    AlertTriangle, ShoppingBag, Store, Layers, Building2, FileText, Clock, Users, Scale, Wallet
+    AlertTriangle, ShoppingBag, Store, Layers, Building2, FileText, Clock, Users, Scale, Wallet, Ban
 } from 'lucide-react';
 import DailyReportView from '../components/DailyReportView';
 import FinancialDetailView from '../components/FinancialDetailView';
@@ -15,6 +15,9 @@ import SalesMatrixView from '../components/SalesMatrixView';
 import InventoryReconciliationView from '../components/InventoryReconciliationView';
 import ExpensesReportView from '../components/ExpensesReportView';
 import CashSalesSummaryView from '../components/CashSalesSummaryView';
+import AnulacionesReportView from '../components/AnulacionesReportView';
+import ProductTrendsView from '../components/ProductTrendsView';
+import ProductStatsView from '../components/ProductStatsView';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, BarChart, Bar, Legend
@@ -28,7 +31,7 @@ function cn(...inputs: ClassValue[]) {
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'conciliacion' | 'gastos' | 'caja_ventas';
+type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
@@ -106,9 +109,12 @@ export default function ReportsPage() {
                     { id: 'hourly', label: 'Ventas por Hora', icon: <Clock size={16} /> },
                     { id: 'staff', label: 'Desempeño Staff', icon: <Users size={16} /> },
                     { id: 'matrix', label: 'Matriz de Ventas', icon: <BarChart3 size={16} /> },
+                    { id: 'tendencias', label: 'Tendencias', icon: <TrendingUp size={16} /> },
+                    { id: 'product_stats', label: 'Estadísticas de Producto', icon: <BarChart3 size={16} /> },
                     { id: 'caja_ventas', label: 'Ventas por Caja', icon: <Wallet size={16} /> },
                     { id: 'inventario_valorado', label: 'Inventario Valorado', icon: <Package size={16} /> },
                     { id: 'gastos', label: 'Gastos', icon: <DollarSign size={16} /> },
+                    { id: 'anulaciones', label: 'Anulaciones', icon: <Ban size={16} /> },
                 ].filter(t => !t.hidden).map((tab) => (
                     <button
                         key={tab.id}
@@ -137,12 +143,18 @@ export default function ReportsPage() {
                 <StaffPerformanceView />
             ) : activeTab === 'matrix' ? (
                 <SalesMatrixView />
+            ) : activeTab === 'tendencias' ? (
+                <ProductTrendsView />
+            ) : activeTab === 'product_stats' ? (
+                <ProductStatsView />
             ) : activeTab === 'conciliacion' ? (
                 <InventoryReconciliationView />
             ) : activeTab === 'gastos' ? (
                 <ExpensesReportView />
             ) : activeTab === 'caja_ventas' ? (
                 <CashSalesSummaryView />
+            ) : activeTab === 'anulaciones' ? (
+                <AnulacionesReportView />
             ) : (
                 <>
                     {isLoading ? (

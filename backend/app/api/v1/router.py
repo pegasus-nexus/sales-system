@@ -4,7 +4,7 @@ from app.api.v1.endpoints import (
     caja, categories, upload, analytics,
     sucursales, inventario, pedidos, descuentos,
     price_requests, clientes, price_lists, reports, creditos, b2b,
-    comunidad, traslados, chat, analytics
+    comunidad, traslados, chat, audit, almacenes, recipes, meal_plans, production
 )
 
 api_router = APIRouter()
@@ -12,6 +12,7 @@ api_router = APIRouter()
 api_router.include_router(auth.router, tags=["auth"])
 api_router.include_router(tenants.router, tags=["tenants"])
 api_router.include_router(sucursales.router, tags=["sucursales"])
+api_router.include_router(almacenes.router, prefix="/almacenes", tags=["almacenes"])
 api_router.include_router(users.router, tags=["users"])
 api_router.include_router(products.router, tags=["products"])
 api_router.include_router(inventario.router, tags=["inventario"])
@@ -31,3 +32,7 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(b2b.router, prefix="/b2b", tags=["b2b"])
 api_router.include_router(comunidad.router, prefix="/comunidad", tags=["comunidad"])
 api_router.include_router(traslados.router, prefix="/traslados", tags=["traslados"])
+api_router.include_router(audit.router, prefix="/audit-logs", tags=["audit"])
+api_router.include_router(recipes.router, tags=["recipes"])
+api_router.include_router(meal_plans.router, tags=["meal_plans"])
+api_router.include_router(production.router, tags=["production"])

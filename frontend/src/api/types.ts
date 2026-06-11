@@ -10,11 +10,31 @@ export interface User {
     is_active?: boolean;
 }
 
+export interface WhatsAppSettings {
+    enabled: boolean;
+    provider: string;
+    instance_id?: string;
+    api_token?: string;
+    default_message: string;
+}
+
+export interface TenantSettings {
+    ticket_footer?: string;
+    report_watermark?: string;
+    logo_base64?: string;
+    direccion?: string;
+    telefono?: string;
+    brand_color?: string;
+    whatsapp?: WhatsAppSettings;
+}
+
 export interface Tenant {
     _id: string;
     name: string;
     plan: string;
     is_active: boolean;
+    plan_expires_at?: string;
+    settings?: TenantSettings;
     created_at: string;
 }
 
@@ -29,6 +49,7 @@ export interface TenantUpdate {
     name?: string;
     plan?: string;
     is_active?: boolean;
+    plan_expires_at?: string;
 }
 
 export interface Sucursal {
@@ -53,6 +74,31 @@ export interface SucursalCreate {
     admin_password: string;
 }
 
+export interface Almacen {
+    id?: string;
+    tenant_id: string;
+    sucursal_id: string;
+    nombre: string;
+    ubicacion?: string;
+    is_default?: boolean;
+    is_active?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface AlmacenCreate {
+    nombre: string;
+    ubicacion?: string;
+    is_default?: boolean;
+}
+
+export interface AlmacenUpdate {
+    nombre?: string;
+    ubicacion?: string;
+    is_default?: boolean;
+    is_active?: boolean;
+}
+
 /** Canonical product model matching the backend Product document. */
 export interface Product {
     _id: string;
@@ -69,6 +115,7 @@ export interface Product {
     image_url?: string;
     is_active?: boolean;
     precios_sucursales?: Record<string, number>; // sucursal_id -> branch specific price
+    meal_plan_template_id?: string;
 }
 
 export interface ProductCreate {
@@ -81,6 +128,7 @@ export interface ProductCreate {
     proveedor?: string;
     image_url?: string;
     precios_sucursales?: Record<string, number>;
+    meal_plan_template_id?: string;
 }
 
 export interface ProductUpdate extends Partial<ProductCreate> { }
@@ -101,6 +149,19 @@ export interface AjusteInventario {
     tipo: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
     cantidad: number;
     notas?: string;
+}
+
+export interface AjusteInventarioMasivoItem {
+    producto_id: string;
+    tipo: 'ENTRADA' | 'SALIDA' | 'AJUSTE';
+    cantidad: number;
+}
+
+export interface AjusteInventarioMasivoRequest {
+    sucursal_id: string;
+    almacen_id: string;
+    notas_generales?: string;
+    ajustes: AjusteInventarioMasivoItem[];
 }
 
 export interface InventoryLog {
@@ -134,16 +195,37 @@ export interface PedidoInterno {
     sucursal_id: string;
     sucursal_origen_id?: string;
     sucursal_destino_id?: string;
-    tipo_pedido?: string;
+    tipo_pedido: string;
     estado: 'CREADO' | 'ACEPTADO' | 'DESPACHADO' | 'RECIBIDO' | 'CANCELADO';
     items: PedidoItem[];
     notas?: string;
+    etiquetas_ids?: string[];
     total_mayorista: number;
     created_at: string;
+    aceptado_at?: string;
     despachado_at?: string;
     recibido_at?: string;
-    aceptado_at?: string;
     cancelado_at?: string;
+}
+
+export interface Etiqueta {
+    _id: string;
+    tenant_id: string;
+    nombre: string;
+    color: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface EtiquetaCreate {
+    nombre: string;
+    color: string;
+}
+
+export interface EtiquetaUpdate {
+    nombre?: string;
+    color?: string;
+    is_active?: boolean;
 }
 
 export interface PedidoCreate {
@@ -247,6 +329,7 @@ export interface SaleCreate {
     };
     vendedor_id?: string;
     vendedor_name?: string;
+    send_whatsapp?: boolean;
 }
 
 export interface PagoItem {
@@ -303,6 +386,7 @@ export interface Sale {
         costo_unitario: number;
         descuento_unitario: number;
         subtotal: number;
+        almacen_id?: string;  // Almacén de origen del stock (puede ser undefined en ventas antiguas)
     }[];
     total: number;
     pagos: PagoItem[];
@@ -487,4 +571,104 @@ export interface DemandPredictionResponse {
     trend_percentage: number;
     predictions: DemandPredictionPoint[];
     hourly_today: HourlyComparisson[];
+}
+
+// ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
+
+export type RecipeType = 'PLATO_FINAL' | 'BASE' | 'PROTEINA' | 'TOPPING' | 'SALSAS' | 'BEBIDA' | 'COMPLEMENTO';
+
+export interface RecipeIngredient {
+    _id: string;
+    tenant_id: string;
+    recipe_id: string;
+    producto_id: string;
+    cantidad: number;
+    unidad_medida_receta: string;
+    tipo_almacen_origen: string;
+    es_opcional: boolean;
+    notas?: string;
+    created_at?: string;
+}
+
+export interface RecipeIngredientCreate {
+    producto_id: string;
+    cantidad: number;
+    unidad_medida_receta?: string;
+    tipo_almacen_origen?: string;
+    es_opcional?: boolean;
+    notas?: string;
+}
+
+export interface Recipe {
+    _id: string;
+    tenant_id: string;
+    nombre: string;
+    descripcion?: string;
+    tipo: RecipeType;
+    precio_extra: number;
+    is_active: boolean;
+    created_at: string;
+    ingredientes?: RecipeIngredient[];
+}
+
+export interface RecipeCreate {
+    nombre: string;
+    descripcion?: string;
+    tipo?: RecipeType;
+    precio_extra?: number;
+    ingredientes?: RecipeIngredientCreate[];
+}
+
+export interface MealPlanTemplate {
+    _id: string;
+    tenant_id: string;
+    nombre: string;
+    descripcion?: string;
+    cantidad_comidas: number;
+    dias_vigencia: number;
+    precio_sugerido: number;
+    es_flexible: boolean;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface MealPlanTemplateCreate {
+    nombre: string;
+    descripcion?: string;
+    cantidad_comidas: number;
+    dias_vigencia: number;
+    precio_sugerido?: number;
+    es_flexible?: boolean;
+}
+
+export type MealScheduleStatus = 'PROGRAMADO' | 'ENTREGADO' | 'POSTPERGADO' | 'CANCELADO';
+
+export interface ClientMealPlan {
+    _id: string;
+    tenant_id: string;
+    cliente_id: string;
+    template_id: string;
+    template_name?: string;
+    sale_id?: string;
+    fecha_inicio: string;
+    fecha_fin_estimada: string;
+    comidas_totales: number;
+    comidas_consumidas: number;
+    estado: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO';
+    created_at: string;
+}
+
+export interface MealSchedule {
+    _id: string;
+    tenant_id: string;
+    cliente_id: string;
+    client_name?: string;
+    client_meal_plan_id: string;
+    fecha_programada: string; // YYYY-MM-DD
+    recetas_ids: string[];
+    recipe_names?: string[];
+    estado: MealScheduleStatus;
+    motivo_postergacion?: string;
+    entregado_at?: string;
+    created_at: string;
 }

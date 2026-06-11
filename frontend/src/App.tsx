@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Lock } from 'lucide-react';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
-import AdminDashboard from './pages/AdminDashboard';
+import TenantsAdminPage from './pages/TenantsAdminPage';
+import PlanesAdminPage from './pages/PlanesAdminPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import TenantDashboard from './pages/TenantDashboard';
 import SucursalesPage from './pages/SucursalesPage';
 import CatalogoPage from './pages/CatalogoPage';
@@ -20,13 +23,18 @@ import VentasPage from './pages/VentasPage';
 import ControlQRPage from './pages/ControlQRPage';
 import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
-import CreditosPage from './pages/CreditosPage';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import ClientesPage from './pages/ClientesPage';
+import CreditosPage from './pages/CreditosPage';
+import RecipesPage from './pages/RecipesPage';
+import MealPlansPage from './pages/MealPlansPage';
+import ProductionCalendarPage from './pages/ProductionCalendarPage';
 import ReclamosFabrica from './pages/b2b/ReclamosFabrica';
 import ComunidadPage from './pages/ComunidadPage';
+import ConfiguracionPage from './pages/ConfiguracionPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 import { useAuthStore } from './store/authStore';
-import { getMyFeatures } from './api/api';
+import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
 import ChatbotAnalitico from './components/ChatbotAnalitico';
 import { ErrorModalProvider, useErrorModal } from './components/ErrorModal';
@@ -57,22 +65,62 @@ function ErrorEventBridge() {
  * Se ejecuta una sola vez por sesión, persistido en el store.
  */
 function FeaturesFetcher() {
-  const { isAuthenticated, setFeatures, features } = useAuthStore();
+  const { isAuthenticated, setFeatures, features, setTenantSettings, setPlanExpiresAt } = useAuthStore();
 
   useEffect(() => {
-    // Solo cargar si está autenticado y aún no tiene features cargados
     if (!isAuthenticated()) return;
-    if (features.length > 0) return;
+    
+    if (features.length === 0) {
+      getMyFeatures()
+        .then(res => setFeatures(res.features, res.plan_name))
+        .catch(() => {});
+    }
 
-    getMyFeatures()
-      .then(res => setFeatures(res.features, res.plan_name))
-      .catch(() => {
-        // Error de red → ignorar, el fallback en hasFeature() retorna true
-      });
+    // Siempre refrescar settings al iniciar
+    getMyTenant()
+      .then(tenant => {
+          if (tenant.settings) {
+              setTenantSettings(tenant.settings);
+              if (tenant.settings.brand_color) {
+                  document.documentElement.style.setProperty('--brand-color', tenant.settings.brand_color);
+              }
+          }
+          if (tenant.plan_expires_at !== undefined) {
+              setPlanExpiresAt(tenant.plan_expires_at);
+          }
+      })
+      .catch(() => {});
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated()]);
 
   return null;
+}
+
+function SoftLockBlocker() {
+    const { isAuthenticated, planExpiresAt, role, logout } = useAuthStore();
+    if (!isAuthenticated() || role === 'SUPERADMIN' || !planExpiresAt) return null;
+
+    // Check if expired
+    const today = new Date();
+    // planExpiresAt is full ISO from backend
+    const expiry = new Date(planExpiresAt);
+    if (today <= expiry) return null;
+
+    return (
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
+                <div className="w-24 h-24 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-6 border-8 border-red-100/50">
+                    <Lock size={40} />
+                </div>
+                <h1 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Acceso Bloqueado</h1>
+                <p className="text-gray-500 mb-8 font-medium leading-relaxed">Tu suscripción ha finalizado el <strong className="text-gray-900">{expiry.toLocaleDateString()}</strong>. Por favor, contacta con tu proveedor para renovar tu plan y recuperar el acceso a tu información.</p>
+                <button onClick={() => { logout(); window.location.href = '/login'; }} className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors shadow-lg shadow-black/10">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    );
 }
 
 // ─── Route Guard (autenticación + rol) ───────────────────────────────────────
@@ -127,9 +175,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ErrorModalProvider>
         <ErrorEventBridge />
+        <FeaturesFetcher />
+        <SoftLockBlocker />
         <Toaster position="top-right" richColors theme="light" />
       <BrowserRouter>
-        <FeaturesFetcher />
         <Routes>
           {/* 1. Ruta de Login fuera del Layout */}
           <Route path="/login" element={<LoginPage />} />
@@ -140,11 +189,23 @@ function App() {
               <Routes>
                 <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
 
-                <Route path="/admin" element={
+                {/* SuperAdmin */}
+                <Route path="/admin/dashboard" element={
                   <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                    <AdminDashboard />
+                    <AdminDashboardPage />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/empresas" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                    <TenantsAdminPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/planes" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                    <PlanesAdminPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
                 <Route path="/dashboard" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
@@ -229,6 +290,23 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                {/* Dark Kitchen */}
+                <Route path="/recetas" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                    <RecipesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/planes-comida" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                    <MealPlansPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/produccion" element={
+                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
+                    <ProductionCalendarPage />
+                  </ProtectedRoute>
+                } />
+
                 {/* B2B / Reclamos Fábrica */}
                 <Route path="/b2b/mermas" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
@@ -240,6 +318,20 @@ function App() {
                 <Route path="/comunidad" element={
                   <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                     <ComunidadPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Configuración */}
+                <Route path="/configuracion" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                    <ConfiguracionPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Auditoria */}
+                <Route path="/auditoria" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN']}>
+                    <AuditLogsPage />
                   </ProtectedRoute>
                 } />
 

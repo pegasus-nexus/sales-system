@@ -18,7 +18,7 @@ async def registrar_merma(
 ):
     """
     Registra el ingreso de mercadería vencida desde un supermercado.
-    Calcula automáticamente la deuda de Taboada basada en costo unitario.
+    Calcula automáticamente la deuda de la Fábrica Matriz basada en costo unitario.
     Cruza el inventario para reponer mercadería fresca.
     """
     tenant_id = current_user.tenant_id or "default"
@@ -40,7 +40,7 @@ async def listar_mermas(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Obtiene la lista de Mermas/Reclamos hacia Fábrica Taboada.
+    Obtiene la lista de Mermas/Reclamos hacia Fábrica Matriz.
     """
     tenant_id = current_user.tenant_id or "default"
     query = {"tenant_id": tenant_id}
@@ -57,10 +57,11 @@ async def listar_mermas(
     
     # Calcular sumatoria global pendiente
     
-    deuda_pendiente_obj = await NotaDevolucionMerma.aggregate([
+    cursor = NotaDevolucionMerma.get_pymongo_collection().aggregate([
         {"$match": {"tenant_id": tenant_id, "estado_reclamo": "PENDIENTE"}},
         {"$group": {"_id": None, "total": {"$sum": "$costo_total_merma"}}}
-    ]).to_list()
+    ])
+    deuda_pendiente_obj = await cursor.to_list(length=None)
     deuda_pendiente = float(str(deuda_pendiente_obj[0]["total"])) if deuda_pendiente_obj else 0.0
 
     return {
@@ -77,7 +78,7 @@ async def compensar_merma(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Marca un reporte de merma como pagado o devuelto por la fábrica Taboada, 
+    Marca un reporte de merma como pagado o devuelto por la fábrica matriz, 
     bajando así la deuda acumulada.
     """
     tenant_id = current_user.tenant_id or "default"
