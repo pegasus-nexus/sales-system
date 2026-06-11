@@ -12,20 +12,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Start MongoDB using Docker
+      run: |
+        docker run -d -p 27017:27017 --name mongodb_container mongo:6.0
+        echo "Waiting for MongoDB to initialize..."
+        sleep 15
+        docker ps
+        docker logs mongodb_container
 
     - name: Set up Python
       uses: actions/setup-python@v4
