@@ -12,15 +12,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
-    - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@1.11.0
-      with:
-        mongodb-version: '6.0'
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,6 +43,5 @@ jobs:
         MONGO_URI: "mongodb://127.0.0.1:27017/salessystem_test"
         PYTHONPATH: "backend"
       run: |
-        sleep 10
         cd backend
         pytest tests/ -v
