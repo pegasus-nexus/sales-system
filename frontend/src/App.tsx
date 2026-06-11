@@ -23,8 +23,11 @@ import VentasPage from './pages/VentasPage';
 import ControlQRPage from './pages/ControlQRPage';
 import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
-import CreditosPage from './pages/CreditosPage';
 import ClientesPage from './pages/ClientesPage';
+import CreditosPage from './pages/CreditosPage';
+import RecipesPage from './pages/RecipesPage';
+import MealPlansPage from './pages/MealPlansPage';
+import ProductionCalendarPage from './pages/ProductionCalendarPage';
 import ReclamosFabrica from './pages/b2b/ReclamosFabrica';
 import ComunidadPage from './pages/ComunidadPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
@@ -278,6 +281,23 @@ function App() {
                 <Route path="/clientes" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <ClientesPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Dark Kitchen */}
+                <Route path="/recetas" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                    <RecipesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/planes-comida" element={
+                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                    <MealPlansPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/produccion" element={
+                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
+                    <ProductionCalendarPage />
                   </ProtectedRoute>
                 } />
 

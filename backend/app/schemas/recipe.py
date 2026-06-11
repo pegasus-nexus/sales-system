@@ -29,6 +29,7 @@ class RecipeUpdate(BaseModel):
     tipo: Optional[RecipeType] = None
     precio_extra: Optional[float] = None
     is_active: Optional[bool] = None
+    ingredientes: Optional[List[RecipeIngredientCreate]] = None
 
 class RecipeIngredientResponse(BaseModel):
     id: PyObjectId = Field(..., alias="_id")

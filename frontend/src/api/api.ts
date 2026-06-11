@@ -730,3 +730,54 @@ export const getProductStatsReport = (data: ProductStatsRequest) => {
     return client<any[]>(`/reports/product-stats`, { method: 'POST', body: data });
 };
 
+// ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
+
+import type {
+    Recipe, RecipeCreate, MealPlanTemplate, MealPlanTemplateCreate,
+    ClientMealPlan, MealSchedule, MealScheduleStatus
+} from './types';
+
+// Recipes CRUD
+export const getRecipes = () => client<Recipe[]>('/recipes');
+export const getRecipeById = (id: string) => client<Recipe>(`/recipes/${id}`);
+export const createRecipe = (data: RecipeCreate) => client<Recipe>('/recipes', { method: 'POST', body: data });
+export const updateRecipe = (id: string, data: Partial<RecipeCreate>) => client<Recipe>(`/recipes/${id}`, { method: 'PUT', body: data });
+export const deleteRecipe = (id: string) => client<{message: string}>(`/recipes/${id}`, { method: 'DELETE' });
+
+// Meal Plan Templates CRUD
+export const getMealPlanTemplates = () => client<MealPlanTemplate[]>('/meal-plans/templates');
+export const createMealPlanTemplate = (data: MealPlanTemplateCreate) => client<MealPlanTemplate>('/meal-plans/templates', { method: 'POST', body: data });
+export const updateMealPlanTemplate = (id: string, data: Partial<MealPlanTemplateCreate>) => client<MealPlanTemplate>(`/meal-plans/templates/${id}`, { method: 'PUT', body: data });
+export const deleteMealPlanTemplate = (id: string) => client<{message: string}>(`/meal-plans/templates/${id}`, { method: 'DELETE' });
+
+// Client Plan Assignments
+export const getClientMealPlans = (clienteId: string) => client<ClientMealPlan[]>(`/clientes/${clienteId}/meal-plans`);
+export const assignPlanToClient = (clienteId: string, templateId: string, fechaInicio?: string) => 
+    client<ClientMealPlan>(`/clientes/${clienteId}/meal-plans`, { 
+        method: 'POST', 
+        body: { template_id: templateId, fecha_inicio: fechaInicio } 
+    });
+
+// Production Schedules
+export const getDailyProductionReport = (fecha: string) => 
+    client<{schedules_count: number; ingredients: any[]}>(`/production/daily-report?fecha=${fecha}`);
+
+export const getMealSchedules = (params: { cliente_id?: string; fecha_programada?: string; estado?: string; parent_id?: string }) => {
+    const qParams = new URLSearchParams();
+    if (params.cliente_id) qParams.set('cliente_id', params.cliente_id);
+    if (params.fecha_programada) qParams.set('fecha_programada', params.fecha_programada);
+    if (params.parent_id) qParams.set('parent_id', params.parent_id); // Compatibility / just in case
+    if (params.estado) qParams.set('estado', params.estado);
+    const qs = qParams.toString();
+    return client<MealSchedule[]>(`/production/schedules${qs ? '?' + qs : ''}`);
+};
+
+export const createMealSchedule = (data: { cliente_id: string; client_meal_plan_id: string; fecha_programada: string; recetas_ids: string[] }) =>
+    client<MealSchedule>('/production/schedules', { method: 'POST', body: data });
+
+export const updateMealSchedule = (id: string, data: { recetas_ids?: string[]; estado?: MealScheduleStatus; motivo_postergacion?: string }) =>
+    client<MealSchedule>(`/production/schedules/${id}`, { method: 'PUT', body: data });
+
+export const markScheduleAsDelivered = (id: string) =>
+    client<MealSchedule>(`/production/schedules/${id}/deliver`, { method: 'POST' });
+
