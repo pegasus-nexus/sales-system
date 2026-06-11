@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.domain.models.meal_plan_template import MealPlanTemplate
 from app.domain.models.user import User
