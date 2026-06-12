@@ -413,8 +413,8 @@ async def get_movimientos_inventario(
 
     # Soporte para búsqueda por texto en varios campos del log
     if search:
-        # Escapar caracteres especiales como ( ) + * para que se busquen literalmente y no rompan el motor de regex
-        safe_search = re.escape(search)
+        # Escapar caracteres especiales y luego des-escapar el espacio porque MongoDB regex no maneja bien '\ '
+        safe_search = re.escape(search).replace("\\ ", " ")
         query["$or"] = [
             {"descripcion": {"$regex": safe_search, "$options": "i"}},
             {"notas": {"$regex": safe_search, "$options": "i"}},
@@ -472,7 +472,7 @@ async def exportar_movimientos(
     if producto_id: query["producto_id"] = producto_id
     if tipo_movimiento: query["tipo_movimiento"] = tipo_movimiento
     if search:
-        safe_search = re.escape(search)
+        safe_search = re.escape(search).replace("\\ ", " ")
         query["$or"] = [
             {"descripcion": {"$regex": safe_search, "$options": "i"}},
             {"notas": {"$regex": safe_search, "$options": "i"}},
