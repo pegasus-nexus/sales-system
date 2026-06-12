@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, createEmployee, updateEmployee, toggleEmployeeStatus } from '../api/api';
-import { Users, Plus, Loader2, X, KeyRound, AlertTriangle, Copy, Check, Edit2, Trash2 } from 'lucide-react';
+import { getUsers, createEmployee, updateEmployee, toggleEmployeeStatus, impersonateUser, getMe } from '../api/api';
+import { Users, Plus, Loader2, X, KeyRound, AlertTriangle, Copy, Check, Edit2, Trash2, LogIn } from 'lucide-react';
 import type { EmployeeCreate } from '../api/types';
 import PasswordField from '../components/PasswordField';
 import { toast } from 'sonner';
 import Pagination from '../components/Pagination';
+import { useAuthStore } from '../store/authStore';
 
 interface NewCredentials {
     username: string;
@@ -16,6 +17,7 @@ interface NewCredentials {
 const BLANK: EmployeeCreate = { username: '', email: '', password: '', full_name: '', role: 'CAJERO' };
 
 export default function UsersPage() {
+    const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState<EmployeeCreate>(BLANK);
@@ -82,6 +84,23 @@ export default function UsersPage() {
         }
     });
 
+    const impersonateMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            const { access_token } = await impersonateUser(userId);
+            useAuthStore.setState({ token: access_token });
+            const fetchedUser = await getMe();
+            useAuthStore.getState().login(access_token, fetchedUser);
+            return access_token;
+        },
+        onSuccess: () => {
+            toast.success("Sesión iniciada. Redirigiendo...");
+            window.location.href = '/dashboard';
+        },
+        onError: () => {
+            toast.error("No tienes permiso para entrar como este usuario");
+        }
+    });
+
     return (
         <div className="max-w-7xl mx-auto px-3 py-4 md:p-4 space-y-4 pb-20 md:pb-4">
             {/* Header */}
@@ -144,6 +163,15 @@ export default function UsersPage() {
                                         className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 ${emp.is_active === false ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
                                         {emp.is_active === false ? <><Check size={14} /> Reactivar</> : <><Trash2 size={14} /> Desactivar</>}
                                     </button>
+                                    {(user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN') && (
+                                        <button 
+                                            onClick={() => impersonateMutation.mutate(emp._id)}
+                                            disabled={impersonateMutation.isPending}
+                                            title="Entrar como este usuario"
+                                            className="flex-none flex items-center justify-center p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors disabled:opacity-50">
+                                            {impersonateMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}

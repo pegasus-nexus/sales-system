@@ -10,6 +10,7 @@ from app.infrastructure.auth import (
 )
 from fastapi import Request
 from app.infrastructure.core.rate_limit import limiter
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -59,3 +60,22 @@ async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_cu
         data={"sub": admin_user.username, "role": admin_user.role}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": admin_user.role}
+
+@router.post("/impersonate/user/{user_id}")
+async def impersonate_user(user_id: str, current_user: User = Depends(get_current_active_user)):
+    """[ADMIN_MATRIZ] Logs in as a specific user within the same tenant."""
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
+        raise HTTPException(status_code=403, detail="Not authorized to impersonate users")
+        
+    target_user = await User.get(ObjectId(user_id))
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if current_user.role != UserRole.SUPERADMIN and target_user.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Cannot impersonate user from another tenant")
+        
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": target_user.username, "role": target_user.role}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "role": target_user.role}
