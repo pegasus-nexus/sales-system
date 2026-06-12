@@ -24,6 +24,7 @@ import ControlQRPage from './pages/ControlQRPage';
 import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
 import ClientesPage from './pages/ClientesPage';
+import ProveedoresPage from './pages/ProveedoresPage';
 import CreditosPage from './pages/CreditosPage';
 import RecipesPage from './pages/RecipesPage';
 import MealPlansPage from './pages/MealPlansPage';
@@ -281,6 +282,13 @@ function App() {
                 <Route path="/clientes" element={
                   <ProtectedRoute allowedRoles={ALL_STAFF}>
                     <ClientesPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Proveedores */}
+                <Route path="/proveedores" element={
+                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
+                    <ProveedoresPage />
                   </ProtectedRoute>
                 } />
 

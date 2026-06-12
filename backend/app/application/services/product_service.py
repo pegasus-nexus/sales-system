@@ -24,7 +24,7 @@ async def _enrich(product: Product) -> Product:
 class ProductService:
     @staticmethod
     async def create_product(data: ProductCreate, current_user: User) -> Product:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="Not authorized")
     
         tenant_id = current_user.tenant_id or "default"
@@ -75,7 +75,7 @@ class ProductService:
     
     @staticmethod
     async def update_product(product_id: str, data: ProductUpdate, current_user: User) -> Product:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="Not authorized")
     
         product = await Product.get(product_id)
@@ -153,7 +153,7 @@ class ProductService:
     
     @staticmethod
     async def deactivate_product(product_id: str, current_user: User):
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="Not authorized")
         product = await Product.get(product_id)
         if not product or (current_user.role != UserRole.SUPERADMIN and product.tenant_id != current_user.tenant_id):

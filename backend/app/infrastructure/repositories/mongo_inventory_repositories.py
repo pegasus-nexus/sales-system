@@ -12,10 +12,9 @@ class MongoAlmacenRepository(MongoBaseRepository[Almacen], IAlmacenRepository):
     async def get_by_sucursal(self, tenant_id: str, sucursal_id: str, session=None) -> List[Almacen]:
         query = self.model_class.find(
             self.model_class.tenant_id == tenant_id,
-            self.model_class.sucursal_id == sucursal_id
+            self.model_class.sucursal_id == sucursal_id,
+            session=session
         )
-        if session:
-            return await query.to_list(session=session)
         return await query.to_list()
 
 class MongoInventoryRepository(MongoBaseRepository[Inventario], IInventoryRepository):

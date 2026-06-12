@@ -210,6 +210,9 @@ export const createProduct = (data: ProductCreate) => client<Product>('/products
 export const updateProduct = (id: string, data: ProductCreate) =>
     client<Product>(`/products/${id}`, { method: 'PUT', body: data });
 
+export const deactivateProduct = (id: string) =>
+    client<{ message: string }>(`/products/${id}`, { method: 'DELETE' });
+
 export const exportProductTemplate = async () => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
@@ -777,7 +780,27 @@ export const createMealSchedule = (data: { cliente_id: string; client_meal_plan_
 
 export const updateMealSchedule = (id: string, data: { recetas_ids?: string[]; estado?: MealScheduleStatus; motivo_postergacion?: string }) =>
     client<MealSchedule>(`/production/schedules/${id}`, { method: 'PUT', body: data });
-
 export const markScheduleAsDelivered = (id: string) =>
     client<MealSchedule>(`/production/schedules/${id}/deliver`, { method: 'POST' });
 
+// ─── Proveedores ──────────────────────────────────────────────────────────
+import type { Proveedor } from './types';
+
+export const getProveedores = (page: number = 1, limit: number = 50, q: string = '') => {
+    const skip = (page - 1) * limit;
+    let url = `/proveedores?skip=${skip}&limit=${limit}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    return client<Proveedor[]>(url);
+};
+
+export const getProveedorById = (id: string) => 
+    client<Proveedor>(`/proveedores/${id}`);
+
+export const createProveedor = (data: Partial<Proveedor>) => 
+    client<Proveedor>('/proveedores', { method: 'POST', body: data });
+
+export const updateProveedor = (id: string, data: Partial<Proveedor>) => 
+    client<Proveedor>(`/proveedores/${id}`, { method: 'PUT', body: data });
+
+export const deleteProveedor = (id: string) => 
+    client<{ message: string }>(`/proveedores/${id}`, { method: 'DELETE' });
