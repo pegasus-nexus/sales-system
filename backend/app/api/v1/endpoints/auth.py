@@ -10,7 +10,7 @@ from app.infrastructure.auth import (
 )
 from fastapi import Request
 from app.infrastructure.core.rate_limit import limiter
-from bson import ObjectId
+from beanie import PydanticObjectId
 
 router = APIRouter()
 
@@ -93,7 +93,7 @@ async def impersonate_user(user_id: str, current_user: User = Depends(get_curren
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized to impersonate users")
         
-    target_user = await User.get(ObjectId(user_id))
+    target_user = await User.get(PydanticObjectId(user_id))
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
         

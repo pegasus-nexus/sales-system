@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, createEmployee, updateEmployee, toggleEmployeeStatus, impersonateUser, getMe } from '../api/api';
+import { getUsers, createEmployee, updateEmployee, toggleEmployeeStatus, impersonateUser, getMe, getSucursales } from '../api/api';
 import { Users, Plus, Loader2, X, KeyRound, AlertTriangle, Copy, Check, Edit2, Trash2, LogIn } from 'lucide-react';
 import type { EmployeeCreate } from '../api/types';
 import PasswordField from '../components/PasswordField';
@@ -30,12 +30,24 @@ export default function UsersPage() {
     const ITEMS_PER_PAGE = 12;
 
     const { data: employees, isLoading } = useQuery({ queryKey: ['employees'], queryFn: getUsers });
+    const { data: sucursales } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales, enabled: user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN' });
 
     const paginatedEmployees = useMemo(() => {
         if (!employees) return [];
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         return employees.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     }, [employees, currentPage]);
+
+    const groupedEmployees = useMemo(() => {
+        if (!employees) return {};
+        const groups: Record<string, any[]> = {};
+        employees.forEach(emp => {
+            const sid = emp.sucursal_id || 'CENTRAL';
+            if (!groups[sid]) groups[sid] = [];
+            groups[sid].push(emp);
+        });
+        return groups;
+    }, [employees]);
 
     const passwordsMatch = form.password === confirmPassword;
     const canSubmit = form.password.length >= 8 && passwordsMatch;
@@ -94,7 +106,7 @@ export default function UsersPage() {
         },
         onSuccess: () => {
             toast.success("Sesión iniciada. Redirigiendo...");
-            window.location.href = '/dashboard';
+            window.location.href = '/';
         },
         onError: () => {
             toast.error("No tienes permiso para entrar como este usuario");
@@ -125,66 +137,123 @@ export default function UsersPage() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {paginatedEmployees.map(emp => (
-                            <div key={emp._id} className={`bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex flex-col gap-4 ${emp.is_active === false ? 'opacity-60 grayscale' : ''}`}>
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${emp.role === 'SUPERVISOR' ? 'bg-purple-50 text-purple-600' : emp.role === 'VENDEDOR' ? 'bg-amber-50 text-amber-600' : emp.role === 'FACTURADOR' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'}`}>
-                                            <Users size={20} />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">{emp.full_name ?? emp.username}</h3>
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-sm text-gray-500">@{emp.username}</p>
-                                                <span className={`text-[10px] font-bold px-1.5 rounded uppercase ${emp.role === 'VENDEDOR' ? 'bg-amber-100 text-amber-700' : emp.role === 'SUPERVISOR' ? 'bg-purple-100 text-purple-700' : emp.role === 'FACTURADOR' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                    {emp.role}
-                                                </span>
-                                            </div>
+                    {user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN' ? (
+                        <div className="space-y-8">
+                            {Object.entries(groupedEmployees).map(([sucursalId, emps]) => {
+                                const sucursalName = sucursales?.find((s: any) => s._id === sucursalId)?.nombre || (sucursalId === 'CENTRAL' ? 'Matriz Central' : 'Cargando...');
+                                return (
+                                    <div key={sucursalId} className="space-y-4">
+                                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2">{sucursalName}</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            {emps.map(emp => (
+                                                <div key={emp._id} className={`bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex flex-col gap-4 ${emp.is_active === false ? 'opacity-60 grayscale' : ''}`}>
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${emp.role === 'SUPERVISOR' ? 'bg-purple-50 text-purple-600' : emp.role === 'VENDEDOR' ? 'bg-amber-50 text-amber-600' : emp.role === 'FACTURADOR' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                                <Users size={20} />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-semibold text-gray-900">{emp.full_name ?? emp.username}</h3>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm text-gray-500">@{emp.username}</p>
+                                                                    <span className={`text-[10px] font-bold px-1.5 rounded uppercase ${emp.role === 'VENDEDOR' ? 'bg-amber-100 text-amber-700' : emp.role === 'SUPERVISOR' ? 'bg-purple-100 text-purple-700' : emp.role === 'FACTURADOR' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                        {emp.role}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase shrink-0 ${emp.is_active === false ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                                            {emp.is_active === false ? 'Inactivo' : 'Activo'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
+                                                        <button 
+                                                            onClick={() => { 
+                                                                setEditingEmployee(emp); 
+                                                                setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
+                                                                setConfirmPassword(''); 
+                                                            }} 
+                                                            className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
+                                                            <Edit2 size={14} /> Editar
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => toggleStatusMutation.mutate({ id: emp._id, isActive: emp.is_active === false ? true : false })}
+                                                            disabled={toggleStatusMutation.isPending}
+                                                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 ${emp.is_active === false ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
+                                                            {emp.is_active === false ? <><Check size={14} /> Reactivar</> : <><Trash2 size={14} /> Desactivar</>}
+                                                        </button>
+                                                        {(user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN') && (
+                                                            <button 
+                                                                onClick={() => impersonateMutation.mutate(emp._id)}
+                                                                disabled={impersonateMutation.isPending}
+                                                                title="Entrar como este usuario"
+                                                                className="flex-none flex items-center justify-center p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors disabled:opacity-50">
+                                                                {impersonateMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase shrink-0 ${emp.is_active === false ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                        {emp.is_active === false ? 'Inactivo' : 'Activo'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
-                                    <button 
-                                        onClick={() => { 
-                                            setEditingEmployee(emp); 
-                                            setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
-                                            setConfirmPassword(''); 
-                                        }} 
-                                        className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
-                                        <Edit2 size={14} /> Editar
-                                    </button>
-                                    <button 
-                                        onClick={() => toggleStatusMutation.mutate({ id: emp._id, isActive: emp.is_active === false ? true : false })}
-                                        disabled={toggleStatusMutation.isPending}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 ${emp.is_active === false ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
-                                        {emp.is_active === false ? <><Check size={14} /> Reactivar</> : <><Trash2 size={14} /> Desactivar</>}
-                                    </button>
-                                    {(user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN') && (
-                                        <button 
-                                            onClick={() => impersonateMutation.mutate(emp._id)}
-                                            disabled={impersonateMutation.isPending}
-                                            title="Entrar como este usuario"
-                                            className="flex-none flex items-center justify-center p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors disabled:opacity-50">
-                                            {impersonateMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
-                                        </button>
-                                    )}
-                                </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {paginatedEmployees.map(emp => (
+                                    <div key={emp._id} className={`bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition-shadow flex flex-col gap-4 ${emp.is_active === false ? 'opacity-60 grayscale' : ''}`}>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${emp.role === 'SUPERVISOR' ? 'bg-purple-50 text-purple-600' : emp.role === 'VENDEDOR' ? 'bg-amber-50 text-amber-600' : emp.role === 'FACTURADOR' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                    <Users size={20} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-900">{emp.full_name ?? emp.username}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-sm text-gray-500">@{emp.username}</p>
+                                                        <span className={`text-[10px] font-bold px-1.5 rounded uppercase ${emp.role === 'VENDEDOR' ? 'bg-amber-100 text-amber-700' : emp.role === 'SUPERVISOR' ? 'bg-purple-100 text-purple-700' : emp.role === 'FACTURADOR' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                            {emp.role}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase shrink-0 ${emp.is_active === false ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                                {emp.is_active === false ? 'Inactivo' : 'Activo'}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50">
+                                            <button 
+                                                onClick={() => { 
+                                                    setEditingEmployee(emp); 
+                                                    setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
+                                                    setConfirmPassword(''); 
+                                                }} 
+                                                className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
+                                                <Edit2 size={14} /> Editar
+                                            </button>
+                                            <button 
+                                                onClick={() => toggleStatusMutation.mutate({ id: emp._id, isActive: emp.is_active === false ? true : false })}
+                                                disabled={toggleStatusMutation.isPending}
+                                                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 ${emp.is_active === false ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
+                                                {emp.is_active === false ? <><Check size={14} /> Reactivar</> : <><Trash2 size={14} /> Desactivar</>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                    
-                    {employees && employees.length > ITEMS_PER_PAGE && (
-                        <Pagination 
-                            currentPage={currentPage}
-                            totalPages={Math.ceil(employees.length / ITEMS_PER_PAGE)}
-                            onPageChange={setCurrentPage}
-                            totalItems={employees.length}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                        />
+                            
+                            {employees && employees.length > ITEMS_PER_PAGE && (
+                                <Pagination 
+                                    currentPage={currentPage}
+                                    totalPages={Math.ceil(employees.length / ITEMS_PER_PAGE)}
+                                    onPageChange={setCurrentPage}
+                                    totalItems={employees.length}
+                                    itemsPerPage={ITEMS_PER_PAGE}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
             )}
