@@ -98,6 +98,10 @@ export default function UsersPage() {
 
     const impersonateMutation = useMutation({
         mutationFn: async (userId: string) => {
+            const currentToken = useAuthStore.getState().token;
+            if (currentToken && !useAuthStore.getState().originalToken) {
+                useAuthStore.getState().setOriginalToken(currentToken);
+            }
             const { access_token } = await impersonateUser(userId);
             useAuthStore.setState({ token: access_token });
             const fetchedUser = await getMe();

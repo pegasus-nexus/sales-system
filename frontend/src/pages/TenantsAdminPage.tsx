@@ -143,6 +143,11 @@ export default function TenantsAdminPage() {
 
     const impersonateMutation = useMutation({
         mutationFn: async (tenantId: string) => {
+            const currentToken = useAuthStore.getState().token;
+            if (currentToken && !useAuthStore.getState().originalToken) {
+                useAuthStore.getState().setOriginalToken(currentToken);
+            }
+            
             const { access_token } = await impersonateTenant(tenantId);
             useAuthStore.setState({ token: access_token });
             const user = await getMe();

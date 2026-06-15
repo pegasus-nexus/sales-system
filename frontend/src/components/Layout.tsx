@@ -159,8 +159,50 @@ export default function Layout({ children }: LayoutProps) {
                 </aside>
             )}
 
+            {/* ── Exit Impersonation Banner ── */}
+            {useAuthStore(state => state.originalToken) && (
+                <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
+                    <span className="text-xs font-medium truncate pr-2">Viendo como <strong>{user?.username}</strong></span>
+                    <button 
+                        onClick={() => {
+                            const store = useAuthStore.getState();
+                            if (store.originalToken) {
+                                store.login(store.originalToken, store.user as any); // Temporarily set to avoid crash, will reload
+                                store.setOriginalToken(null);
+                                store.setFeatures([]);
+                                window.location.href = '/';
+                            }
+                        }}
+                        className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition-colors whitespace-nowrap"
+                    >
+                        Volver
+                    </button>
+                </div>
+            )}
+
             {/* ── Main Content Shell ── */}
-            <main className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a] md:pr-4 md:py-4">
+            <main className={cn("flex-1 flex flex-col min-w-0 bg-[#0a0a0a] md:pr-4 md:py-4", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
+                {/* Desktop Exit Impersonation Banner */}
+                {useAuthStore(state => state.originalToken) && (
+                    <div className="hidden md:flex mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
+                        <span className="text-sm font-medium">Estás navegando la cuenta como <strong>{user?.username}</strong></span>
+                        <button 
+                            onClick={() => {
+                                const store = useAuthStore.getState();
+                                if (store.originalToken) {
+                                    store.login(store.originalToken, store.user as any);
+                                    store.setOriginalToken(null);
+                                    store.setFeatures([]);
+                                    window.location.href = '/';
+                                }
+                            }}
+                            className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"
+                        >
+                            Volver a mi cuenta original
+                        </button>
+                    </div>
+                )}
+                
                 <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
                     {/* Mobile Top Bar (hidden for CAJERO) */}
                     {role !== 'CAJERO' && (
