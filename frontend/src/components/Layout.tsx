@@ -11,6 +11,7 @@ import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getMe } from '../api/api';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -164,15 +165,24 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
                     <span className="text-xs font-medium truncate pr-2">Viendo como <strong>{user?.username}</strong></span>
                     <button 
-                        onClick={() => {
-                            const store = useAuthStore.getState();
-                            if (store.originalToken) {
-                                store.login(store.originalToken, store.user as any); // Temporarily set to avoid crash, will reload
-                                store.setOriginalToken(null);
-                                store.setFeatures([]);
-                                window.location.href = '/';
-                            }
-                        }}
+                            onClick={async () => {
+                                const store = useAuthStore.getState();
+                                if (store.originalToken) {
+                                    try {
+                                        // Temporarily override the API token
+                                        useAuthStore.setState({ token: store.originalToken });
+                                        // Fetch the real original user
+                                        const originalUser = await getMe();
+                                        store.login(store.originalToken, originalUser);
+                                        store.setOriginalToken(null);
+                                        store.setFeatures([]);
+                                        window.location.href = '/';
+                                    } catch (e) {
+                                        store.logout();
+                                        window.location.href = '/login';
+                                    }
+                                }
+                            }}
                         className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition-colors whitespace-nowrap"
                     >
                         Volver
@@ -187,13 +197,22 @@ export default function Layout({ children }: LayoutProps) {
                     <div className="hidden md:flex mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
                         <span className="text-sm font-medium">Estás navegando la cuenta como <strong>{user?.username}</strong></span>
                         <button 
-                            onClick={() => {
+                            onClick={async () => {
                                 const store = useAuthStore.getState();
                                 if (store.originalToken) {
-                                    store.login(store.originalToken, store.user as any);
-                                    store.setOriginalToken(null);
-                                    store.setFeatures([]);
-                                    window.location.href = '/';
+                                    try {
+                                        // Temporarily override the API token
+                                        useAuthStore.setState({ token: store.originalToken });
+                                        // Fetch the real original user
+                                        const originalUser = await getMe();
+                                        store.login(store.originalToken, originalUser);
+                                        store.setOriginalToken(null);
+                                        store.setFeatures([]);
+                                        window.location.href = '/';
+                                    } catch (e) {
+                                        store.logout();
+                                        window.location.href = '/login';
+                                    }
                                 }
                             }}
                             className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"
