@@ -21,16 +21,19 @@ router = APIRouter()
 @router.get("/general")
 async def get_general_reports(
     days: int = 30,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    sucursal_id: Optional[str] = "all",
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ) -> Dict[str, Any]:
     """
     Returns general analytics data (KPIs, sales by branch, top products, daily evolution)
     Only accessible by MATRIZ admins. Over the last `days` days.
     """
-    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver los reportes.")
         
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     # 00:00:00 of X days ago in Bolivia time, converted to UTC
     now_bo = datetime.now(BOLIVIA_TZ)
@@ -43,7 +46,7 @@ async def get_general_reports(
     kpis_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id,
+                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
                 "anulada": False,
                 "created_at": {"$gte": start_date}
             }
@@ -104,7 +107,7 @@ async def get_general_reports(
     sucursal_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id,
+                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
                 "anulada": False,
                 "created_at": {"$gte": start_date}
             }
@@ -167,7 +170,7 @@ async def get_general_reports(
     top_products_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id,
+                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
                 "sale_date": {"$gte": start_date}
             }
         },
@@ -211,7 +214,7 @@ async def get_general_reports(
     diaria_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id,
+                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
                 "sale_date": {"$gte": start_date}
             }
         },
@@ -259,13 +262,15 @@ async def get_general_reports(
 async def get_daily_report(
     date: str, # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns a detailed daily report for a specific branch.
     Accessible by Matriz admins (for any branch) or Branch admins (only for their branch).
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     # Permission check
     target_sucursal = sucursal_id
@@ -349,7 +354,7 @@ async def get_daily_report(
     items_vendidos_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id,
+                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
                 "sucursal_id": target_sucursal,
                 "sale_date": {"$gte": start_dt, "$lte": end_dt}
             }
@@ -412,16 +417,18 @@ async def get_financial_report(
     start_date: str, # YYYY-MM-DD
     end_date: str,   # YYYY-MM-DD
     sucursal_id: Optional[str] = "all", 
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns a financial detail report for General Admins.
     Shows Público, Fábrica, Margen 15%, Margen Retail and Margen Total.
     """
-    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver este reporte.")
         
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     try:
         start_dt, _ = get_day_range_bolivia(start_date)
@@ -431,7 +438,7 @@ async def get_financial_report(
 
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "anulada": False,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
@@ -505,12 +512,14 @@ async def get_anulaciones_report(
     start_date: str, # YYYY-MM-DD
     end_date: str,   # YYYY-MM-DD
     sucursal_id: Optional[str] = "all",
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns a detailed report of all cancelled (anulada) sales.
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     target_sucursal = sucursal_id
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
@@ -523,7 +532,7 @@ async def get_anulaciones_report(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "anulada": True,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
@@ -567,7 +576,7 @@ async def get_anulaciones_report(
 async def get_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
     sucursal_id: Optional[str] = "all",
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns the total value of inventory (cantidad * costo_producto)
@@ -590,7 +599,7 @@ async def get_valued_inventory(
             raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
         # Historical match filter
-        hist_match = {"tenant_id": tenant_id, "created_at": {"$lte": end_dt}}
+        hist_match = {"tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}), "created_at": {"$lte": end_dt}}
         if "sucursal_id" in match_filter:
             hist_match["sucursal_id"] = match_filter["sucursal_id"]
 
@@ -805,7 +814,7 @@ from fastapi.responses import StreamingResponse
 async def export_valued_inventory(
     date: Optional[str] = None, # YYYY-MM-DD
     sucursal_id: Optional[str] = "all",
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Exports the valued inventory report to Excel.
@@ -863,12 +872,14 @@ async def export_valued_inventory(
 async def get_sales_by_hour(
     date: str, # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns total sales grouped by hour for a specific day.
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     target_sucursal = sucursal_id
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
@@ -880,7 +891,7 @@ async def get_sales_by_hour(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "anulada": False,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
@@ -928,12 +939,14 @@ async def get_staff_performance(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     sucursal_id: Optional[str] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns sales grouped by cashier and by vendor for a specific day or date range.
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     target_sucursal = sucursal_id
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
@@ -952,7 +965,7 @@ async def get_staff_performance(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "anulada": False,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
@@ -1139,12 +1152,14 @@ async def get_sales_matrix(
     start_date: str, # YYYY-MM-DD
     end_date: str, # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns sales matrix grouped by product and day.
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     target_sucursal = sucursal_id
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
@@ -1156,7 +1171,7 @@ async def get_sales_matrix(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "sale_date": {"$gte": start_dt, "$lte": end_dt}
     }
     
@@ -1241,7 +1256,7 @@ async def get_inventory_reconciliation(
     start_date: str,
     end_date: str,
     sucursal_id: str = "all",
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ) -> Dict[str, Any]:
     from app.domain.models.inventario import InventoryLog
     from app.domain.models.sale import Sale
@@ -1250,7 +1265,7 @@ async def get_inventory_reconciliation(
     start_dt, end_dt = get_range_bolivia(start_date, end_date)
     
     inv_query = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
     if sucursal_id != "all":
@@ -1285,7 +1300,7 @@ async def get_inventory_reconciliation(
                 salidas_mermas_costo += abs(valor)
                 
     sale_query = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "anulada": False,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
@@ -1308,7 +1323,7 @@ async def get_inventory_reconciliation(
     ganancia_bruta = ventas_netas - costo_ventas_kardex
     
     # Calculate inventario_final_costo strictly at end_dt using InventoryLog to ensure 100% match with valued-inventory
-    hist_match = {"tenant_id": tenant_id, "created_at": {"$lte": end_dt}}
+    hist_match = {"tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}), "created_at": {"$lte": end_dt}}
     if sucursal_id != "all":
         hist_match["sucursal_id"] = sucursal_id
         
@@ -1336,7 +1351,7 @@ async def get_inventory_reconciliation(
     inventario_final_costo = Decimal(str(raw_inv[0]["inventario_final_costo"])) if raw_inv else Decimal("0.0")
     
     # Calculate TRUE inventario_inicial_costo strictly BEFORE start_dt
-    hist_start_match = {"tenant_id": tenant_id, "created_at": {"$lt": start_dt}}
+    hist_start_match = {"tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}), "created_at": {"$lt": start_dt}}
     if sucursal_id != "all":
         hist_start_match["sucursal_id"] = sucursal_id
         
@@ -1384,15 +1399,17 @@ async def get_expenses_report(
     end_date: str,   # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
     categoria_id: Optional[str] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns a detailed expenses report filtered by date range, branch and category.
     """
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     # Permission check: Branch admins only see their branch
-    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         target_sucursal = current_user.sucursal_id
     else:
         target_sucursal = sucursal_id if sucursal_id and sucursal_id != "all" else None
@@ -1406,7 +1423,7 @@ async def get_expenses_report(
 
     # Build query
     query: Dict[str, Any] = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "tipo": "EGRESO",
         "subtipo": SubtipoMovimiento.GASTO,
         "fecha": {"$gte": s_dt, "$lte": e_dt}
@@ -1466,9 +1483,11 @@ class ProductStatsRequest(BaseModel):
 @router.post("/product-stats")
 async def get_product_stats(
     req: ProductStatsRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
     
     # Permission check for branch
     target_sucursal = req.sucursal_id
@@ -1495,7 +1514,7 @@ async def get_product_stats(
         date_format = "%Y-%m-%d"
 
     match_filter = {
-        "tenant_id": tenant_id,
+        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
         "sale_date": {"$gte": start_dt, "$lte": end_dt}
     }
     
