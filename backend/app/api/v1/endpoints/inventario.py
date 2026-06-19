@@ -289,7 +289,7 @@ from app.domain.uow.base_uow import BaseUnitOfWork
 @router.post("/inventario/ajuste-masivo")
 async def ajustar_inventario_masivo(
     req: AjusteInventarioMasivoRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL])),
     uow: BaseUnitOfWork = Depends(get_uow)
 ):
     """
