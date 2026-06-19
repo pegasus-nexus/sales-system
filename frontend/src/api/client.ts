@@ -36,6 +36,10 @@ export async function parseApiError(response: Response): Promise<{ message: stri
             } else if (typeof data.detail === 'string') {
                 message = data.detail;
             }
+            
+            if (data.error_id) {
+                message += ` (Error ID: ${data.error_id})`;
+            }
         } catch {
             message = text || message;
         }
