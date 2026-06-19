@@ -196,7 +196,6 @@ async def ajustar_inventario(
     set_on_insert = {
         "tenant_id": tenant_id,
         "sucursal_id": sucursal_id,
-        "almacen_id": almacen_id,
         "producto_id": ajuste.producto_id,
         "created_at": now,
     }
