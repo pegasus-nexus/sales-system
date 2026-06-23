@@ -14,7 +14,7 @@ import type {
     SaleCreate, Sale, SalesPaginated,
     Sucursal, SucursalCreate,
     Almacen, AlmacenCreate, AlmacenUpdate,
-    InventarioItem, AjusteInventario, InventoryLog, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
+    InventarioItem, AjusteInventario, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
     PedidoInterno, PedidoCreate,
     PriceChangeRequest, PriceRequestCreate, ReportStats,
     Etiqueta, EtiquetaCreate, EtiquetaUpdate
