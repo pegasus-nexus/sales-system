@@ -14,7 +14,7 @@ import type {
     SaleCreate, Sale, SalesPaginated,
     Sucursal, SucursalCreate,
     Almacen, AlmacenCreate, AlmacenUpdate,
-    InventarioItem, AjusteInventario, InventoryLog, AjusteInventarioMasivoRequest,
+    InventarioItem, AjusteInventario, InventoryLog, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
     PedidoInterno, PedidoCreate,
     PriceChangeRequest, PriceRequestCreate, ReportStats,
     Etiqueta, EtiquetaCreate, EtiquetaUpdate
@@ -359,14 +359,29 @@ export const ajustarInventarioMasivo = (data: AjusteInventarioMasivoRequest) =>
         method: 'POST',
         body: data,
     });
-export const getMovimientosInventario = (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
-    const params = new URLSearchParams({ sucursal_id, almacen_id });
+export const getMovimientosInventario = (
+    sucursal_id = 'CENTRAL', 
+    almacen_id = 'default', 
+    producto_id?: string, 
+    startDate?: string, 
+    endDate?: string, 
+    search?: string, 
+    tipo_movimiento?: string,
+    page = 1,
+    limit = 50
+) => {
+    const params = new URLSearchParams({ 
+        sucursal_id, 
+        almacen_id,
+        page: page.toString(),
+        limit: limit.toString()
+    });
     if (producto_id) params.set('producto_id', producto_id);
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
     if (search) params.set('search', search);
     if (tipo_movimiento) params.set('tipo_movimiento', tipo_movimiento);
-    return client<InventoryLog[]>(`/inventario/movimientos?${params.toString()}`);
+    return client<InventoryLogsPaginated>(`/inventario/movimientos?${params.toString()}`);
 };
 
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {

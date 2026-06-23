@@ -355,7 +355,7 @@ export default function UsersPage() {
 
                             {createMutation.isError && (
                                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                                    {((createMutation.error as any)?.detail as string) ?? 'Error al crear la cuenta'}
+                                    {createMutation.error?.message || 'Error al crear la cuenta'}
                                 </p>
                             )}
 
@@ -426,7 +426,7 @@ export default function UsersPage() {
 
                             {updateMutation.isError && (
                                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                                    {((updateMutation.error as any)?.detail as string) ?? 'Error al actualizar'}
+                                    {updateMutation.error?.message || 'Error al actualizar'}
                                 </p>
                             )}
 

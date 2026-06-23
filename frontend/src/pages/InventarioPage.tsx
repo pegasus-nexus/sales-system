@@ -88,11 +88,25 @@ export default function InventarioPage() {
     const totalPagesStock = invData?.pages || 1;
     const totalItemsStock = invData?.total || 0;
 
-    const { data: movimientos = [], isLoading: loadingMovs } = useQuery({
-        queryKey: ['movimientos', selectedSucursal, selectedAlmacen, startDate, endDate, debouncedSearch, kardexProductoId, tipoMovimiento],
-        queryFn: () => getMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, debouncedSearch || undefined, tipoMovimiento || undefined),
+    const { data: movData, isLoading: loadingMovs } = useQuery({
+        queryKey: ['movimientos', selectedSucursal, selectedAlmacen, startDate, endDate, debouncedSearch, kardexProductoId, tipoMovimiento, currentPageKardex, ITEMS_PER_PAGE],
+        queryFn: () => getMovimientosInventario(
+            selectedSucursal, 
+            selectedAlmacen, 
+            kardexProductoId, 
+            startDate || undefined, 
+            endDate || undefined, 
+            debouncedSearch || undefined, 
+            tipoMovimiento || undefined,
+            currentPageKardex,
+            ITEMS_PER_PAGE
+        ),
         enabled: tab === 'kardex',
     });
+
+    const movimientos = movData?.items || [];
+    const totalPagesKardex = movData?.pages || 1;
+    const totalItemsKardex = movData?.total || 0;
 
     // Modals State
     const [adjItem, setAdjItem] = useState<{ id: string, name: string } | null>(null);
@@ -104,15 +118,17 @@ export default function InventarioPage() {
         setCurrentPageKardex(1);
     }, [searchTerm, selectedSucursal, selectedAlmacen, tab, selectedCategory, stockBajoOnly]);
 
+    useEffect(() => {
+        setCurrentPageKardex(1);
+    }, [startDate, endDate, kardexProductoId, tipoMovimiento]);
+
     const filteredMovs = useMemo(() => {
-        // El filtrado ya se hace principalmente en el backend ahora, pero mantenemos esto por si acaso o para refinamiento extra
         return movimientos;
     }, [movimientos]);
 
     const paginatedMovs = useMemo(() => {
-        const startIndex = (currentPageKardex - 1) * ITEMS_PER_PAGE;
-        return filteredMovs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [filteredMovs, currentPageKardex]);
+        return filteredMovs;
+    }, [filteredMovs]);
 
     const handleAjusteSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['inventario', selectedSucursal] });
@@ -513,14 +529,14 @@ export default function InventarioPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {loadingMovs ? (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                                        <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                                             <Loader2 size={32} className="mx-auto animate-spin mb-3 text-indigo-400" />
                                             <p>Cargando historial de movimientos...</p>
                                         </td>
                                     </tr>
                                 ) : filteredMovs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                                        <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                                             <History size={48} className="mx-auto mb-4 opacity-20" />
                                             <p className="text-base font-medium text-gray-600">Sin movimientos {searchTerm ? 'para esta búsqueda' : 'registrados'}</p>
                                         </td>
@@ -573,12 +589,12 @@ export default function InventarioPage() {
                             </tbody>
                         </table>
                     </div>
-                    {filteredMovs.length > ITEMS_PER_PAGE && (
+                    {totalItemsKardex > ITEMS_PER_PAGE && (
                         <Pagination 
                             currentPage={currentPageKardex}
-                            totalPages={Math.ceil(filteredMovs.length / ITEMS_PER_PAGE)}
+                            totalPages={totalPagesKardex}
                             onPageChange={setCurrentPageKardex}
-                            totalItems={filteredMovs.length}
+                            totalItems={totalItemsKardex}
                             itemsPerPage={ITEMS_PER_PAGE}
                         />
                     )}

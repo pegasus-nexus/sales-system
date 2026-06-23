@@ -96,7 +96,7 @@ async def get_users(current_user: User = Depends(get_current_active_user)):
 @router.post("/users/employee", response_model=User)
 async def create_cajero(
     data: CajeroCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Create a CAJERO user.
@@ -106,6 +106,8 @@ async def create_cajero(
 
     - ADMIN_MATRIZ   → cajero is bound to the matrix (no sucursal).
     """
+    if current_user.role == UserRole.ADMIN_SUCURSAL and data.role not in [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.FACTURADOR, UserRole.SUPERVISOR]:
+        raise HTTPException(status_code=403, detail="No tienes permisos para asignar ese rol")
 
     import re
     username_lower = data.username.lower()
@@ -163,14 +165,14 @@ async def get_employees(current_user: User = Depends(get_current_active_user)):
 
 
 @router.post("/employees", response_model=User)
-async def create_employee(data: CajeroCreate, current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))):
+async def create_employee(data: CajeroCreate, current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))):
     return await create_cajero(data, current_user)
 
 @router.put("/users/{user_id}", response_model=User)
 async def update_employee(
     user_id: str,
     data: EmployeeUpdate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
         
     from beanie import PydanticObjectId
@@ -181,8 +183,11 @@ async def update_employee(
     if current_user.role != UserRole.SUPERADMIN and target_user.tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    if current_user.role == UserRole.ADMIN_SUCURSAL and target_user.sucursal_id != current_user.sucursal_id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if current_user.role == UserRole.ADMIN_SUCURSAL:
+        if target_user.sucursal_id != current_user.sucursal_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        if data.role is not None and data.role not in [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.FACTURADOR, UserRole.SUPERVISOR]:
+            raise HTTPException(status_code=403, detail="No tienes permisos para asignar ese rol")
 
     import re
     if data.username is not None:
@@ -215,7 +220,7 @@ async def update_employee(
 async def toggle_employee_status(
     user_id: str,
     is_active: bool,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
         
     from beanie import PydanticObjectId
@@ -225,6 +230,9 @@ async def toggle_employee_status(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
     if current_user.role != UserRole.SUPERADMIN and target_user.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    if current_user.role == UserRole.ADMIN_SUCURSAL and target_user.sucursal_id != current_user.sucursal_id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
     if str(target_user.id) == str(current_user.id):

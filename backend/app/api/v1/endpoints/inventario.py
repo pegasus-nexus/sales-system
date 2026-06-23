@@ -453,13 +453,15 @@ async def get_movimientos_inventario(
     end_date: Optional[str] = None,
     search: Optional[str] = None,
     tipo_movimiento: Optional[str] = None,
-    limit: int = Query(500, le=2000),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=2000),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get movement history (Kárdex) for a branch and almacen.
+    Get movement history (Kárdex) for a branch and almacen, with server-side pagination.
     """
     tenant_id = current_user.tenant_id or ""
+    skip = (page - 1) * limit
     
     query = {"tenant_id": tenant_id, "sucursal_id": sucursal_id, "almacen_id": almacen_id}
     if producto_id:
@@ -508,17 +510,25 @@ async def get_movimientos_inventario(
             
     from app.domain.models.inventario import InventoryLog
     
-    movimientos = await InventoryLog.find(query).sort("-created_at").limit(limit).to_list()
+    total = await InventoryLog.find(query).count()
+    movimientos = await InventoryLog.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     
     # Enrich with product names directly from the snapshot stored in InventoryLog
     # Eliminated N+1 queries here for massive performance boost
     result = []
     for mov in movimientos:
-        data = mov.model_dump()
+        data = mov.model_dump(by_alias=True)
+        data["_id"] = str(mov.id)
         data["producto_nombre"] = mov.descripcion or "Producto Sin Nombre"
         result.append(data)
         
-    return result
+    pages = math.ceil(total / limit) if limit > 0 else 1
+    return {
+        "items": result,
+        "total": total,
+        "page": page,
+        "pages": pages
+    }
 
 
 @router.get("/inventario/movimientos/exportar")
@@ -576,7 +586,12 @@ async def exportar_movimientos(
     from app.utils.date_utils import BOLIVIA_TZ
     from datetime import datetime
     
-    movimientos = await InventoryLog.find(query).sort("-created_at").limit(5000).to_list()
+    if producto_id:
+        # No limit for a specific product to ensure full history
+        movimientos = await InventoryLog.find(query).sort("-created_at").to_list()
+    else:
+        # Capped for global export to avoid performance issues
+        movimientos = await InventoryLog.find(query).sort("-created_at").limit(20000).to_list()
     
     rows = []
     for mov in movimientos:

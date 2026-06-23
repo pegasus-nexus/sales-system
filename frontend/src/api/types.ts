@@ -181,6 +181,13 @@ export interface InventoryLog {
     created_at: string;
 }
 
+export interface InventoryLogsPaginated {
+    items: InventoryLog[];
+    total: number;
+    page: number;
+    pages: number;
+}
+
 export interface PedidoItem {
     producto_id: string;
     producto_nombre: string;
