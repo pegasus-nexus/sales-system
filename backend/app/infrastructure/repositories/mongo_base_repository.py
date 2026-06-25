@@ -22,8 +22,8 @@ class MongoBaseRepository(BaseRepository[DocType], Generic[DocType]):
             return None
 
     async def get_all(self, tenant_id: str, limit: int = 100, skip: int = 0, session=None) -> List[DocType]:
-        query = self.model_class.find({"tenant_id": tenant_id}).skip(skip).limit(limit)
-        return await query.to_list(session=session) if session else await query.to_list()
+        query = self.model_class.find({"tenant_id": tenant_id}, session=session).skip(skip).limit(limit)
+        return await query.to_list()
 
     async def add(self, entity: DocType, session=None) -> DocType:
         return await entity.insert(session=session)

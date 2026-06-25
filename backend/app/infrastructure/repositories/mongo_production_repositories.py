@@ -23,8 +23,7 @@ class MongoRecipeIngredientRepository(MongoBaseRepository[RecipeIngredient], IRe
     async def get_by_recipe_ids(self, tenant_id: str, recipe_ids: List[str], session=None) -> List[RecipeIngredient]:
         query = self.model_class.find(
             self.model_class.tenant_id == tenant_id,
-            In(self.model_class.recipe_id, recipe_ids)
+            In(self.model_class.recipe_id, recipe_ids),
+            session=session
         )
-        if session:
-            return await query.to_list(session=session)
         return await query.to_list()

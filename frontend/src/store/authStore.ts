@@ -32,6 +32,8 @@ interface AuthState {
     planExpiresAt: string | null;
     login: (token: string, user: User) => void;
     logout: () => void;
+    originalToken: string | null;
+    setOriginalToken: (token: string | null) => void;
     setFeatures: (features: string[], planName?: string) => void;
     setPlanExpiresAt: (date: string | null) => void;
     tenantSettings: TenantSettings | null;
@@ -65,7 +67,9 @@ export const useAuthStore = create<AuthState>()(
                 user,
                 sucursal_id: user.sucursal_id ?? null,
             }),
-            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null }),
+            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null, originalToken: null }),
+            originalToken: null,
+            setOriginalToken: (token) => set({ originalToken: token }),
             setFeatures: (features, planName = '') => set({ features, planName }),
             setPlanExpiresAt: (date) => set({ planExpiresAt: date }),
             setTenantSettings: (settings) => set({ tenantSettings: settings }),

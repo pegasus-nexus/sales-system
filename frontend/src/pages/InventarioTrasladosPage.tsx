@@ -7,21 +7,31 @@ import type { Almacen } from '../api/types';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { formatFullDate } from '../utils/dateUtils';
+import { useConfirm } from '../components/ConfirmModal';
+import Pagination from '../components/Pagination';
+
 
 export default function InventarioTrasladosPage() {
+    const confirm = useConfirm();
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [tab, setTab] = useState<'enviados' | 'recibidos'>('enviados');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isReceiveModalOpen, setIsReceiveModalOpen] = useState<string | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState<any | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
 
     const canManage = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN_SUCURSAL' || user?.role === 'ADMIN';
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [tab]);
+
     // Queries
     const { data: trasladosData, isLoading } = useQuery({
-        queryKey: ['traslados', tab],
-        queryFn: () => getTraslados({ tipo: tab }),
+        queryKey: ['traslados', tab, currentPage],
+        queryFn: () => getTraslados({ tipo: tab, page: currentPage, page_size: ITEMS_PER_PAGE }),
     });
 
     const { data: sucursales = [] } = useQuery({
@@ -30,6 +40,8 @@ export default function InventarioTrasladosPage() {
     });
 
     const traslados = (trasladosData as any)?.items || [];
+    const totalItems = (trasladosData as any)?.total || 0;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
 
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['traslados'] });
@@ -152,8 +164,14 @@ export default function InventarioTrasladosPage() {
                                     )}
                                     {tab === 'enviados' && t.estado === 'EN_TRANSITO' && (
                                         <button 
-                                            onClick={() => {
-                                                if(confirm("¿Estás seguro de cancelar este traslado? El stock volverá a tu sucursal.")) {
+                                            onClick={async () => {
+                                                if (await confirm({
+                                                    title: '¿Cancelar envío?',
+                                                    message: '¿Estás seguro de cancelar este traslado? El stock volverá a tu sucursal.',
+                                                    type: 'danger',
+                                                    confirmLabel: 'Cancelar Envío',
+                                                    cancelLabel: 'Volver'
+                                                })) {
                                                     cancelMutation.mutate(t._id);
                                                 }
                                             }}
@@ -169,6 +187,18 @@ export default function InventarioTrasladosPage() {
                 )}
             </div>
 
+            {totalItems > ITEMS_PER_PAGE && (
+                <div className="mt-4">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                </div>
+            )}
+
             {/* Modals */}
             {isCreateModalOpen && (
                 <CreateTrasladoModal 
@@ -183,8 +213,14 @@ export default function InventarioTrasladosPage() {
                     traslado={isDetailOpen}
                     onClose={() => setIsDetailOpen(null)}
                     onReceive={(t: any) => { setIsDetailOpen(null); setIsReceiveModalOpen(t); }}
-                    onCancel={(id: string) => {
-                        if(confirm("¿Cancelar este traslado? El stock volverá a tu sucursal.")) {
+                    onCancel={async (id: string) => {
+                        if (await confirm({
+                            title: '¿Cancelar envío?',
+                            message: '¿Cancelar este traslado? El stock volverá a tu sucursal.',
+                            type: 'danger',
+                            confirmLabel: 'Cancelar Envío',
+                            cancelLabel: 'Volver'
+                        })) {
                             cancelMutation.mutate(id);
                             setIsDetailOpen(null);
                         }

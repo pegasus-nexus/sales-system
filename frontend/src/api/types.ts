@@ -35,6 +35,7 @@ export interface Tenant {
     is_active: boolean;
     plan_expires_at?: string;
     settings?: TenantSettings;
+    configuracion?: Record<string, any>;
     created_at: string;
 }
 
@@ -178,6 +179,13 @@ export interface InventoryLog {
     costo_unitario_momento?: number;
     precio_venta_momento?: number;
     created_at: string;
+}
+
+export interface InventoryLogsPaginated {
+    items: InventoryLog[];
+    total: number;
+    page: number;
+    pages: number;
 }
 
 export interface PedidoItem {
@@ -670,5 +678,20 @@ export interface MealSchedule {
     estado: MealScheduleStatus;
     motivo_postergacion?: string;
     entregado_at?: string;
+    created_at: string;
+}
+
+export interface Proveedor {
+    _id: string;
+    tenant_id: string;
+    nombre: string;
+    contacto_nombre?: string;
+    telefono?: string;
+    email?: string;
+    nit_ci?: string;
+    direccion?: string;
+    tipo_insumos?: string;
+    notas?: string;
+    is_active: boolean;
     created_at: string;
 }

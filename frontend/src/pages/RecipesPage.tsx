@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRecipes, createRecipe, updateRecipe, deleteRecipe, getProducts } from '../api/api';
 import { Plus, Trash2, Loader2, BookOpen, X, Search, Utensils, Edit3 } from 'lucide-react';
 import type { Recipe, RecipeCreate, RecipeIngredientCreate, RecipeType } from '../api/types';
+import { toast } from 'sonner';
+import { useConfirm } from '../components/ConfirmModal';
+
 
 const RECIPE_TYPES: { value: RecipeType; label: string }[] = [
     { value: 'PLATO_FINAL', label: 'Plato Final (Bowl)' },
@@ -15,6 +18,7 @@ const RECIPE_TYPES: { value: RecipeType; label: string }[] = [
 ];
 
 export default function RecipesPage() {
+    const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export default function RecipesPage() {
         // Validation: check if all ingredients have a selected product and quantity > 0
         const invalid = ingredientes.some(ing => !ing.producto_id || ing.cantidad <= 0);
         if (invalid) {
-            alert('Por favor selecciona un producto y especifica una cantidad mayor a 0 para todos los ingredientes.');
+            toast.warning('Por favor selecciona un producto y especifica una cantidad mayor a 0 para todos los ingredientes.');
             return;
         }
 
@@ -228,8 +232,16 @@ export default function RecipesPage() {
                                         <Edit3 size={15} /> Editar
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            if (confirm('¿Eliminar esta receta?')) deleteMutation.mutate(recipe._id);
+                                        onClick={async () => {
+                                             if (await confirm({
+                                                 title: '¿Eliminar receta?',
+                                                 message: '¿Estás seguro de que deseas eliminar esta receta?',
+                                                 type: 'danger',
+                                                 confirmLabel: 'Eliminar',
+                                                 cancelLabel: 'Cancelar'
+                                             })) {
+                                                 deleteMutation.mutate(recipe._id);
+                                             }
                                         }}
                                         className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold"
                                         title="Eliminar"
@@ -351,14 +363,21 @@ export default function RecipesPage() {
                                             </div>
 
                                             {/* Unidad */}
-                                            <div className="w-full md:w-20">
-                                                <input
-                                                    type="text" required
-                                                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-black/5"
-                                                    placeholder="Unidad"
+                                            <div className="w-full md:w-24">
+                                                <select
+                                                    required
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-2 py-2 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-black/5"
                                                     value={ing.unidad_medida_receta}
                                                     onChange={e => handleIngredientChange(index, 'unidad_medida_receta', e.target.value)}
-                                                />
+                                                >
+                                                    <option value="kg">kg</option>
+                                                    <option value="g">g</option>
+                                                    <option value="L">L</option>
+                                                    <option value="ml">ml</option>
+                                                    <option value="u">u</option>
+                                                    <option value="oz">oz</option>
+                                                    <option value="lb">lb</option>
+                                                </select>
                                             </div>
 
                                             {/* Notas */}

@@ -14,7 +14,7 @@ import type {
     SaleCreate, Sale, SalesPaginated,
     Sucursal, SucursalCreate,
     Almacen, AlmacenCreate, AlmacenUpdate,
-    InventarioItem, AjusteInventario, InventoryLog, AjusteInventarioMasivoRequest,
+    InventarioItem, AjusteInventario, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
     PedidoInterno, PedidoCreate,
     PriceChangeRequest, PriceRequestCreate, ReportStats,
     OrchestrationResponse, DemandPredictionResponse,
@@ -28,6 +28,7 @@ import type {
 // ─── Auth ─────────────────────────────────────────────────────────────────
 export const getMe = () => client<User>('/users/me');
 export const impersonateTenant = (tenant_id: string) => client<{access_token: string, token_type: string, role: string}>(`/impersonate/${tenant_id}`, { method: 'POST' });
+export const impersonateUser = (user_id: string) => client<{access_token: string, token_type: string, role: string}>(`/impersonate/user/${user_id}`, { method: 'POST' });
 
 // ─── Tenants ──────────────────────────────────────────────────────────────
 export const getTenants = () => client<Tenant[]>('/tenants');
@@ -37,6 +38,7 @@ export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/
 export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string }>('/tenants/my-features');
 export const getMyTenant = () => client<Tenant>('/tenants/me');
 export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
+export const updateMyTenantConfiguracion = (data: Record<string, any>) => client<Record<string, any>>('/tenants/me/configuracion', { method: 'PUT', body: data });
 
 export const getAuditLogs = (limit: number = 100, skip: number = 0, action?: string, entity?: string, username?: string) => {
     const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
@@ -289,6 +291,9 @@ export const createProduct = (data: ProductCreate) => client<Product>('/products
 export const updateProduct = (id: string, data: ProductCreate) =>
     client<Product>(`/products/${id}`, { method: 'PUT', body: data });
 
+export const deactivateProduct = (id: string) =>
+    client<{ message: string }>(`/products/${id}`, { method: 'DELETE' });
+
 export const exportProductTemplate = async () => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
@@ -433,14 +438,29 @@ export const ajustarInventarioMasivo = (data: AjusteInventarioMasivoRequest) =>
         method: 'POST',
         body: data,
     });
-export const getMovimientosInventario = (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
-    const params = new URLSearchParams({ sucursal_id, almacen_id });
+export const getMovimientosInventario = (
+    sucursal_id = 'CENTRAL', 
+    almacen_id = 'default', 
+    producto_id?: string, 
+    startDate?: string, 
+    endDate?: string, 
+    search?: string, 
+    tipo_movimiento?: string,
+    page = 1,
+    limit = 50
+) => {
+    const params = new URLSearchParams({ 
+        sucursal_id, 
+        almacen_id,
+        page: page.toString(),
+        limit: limit.toString()
+    });
     if (producto_id) params.set('producto_id', producto_id);
     if (startDate) params.set('start_date', startDate);
     if (endDate) params.set('end_date', endDate);
     if (search) params.set('search', search);
     if (tipo_movimiento) params.set('tipo_movimiento', tipo_movimiento);
-    return client<InventoryLog[]>(`/inventario/movimientos?${params.toString()}`);
+    return client<InventoryLogsPaginated>(`/inventario/movimientos?${params.toString()}`);
 };
 
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
@@ -856,7 +876,27 @@ export const createMealSchedule = (data: { cliente_id: string; client_meal_plan_
 
 export const updateMealSchedule = (id: string, data: { recetas_ids?: string[]; estado?: MealScheduleStatus; motivo_postergacion?: string }) =>
     client<MealSchedule>(`/production/schedules/${id}`, { method: 'PUT', body: data });
-
 export const markScheduleAsDelivered = (id: string) =>
     client<MealSchedule>(`/production/schedules/${id}/deliver`, { method: 'POST' });
 
+// ─── Proveedores ──────────────────────────────────────────────────────────
+import type { Proveedor } from './types';
+
+export const getProveedores = (page: number = 1, limit: number = 50, q: string = '') => {
+    const skip = (page - 1) * limit;
+    let url = `/proveedores?skip=${skip}&limit=${limit}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    return client<Proveedor[]>(url);
+};
+
+export const getProveedorById = (id: string) => 
+    client<Proveedor>(`/proveedores/${id}`);
+
+export const createProveedor = (data: Partial<Proveedor>) => 
+    client<Proveedor>('/proveedores', { method: 'POST', body: data });
+
+export const updateProveedor = (id: string, data: Partial<Proveedor>) => 
+    client<Proveedor>(`/proveedores/${id}`, { method: 'PUT', body: data });
+
+export const deleteProveedor = (id: string) => 
+    client<{ message: string }>(`/proveedores/${id}`, { method: 'DELETE' });

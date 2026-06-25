@@ -30,6 +30,8 @@ from app.domain.models.recipe_ingredient import RecipeIngredient
 from app.domain.models.meal_plan_template import MealPlanTemplate
 from app.domain.models.client_meal_plan import ClientMealPlan
 from app.domain.models.meal_schedule import MealSchedule
+from app.domain.models.proveedor import Proveedor
+from app.domain.models.client_wallet import ClientWallet
 
 from app.infrastructure.core.config import settings
 
@@ -87,6 +89,7 @@ async def init_db():
             PlanFeatureDocument,
             PedidoItemDocument,
             Cliente,
+            Proveedor,
             ListaPrecio,
             ListaPrecioItem,
             CuentaCredito,
@@ -104,7 +107,8 @@ async def init_db():
             RecipeIngredient,
             MealPlanTemplate,
             ClientMealPlan,
-            MealSchedule
+            MealSchedule,
+            ClientWallet
         ]
     )
 

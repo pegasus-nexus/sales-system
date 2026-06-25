@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit2, Loader2, Package, Image as ImageIcon, Check, X, Tag, Upload, Download, FileSpreadsheet } from 'lucide-react';
-import { getProducts, getCategories, createProduct, updateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage, getMealPlanTemplates } from '../api/api';
+import { Plus, Search, Edit2, Loader2, Package, Image as ImageIcon, Check, X, Tag, Upload, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { getProducts, getCategories, createProduct, updateProduct, deactivateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage, getMealPlanTemplates } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
+import { useConfirm } from '../components/ConfirmModal';
+
 import type { Product, Category, ProductCreate, Sucursal } from '../api/types';
 import Pagination from '../components/Pagination';
 
 export default function CatalogoPage() {
+    const confirm = useConfirm();
     const { user } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -49,13 +52,61 @@ export default function CatalogoPage() {
         if (!categorySearch) return categories;
         return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
     }, [categories, categorySearch]);
-    const isEditor = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
+    const isEditor = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN' || user?.role === 'ADMIN_SUCURSAL';
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
         queryFn: getSucursales,
         enabled: isEditor
     });
+
+    const queryClient = useQueryClient();
+
+    const deactivateMut = useMutation({
+        mutationFn: deactivateProduct,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            toast.success('Producto desactivado/ocultado correctamente');
+        },
+        onError: (err: any) => {
+            toast.error(err.message || 'Error al desactivar el producto');
+        }
+    });
+
+    const handleDeactivateProduct = async (id: string) => {
+        if (await confirm({
+            title: '¿Desactivar producto?',
+            message: '¿Estás seguro de que deseas desactivar/ocultar este producto? No se podrá usar en nuevas ventas ni pedidos.',
+            type: 'danger',
+            confirmLabel: 'Desactivar',
+            cancelLabel: 'Cancelar'
+        })) {
+            deactivateMut.mutate(id);
+        }
+    };
+
+    const reactivateMut = useMutation({
+        mutationFn: (product: Product) => updateProduct(product._id, { ...product, is_active: true } as any),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+            toast.success('Producto reactivado correctamente');
+        },
+        onError: (err: any) => {
+            toast.error(err.message || 'Error al reactivar el producto');
+        }
+    });
+
+    const handleReactivateProduct = async (product: Product) => {
+        if (await confirm({
+            title: '¿Reactivar producto?',
+            message: '¿Estás seguro de que deseas reactivar este producto?',
+            type: 'info',
+            confirmLabel: 'Reactivar',
+            cancelLabel: 'Cancelar'
+        })) {
+            reactivateMut.mutate(product);
+        }
+    };
 
     // Reset pagination when filters change
     useEffect(() => {
@@ -255,10 +306,19 @@ export default function CatalogoPage() {
                                             </span>
                                         </td>
                                         {isEditor && (
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleOpenEdit(p)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                            <td className="px-6 py-4 text-right flex justify-end gap-1">
+                                                <button onClick={() => handleOpenEdit(p)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Editar">
                                                     <Edit2 size={18} />
                                                 </button>
+                                                {p.is_active !== false ? (
+                                                    <button onClick={() => handleDeactivateProduct(p._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Desactivar">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                ) : (
+                                                    <button onClick={() => handleReactivateProduct(p)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Reactivar">
+                                                        <Check size={18} />
+                                                    </button>
+                                                )}
                                             </td>
                                         )}
                                     </tr>
@@ -343,7 +403,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
         try {
             await exportProductTemplate();
         } catch (err) {
-            alert("Error descargando plantilla");
+            toast.error("Error descargando plantilla");
         }
     }
 

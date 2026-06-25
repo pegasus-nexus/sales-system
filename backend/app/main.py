@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.infrastructure.core.config import settings
@@ -36,6 +37,20 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+import traceback
+import uuid
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_id = f"ERR-{uuid.uuid4().hex[:8].upper()}"
+    print(f"[{error_id}] Unhandled Exception on {request.method} {request.url.path}")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Tuvimos un problema procesando tu solicitud. Por favor intenta de nuevo más tarde.", "error_id": error_id}
+    )
+
 
 @app.get("/")
 def index():

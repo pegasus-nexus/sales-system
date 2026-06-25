@@ -25,6 +25,7 @@ import PriceRequestsPage from './pages/PriceRequestsPage';
 import ReportsPage from './pages/ReportsPage';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import ClientesPage from './pages/ClientesPage';
+import ProveedoresPage from './pages/ProveedoresPage';
 import CreditosPage from './pages/CreditosPage';
 import RecipesPage from './pages/RecipesPage';
 import MealPlansPage from './pages/MealPlansPage';
@@ -38,6 +39,7 @@ import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
 import ChatbotAnalitico from './components/ChatbotAnalitico';
 import { ErrorModalProvider, useErrorModal } from './components/ErrorModal';
+import { ConfirmProvider } from './components/ConfirmModal';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -169,16 +171,19 @@ const MATRIZ_ROLES = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'];
 const BRANCH_ROLES = ['ADMIN_SUCURSAL', 'ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'];
 const MOBILE_MANAGEMENT_ROLES = [...BRANCH_ROLES, 'SUPERVISOR'];
 const ALL_STAFF = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'CAJERO', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERVISOR', 'VENDEDOR'];
+const STAFF_NO_CAJERO = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERVISOR', 'VENDEDOR'];
+
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorModalProvider>
-        <ErrorEventBridge />
-        <FeaturesFetcher />
-        <SoftLockBlocker />
-        <Toaster position="top-right" richColors theme="light" />
-      <BrowserRouter>
+        <ConfirmProvider>
+          <ErrorEventBridge />
+          <FeaturesFetcher />
+          <SoftLockBlocker />
+          <Toaster position="top-right" richColors theme="light" />
+          <BrowserRouter>
         <Routes>
           {/* 1. Ruta de Login fuera del Layout */}
           <Route path="/login" element={<LoginPage />} />
@@ -238,13 +243,13 @@ function App() {
                 } />
 
                 <Route path="/catalogo" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
+                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
                     <CatalogoPage />
                   </ProtectedRoute>
                 } />
 
                 <Route path="/inventario" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
+                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
                     <InventarioPage />
                   </ProtectedRoute>
                 } />
@@ -278,15 +283,22 @@ function App() {
 
                 {/* Créditos */}
                 <Route path="/creditos" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CREDITOS">
+                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="CREDITOS">
                     <CreditosPage />
                   </ProtectedRoute>
                 } />
 
                 {/* Clientes */}
                 <Route path="/clientes" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF}>
+                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO}>
                     <ClientesPage />
+                  </ProtectedRoute>
+                } />
+
+                {/* Proveedores */}
+                <Route path="/proveedores" element={
+                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
+                    <ProveedoresPage />
                   </ProtectedRoute>
                 } />
 
@@ -302,7 +314,7 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/produccion" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
+                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
                     <ProductionCalendarPage />
                   </ProtectedRoute>
                 } />
@@ -380,6 +392,7 @@ function App() {
         {/* Chatbot siempre visible pero fuera del sistema de rutas */}
         <ChatbotAnalitico />
       </BrowserRouter>
+        </ConfirmProvider>
       </ErrorModalProvider>
     </QueryClientProvider>
   );
