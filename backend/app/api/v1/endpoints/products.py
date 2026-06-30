@@ -93,7 +93,7 @@ async def get_products(
 @router.post("/products", response_model=Product)
 async def create_product(
     data: ProductCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.create_product(data, current_user)
@@ -103,7 +103,7 @@ async def create_product(
 async def update_product(
     product_id: str,
     data: ProductUpdate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.update_product(product_id, data, current_user)
@@ -112,7 +112,7 @@ async def update_product(
 @router.delete("/products/{product_id}")
 async def deactivate_product(
     product_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.deactivate_product(product_id, current_user)
@@ -120,7 +120,7 @@ async def deactivate_product(
 
 @router.get("/productos/exportar-plantilla")
 async def export_product_template(
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     tenant_id = current_user.tenant_id or "default"
     
@@ -167,7 +167,7 @@ async def export_product_template(
 @router.post("/productos/importar")
 async def import_products(
     file: UploadFile = File(...),
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.excel_import_service import ExcelImportService
     contents = await file.read()
@@ -177,7 +177,7 @@ async def import_products(
 @router.post("/productos/importacion-global")
 async def importacion_global_excel(
     file: UploadFile = File(...),
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.excel_import_service import ExcelImportService
     contents = await file.read()
@@ -187,7 +187,7 @@ async def importacion_global_excel(
 @router.get("/productos/exportar-plantilla-precios")
 async def export_product_price_template(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     tenant_id = current_user.tenant_id or "default"
     
@@ -234,7 +234,7 @@ async def export_product_price_template(
 async def import_product_prices(
     sucursal_id: str = Form(...),
     file: UploadFile = File(...),
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.excel_import_service import ExcelImportService
     contents = await file.read()

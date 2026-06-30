@@ -15,7 +15,7 @@ from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimient
 class ExcelImportService:
     @staticmethod
     async def import_products(file_bytes: bytes, filename: str, current_user: User):
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="No autorizado para importar productos")
             
         if not filename.endswith((".xlsx", ".xls")):
@@ -136,7 +136,7 @@ class ExcelImportService:
     
     @staticmethod
     async def importacion_global_excel(file_bytes: bytes, filename: str, current_user: User):
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="No autorizado para la importación global")
             
         if not filename.endswith((".xlsx", ".xls")):
@@ -409,8 +409,11 @@ class ExcelImportService:
     
     @staticmethod
     async def import_product_prices(sucursal_id: str, file_bytes: bytes, filename: str, current_user: User):
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="No autorizado para importar precios")
+            
+        if current_user.role == UserRole.ADMIN_SUCURSAL and sucursal_id != current_user.sucursal_id:
+            raise HTTPException(status_code=403, detail="No tienes permisos para importar precios de otra sucursal")
             
         if not filename.endswith((".xlsx", ".xls")):
             raise HTTPException(status_code=400, detail="Formato de archivo inválido. Solo se permite .xlsx o .xls")
