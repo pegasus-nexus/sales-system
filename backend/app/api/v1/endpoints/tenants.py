@@ -221,7 +221,10 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
 async def get_tenant_admin(tenant_id: str, current_user: User = Depends(get_current_active_user)):
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
-    admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN})
+    admin_user = await User.find_one({
+        "tenant_id": tenant_id,
+        "role": {"$in": [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, "ADMIN_MATRIZ", "ADMIN"]}
+    })
     if not admin_user:
         return {"username": "No asignado", "email": ""}
     return {"username": admin_user.username, "email": admin_user.email}
@@ -235,23 +238,45 @@ async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
-    admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN})
+    admin_user = await User.find_one({
+        "tenant_id": tenant_id,
+        "role": {"$in": [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, "ADMIN_MATRIZ", "ADMIN"]}
+    })
+    
     if not admin_user:
-        raise HTTPException(status_code=404, detail="Admin user for this tenant not found")
+        # Si no existe un usuario administrador, lo creamos
+        if not creds.username or not creds.password:
+            raise HTTPException(status_code=400, detail="El usuario admin no existe para este tenant. Debes ingresar un correo y una contraseña para crearlo.")
         
-    if creds.username:
         admin_username_lower = creds.username.lower()
-        # Verificar que no exista otro usuario con este correo en todo el sistema
         existing = await User.find_one({"username": admin_username_lower})
-        if existing and str(existing.id) != str(admin_user.id):
-            raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona")
-        admin_user.username = admin_username_lower
-        admin_user.email = admin_username_lower
+        if existing:
+            raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona en el sistema")
+            
+        admin_user = User(
+            username=admin_username_lower,
+            email=admin_username_lower,
+            hashed_password=get_password_hash(creds.password),
+            role=UserRole.ADMIN_MATRIZ,
+            tenant_id=tenant_id,
+            full_name=f"Admin {tenant.name}"
+        )
+        await admin_user.create()
+    else:
+        # Si ya existe, actualizamos sus credenciales
+        if creds.username:
+            admin_username_lower = creds.username.lower()
+            existing = await User.find_one({"username": admin_username_lower})
+            if existing and str(existing.id) != str(admin_user.id):
+                raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona")
+            admin_user.username = admin_username_lower
+            admin_user.email = admin_username_lower
+            
+        if creds.password:
+            admin_user.hashed_password = get_password_hash(creds.password)
+            
+        await admin_user.save()
         
-    if creds.password:
-        admin_user.hashed_password = get_password_hash(creds.password)
-        
-    await admin_user.save()
     return {"message": "Credenciales actualizadas exitosamente"}
 
 @router.delete("/tenants/{tenant_id}")
