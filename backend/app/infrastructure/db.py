@@ -122,3 +122,7 @@ def get_client() -> motor.motor_asyncio.AsyncIOMotorClient:
     if _client is None:
         raise RuntimeError("Database not initialized")
     return _client
+
+# Monkey-patch Beanie Document to support get_pymongo_collection across the application
+from beanie import Document
+Document.get_pymongo_collection = classmethod(lambda cls: cls.get_motor_collection())

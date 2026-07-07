@@ -245,28 +245,81 @@ class SalesService:
                         session=session
                     ).update({"$set": {"referencia_id": str(sale.id)}}, session=session)
 
-                    # --- Resolución de cliente_id para créditos ---
-                    # Si la venta es a crédito y no tiene cliente_id formal,
-                    # creamos el cliente desde el snapshot de nombre/teléfono.
-                    if sale.estado_pago in [EstadoPago.PENDIENTE, EstadoPago.PARCIAL] and not sale.cliente_id:
-                        if sale.cliente and (sale.cliente.razon_social or sale.cliente.telefono):
+                    # --- Resolución de cliente_id ---
+                    # Si la venta no tiene cliente_id formal y tiene datos del cliente (por crédito, factura o datos ingresados),
+                    # guardamos al cliente en la base de datos para que sea recurrente.
+                    if not sale.cliente_id and sale.cliente:
+                        es_credito = sale.estado_pago in [EstadoPago.PENDIENTE, EstadoPago.PARCIAL]
+                        es_factura = sale.cliente.es_factura
+                        tiene_nit = bool(sale.cliente.nit)
+                        tiene_razon_social = bool(sale.cliente.razon_social)
+                        tiene_telefono = bool(sale.cliente.telefono)
+                        tiene_email = bool(sale.cliente.email)
+                        
+                        # Guardamos si hay cualquier tipo de intención o datos de contacto provistos
+                        if es_credito or es_factura or tiene_nit or tiene_razon_social or tiene_telefono or tiene_email:
                             nombre = (sale.cliente.razon_social or "CONSUMIDOR FINAL").strip().upper()
                             telf = (sale.cliente.telefono or "").strip() or None
-                            # Buscar si ya existe
-                            cliente_existente = await Cliente.find_one({
-                                "tenant_id": sale.tenant_id,
-                                "nombre": nombre,
-                                "telefono": telf
-                            }, session=session)
+                            nit_val = (sale.cliente.nit or "").strip() or None
+                            
+                            cliente_existente = None
+                            # 1. Buscar por NIT/CI primero si está provisto
+                            if nit_val:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
+                                    "nit_ci": nit_val,
+                                    "is_active": True
+                                }, session=session)
+                                
+                            # 2. Si no se encontró por NIT/CI, buscar por nombre y teléfono
+                            if not cliente_existente and nombre and telf:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
+                                    "nombre": nombre,
+                                    "telefono": telf,
+                                    "is_active": True
+                                }, session=session)
+                                
+                            # 3. Si no se encontró y no tiene teléfono, buscar por nombre único (si no es CONSUMIDOR FINAL)
+                            if not cliente_existente and nombre and nombre != "CONSUMIDOR FINAL" and not telf:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
+                                    "nombre": nombre,
+                                    "is_active": True
+                                }, session=session)
+                                
+                            # 4. Si no se encontró por las anteriores, buscar por teléfono (si está provisto)
+                            if not cliente_existente and telf:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
+                                    "telefono": telf,
+                                    "is_active": True
+                                }, session=session)
+                                
                             if not cliente_existente:
                                 cliente_existente = Cliente(
                                     tenant_id=sale.tenant_id,
                                     nombre=nombre,
                                     telefono=telf,
-                                    nit_ci=sale.cliente.nit,
+                                    nit_ci=nit_val,
                                     email=sale.cliente.email
                                 )
                                 await cliente_existente.insert(session=session)
+                            else:
+                                # Actualizar datos si han cambiado y son válidos
+                                updated = False
+                                if nit_val and cliente_existente.nit_ci != nit_val:
+                                    cliente_existente.nit_ci = nit_val
+                                    updated = True
+                                if telf and cliente_existente.telefono != telf:
+                                    cliente_existente.telefono = telf
+                                    updated = True
+                                if sale.cliente.email and cliente_existente.email != sale.cliente.email:
+                                    cliente_existente.email = sale.cliente.email
+                                    updated = True
+                                if updated:
+                                    await cliente_existente.save(session=session)
+                                    
                             # Vincular el cliente a la venta
                             sale.cliente_id = str(cliente_existente.id)
                             await sale.save(session=session)
