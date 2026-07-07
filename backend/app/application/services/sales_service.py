@@ -228,8 +228,11 @@ class SalesService:
                         es_factura = sale.cliente.es_factura
                         tiene_nit = bool(sale.cliente.nit)
                         tiene_razon_social = bool(sale.cliente.razon_social)
+                        tiene_telefono = bool(sale.cliente.telefono)
+                        tiene_email = bool(sale.cliente.email)
                         
-                        if es_credito or es_factura or tiene_nit or tiene_razon_social:
+                        # Guardamos si hay cualquier tipo de intención o datos de contacto provistos
+                        if es_credito or es_factura or tiene_nit or tiene_razon_social or tiene_telefono or tiene_email:
                             nombre = (sale.cliente.razon_social or "CONSUMIDOR FINAL").strip().upper()
                             telf = (sale.cliente.telefono or "").strip() or None
                             nit_val = (sale.cliente.nit or "").strip() or None
@@ -248,6 +251,22 @@ class SalesService:
                                 cliente_existente = await Cliente.find_one({
                                     "tenant_id": sale.tenant_id,
                                     "nombre": nombre,
+                                    "telefono": telf,
+                                    "is_active": True
+                                }, session=session)
+                                
+                            # 3. Si no se encontró y no tiene teléfono, buscar por nombre único (si no es CONSUMIDOR FINAL)
+                            if not cliente_existente and nombre and nombre != "CONSUMIDOR FINAL" and not telf:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
+                                    "nombre": nombre,
+                                    "is_active": True
+                                }, session=session)
+                                
+                            # 4. Si no se encontró por las anteriores, buscar por teléfono (si está provisto)
+                            if not cliente_existente and telf:
+                                cliente_existente = await Cliente.find_one({
+                                    "tenant_id": sale.tenant_id,
                                     "telefono": telf,
                                     "is_active": True
                                 }, session=session)
