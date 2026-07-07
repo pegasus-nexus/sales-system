@@ -62,7 +62,7 @@ class DescuentoUpdate(BaseModel):
 class DescuentoResponse(DescuentoBase):
     id: str = Field(..., alias="_id")
     tenant_id: str
-    sucursal_id: str
+    sucursal_id: Optional[str] = None
     creado_por_rol: str
     created_at: datetime
     updated_at: datetime
