@@ -121,8 +121,9 @@ async def get_sales(
         filters.append(Sale.sucursal_id == current_user.sucursal_id)
 
     # Cashiers can ONLY see their own generated sales
-    if current_user.role == UserRole.CAJERO:
+    if current_user.role in [UserRole.CAJERO, UserRole.USER, "CAJERO", "USER"]:
         filters.append(Sale.cashier_id == str(current_user.id))
+        filters.append(Sale.sucursal_id == (current_user.sucursal_id or "CENTRAL"))
 
     skip = (page - 1) * limit
     

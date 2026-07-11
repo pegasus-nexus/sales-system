@@ -109,6 +109,8 @@ class CreditoService:
             deuda_especifica = await Deuda.get(request.deuda_id)
             if not deuda_especifica or str(deuda_especifica.cuenta_id) != cuenta_id:
                 raise HTTPException(status_code=404, detail="Deuda específica no encontrada en esta cuenta.")
+            if user.role in ["CAJERO", "USER", "ADMIN_SUCURSAL"] and deuda_especifica.sucursal_id != (user.sucursal_id or "CENTRAL"):
+                raise HTTPException(status_code=403, detail="No puedes registrar abonos para deudas de otra sucursal.")
             if deuda_especifica.estado == EstadoDeuda.PAGADA:
                 raise HTTPException(status_code=400, detail="Esta deuda ya está pagada.")
             if monto_total_abono > Decimal(str(deuda_especifica.saldo_pendiente)) + Decimal("0.01"):
@@ -117,11 +119,14 @@ class CreditoService:
             deudas_a_cobrar = [deuda_especifica]
         else:
             # Pagar las más antiguas primero (FIFO)
-            deudas_a_cobrar = await Deuda.find(
+            deuda_filters = [
                 Deuda.cuenta_id == cuenta_id,
                 Deuda.estado != EstadoDeuda.PAGADA,
                 Deuda.estado != EstadoDeuda.ANULADA
-            ).sort(Deuda.fecha_emision).to_list()
+            ]
+            if user.role in ["CAJERO", "USER", "ADMIN_SUCURSAL"]:
+                deuda_filters.append(Deuda.sucursal_id == (user.sucursal_id or "CENTRAL"))
+            deudas_a_cobrar = await Deuda.find(*deuda_filters).sort(Deuda.fecha_emision).to_list()
             
         if not deudas_a_cobrar:
             raise HTTPException(status_code=400, detail="No hay deudas pendientes en esta cuenta.")

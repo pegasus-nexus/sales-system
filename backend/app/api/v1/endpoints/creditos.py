@@ -35,6 +35,22 @@ async def get_cuentas_credito(
             ]
         })
         
+    # Si es cajero o administrador de sucursal, filtrar cuentas con deudas en su sucursal
+    if current_user.role in ["CAJERO", "USER", "ADMIN_SUCURSAL"]:
+        sucursal_id = current_user.sucursal_id or "CENTRAL"
+        from bson import ObjectId
+        cuenta_ids_raw = await Deuda.get_pymongo_collection().distinct(
+            "cuenta_id", 
+            {"tenant_id": tenant_id, "sucursal_id": sucursal_id}
+        )
+        cuenta_ids = []
+        for cid in cuenta_ids_raw:
+            try:
+                cuenta_ids.append(ObjectId(cid))
+            except Exception:
+                pass
+        filters.append({"_id": {"$in": cuenta_ids}})
+        
     query = CuentaCredito.find(*filters)
     total = await query.count()
     skip = (page - 1) * limit
@@ -89,6 +105,8 @@ async def get_deudas_por_cuenta(
     filters = [Deuda.cuenta_id == cuenta_id]
     if estado:
         filters.append(Deuda.estado == estado)
+    if current_user.role in ["CAJERO", "USER", "ADMIN_SUCURSAL"]:
+        filters.append(Deuda.sucursal_id == (current_user.sucursal_id or "CENTRAL"))
         
     deudas = await Deuda.find(*filters).sort(-Deuda.fecha_emision).to_list()
     
@@ -117,9 +135,11 @@ async def get_transacciones_cuenta(
     if not cuenta or cuenta.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cuenta no encontrada")
         
-    historial = await TransaccionCredito.find(
-        TransaccionCredito.cuenta_id == cuenta_id
-    ).sort(-TransaccionCredito.created_at).to_list()
+    trans_filters = [TransaccionCredito.cuenta_id == cuenta_id]
+    if current_user.role in ["CAJERO", "USER", "ADMIN_SUCURSAL"]:
+        trans_filters.append(TransaccionCredito.sucursal_id == (current_user.sucursal_id or "CENTRAL"))
+        
+    historial = await TransaccionCredito.find(*trans_filters).sort(-TransaccionCredito.created_at).to_list()
     
     return [
         {

@@ -29,12 +29,15 @@ from app.utils.errors import CajaErrors
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async def _get_active_session(tenant_id: str, sucursal_id: str) -> Optional[CajaSesion]:
-    return await CajaSesion.find_one(
+async def _get_active_session(tenant_id: str, sucursal_id: str, cajero_id: Optional[str] = None) -> Optional[CajaSesion]:
+    filters = [
         CajaSesion.tenant_id   == tenant_id,
         CajaSesion.sucursal_id == sucursal_id,
         CajaSesion.estado      == EstadoSesion.ABIERTA,
-    )
+    ]
+    if cajero_id:
+        filters.append(CajaSesion.cajero_id == cajero_id)
+    return await CajaSesion.find_one(*filters)
 
 
 # ─── Historial de sesiones ────────────────────────────────────────────────────
@@ -45,10 +48,14 @@ async def get_sesiones(current_user: User = Depends(get_current_active_user)):
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
 
-    sesiones = await CajaSesion.find(
+    session_filters = [
         CajaSesion.tenant_id   == tenant_id,
         CajaSesion.sucursal_id == sucursal_id,
-    ).sort("-abierta_at").to_list()
+    ]
+    if current_user.role in ["CAJERO", "USER"]:
+        session_filters.append(CajaSesion.cajero_id == str(current_user.id))
+
+    sesiones = await CajaSesion.find(*session_filters).sort("-abierta_at").to_list()
 
     result = []
     for s in sesiones:
@@ -113,7 +120,8 @@ async def abrir_caja(request: Request, body: AbrirCajaIn, current_user: User = D
 async def get_sesion_activa(current_user: User = Depends(get_current_active_user)):
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
-    sesion = await _get_active_session(tenant_id, sucursal_id)
+    cajero_id = str(current_user.id) if current_user.role in ["CAJERO", "USER"] else None
+    sesion = await _get_active_session(tenant_id, sucursal_id, cajero_id)
     if not sesion:
         return None
     return sesion
@@ -209,7 +217,8 @@ async def registrar_gasto(body: GastoIn, current_user: User = Depends(get_curren
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
 
-    sesion = await _get_active_session(tenant_id, sucursal_id)
+    cajero_id = str(current_user.id) if current_user.role in ["CAJERO", "USER"] else None
+    sesion = await _get_active_session(tenant_id, sucursal_id, cajero_id)
     if not sesion:
         raise HTTPException(status_code=400, detail=CajaErrors.SIN_SESION_ACTIVA)
 
@@ -236,7 +245,8 @@ async def registrar_ingreso(body: IngresoIn, current_user: User = Depends(get_cu
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
 
-    sesion = await _get_active_session(tenant_id, sucursal_id)
+    cajero_id = str(current_user.id) if current_user.role in ["CAJERO", "USER"] else None
+    sesion = await _get_active_session(tenant_id, sucursal_id, cajero_id)
     if not sesion:
         raise HTTPException(status_code=400, detail="No hay una sesión de caja abierta. Abrí la caja primero.")
 
@@ -269,7 +279,8 @@ async def get_movimientos(current_user: User = Depends(get_current_active_user))
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
 
-    sesion = await _get_active_session(tenant_id, sucursal_id)
+    cajero_id = str(current_user.id) if current_user.role in ["CAJERO", "USER"] else None
+    sesion = await _get_active_session(tenant_id, sucursal_id, cajero_id)
     if not sesion:
         return []
 

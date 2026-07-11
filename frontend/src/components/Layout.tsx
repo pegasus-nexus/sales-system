@@ -65,7 +65,12 @@ export default function Layout({ children }: LayoutProps) {
 
         return allItems
             .filter(item => item.roles.includes(role ?? ''))
-            .filter(item => !item.feature || hasFeature(item.feature));
+            .filter(item => {
+                if (['CAJERO', 'USER'].includes(role ?? '') && ['/inventario', '/creditos'].includes(item.path)) {
+                    return true;
+                }
+                return !item.feature || hasFeature(item.feature);
+            });
     };
 
 
