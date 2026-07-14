@@ -98,8 +98,7 @@ export default function Layout({ children }: LayoutProps) {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
-            {/* ── Desktop Sidebar (hidden on mobile and for CAJERO) ── */}
-            {role !== 'CAJERO' && (
+            {/* ── Desktop Sidebar ── */}
                 <aside className={cn("hidden md:flex flex-col p-4 gap-5 transition-all duration-300 relative", isCollapsed ? "w-20" : "w-52")}>
 
                     {/* Header (Menu Toggle + Brand) */}
@@ -165,7 +164,7 @@ export default function Layout({ children }: LayoutProps) {
                         </button>
                     </div>
                 </aside>
-            )}
+
 
             {/* ── Exit Impersonation Banner ── */}
             {useAuthStore(state => state.originalToken) && (
@@ -243,38 +242,6 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
                     )}
 
-                    {/* Cajero Top Header (Desktop & Mobile) */}
-                    {role === 'CAJERO' && (
-                        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
-                            <div className="flex items-center gap-6">
-                                <span className="text-lg font-black text-gray-900 tracking-tight flex items-center gap-2">
-                                    <ShoppingBag className="text-indigo-600 w-5 h-5" /> Sales System POS
-                                </span>
-                                <nav className="hidden md:flex gap-1 bg-gray-100 p-1 rounded-xl">
-                                    <Link to="/pos" className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", location.pathname === '/pos' ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-gray-800")}>POS</Link>
-                                    <Link to="/caja" className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", location.pathname === '/caja' ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-gray-800")}>Caja</Link>
-                                    <Link to="/ventas" className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", location.pathname === '/ventas' ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-gray-800")}>Ventas</Link>
-                                    {hasFeature('CONTROL_QR') && (
-                                        <Link to="/qr-control" className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", location.pathname === '/qr-control' ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-gray-800")}>Control QR</Link>
-                                    )}
-                                </nav>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-full border-2 border-indigo-100 bg-indigo-50/50 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                                        {(user?.username || 'C')[0].toUpperCase()}
-                                    </div>
-                                    <div className="text-left leading-tight hidden sm:block">
-                                        <p className="text-xs font-bold text-gray-900 truncate max-w-[120px]">{user?.username || 'Cajero'}</p>
-                                        <span className="inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-orange-100 text-orange-700">CAJERO</span>
-                                    </div>
-                                </div>
-                                <button onClick={() => setShowLogoutConfirm(true)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer" title="Cerrar Sesión">
-                                    <LogOut size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Scrollable Content */}
                     <div className={`flex-1 min-h-0 relative scroll-smooth ${location.pathname === '/pos'
