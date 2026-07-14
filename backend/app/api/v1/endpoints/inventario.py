@@ -34,7 +34,11 @@ async def get_inventario(
     """
     tenant_id = current_user.tenant_id or ""
     skip = (page - 1) * limit
-    
+
+    # Seguridad: CAJERO y USER solo pueden ver su propia sucursal
+    if current_user.role in [UserRole.CAJERO, UserRole.USER]:
+        sucursal_id = current_user.sucursal_id or "CENTRAL"
+
     prod_match = {"tenant_id": tenant_id}
     if search and search.strip():
         # Escapar caracteres para búsqueda segura y permitir coincidencias parciales
@@ -462,7 +466,11 @@ async def get_movimientos_inventario(
     """
     tenant_id = current_user.tenant_id or ""
     skip = (page - 1) * limit
-    
+
+    # Seguridad: CAJERO y USER solo pueden ver su propia sucursal
+    if current_user.role in [UserRole.CAJERO, UserRole.USER]:
+        sucursal_id = current_user.sucursal_id or "CENTRAL"
+
     query = {"tenant_id": tenant_id, "sucursal_id": sucursal_id, "almacen_id": almacen_id}
     if producto_id:
         query["producto_id"] = producto_id
@@ -546,7 +554,11 @@ async def exportar_movimientos(
     Exports the movement history (Kárdex) to Excel.
     """
     tenant_id = current_user.tenant_id or ""
-    
+
+    # Seguridad: CAJERO y USER solo pueden exportar su propia sucursal
+    if current_user.role in [UserRole.CAJERO, UserRole.USER]:
+        sucursal_id = current_user.sucursal_id or "CENTRAL"
+
     query = {"tenant_id": tenant_id, "sucursal_id": sucursal_id, "almacen_id": almacen_id}
     if producto_id: query["producto_id"] = producto_id
     if tipo_movimiento: query["tipo_movimiento"] = tipo_movimiento
