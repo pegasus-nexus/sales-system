@@ -253,7 +253,7 @@ function App() {
                 } />
 
                 <Route path="/inventario" element={
-                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
+                  <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
                     <InventarioPage />
                   </ProtectedRoute>
                 } />
@@ -287,7 +287,7 @@ function App() {
 
                 {/* Créditos */}
                 <Route path="/creditos" element={
-                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="CREDITOS">
+                  <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="CREDITOS">
                     <CreditosPage />
                   </ProtectedRoute>
                 } />
