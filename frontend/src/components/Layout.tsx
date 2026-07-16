@@ -53,7 +53,7 @@ export default function Layout({ children }: LayoutProps) {
             { icon: LayoutDashboard, label: 'Dashboard',    path: '/dashboard-sucursal', feature: null,                   roles: ['ADMIN_SUCURSAL'] },
             // Módulos con feature flag
             { icon: ShoppingBag,     label: 'POS',          path: '/pos',                feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: RotateCcw,       label: 'Ventas',       path: '/ventas',             feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR'] },
+            { icon: RotateCcw,       label: 'Ventas',       path: '/ventas',             feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
             { icon: Wallet,          label: 'Caja',         path: '/caja',               feature: 'CAJA',                 roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Package,         label: 'Catálogo',     path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
             { icon: Warehouse,       label: 'Inventario',   path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
@@ -83,8 +83,8 @@ export default function Layout({ children }: LayoutProps) {
         return allItems
             .filter(item => item.roles.includes(role ?? ''))
             .filter(item => {
-                // CAJERO/USER siempre ven inventario y créditos independiente del plan
-                if (['CAJERO', 'USER'].includes(role ?? '') && ['/inventario', '/creditos'].includes(item.path)) {
+                // CAJERO/USER siempre ven ventas, inventario y créditos independiente del plan
+                if (['CAJERO', 'USER'].includes(role ?? '') && ['/ventas', '/inventario', '/creditos'].includes(item.path)) {
                     return true;
                 }
                 return !item.feature || hasFeature(item.feature);

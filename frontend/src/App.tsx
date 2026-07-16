@@ -150,8 +150,8 @@ const ProtectedRoute = ({
 
   // Verificar feature flag si se especificó
   if (requiredFeature && !hasFeature(requiredFeature)) {
-    // CAJERO/USER siempre pueden acceder a inventario y créditos sin importar el plan
-    if (['CAJERO', 'USER'].includes(role ?? '') && ['INVENTARIO', 'CREDITOS'].includes(requiredFeature)) {
+    // CAJERO/USER siempre pueden acceder a ventas, inventario y créditos sin importar el plan
+    if (['CAJERO', 'USER'].includes(role ?? '') && ['VENTAS', 'INVENTARIO', 'CREDITOS'].includes(requiredFeature)) {
       return children;
     }
     return <Navigate to="/" replace />;
