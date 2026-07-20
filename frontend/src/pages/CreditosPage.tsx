@@ -22,7 +22,7 @@ interface CuentaCredito {
     estado_cuenta: 'AL_DIA' | 'MOROSO';
 }
 
-interface Deuda {
+export interface Deuda {
     id: string;
     sale_id_corto: string;
     estado: string;
