@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales, getCategories, getProducts } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    FileDown, FileSpreadsheet, Tag, Truck
+    FileDown, FileSpreadsheet, Tag, Truck, Filter
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
@@ -23,11 +23,31 @@ export default function FinancialDetailView() {
         return d.toISOString().split('T')[0];
     })();
     
+    // Draft filter state (user selections)
     const [startDate, setStartDate] = useState(sevenDaysAgo);
     const [endDate, setEndDate] = useState(today);
     const [selectedSucursal, setSelectedSucursal] = useState('all');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedProveedor, setSelectedProveedor] = useState('');
+
+    // Applied filter state (triggers API fetch ONLY on clicking "Aplicar Filtros")
+    const [appliedFilters, setAppliedFilters] = useState({
+        startDate: sevenDaysAgo,
+        endDate: today,
+        sucursal: 'all',
+        category: '',
+        proveedor: ''
+    });
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            startDate,
+            endDate,
+            sucursal: selectedSucursal,
+            category: selectedCategory,
+            proveedor: selectedProveedor
+        });
+    };
 
     const { data: sucursales } = useQuery({
         queryKey: ['sucursales'],
@@ -67,9 +87,9 @@ export default function FinancialDetailView() {
     }, [productsData]);
 
     const { data: reportData, isLoading, isError } = useQuery({
-        queryKey: ['financial-report', startDate, endDate, selectedSucursal],
-        queryFn: () => getFinancialReport(startDate, endDate, selectedSucursal),
-        enabled: !!startDate && !!endDate
+        queryKey: ['financial-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal],
+        queryFn: () => getFinancialReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal),
+        enabled: !!appliedFilters.startDate && !!appliedFilters.endDate
     });
     const report: any = reportData;
 
@@ -101,7 +121,7 @@ export default function FinancialDetailView() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Reporte_Financiero_${startDate}_a_${endDate}.csv`;
+        a.download = `Reporte_Financiero_${appliedFilters.startDate}_a_${appliedFilters.endDate}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
     };
@@ -189,7 +209,14 @@ export default function FinancialDetailView() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 pt-2 xl:pt-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 xl:pt-0">
+                    <button 
+                        onClick={handleApplyFilters}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-indigo-200"
+                    >
+                        <Filter size={18} /> Aplicar Filtros
+                    </button>
+
                     <button 
                         onClick={handleExportExcel}
                         disabled={!report || !report.length}
@@ -201,12 +228,12 @@ export default function FinancialDetailView() {
                     <button 
                         onClick={() => {
                             if (report && totals) {
-                                const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales?.find((s: any) => s._id === selectedSucursal)?.nombre || selectedSucursal);
-                                descargarPDFFinanzas(report, totals, startDate, endDate, sucNombre);
+                                const sucNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (sucursales?.find((s: any) => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
+                                descargarPDFFinanzas(report, totals, appliedFilters.startDate, appliedFilters.endDate, sucNombre);
                             }
                         }}
                         disabled={!report}
-                        className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                        className="bg-gray-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-900 transition-all shadow-lg shadow-gray-200 disabled:opacity-50"
                     >
                         <FileDown size={18} /> Descargar PDF
                     </button>
