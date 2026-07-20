@@ -1632,3 +1632,186 @@ async def get_product_stats(
 
     return results
 
+
+@router.get("/purchases-by-client")
+async def get_purchases_by_client(
+    start_date: str,
+    end_date: str,
+    sucursal_id: Optional[str] = "all",
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+):
+    """
+    Returns a detailed purchases report grouped by client.
+    Shows: total purchases, ticket average, payment methods breakdown (EFECTIVO/QR/TARJETA/TRANSFERENCIA/CREDITO),
+    number of unique clients, and per-client detail.
+    """
+    tenant_id = current_user.tenant_id or "default"
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        sucursal_id = current_user.sucursal_id
+
+    target_sucursal = sucursal_id
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+        target_sucursal = current_user.sucursal_id
+
+    try:
+        start_dt, end_dt = get_range_bolivia(start_date, end_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
+
+    match_filter = {
+        "tenant_id": tenant_id,
+        "anulada": False,
+        "created_at": {"$gte": start_dt, "$lte": end_dt}
+    }
+
+    if target_sucursal and target_sucursal != "all":
+        match_filter["sucursal_id"] = target_sucursal
+
+    pipeline = [
+        {"$match": match_filter},
+        {
+            "$group": {
+                "_id": {
+                    "cliente_id": {"$ifNull": ["$cliente_id", {"$ifNull": ["$cliente.nit", "$cliente.razon_social"]}]},
+                    "nit": {"$ifNull": ["$cliente.nit", None]},
+                    "razon_social": {"$ifNull": ["$cliente.razon_social", "Cliente Sin Identificar"]},
+                    "telefono": {"$ifNull": ["$cliente.telefono", None]}
+                },
+                "cantidad_compras": {"$sum": 1},
+                "total_comprado": {"$sum": "$total"},
+                "pagos": {"$push": "$pagos"}
+            }
+        },
+        {
+            "$project": {
+                "cliente_id": "$_id.cliente_id",
+                "nit": "$_id.nit",
+                "razon_social": "$_id.razon_social",
+                "telefono": "$_id.telefono",
+                "cantidad_compras": 1,
+                "total_comprado": 1,
+                "pagos": 1,
+                "_id": 0
+            }
+        },
+        {"$sort": {"total_comprado": -1}}
+    ]
+
+    cursor = Sale.get_pymongo_collection().aggregate(pipeline)
+    raw_results = await cursor.to_list(length=5000)
+
+    def fmt_val(v):
+        if v is None:
+            return Decimal("0")
+        if hasattr(v, 'to_decimal'):
+            return v.to_decimal()
+        return Decimal(str(v))
+
+    client_data = {}
+    total_global = Decimal("0")
+    total_efectivo = Decimal("0")
+    total_qr = Decimal("0")
+    total_tarjeta = Decimal("0")
+    total_transferencia = Decimal("0")
+    total_credito = Decimal("0")
+    total_transacciones = 0
+
+    for r in raw_results:
+        nit = r.get("nit") or r.get("razon_social", "Cliente Sin Identificar")
+        if nit not in client_data:
+            client_data[nit] = {
+                "nit": r.get("nit"),
+                "razon_social": r.get("razon_social", "Cliente Sin Identificar"),
+                "telefono": r.get("telefono"),
+                "cantidad_compras": 0,
+                "total_comprado": Decimal("0"),
+                "efectivo": Decimal("0"),
+                "qr": Decimal("0"),
+                "tarjeta": Decimal("0"),
+                "transferencia": Decimal("0"),
+                "credito": Decimal("0")
+            }
+
+        total_comprado = fmt_val(r.get("total_comprado", 0))
+        client_data[nit]["cantidad_compras"] += r.get("cantidad_compras", 0)
+        client_data[nit]["total_comprado"] += total_comprado
+        total_global += total_comprado
+        total_transacciones += r.get("cantidad_compras", 0)
+
+        pagos_list = r.get("pagos", []) or []
+        for pago_group in pagos_list:
+            if not pago_group:
+                continue
+            items_to_process = pago_group if isinstance(pago_group, list) else [pago_group]
+            for p in items_to_process:
+                if isinstance(p, dict):
+                    metodo = (p.get("metodo") or "CREDITO").upper()
+                    monto = fmt_val(p.get("monto", 0))
+                    if metodo == "EFECTIVO":
+                        client_data[nit]["efectivo"] += monto
+                        total_efectivo += monto
+                    elif metodo == "QR":
+                        client_data[nit]["qr"] += monto
+                        total_qr += monto
+                    elif metodo == "TARJETA":
+                        client_data[nit]["tarjeta"] += monto
+                        total_tarjeta += monto
+                    elif metodo == "TRANSFERENCIA":
+                        client_data[nit]["transferencia"] += monto
+                        total_transferencia += monto
+                    elif metodo == "CREDITO":
+                        client_data[nit]["credito"] += monto
+                        total_credito += monto
+
+    unique_clients = len(client_data)
+    ticket_promedio = total_global / unique_clients if unique_clients > 0 else Decimal("0")
+
+    clientes_list = []
+    for client_info in client_data.values():
+        clientes_list.append({
+            "nit": client_info["nit"],
+            "razon_social": client_info["razon_social"],
+            "telefono": client_info["telefono"],
+            "cantidad_compras": client_info["cantidad_compras"],
+            "total_comprado": float(client_info["total_comprado"]),
+            "ticket_promedio": float(client_info["total_comprado"] / client_info["cantidad_compras"]) if client_info["cantidad_compras"] > 0 else 0,
+            "efectivo": float(client_info["efectivo"]),
+            "qr": float(client_info["qr"]),
+            "tarjeta": float(client_info["tarjeta"]),
+            "transferencia": float(client_info["transferencia"]),
+            "credito": float(client_info["credito"]),
+            "metodo_preferido": (
+                "EFECTIVO" if client_info["efectivo"] >= max(client_info["qr"], client_info["tarjeta"], client_info["transferencia"], client_info["credito"])
+                else "QR" if client_info["qr"] >= max(client_info["tarjeta"], client_info["transferencia"], client_info["credito"])
+                else "TARJETA" if client_info["tarjeta"] >= max(client_info["transferencia"], client_info["credito"])
+                else "TRANSFERENCIA" if client_info["transferencia"] >= client_info["credito"]
+                else "CREDITO"
+            )
+        })
+
+    clientes_list.sort(key=lambda x: x["total_comprado"], reverse=True)
+
+    por_metodo = {
+        "EFECTIVO": float(total_efectivo),
+        "QR": float(total_qr),
+        "TARJETA": float(total_tarjeta),
+        "TRANSFERENCIA": float(total_transferencia),
+        "CREDITO": float(total_credito)
+    }
+
+    return {
+        "resumen": {
+            "total_comprado": float(total_global),
+            "clientes_unicos": unique_clients,
+            "total_transacciones": total_transacciones,
+            "ticket_promedio_general": float(ticket_promedio),
+            "por_metodo": por_metodo
+        },
+        "por_cliente": clientes_list,
+        "filtros": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "sucursal_id": target_sucursal if target_sucursal and target_sucursal != "all" else "todas"
+        }
+    }
+
