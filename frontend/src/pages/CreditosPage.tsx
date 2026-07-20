@@ -86,7 +86,7 @@ export default function CreditosPage() {
 
     const abonoMut = useMutation({
         mutationFn: (data: any) => registrarAbonosMultiple(abonoDrawer.cuenta.id, data),
-        onSuccess: (res) => {
+        onSuccess: (res: any) => {
             qc.invalidateQueries({ queryKey: ['cuentas-credito'] });
             qc.invalidateQueries({ queryKey: ['deudas', selectedCuenta?.id] });
             qc.invalidateQueries({ queryKey: ['transacciones', selectedCuenta?.id] });
@@ -101,7 +101,7 @@ export default function CreditosPage() {
     const anularMut = useMutation({
         mutationFn: ({ transaccionId, motivo }: { transaccionId: string, motivo: string }) => 
             anularAbono(selectedCuenta!.id, transaccionId, motivo),
-        onSuccess: (res) => {
+        onSuccess: (res: any) => {
             qc.invalidateQueries({ queryKey: ['cuentas-credito'] });
             qc.invalidateQueries({ queryKey: ['deudas', selectedCuenta?.id] });
             qc.invalidateQueries({ queryKey: ['transacciones', selectedCuenta?.id] });
