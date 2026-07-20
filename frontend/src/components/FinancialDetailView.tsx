@@ -87,8 +87,8 @@ export default function FinancialDetailView() {
     }, [productsData]);
 
     const { data: reportData, isLoading, isError } = useQuery({
-        queryKey: ['financial-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal],
-        queryFn: () => getFinancialReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal),
+        queryKey: ['financial-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category, appliedFilters.proveedor],
+        queryFn: () => getFinancialReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category, appliedFilters.proveedor),
         enabled: !!appliedFilters.startDate && !!appliedFilters.endDate
     });
     const report: any = reportData;

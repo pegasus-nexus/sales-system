@@ -417,11 +417,14 @@ async def get_financial_report(
     start_date: str, # YYYY-MM-DD
     end_date: str,   # YYYY-MM-DD
     sucursal_id: Optional[str] = "all", 
+    category: Optional[str] = None,
+    proveedor: Optional[str] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
     Returns a financial detail report for General Admins.
     Shows Público, Fábrica, Margen 15%, Margen Retail and Margen Total.
+    Supports optional category and proveedor filters.
     """
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver este reporte.")
@@ -436,15 +439,58 @@ async def get_financial_report(
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
-
     match_filter = {
-        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
+        "tenant_id": tenant_id,
         "anulada": False,
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
     
     if sucursal_id and sucursal_id != "all":
         match_filter["sucursal_id"] = sucursal_id
+
+    matching_ids = []
+    matching_names = []
+    if category or proveedor:
+        prod_query: dict = {"tenant_id": tenant_id, "is_active": True}
+        if category:
+            cat_docs = await Category.find({"$or": [{"name": category}, {"nombre": category}]}).to_list()
+            cat_ids = [str(c.id) for c in cat_docs]
+            prod_query["$or"] = [
+                {"categoria_nombre": category},
+                {"categoria": category},
+                {"categoria_id": {"$in": cat_ids}}
+            ]
+        if proveedor:
+            prov_conditions = [
+                {"proveedor_nombre": proveedor},
+                {"proveedor": proveedor}
+            ]
+            if "$or" in prod_query:
+                prod_query["$and"] = [{"$or": prod_query.pop("$or")}, {"$or": prov_conditions}]
+            else:
+                prod_query["$or"] = prov_conditions
+
+        matching_products = await Product.find(prod_query).to_list()
+        matching_ids = [str(p.id) for p in matching_products]
+        matching_names = [p.descripcion for p in matching_products if p.descripcion]
+
+        match_filter["$or"] = [
+            {"items.producto_id": {"$in": matching_ids}},
+            {"items.nombre": {"$in": matching_names}}
+        ]
+
+    filtered_items_expr = {
+        "$filter": {
+            "input": "$items",
+            "as": "item",
+            "cond": {
+                "$or": [
+                    {"$in": ["$$item.producto_id", matching_ids]},
+                    {"$in": ["$$item.nombre", matching_names]}
+                ]
+            }
+        }
+    } if (category or proveedor) else "$items"
 
     pipeline = [
         {"$match": match_filter},
@@ -455,13 +501,21 @@ async def get_financial_report(
                     "sucursal_id": "$sucursal_id"
                 },
 
-                "total_publico": {"$sum": "$total"},
+                "total_publico": {
+                    "$sum": {
+                        "$reduce": {
+                            "input": filtered_items_expr,
+                            "initialValue": 0,
+                            "in": {"$add": ["$$value", {"$multiply": [{"$ifNull": ["$$this.precio_unitario", 0]}, {"$ifNull": ["$$this.cantidad", 0]}]}]}
+                        }
+                    }
+                },
                 "total_fabrica": {
                     "$sum": {
                         "$reduce": {
-                            "input": "$items",
+                            "input": filtered_items_expr,
                             "initialValue": 0,
-                            "in": {"$add": ["$$value", {"$multiply": ["$$this.costo_unitario", "$$this.cantidad"]}]}
+                            "in": {"$add": ["$$value", {"$multiply": [{"$ifNull": ["$$this.costo_unitario", 0]}, {"$ifNull": ["$$this.cantidad", 0]}]}]}
                         }
                     }
                 },
@@ -473,9 +527,7 @@ async def get_financial_report(
                 "sucursal_id": "$_id.sucursal_id",
                 "total_publico": 1,
                 "total_fabrica": 1,
-                # Margen 15% (Distribuidor) = 15% del costo de fabrica
                 "margen_distribuidor": {"$multiply": ["$total_fabrica", 0.15]},
-                # Margen Utilidad (Retail) = Venta al publico - Costo fabrica
                 "margen_retail": {"$subtract": ["$total_publico", "$total_fabrica"]},
                 "_id": 0
             }

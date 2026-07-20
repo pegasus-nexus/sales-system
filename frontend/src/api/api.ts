@@ -119,12 +119,14 @@ export const exportValuedInventory = async (date?: string, sucursal_id?: string)
     window.URL.revokeObjectURL(url);
 };
 
-export const getFinancialReport = (startDate: string, endDate: string, sucursal_id: string = 'all') => {
+export const getFinancialReport = (startDate: string, endDate: string, sucursal_id: string = 'all', category?: string, proveedor?: string) => {
     const params = new URLSearchParams({ 
         start_date: startDate, 
         end_date: endDate,
         sucursal_id: sucursal_id
     });
+    if (category) params.append('category', category);
+    if (proveedor) params.append('proveedor', proveedor);
     return client<unknown[]>(`/reports/financial-report?${params.toString()}`);
 };
 
