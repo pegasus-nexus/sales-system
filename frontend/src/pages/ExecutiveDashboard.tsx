@@ -9,6 +9,7 @@ import CatalogRentability from './CatalogRentability';
 import AnaliticaAvanzada from './AnaliticaAvanzada';
 
 import ImportadorInteligente from '../components/DataImporterWizard';
+import ChatbotAnalitico from '../components/ChatbotAnalitico';
 
 
 function cn(...inputs: ClassValue[]) {
@@ -145,6 +146,9 @@ export default function ExecutiveDashboard() {
                 {activeTab === 'ml' && <AnaliticaAvanzada />}
                 {activeTab === 'importar' && <ImportadorInteligente />}
             </div>
+
+            {/* AI Assistant Floating Component */}
+            <ChatbotAnalitico />
         </div>
     );
 }
