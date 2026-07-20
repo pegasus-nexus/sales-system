@@ -35,7 +35,7 @@ export const getTenants = () => client<Tenant[]>('/tenants');
 export const createTenant = (data: TenantCreate) => client<Tenant>('/tenants', { body: data });
 export const updateTenant = (id: string, data: TenantUpdate) => client<Tenant>(`/tenants/${id}`, { method: 'PUT', body: data });
 export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/${id}`, { method: 'DELETE' });
-export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string }>('/tenants/my-features');
+export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string; rubro: string; modulos_activos: string[] }>('/tenants/my-features');
 export const getMyTenant = () => client<Tenant>('/tenants/me');
 export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
 export const updateMyTenantConfiguracion = (data: Record<string, unknown>) => client<Record<string, unknown>>('/tenants/me/configuracion', { method: 'PUT', body: data });

@@ -1,39 +1,40 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
 import Layout from './components/Layout';
-import LoginPage from './pages/LoginPage';
-import TenantsAdminPage from './pages/TenantsAdminPage';
-import PlanesAdminPage from './pages/PlanesAdminPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import TenantDashboard from './pages/TenantDashboard';
-import SucursalesPage from './pages/SucursalesPage';
-import CatalogoPage from './pages/CatalogoPage';
-import InventarioPage from './pages/InventarioPage';
-import InventarioTrasladosPage from './pages/InventarioTrasladosPage';
-import PedidosPage from './pages/PedidosPage';
-import POSPage from './pages/POSPage';
-import CajaPage from './pages/CajaPage';
-import CategoriesPage from './pages/CategoriesPage';
-import UsersPage from './pages/UsersPage';
-import DescuentosPage from './pages/DescuentosPage';
-import DashboardSucursal from './pages/DashboardSucursal';
-import VentasPage from './pages/VentasPage';
-import ControlQRPage from './pages/ControlQRPage';
-import PriceRequestsPage from './pages/PriceRequestsPage';
-import ReportsPage from './pages/ReportsPage';
-import ExecutiveDashboard from './pages/ExecutiveDashboard';
-import ClientesPage from './pages/ClientesPage';
-import ProveedoresPage from './pages/ProveedoresPage';
-import CreditosPage from './pages/CreditosPage';
-import RecipesPage from './pages/RecipesPage';
-import MealPlansPage from './pages/MealPlansPage';
-import ProductionCalendarPage from './pages/ProductionCalendarPage';
-import ReclamosFabrica from './pages/b2b/ReclamosFabrica';
-import ComunidadPage from './pages/ComunidadPage';
-import ConfiguracionPage from './pages/ConfiguracionPage';
-import AuditLogsPage from './pages/AuditLogsPage';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
+const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const TenantDashboard = lazy(() => import('./pages/TenantDashboard'));
+const SucursalesPage = lazy(() => import('./pages/SucursalesPage'));
+const CatalogoPage = lazy(() => import('./pages/CatalogoPage'));
+const InventarioPage = lazy(() => import('./pages/InventarioPage'));
+const InventarioTrasladosPage = lazy(() => import('./pages/InventarioTrasladosPage'));
+const PedidosPage = lazy(() => import('./pages/PedidosPage'));
+const POSPage = lazy(() => import('./pages/POSPage'));
+const CajaPage = lazy(() => import('./pages/CajaPage'));
+const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const DescuentosPage = lazy(() => import('./pages/DescuentosPage'));
+const DashboardSucursal = lazy(() => import('./pages/DashboardSucursal'));
+const VentasPage = lazy(() => import('./pages/VentasPage'));
+const ControlQRPage = lazy(() => import('./pages/ControlQRPage'));
+const PriceRequestsPage = lazy(() => import('./pages/PriceRequestsPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
+const ClientesPage = lazy(() => import('./pages/ClientesPage'));
+const ProveedoresPage = lazy(() => import('./pages/ProveedoresPage'));
+const CreditosPage = lazy(() => import('./pages/CreditosPage'));
+const RecipesPage = lazy(() => import('./pages/RecipesPage'));
+const MealPlansPage = lazy(() => import('./pages/MealPlansPage'));
+const ProductionCalendarPage = lazy(() => import('./pages/ProductionCalendarPage'));
+const ReclamosFabrica = lazy(() => import('./pages/b2b/ReclamosFabrica'));
+const ComunidadPage = lazy(() => import('./pages/ComunidadPage'));
+const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'));
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
@@ -73,7 +74,7 @@ function FeaturesFetcher() {
     
     if (features.length === 0) {
       getMyFeatures()
-        .then(res => setFeatures(res.features, res.plan_name))
+        .then(res => setFeatures(res.features, res.plan_name, res.rubro, res.modulos_activos))
         .catch(() => {});
     }
 
@@ -187,212 +188,236 @@ function App() {
           <SoftLockBlocker />
           <Toaster position="top-right" richColors theme="light" />
           <BrowserRouter>
-        <Routes>
-          {/* 1. Ruta de Login fuera del Layout */}
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* 2. Todas las demás rutas dentro del Layout */}
-          <Route path="/*" element={
-            <Layout>
+            <Suspense fallback={
+              <div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-neutral-400 font-medium">
+                Cargando...
+              </div>
+            }>
               <Routes>
-                <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
+                {/* 1. Ruta de Login fuera del Layout */}
+                <Route path="/login" element={<LoginPage />} />
 
-                {/* SuperAdmin */}
-                <Route path="/admin/dashboard" element={
-                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                    <AdminDashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/empresas" element={
-                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                    <TenantsAdminPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/planes" element={
-                  <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                    <PlanesAdminPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                {/* 2. Todas las demás rutas dentro del Layout */}
+                <Route path="/*" element={
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
 
-                <Route path="/dashboard" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                    <TenantDashboard />
-                  </ProtectedRoute>
-                } />
+                      {/* SuperAdmin */}
+                      <Route path="/admin/dashboard" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                          <AdminDashboardPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/empresas" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                          <TenantsAdminPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/planes" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                          <PlanesAdminPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
-                <Route path="/reportes" element={
-                  <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="REPORTES_AVANZADOS">
-                    <ReportsPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/dashboard" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <TenantDashboard />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/inteligencia" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                    <ExecutiveDashboard />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/reportes" element={
+                        <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="REPORTES_AVANZADOS">
+                          <ReportsPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/sucursales" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="MULTI_SUCURSAL">
-                    <SucursalesPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/inteligencia" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <ExecutiveDashboard />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/dashboard-sucursal" element={
-                  <ProtectedRoute allowedRoles={['ADMIN_SUCURSAL']}>
-                    <DashboardSucursal />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/sucursales" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="MULTI_SUCURSAL">
+                          <SucursalesPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/catalogo" element={
-                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
-                    <CatalogoPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/dashboard-sucursal" element={
+                        <ProtectedRoute allowedRoles={['ADMIN_SUCURSAL']}>
+                          <DashboardSucursal />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/inventario" element={
-                  <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
-                    <InventarioPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/catalogo" element={
+                        <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
+                          <CatalogoPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Traslados de Inventario */}
-                <Route path="/traslados" element={
-                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="INVENTARIO">
-                    <InventarioTrasladosPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/inventario" element={
+                        <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
+                          <InventarioPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* B2B Orders */}
-                <Route path="/pedidos" element={
-                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="PEDIDOS_INTERNOS">
-                    <PedidosPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Traslados de Inventario */}
+                      <Route path="/traslados" element={
+                        <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="INVENTARIO">
+                          <InventarioTrasladosPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Historial de Ventas */}
-                <Route path="/ventas" element={
-                  <ProtectedRoute allowedRoles={[...ALL_STAFF, 'FACTURADOR']} requiredFeature="VENTAS">
-                    <VentasPage />
-                  </ProtectedRoute>
-                } />
+                      {/* B2B Orders */}
+                      <Route path="/pedidos" element={
+                        <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="PEDIDOS_INTERNOS">
+                          <PedidosPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/qr-control" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CONTROL_QR">
-                    <ControlQRPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Historial de Ventas */}
+                      <Route path="/ventas" element={
+                        <ProtectedRoute allowedRoles={[...ALL_STAFF, 'FACTURADOR']} requiredFeature="VENTAS">
+                          <VentasPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Créditos */}
-                <Route path="/creditos" element={
-                  <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="CREDITOS">
-                    <CreditosPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/qr-control" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CONTROL_QR">
+                          <ControlQRPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Clientes */}
-                <Route path="/clientes" element={
-                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO}>
-                    <ClientesPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Créditos */}
+                      <Route path="/creditos" element={
+                        <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="CREDITOS">
+                          <CreditosPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Proveedores */}
-                <Route path="/proveedores" element={
-                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
-                    <ProveedoresPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Clientes */}
+                      <Route path="/clientes" element={
+                        <ProtectedRoute allowedRoles={STAFF_NO_CAJERO}>
+                          <ClientesPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Dark Kitchen */}
-                <Route path="/recetas" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
-                    <RecipesPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/planes-comida" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
-                    <MealPlansPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/produccion" element={
-                  <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
-                    <ProductionCalendarPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Proveedores */}
+                      <Route path="/proveedores" element={
+                        <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
+                          <ProveedoresPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* B2B / Reclamos Fábrica */}
-                <Route path="/b2b/mermas" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                    <ReclamosFabrica />
-                  </ProtectedRoute>
-                } />
+                      {/* Dark Kitchen */}
+                      <Route path="/recetas" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                          <RecipesPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/planes-comida" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                          <MealPlansPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/produccion" element={
+                        <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
+                          <ProductionCalendarPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Comunidad FEXCO */}
-                <Route path="/comunidad" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                    <ComunidadPage />
-                  </ProtectedRoute>
-                } />
+                      {/* B2B / Reclamos Fábrica */}
+                      <Route path="/b2b/mermas" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <ReclamosFabrica />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Configuración */}
-                <Route path="/configuracion" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                    <ConfiguracionPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Comunidad FEXCO */}
+                      <Route path="/comunidad" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <ComunidadPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Auditoria */}
-                <Route path="/auditoria" element={
-                  <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN']}>
-                    <AuditLogsPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Configuración */}
+                      <Route path="/configuracion" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <ConfiguracionPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Descuentos */}
-                <Route path="/descuentos" element={
-                  <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="DESCUENTOS_AVANZADOS">
-                    <DescuentosPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Auditoria */}
+                      <Route path="/auditoria" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN']}>
+                          <AuditLogsPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/solicitudes-precio" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="LISTAS_PRECIOS">
-                    <PriceRequestsPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Descuentos */}
+                      <Route path="/descuentos" element={
+                        <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="DESCUENTOS_AVANZADOS">
+                          <DescuentosPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Categories (parte de INVENTARIO) */}
-                <Route path="/categories" element={
-                  <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
-                    <CategoriesPage />
-                  </ProtectedRoute>
-                } />
+                      <Route path="/solicitudes-precio" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="LISTAS_PRECIOS">
+                          <PriceRequestsPage />
+                        </ProtectedRoute>
+                      } />
 
-                {/* Users */}
-                <Route path="/usuarios" element={
-                  <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
-                    <UsersPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Categories (parte de INVENTARIO) */}
+                      <Route path="/categories" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                          <CategoriesPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/caja" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CAJA">
-                    <CajaPage />
-                  </ProtectedRoute>
-                } />
+                      {/* Users */}
+                      <Route path="/usuarios" element={
+                        <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
+                          <UsersPage />
+                        </ProtectedRoute>
+                      } />
 
-                <Route path="/pos" element={
-                  <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="VENTAS">
-                    <POSPage />
-                  </ProtectedRoute>
+                      <Route path="/caja" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="CAJA">
+                          <CajaPage />
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/pos" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="VENTAS">
+                          <POSPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Restaurante (Fase 1 Infraestructura) */}
+                      <Route path="/mesas" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="MESAS">
+                          <div className="p-8 bg-[#0d0d0d] rounded-2xl border border-neutral-800/40 m-6">
+                            <h2 className="text-2xl font-black text-white tracking-tight mb-2">Gestión de Mesas</h2>
+                            <p className="text-neutral-400 text-sm">Este módulo está en desarrollo y se activará próximamente.</p>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/comandas" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="COMANDAS">
+                          <div className="p-8 bg-[#0d0d0d] rounded-2xl border border-neutral-800/40 m-6">
+                            <h2 className="text-2xl font-black text-white tracking-tight mb-2">Pantalla de Comandas (KDS)</h2>
+                            <p className="text-neutral-400 text-sm">Este módulo está en desarrollo y se activará próximamente.</p>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+                    </Routes>
+                  </Layout>
                 } />
               </Routes>
-            </Layout>
-          } />
-        </Routes>
-      </BrowserRouter>
+            </Suspense>
+          </BrowserRouter>
         </ConfirmProvider>
       </ErrorModalProvider>
     </QueryClientProvider>

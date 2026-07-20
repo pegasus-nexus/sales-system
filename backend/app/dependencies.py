@@ -48,3 +48,8 @@ def get_production_service() -> ProductionService:
         client_plan_repo=get_client_meal_plan_repo(),
         product_repo=get_product_repo()
     )
+
+from app.application.services.sales_service import SalesService
+
+def get_sales_service() -> SalesService:
+    return SalesService()

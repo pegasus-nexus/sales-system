@@ -25,6 +25,11 @@ logger = logging.getLogger("SalesService")
 
 class SalesService:
     @staticmethod
+    def _get_sale_repo():
+        from app.infrastructure.repositories.mongo_sale_repository import MongoSaleRepository
+        return MongoSaleRepository()
+
+    @staticmethod
     async def create_sale(sale_in: SaleCreate, current_user: User) -> Sale:
         if current_user.role == UserRole.FACTURADOR:
             raise HTTPException(status_code=403, detail="Un facturador no tiene permisos para crear ventas")
@@ -231,7 +236,7 @@ class SalesService:
                         vendedor_id=sale_in.vendedor_id,
                         vendedor_name=sale_in.vendedor_name,
                     )
-                    await sale.create(session=session)
+                    await SalesService._get_sale_repo().add(sale, session=session)
 
                     await SaleItemAnalytics.find(
                         SaleItemAnalytics.tenant_id == tenant_id,
@@ -322,7 +327,7 @@ class SalesService:
                                     
                             # Vincular el cliente a la venta
                             sale.cliente_id = str(cliente_existente.id)
-                            await sale.save(session=session)
+                            await SalesService._get_sale_repo().update(sale, session=session)
 
                     if sale.cliente_id:
                         from beanie.operators import Inc, Set
@@ -504,7 +509,7 @@ class SalesService:
         try:
             async with await client.start_session() as session:
                 async with session.start_transaction():
-                    sale = await Sale.get(sale_id, session=session)
+                    sale = await SalesService._get_sale_repo().get_by_id(sale_id, session=session)
                     if not sale or sale.tenant_id != tenant_id:
                         raise HTTPException(status_code=404, detail=VentasErrors.VENTA_NO_ENCONTRADA)
 
@@ -691,7 +696,7 @@ class SalesService:
                     sale.anulada_por_nombre   = current_user.full_name or current_user.username
                     sale.anulada_at           = datetime.utcnow()
                     sale.metodo_pago_correcto = metodo_pago_correcto
-                    await sale.save(session=session)
+                    await SalesService._get_sale_repo().update(sale, session=session)
                     
                     await SaleItemAnalytics.find(
                         SaleItemAnalytics.tenant_id == tenant_id,
@@ -784,7 +789,7 @@ class SalesService:
                             created_at=datetime.utcnow(),
                             notas_anulacion=f"[Creada automáticamente por corrección del Ticket #{str(sale.id)[-6:].upper()}]"
                         )
-                        await new_sale.insert(session=session)
+                        await SalesService._get_sale_repo().add(new_sale, session=session)
                         
                         # C. Incrementar compras del cliente para la nueva venta
                         if new_sale.cliente_id:

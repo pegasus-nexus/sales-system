@@ -34,8 +34,35 @@ class PlanType(str, Enum):
 
 class RubroEmpresa(str, Enum):
     RETAIL = "RETAIL"
+    RESTAURANTE = "RESTAURANTE"
     DARK_KITCHEN = "DARK_KITCHEN"
+    CAFETERIA = "CAFETERIA"
     SERVICIOS = "SERVICIOS"
+
+# Default active modules by business segment (rubro)
+MODULOS_DEFAULT_POR_RUBRO: dict[str, list[str]] = {
+    "RETAIL": [
+        "VENTAS", "INVENTARIO", "CAJA", "CLIENTES", "CREDITOS",
+        "KARDEX", "REPORTES_BASICOS"
+    ],
+    "RESTAURANTE": [
+        "VENTAS", "INVENTARIO", "CAJA", "CLIENTES",
+        "RECETAS", "MESAS", "COMANDAS", "CARTA_DIGITAL",
+        "REPORTES_BASICOS"
+    ],
+    "DARK_KITCHEN": [
+        "VENTAS", "INVENTARIO", "RECETAS", "MEAL_PLANS",
+        "PRODUCCION", "DESPACHO", "REPORTES_BASICOS"
+    ],
+    "CAFETERIA": [
+        "VENTAS", "INVENTARIO", "CAJA", "RECETAS",
+        "REPORTES_BASICOS"
+    ],
+    "SERVICIOS": [
+        "VENTAS", "CAJA", "CLIENTES", "CREDITOS",
+        "REPORTES_BASICOS"
+    ],
+}
 
 class Tenant(Document, SoftDeleteMixin):
     name: str

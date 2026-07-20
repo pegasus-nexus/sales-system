@@ -35,6 +35,9 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.ENVIRONMENT != "production" else None,
 )
 
+from app.infrastructure.middleware.tenant_context import TenantContextMiddleware
+app.add_middleware(TenantContextMiddleware)
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

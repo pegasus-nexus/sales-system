@@ -63,6 +63,10 @@ export default function Layout({ children }: LayoutProps) {
             { icon: CalendarRange,   label: 'Planes Comida',path: '/planes-comida',      feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
             { icon: Calendar,        label: 'Producción',   path: '/produccion',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
             
+            // Restaurante (Fase 1 Infraestructura)
+            { icon: Store,           label: 'Mesas',        path: '/mesas',              feature: 'MESAS',                roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
+            { icon: ClipboardList,   label: 'Comandas',     path: '/comandas',           feature: 'COMANDAS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
+
             { icon: Banknote,        label: 'Créditos',     path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
             { icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: 'REPORTES_AVANZADOS',   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
             { icon: Percent,         label: 'Descuentos',   path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },

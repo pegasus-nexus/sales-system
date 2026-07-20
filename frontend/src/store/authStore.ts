@@ -18,6 +18,12 @@ export const FEATURES = {
     PEDIDOS_INTERNOS:     'PEDIDOS_INTERNOS',
     CONTROL_QR:           'CONTROL_QR',
     API_ACCESO:           'API_ACCESO',
+    MESAS:                'MESAS',
+    COMANDAS:             'COMANDAS',
+    CARTA_DIGITAL:        'CARTA_DIGITAL',
+    RESERVAS:             'RESERVAS',
+    DELIVERY:             'DELIVERY',
+    PROPINAS:             'PROPINAS',
 } as const;
 
 interface AuthState {
@@ -30,11 +36,13 @@ interface AuthState {
     /** Nombre del plan activo (informativo) */
     planName: string;
     planExpiresAt: string | null;
+    rubro: string | null;
+    modulos_activos: string[];
     login: (token: string, user: User) => void;
     logout: () => void;
     originalToken: string | null;
     setOriginalToken: (token: string | null) => void;
-    setFeatures: (features: string[], planName?: string) => void;
+    setFeatures: (features: string[], planName?: string, rubro?: string | null, modulos_activos?: string[]) => void;
     setPlanExpiresAt: (date: string | null) => void;
     tenantSettings: TenantSettings | null;
     setTenantSettings: (settings: TenantSettings) => void;
@@ -61,26 +69,38 @@ export const useAuthStore = create<AuthState>()(
             planName: '',
             planExpiresAt: null,
             tenantSettings: null,
+            rubro: null,
+            modulos_activos: [],
             login: (token, user) => set({
                 token,
                 role: user.role,
                 user,
                 sucursal_id: user.sucursal_id ?? null,
             }),
-            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null, originalToken: null }),
+            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null, originalToken: null, rubro: null, modulos_activos: [] }),
             originalToken: null,
             setOriginalToken: (token) => set({ originalToken: token }),
-            setFeatures: (features, planName = '') => set({ features, planName }),
+            setFeatures: (features, planName = '', rubro = null, modulos_activos = []) => set({ features, planName, rubro, modulos_activos }),
             setPlanExpiresAt: (date) => set({ planExpiresAt: date }),
             setTenantSettings: (settings) => set({ tenantSettings: settings }),
             isAuthenticated: () => !!get().token,
             hasFeature: (flag: string) => {
-                const { features, role } = get();
+                const { features, role, modulos_activos } = get();
                 // SUPERADMIN siempre tiene acceso a todo
                 if (role === 'SUPERADMIN') return true;
                 // Si features aún no cargó → acceso total (fallback seguro, nunca bloquea)
                 if (features.length === 0) return true;
-                return features.includes(flag);
+                
+                // Si el módulo requiere un plan feature Y además está activo en modulos_activos para este rubro
+                const hasPlanAccess = features.includes(flag);
+                
+                // Algunos plan features actúan directamente como módulos activos. 
+                // Si modulos_activos está poblado, cruzamos la referencia.
+                if (modulos_activos && modulos_activos.length > 0) {
+                    return hasPlanAccess && modulos_activos.includes(flag);
+                }
+                
+                return hasPlanAccess;
             },
             isSuperAdmin: () => get().role === 'SUPERADMIN',
             isMatriz: () => ['ADMIN_MATRIZ', 'ADMIN'].includes(get().role ?? ''),

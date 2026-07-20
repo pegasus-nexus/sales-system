@@ -40,7 +40,13 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
+        data={
+            "sub": user.username,
+            "role": user.role,
+            "tenant_id": user.tenant_id,
+            "sucursal_id": user.sucursal_id
+        },
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": user.role}
 
@@ -88,7 +94,13 @@ async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_cu
         
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": admin_user.username, "role": admin_user.role}, expires_delta=access_token_expires
+        data={
+            "sub": admin_user.username,
+            "role": admin_user.role,
+            "tenant_id": admin_user.tenant_id,
+            "sucursal_id": admin_user.sucursal_id
+        },
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": admin_user.role}
 
@@ -107,6 +119,12 @@ async def impersonate_user(user_id: str, current_user: User = Depends(get_curren
         
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": target_user.username, "role": target_user.role}, expires_delta=access_token_expires
+        data={
+            "sub": target_user.username,
+            "role": target_user.role,
+            "tenant_id": target_user.tenant_id,
+            "sucursal_id": target_user.sucursal_id
+        },
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": target_user.role}

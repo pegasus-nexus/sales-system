@@ -27,6 +27,7 @@ class TenantCreate(BaseModel):
         min_length=8,
         description="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     )
+    rubro: Optional[str] = "RETAIL"
 
     @field_validator("admin_password")
     @classmethod
@@ -149,8 +150,24 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
     plan_doc = await Plan.find_one(Plan.code == plan_code)
     plan_id = str(plan_doc.id) if plan_doc else None
 
+    # Determine rubro and its default modules
+    from app.domain.models.tenant import RubroEmpresa, MODULOS_DEFAULT_POR_RUBRO
+    rubro_str = tenant_in.rubro or "RETAIL"
+    try:
+        rubro_enum = RubroEmpresa(rubro_str)
+    except ValueError:
+        rubro_enum = RubroEmpresa.RETAIL
+
+    modulos = MODULOS_DEFAULT_POR_RUBRO.get(rubro_enum.value, ["INVENTARIO", "POS", "KARDEX"])
+
     # Create Tenant
-    tenant = Tenant(name=tenant_in.name, plan=plan_enum, plan_id=plan_id)
+    tenant = Tenant(
+        name=tenant_in.name,
+        plan=plan_enum,
+        plan_id=plan_id,
+        rubro=rubro_enum,
+        modulos_activos=modulos
+    )
     await tenant.create()
 
     # Create Admin User for Tenant

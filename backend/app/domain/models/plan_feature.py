@@ -25,6 +25,14 @@ class PlanFeature(str, Enum):
     API_ACCESO           = "API_ACCESO"           # Acceso a API externa
     PRICE_REQUESTS       = "PRICE_REQUESTS"       # Solicitudes de precio
 
+    # ── Módulos Restaurante (nuevos) ─────────────────────────
+    MESAS                = "MESAS"                # Gestión de mesas
+    COMANDAS             = "COMANDAS"             # Pantalla cocina / KDS
+    CARTA_DIGITAL        = "CARTA_DIGITAL"        # Menú QR
+    RESERVAS             = "RESERVAS"             # Sistema de reservas
+    DELIVERY             = "DELIVERY"             # Pedidos delivery
+    PROPINAS             = "PROPINAS"             # Gestión de propinas
+
 
 class PlanFeatureDocument(Document):
     code: str
