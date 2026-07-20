@@ -74,7 +74,7 @@ export default function DashboardMaestro() {
     const [showTicketClienteDetails, setShowTicketClienteDetails] = useState(false);
 
     // NUEVOS ESTADOS DE TIEMPO
-    const [timeRange, setTimeRange] = useState('today'); // 'today', '7days', '30days', 'this_month', 'this_year', 'historico', 'custom_month', 'custom_year', 'custom_date'
+    const [timeRange, setTimeRange] = useState('30days'); // 'today', '7days', '30days', 'this_month', 'this_year', 'historico', 'custom_month', 'custom_year', 'custom_date'
     const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
     const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
     const [customStartDate, setCustomStartDate] = useState('');
