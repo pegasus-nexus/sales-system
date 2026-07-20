@@ -3,12 +3,48 @@ import { getSalesPercentiles } from "../api/api";
 import { Loader2, AlertTriangle, Store, BarChart2, ChevronLeft, ChevronRight, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { clsx } from "clsx"; import { twMerge } from "tailwind-merge";
 function cn(...i: any[]) { return twMerge(clsx(i)); }
-const fmt  = (n: number) => `Bs. ${n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}`;
+const fmt  = (n: number) => `Bs. ${n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 const ZONES = {
-  critico:{ label:"Critico", color:"text-red-700",    bg:"bg-red-100",    border:"border-red-300",    dot:"bg-red-500",    pill:"bg-red-500 text-white"    },
-  bajo:   { label:"Bajo",    color:"text-amber-700",  bg:"bg-amber-100",  border:"border-amber-300",  dot:"bg-amber-400",  pill:"bg-amber-400 text-white"  },
-  normal: { label:"Normal",  color:"text-emerald-700",bg:"bg-emerald-100",border:"border-emerald-300",dot:"bg-emerald-500",pill:"bg-emerald-500 text-white" },
-  alto:   { label:"Alto",    color:"text-violet-700", bg:"bg-violet-100", border:"border-violet-300", dot:"bg-violet-500", pill:"bg-violet-500 text-white"  },
+  critico:{ 
+    label:"Critico", 
+    color:"text-red-700",    
+    bg:"bg-red-100",    
+    border:"border-red-300",    
+    dot:"bg-red-500",    
+    pill:"bg-red-500 text-white",
+    pastelBar:"bg-red-200",
+    pastelPill:"bg-red-50 text-red-700 border border-red-200"
+  },
+  bajo:   { 
+    label:"Bajo",    
+    color:"text-amber-700",  
+    bg:"bg-amber-100",  
+    border:"border-amber-300",  
+    dot:"bg-amber-400",  
+    pill:"bg-amber-400 text-white",
+    pastelBar:"bg-amber-200",
+    pastelPill:"bg-amber-50 text-amber-700 border border-amber-200"
+  },
+  normal: { 
+    label:"Normal",  
+    color:"text-emerald-700",
+    bg:"bg-emerald-100",
+    border:"border-emerald-300",
+    dot:"bg-emerald-500",
+    pill:"bg-emerald-500 text-white",
+    pastelBar:"bg-emerald-200",
+    pastelPill:"bg-emerald-50 text-emerald-700 border border-emerald-200"
+  },
+  alto:   { 
+    label:"Alto",    
+    color:"text-violet-700", 
+    bg:"bg-violet-100", 
+    border:"border-violet-300", 
+    dot:"bg-violet-500", 
+    pill:"bg-violet-500 text-white",
+    pastelBar:"bg-violet-200",
+    pastelPill:"bg-violet-50 text-violet-700 border border-violet-200"
+  },
 } as const;
 const SUCS = [
   {value:"",label:"Todas las Sucursales"},{value:"Heroinas",label:"Heroínas"},
@@ -92,6 +128,14 @@ export default function SalesPercentileTracker(){
   const histPeriods = data?.periods ? data.periods.filter((x: any) => !x.is_future) : [];
   const totalSalesHist = histPeriods.reduce((acc: number, curr: any) => acc + curr.total, 0);
 
+  // Current year calculations
+  const currentYearStr = String(now.getFullYear());
+  const currentYearPeriods = histPeriods.filter((x: any) => x.fecha.startsWith(currentYearStr));
+  const totalSalesCurrentYear = currentYearPeriods.reduce((acc: number, curr: any) => acc + curr.total, 0);
+  const avgSalesCurrentYear = currentYearPeriods.length > 0 
+    ? Math.round(totalSalesCurrentYear / currentYearPeriods.length) 
+    : (p?.media ?? 0);
+
   // Sparkline calculations
   const last7Days = histPeriods.slice(-7);
   const maxLast7 = last7Days.length > 0 ? Math.max(...last7Days.map((d: any) => d.total), 1) : 1;
@@ -125,8 +169,16 @@ export default function SalesPercentileTracker(){
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <div className="relative">
             <Store size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none"/>
-            <select value={sucursal} onChange={e=>setSucursal(e.target.value)} className="pl-8 pr-5 py-2 bg-gray-50 border border-gray-200 hover:border-indigo-300 rounded-xl font-bold text-sm outline-none appearance-none cursor-pointer">
-              {SUCS.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}
+            <select 
+              value={sucursal} 
+              onChange={e=>setSucursal(e.target.value)} 
+              className="pl-8 pr-6 py-2 bg-white border border-gray-200 hover:border-indigo-300 rounded-xl font-bold text-sm text-gray-800 outline-none appearance-none cursor-pointer"
+            >
+              {SUCS.map(s=>(
+                <option key={s.value} value={s.value} className="bg-white text-gray-800">
+                  {s.label}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex bg-gray-100 p-1 rounded-xl gap-0.5">
@@ -163,7 +215,7 @@ export default function SalesPercentileTracker(){
                     💰 Total Facturado
                   </span>
                   <p className="text-[10px] text-slate-400 font-medium mb-2">
-                    Acumulado últimos 365 días • {sucursal ? `Sucursal: ${SUCS.find(s=>s.value===sucursal)?.label}` : "Todas las sucursales"}
+                    Acumulado año actual ({currentYearStr}) • {sucursal ? `Sucursal: ${SUCS.find(s=>s.value===sucursal)?.label}` : "Todas las sucursales"}
                   </p>
                 </div>
                 <div className="flex items-end justify-between gap-4 mt-2">
@@ -184,9 +236,9 @@ export default function SalesPercentileTracker(){
                   </div>
                   {/* Values */}
                   <div className="text-right">
-                    <p className="text-3xl lg:text-4xl font-black text-slate-700 leading-none">{fmt(totalSalesHist)}</p>
+                    <p className="text-3xl lg:text-4xl font-black text-slate-700 leading-none">{fmt(totalSalesCurrentYear)}</p>
                     <span className="text-[10px] text-slate-400 font-extrabold block mt-2 leading-none">
-                      Promedio diario: {fmt(p?.media ?? 0)}
+                      Promedio diario: {fmt(avgSalesCurrentYear)}
                     </span>
                   </div>
                 </div>
@@ -232,24 +284,24 @@ export default function SalesPercentileTracker(){
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
               {/* Card 3: P25 Mínimo */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
                 <div>
                   <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-red-400"/> P25 (Mínimo)
                   </span>
                   <p className="text-[9px] text-slate-400 font-medium">Límite inferior del último año</p>
                 </div>
-                <div className="flex items-end justify-between mt-3">
+                <div className="flex items-end justify-between mt-2">
                   {/* Mini Bars */}
-                  <div className="flex items-end gap-2 h-12 w-24 pb-0.5">
-                    <div className="w-4 bg-red-500 rounded-t-sm transition-all duration-300" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-4 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-4 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
+                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
+                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300" style={{ height: `${p25Pct}%` }} />
+                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
+                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
                   </div>
                   {/* Values */}
                   <div className="text-right">
                     <p className="text-2xl font-black text-red-600 leading-none">{fmt(p25)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1.5 leading-none">
+                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
                       Basado en 365 días
                     </span>
                   </div>
@@ -257,24 +309,24 @@ export default function SalesPercentileTracker(){
               </div>
 
               {/* Card 4: Mediana (P50) */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
                 <div>
                   <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-400"/> P50 (Mediana)
                   </span>
                   <p className="text-[9px] text-slate-400 font-medium">Punto de equilibrio exacto del año</p>
                 </div>
-                <div className="flex items-end justify-between mt-3">
+                <div className="flex items-end justify-between mt-2">
                   {/* Mini Bars */}
-                  <div className="flex items-end gap-2 h-12 w-24 pb-0.5">
-                    <div className="w-4 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-4 bg-amber-400 rounded-t-sm transition-all duration-300" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-4 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
+                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
+                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
+                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300" style={{ height: `${p50Pct}%` }} />
+                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
                   </div>
                   {/* Values */}
                   <div className="text-right">
                     <p className="text-2xl font-black text-amber-600 leading-none">{fmt(p50)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1.5 leading-none">
+                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
                       Basado en 365 días
                     </span>
                   </div>
@@ -282,24 +334,24 @@ export default function SalesPercentileTracker(){
               </div>
 
               {/* Card 5: P75 (Meta) */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
                 <div>
                   <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-violet-400"/> P75 (Meta)
                   </span>
                   <p className="text-[9px] text-slate-400 font-medium">El 25% superior de tu historial</p>
                 </div>
-                <div className="flex items-end justify-between mt-3">
+                <div className="flex items-end justify-between mt-2">
                   {/* Mini Bars */}
-                  <div className="flex items-end gap-2 h-12 w-24 pb-0.5">
-                    <div className="w-4 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-4 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-4 bg-violet-500 rounded-t-sm transition-all duration-300" style={{ height: "100%" }} />
+                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
+                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
+                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
+                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300" style={{ height: "100%" }} />
                   </div>
                   {/* Values */}
                   <div className="text-right">
                     <p className="text-2xl lg:text-3xl font-black text-violet-600 leading-none">{fmt(p75)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1.5 leading-none">
+                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
                       Solo 25% de días arriba
                     </span>
                   </div>
@@ -439,12 +491,12 @@ export default function SalesPercentileTracker(){
                   const p75W=Math.min((p75/maxRef)*100,100);
                   const total=entry?.total??(isFut?p50:0);
                   return(
-                    <div key={i} className={cn("relative group rounded-2xl border transition-all hover:shadow-md",
-                      isToday?"ring-2 ring-indigo-400 bg-indigo-50 border-indigo-200":z?`${z.bg} ${z.border}`:isFut?"border-dashed border-violet-200 bg-violet-50/20":"bg-gray-50 border-gray-100")}>
+                    <div key={i} className={cn("relative group bg-white rounded-2xl border border-gray-100 transition-all hover:shadow-md",
+                      isToday ? "ring-2 ring-indigo-400 bg-indigo-50 border-indigo-200" : isFut ? "border-dashed border-violet-200 bg-violet-50/20" : "")}>
                       <div className="flex items-start gap-3 px-4 pt-3 pb-2">
                         {/* Stripe + dia */}
                         <div className="flex items-center gap-2 w-24 shrink-0 pt-1">
-                          <div className={cn("w-1 h-10 rounded-full shrink-0",z?z.dot:isFut?"bg-violet-300":"bg-gray-200")}/>
+                          <div className={cn("w-1.5 h-10 rounded-full shrink-0", z ? z.dot : isFut ? "bg-violet-300" : "bg-gray-200")}/>
                           <div>
                             <p className={cn("text-sm font-black",isToday?"text-indigo-700":z?z.color:isFut?"text-violet-500":"text-gray-400")}>{DAYS[i]}</p>
                             <p className="text-[10px] text-gray-400">{date.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</p>
@@ -453,8 +505,8 @@ export default function SalesPercentileTracker(){
                         {/* Barra + etiquetas Min/Med/Max */}
                         <div className="flex-1 min-w-0">
                           {/* Barra */}
-                          <div className="relative h-6 bg-white/60 rounded-lg overflow-hidden border border-white/40 mb-1">
-                            <div className={cn("absolute left-0 top-1 bottom-1 rounded-md transition-all duration-700",z?z.dot:isFut?"bg-violet-300":"bg-gray-200")} style={{width:`${barW}%`}}/>
+                          <div className="relative h-6 bg-slate-50/80 rounded-lg overflow-hidden border border-slate-100 mb-1">
+                            <div className={cn("absolute left-0 top-1 bottom-1 rounded-md transition-all duration-700", z ? z.pastelBar : isFut ? "bg-violet-200" : "bg-gray-200")} style={{width:`${barW}%`}}/>
                             {/* P25 */}
                             <div className="absolute top-0 bottom-0 w-px bg-amber-400 z-10" style={{left:`${p25W}%`}}/>
                             {/* P50 */}
@@ -484,8 +536,8 @@ export default function SalesPercentileTracker(){
                               {isFut&&!entry&&<p className="text-[9px] text-violet-400 italic">ref. histórica</p>}
                             </>
                           ):<p className="text-sm text-gray-300">—</p>}
-                          {z&&<span className={cn("inline-block mt-1 text-[9px] font-black px-2 py-0.5 rounded-lg",z.pill)}>{z.label}</span>}
-                          {isFut&&!z&&<span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-lg bg-violet-100 text-violet-700">📊 Ref.</span>}
+                          {z&&<span className={cn("inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-lg",z.pastelPill)}>{z.label}</span>}
+                          {isFut&&!z&&<span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200">📊 Ref.</span>}
                         </div>
                       </div>
                       <Tooltip entry={entry||(isFut?{total:p50,fecha:iso(date),is_future:true,total_low:p25,total_high:p75}:null)} p25={p25} p50={p50} p75={p75}/>

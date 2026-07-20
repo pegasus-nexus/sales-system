@@ -198,6 +198,7 @@ async def get_sales_percentiles(
             last_date=last_date,
             group_by=group_by,
             p25=p25, p50=p50, p75=p75,
+            daily_df=daily[["fecha", "total"]],
         )
         periods.extend(future_periods)
 
@@ -241,43 +242,70 @@ async def get_sales_percentiles(
 def _generate_future_periods(
     last_date, group_by: str,
     p25: float, p50: float, p75: float,
+    daily_df=None,   # DataFrame con columnas fecha (date), total (float)
 ) -> List[Dict]:
-    """Genera períodos futuros con proyección basada en P50 hasta el 31-dic del año actual."""
+    """Genera períodos futuros con proyección por día de semana (si hay datos suficientes)."""
     import calendar as cal_mod
 
     result = []
     today = date.today()
     year_end = date(today.year, 12, 31)
 
+    # ── Percentiles por día de semana (0=lun … 6=dom) ────────────────────────
+    dow_p25: Dict[int, float] = {}
+    dow_p50: Dict[int, float] = {}
+    dow_p75: Dict[int, float] = {}
+
+    if daily_df is not None and len(daily_df) >= 14:
+        try:
+            df_copy = daily_df.copy()
+            df_copy["dow"] = pd.to_datetime(df_copy["fecha"]).dt.dayofweek
+            for dow in range(7):
+                vals = df_copy[df_copy["dow"] == dow]["total"].values
+                if len(vals) >= 4:
+                    dow_p25[dow] = float(np.percentile(vals, 25))
+                    dow_p50[dow] = float(np.percentile(vals, 50))
+                    dow_p75[dow] = float(np.percentile(vals, 75))
+        except Exception:
+            pass  # Fallback to global percentiles below
+
+    def get_dow_stats(d: date):
+        """Devuelve (p25, p50, p75) específicos del día de la semana o globales."""
+        dow = d.weekday()
+        return (
+            dow_p25.get(dow, p25),
+            dow_p50.get(dow, p50),
+            dow_p75.get(dow, p75),
+        )
+
     if group_by == "day":
-        # Un período por cada día desde last_date+1 hasta el 31-dic
         cur = last_date + timedelta(days=1)
         while cur <= year_end:
+            dp25, dp50, dp75 = get_dow_stats(cur)
             result.append(_future_period(
                 label=cur.strftime("%d %b"),
                 fecha=str(cur),
-                p25=p25, p50=p50, p75=p75,
+                p25=dp25, p50=dp50, p75=dp75,
             ))
             cur += timedelta(days=1)
 
     elif group_by == "week":
-        # Un período por semana (lunes) desde la siguiente semana hasta la que cubre dic-31
-        # Encuentra el próximo lunes después de last_date
         days_ahead = (7 - last_date.weekday()) % 7 or 7
         cur = last_date + timedelta(days=days_ahead)
         while cur <= year_end:
             days_in_week = min(7, (year_end - cur).days + 1)
+            # Suma de medianas por día de la semana que componen esa semana
+            week_p50 = sum(get_dow_stats(cur + timedelta(days=k))[1] for k in range(days_in_week))
+            week_p25 = sum(get_dow_stats(cur + timedelta(days=k))[0] for k in range(days_in_week))
+            week_p75 = sum(get_dow_stats(cur + timedelta(days=k))[2] for k in range(days_in_week))
             result.append(_future_period(
                 label=f"Sem {cur.strftime('%d %b')}",
                 fecha=str(cur),
-                p25=p25 * days_in_week,
-                p50=p50 * days_in_week,
-                p75=p75 * days_in_week,
+                p25=week_p25, p50=week_p50, p75=week_p75,
             ))
             cur += timedelta(weeks=1)
 
     elif group_by == "month":
-        # Un período por mes desde el mes siguiente al last_date hasta diciembre
         y, m = last_date.year, last_date.month
         while True:
             m += 1
@@ -290,25 +318,27 @@ def _generate_future_periods(
             if fd > year_end:
                 break
             days_in_month = cal_mod.monthrange(y, m)[1]
+            # Suma de medianas por día del mes
+            month_p50 = sum(get_dow_stats(date(y, m, d))[1] for d in range(1, days_in_month + 1))
+            month_p25 = sum(get_dow_stats(date(y, m, d))[0] for d in range(1, days_in_month + 1))
+            month_p75 = sum(get_dow_stats(date(y, m, d))[2] for d in range(1, days_in_month + 1))
             result.append(_future_period(
                 label=fd.strftime("%b %Y"),
                 fecha=str(fd),
-                p25=p25 * days_in_month,
-                p50=p50 * days_in_month,
-                p75=p75 * days_in_month,
+                p25=month_p25, p50=month_p50, p75=month_p75,
             ))
 
     return result
 
 
 def _future_period(label: str, fecha: str, p25: float, p50: float, p75: float) -> Dict:
-    """Período futuro de referencia estadística — sin IA, basado en historial real."""
+    """Período futuro de referencia estadística — basado en historial real por día de semana."""
     return {
         "label":      label,
         "fecha":      fecha,
-        "total":      round(p50, 2),           # Referencia = mediana histórica (P50)
-        "total_low":  round(p25, 2),           # Mínimo histórico (P25)
-        "total_high": round(p75, 2),           # Máximo histórico (P75)
+        "total":      round(p50, 2),           # Referencia central = mediana del día de semana
+        "total_low":  round(p25, 2),           # Mínimo histórico del día de semana
+        "total_high": round(p75, 2),           # Máximo histórico del día de semana
         "zone":       "historico_ref",
         "zone_label": "Ref. histórica",
         "is_future":  True,

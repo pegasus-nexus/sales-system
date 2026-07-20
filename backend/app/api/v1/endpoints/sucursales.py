@@ -68,7 +68,7 @@ async def list_sucursales(
     sucursales_limpias = []
     for s in sucursales:
         nombre = str(s.nombre).lower()
-        if any(bad in nombre for bad in ["fexco", "distribucion", "vendedores", "sucre", "mayorista"]):
+        if any(bad in nombre for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]):
             continue
         if "heroinas" in nombre or "heroína" in nombre or "calacoto" in nombre or "recoleta" in nombre:
             sucursales_limpias.append(s)

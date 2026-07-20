@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import datetime
 
 async def main():
-    uri = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/salessystem?appName=Cluster0"
+    uri = "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system"
     db = AsyncIOMotorClient(uri)['salessystem']
     
     start_abril = datetime.datetime(2026, 4, 1)

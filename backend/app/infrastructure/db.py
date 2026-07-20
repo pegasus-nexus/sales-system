@@ -57,7 +57,14 @@ _client = None
 
 async def init_db():
     global _client
-    _client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URL)
+    kwargs = {}
+    if "mongodb+srv" in settings.MONGODB_URL:
+        try:
+            import certifi
+            kwargs["tlsCAFile"] = certifi.where()
+        except ImportError:
+            pass
+    _client = motor.motor_asyncio.AsyncIOMotorClient(settings.MONGODB_URL, **kwargs)
     
     # Resolver dinámicamente la base de datos por defecto de la URI (evita problemas de permisos en Atlas)
     try:
@@ -111,7 +118,8 @@ async def init_db():
             ClientMealPlan,
             MealSchedule,
             ClientWallet
-        ]
+        ],
+        skip_indexes=True
     )
 
 def get_client() -> motor.motor_asyncio.AsyncIOMotorClient:

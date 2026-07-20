@@ -27,7 +27,7 @@ export default function ImportadorInteligente() {
             formData.append('sucursal_id', sucursal);
 
             // Determinar la URL correcta (usamos localhost si no hay variable de entorno, para que coincida con el origin de React)
-            const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
+            const baseUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8001/api/v1";
             
             // Construir la petición POST
             const respuesta = await fetch(`${baseUrl}/importar-historico`, {

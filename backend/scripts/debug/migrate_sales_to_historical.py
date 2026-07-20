@@ -2,7 +2,7 @@ import pymongo
 from bson import ObjectId
 from datetime import datetime
 
-uri = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/?appName=Cluster0"
+uri = "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system"
 
 def map_sucursal(sid, sucursal_map):
     # Obtener el nombre correspondiente al sucursal_id

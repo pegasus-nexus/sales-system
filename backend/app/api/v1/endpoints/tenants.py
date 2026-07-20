@@ -17,6 +17,20 @@ router = APIRouter()
 ALL_FEATURES: List[str] = [f.value for f in PlanFeature]
 
 
+async def _get_tenant_by_id_or_slug(tenant_id: str) -> Optional[Tenant]:
+    try:
+        from beanie import PydanticObjectId
+        tenant = await Tenant.get(PydanticObjectId(tenant_id))
+        if tenant:
+            return tenant
+    except Exception:
+        pass
+    # Fallback to string search for slug / test-taboada cases
+    tenant = await Tenant.find_one({"tenant_id": tenant_id})
+    if not tenant:
+        tenant = await Tenant.find_one(Tenant.name == tenant_id)
+    return tenant
+
 # Schemas
 class TenantCreate(BaseModel):
     name: str
@@ -194,7 +208,7 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from beanie import PydanticObjectId
-    tenant = await Tenant.get(tenant_id)
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
@@ -284,8 +298,7 @@ async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current
     if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    from beanie import PydanticObjectId
-    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
@@ -331,8 +344,7 @@ async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
     tenant_id = current_user.tenant_id
     if not tenant_id:
         raise HTTPException(status_code=404, detail="No tenant associated")
-    from beanie import PydanticObjectId
-    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     return tenant
@@ -349,8 +361,7 @@ async def update_my_tenant_settings(
     if not tenant_id:
         raise HTTPException(status_code=404, detail="No tenant associated")
         
-    from beanie import PydanticObjectId
-    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
@@ -389,8 +400,7 @@ async def update_tenant_configuracion(
     if not tenant_id:
         raise HTTPException(status_code=404, detail="No tenant associated")
         
-    from beanie import PydanticObjectId
-    tenant = await Tenant.get(PydanticObjectId(tenant_id))
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         

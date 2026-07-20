@@ -105,7 +105,7 @@ async def get_hourly_multiyear(
         for s in sucursales_list:
             nl = str(s.get("nombre", "")).lower()
             sid = str(s["_id"])
-            if any(bad in nl for bad in ["fexco", "sucre", "distribucion", "vendedores", "mayorista"]):
+            if any(bad in nl for bad in ["fexco", "sucre", "distribucion", "dsitribucion", "distribución", "vendedores", "mayorista"]):
                 continue
             if 'heroina' in nl or 'hero' in nl:
                 suc_id_to_name[sid] = "Heroínas"

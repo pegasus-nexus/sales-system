@@ -53,9 +53,20 @@ async def get_dashboard_metrics(
     try:
         db = await get_raw_db()
         
-        filtro = {"tenant_id": tenant_id}
+        # Resolve sucursal_id to name if it is an ObjectId
+        nombre_sucursal_filtro = None
         if sucursal_id:
-            suc_pattern = sucursal_id.strip()
+            try:
+                from bson import ObjectId
+                suc_doc = await db.sucursales.find_one({"_id": ObjectId(sucursal_id)})
+                if suc_doc:
+                    nombre_sucursal_filtro = suc_doc.get("nombre")
+            except Exception:
+                nombre_sucursal_filtro = sucursal_id
+
+        filtro = {"tenant_id": tenant_id}
+        if nombre_sucursal_filtro:
+            suc_pattern = nombre_sucursal_filtro.strip()
             if suc_pattern.lower() == "heroinas":
                 suc_pattern = "Hero[íi]nas"
             filtro["sucursal"] = {"$regex": suc_pattern, "$options": "i"}
@@ -132,8 +143,8 @@ async def get_dashboard_metrics(
                 "tenant_id": tenant_id
             }
             
-            if sucursal_id:
-                suc_pattern = sucursal_id.strip()
+            if nombre_sucursal_filtro:
+                suc_pattern = nombre_sucursal_filtro.strip()
                 if suc_pattern.lower() == "heroinas":
                     suc_pattern = "Hero[íi]nas"
                 filtro_suc = {"$regex": suc_pattern, "$options": "i"}
@@ -153,7 +164,8 @@ async def get_dashboard_metrics(
             "nombre_producto": 1,
             "cantidad_vendida": 1,
             "cliente": 1,
-            "estado": 1
+            "estado": 1,
+            "original_sale_id": 1
         }
 
         if "$or" in filtro:
@@ -168,6 +180,127 @@ async def get_dashboard_metrics(
         else:
             cursor = db.ventas_historicas_crudas.find(filtro, projection).batch_size(10000)
             datos = await cursor.to_list(length=None)
+
+        # === INTEGRACIÓN DE VENTAS EN VIVO DE LA COLECCIÓN OPERACIONAL 'sales' ===
+        sales_projection = {
+            "_id": 1,
+            "created_at": 1,
+            "total": 1,
+            "sucursal_id": 1,
+            "items": 1,
+            "cliente": 1,
+            "anulada": 1
+        }
+        
+        # Mapeo de sucursal_id a nombre real para el tenant
+        cursor_sucursales = db.sucursales.find({"tenant_id": tenant_id})
+        suc_id_to_name = {}
+        async for s in cursor_sucursales:
+            nombre = str(s.get("nombre", "")).strip()
+            n_lower = nombre.lower()
+            if any(bad in n_lower for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]):
+                continue
+            nombre_real = None
+            if "heroinas" in n_lower or "heroína" in n_lower:
+                nombre_real = "Heroínas"
+            elif "calacoto" in n_lower:
+                nombre_real = "Calacoto"
+            elif "recoleta" in n_lower:
+                nombre_real = "Recoleta"
+            if nombre_real:
+                suc_id_to_name[str(s["_id"])] = nombre_real
+
+        live_sales = []
+        if time_range != 'all':
+            limit_date = fecha_max_db.to_pydatetime()
+            start_sales_date = max(fecha_minima_periodo.to_pydatetime(), limit_date)
+            sales_principal_filtro = {
+                "tenant_id": tenant_id,
+                "created_at": {"$gte": start_sales_date}
+            }
+            if end_curr is not None:
+                sales_principal_filtro["created_at"]["$lt"] = end_curr.to_pydatetime()
+            
+            if sucursal_id:
+                try:
+                    from bson import ObjectId
+                    sales_principal_filtro["sucursal_id"] = {"$in": [sucursal_id, ObjectId(sucursal_id)]}
+                except Exception:
+                    sales_principal_filtro["sucursal_id"] = sucursal_id
+            
+            cursor_sales_principal = db.sales.find(sales_principal_filtro, sales_projection)
+            live_sales = await cursor_sales_principal.to_list(length=None)
+            
+            if inicio_yoy.to_pydatetime() >= limit_date:
+                sales_yoy_filtro = {
+                    "tenant_id": tenant_id,
+                    "created_at": {"$gte": inicio_yoy.to_pydatetime(), "$lt": fin_yoy.to_pydatetime()}
+                }
+                if sucursal_id:
+                    try:
+                        from bson import ObjectId
+                        sales_yoy_filtro["sucursal_id"] = {"$in": [sucursal_id, ObjectId(sucursal_id)]}
+                    except Exception:
+                        sales_yoy_filtro["sucursal_id"] = sucursal_id
+                cursor_sales_yoy = db.sales.find(sales_yoy_filtro, sales_projection)
+                live_sales_yoy = await cursor_sales_yoy.to_list(length=None)
+                live_sales.extend(live_sales_yoy)
+        else:
+            sales_all_filtro = {
+                "tenant_id": tenant_id,
+                "created_at": {"$gte": fecha_max_db.to_pydatetime()}
+            }
+            if sucursal_id:
+                try:
+                    from bson import ObjectId
+                    sales_all_filtro["sucursal_id"] = {"$in": [sucursal_id, ObjectId(sucursal_id)]}
+                except Exception:
+                    sales_all_filtro["sucursal_id"] = sucursal_id
+            cursor_sales_all = db.sales.find(sales_all_filtro, sales_projection)
+            live_sales = await cursor_sales_all.to_list(length=None)
+
+        ids_migrados = {str(d["original_sale_id"]) for d in datos if "original_sale_id" in d}
+        
+        flat_live_records = []
+        for sale in live_sales:
+            sale_id_str = str(sale["_id"])
+            if sale_id_str in ids_migrados:
+                continue
+                
+            suc_id = str(sale.get("sucursal_id", ""))
+            suc_nombre = suc_id_to_name.get(suc_id, "Heroínas")
+            
+            cliente_nombre = ""
+            cliente_obj = sale.get("cliente")
+            if cliente_obj:
+                cliente_nombre = cliente_obj.get("razon_social") or cliente_obj.get("nit") or ""
+                
+            estado_ticket = "Anulado" if sale.get("anulada") else "Completado"
+            
+            items = sale.get("items", [])
+            for item in items:
+                try:
+                    monto_item = float(str(item.get("subtotal", 0)))
+                except Exception:
+                    monto_item = 0.0
+                try:
+                    cant_item = float(str(item.get("cantidad", 1)))
+                except Exception:
+                    cant_item = 1.0
+                prod_desc = str(item.get("descripcion", "")).upper()
+                
+                flat_live_records.append({
+                    "fecha_transaccion": sale.get("created_at"),
+                    "monto_total_bs": monto_item,
+                    "sucursal": suc_nombre,
+                    "nombre_producto": prod_desc,
+                    "cantidad_vendida": cant_item,
+                    "cliente": cliente_nombre,
+                    "estado": estado_ticket,
+                    "original_sale_id": sale_id_str
+                })
+                
+        datos.extend(flat_live_records)
 
         t_mongo_end = __import__('time').time()
         print(f"MONGO QUERY TOOK: {t_mongo_end - t_mongo_start:.4f}s, rows: {len(datos)}")
@@ -197,6 +330,12 @@ async def get_dashboard_metrics(
         # Filtro de estados de ticket: Excluir estrictamente "Anulado"
         if 'estado' in df.columns:
             df = df[df['estado'].str.lower() != 'anulado']
+            
+        # Filtro de sucursales: Excluir sucursales de distribución, mayoristas y auxiliares
+        if 'sucursal' in df.columns:
+            bad_keywords = ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]
+            df = df[~df['sucursal'].str.lower().str.contains('|'.join(bad_keywords), na=False)]
+            
         t_df_end = __import__('time').time()
         print(f"PANDAS CLEANING TOOK: {t_df_end - t_df_start:.4f}s")
         
@@ -526,7 +665,7 @@ async def get_dashboard_metrics(
                 n_lower = nombre.lower()
                 
                 # Ignorar explícitamente sucursales basura de la DB
-                if any(bad in n_lower for bad in ["fexco", "distribucion", "vendedores", "sucre", "mayorista"]):
+                if any(bad in n_lower for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]):
                     continue
                     
                 nombre_real = None

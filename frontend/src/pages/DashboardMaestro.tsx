@@ -50,10 +50,13 @@ const getDynamicPeriodText = (timeRange: string, customStart: string, customEnd:
     } else if (timeRange === 'custom_year') {
         return `AÑO ${selectedYear}`;
     } else if (timeRange === 'custom_date') {
-        if (customStart && customEnd) {
+        if (customStart) {
             const s = new Date(`${customStart}T00:00:00`);
-            const e = new Date(`${customEnd}T00:00:00`);
-            return `del ${formatDate(s)} al ${formatDate(e)}`;
+            if (customEnd && customEnd !== customStart) {
+                const e = new Date(`${customEnd}T00:00:00`);
+                return `del ${formatDate(s)} al ${formatDate(e)}`;
+            }
+            return `el ${formatDate(s)}`;
         }
     }
     return "";
@@ -96,9 +99,10 @@ export default function DashboardMaestro() {
             end.setHours(23, 59, 59, 999);
             setDates({ start: start.toISOString(), end: end.toISOString() });
         } else if (timeRange === 'custom_date') {
-            if (customStartDate && customEndDate) {
+            if (customStartDate) {
                 const start = new Date(`${customStartDate}T00:00:00`);
-                const end = new Date(`${customEndDate}T23:59:59`);
+                const endLimit = customEndDate ? customEndDate : customStartDate;
+                const end = new Date(`${endLimit}T23:59:59`);
                 setDates({ start: start.toISOString(), end: end.toISOString() });
             }
         } else {
@@ -252,7 +256,7 @@ export default function DashboardMaestro() {
                             onChange={(e) => setSelectedSucursal(e.target.value)}
                             className="bg-transparent text-sm outline-none font-black cursor-pointer text-indigo-700 w-[140px]"
                         >
-                            <option value="all">Todas las Sucursales</option>
+                            <option value="all"></option>
                             {sucursales.map((s, index) => (
                                 <option key={s.id || s._id || index} value={s.id || s._id || index}>{s.nombre}</option>
                             ))}
@@ -320,14 +324,14 @@ export default function DashboardMaestro() {
                             <input 
                                 type="date" 
                                 value={customStartDate} 
-                                onChange={(e) => { setCustomStartDate(e.target.value); if(customEndDate) setTimeRange('custom_date'); }} 
+                                onChange={(e) => { setCustomStartDate(e.target.value); setTimeRange('custom_date'); }} 
                                 className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
                             />
                             <span className="text-gray-400 font-bold">-</span>
                             <input 
                                 type="date" 
                                 value={customEndDate} 
-                                onChange={(e) => { setCustomEndDate(e.target.value); if(e.target.value && customStartDate) setTimeRange('custom_date'); }} 
+                                onChange={(e) => { setCustomEndDate(e.target.value); setTimeRange('custom_date'); }} 
                                 className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
                             />
                         </div>
@@ -357,7 +361,8 @@ export default function DashboardMaestro() {
             {/* Sub-header text indicating period and branch for the data below */}
             <div className="flex justify-start mb-2 mt-0">
                 <span className="text-gray-500 font-black text-[11px] bg-white px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-widest shadow-sm">
-                    Mostrando: {getDynamicPeriodText(timeRange, customStartDate, customEndDate, selectedMonth, selectedYear)} • {selectedSucursal === 'all' ? 'Todas las Sucursales' : sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}
+                    Mostrando: {getDynamicPeriodText(timeRange, customStartDate, customEndDate, selectedMonth, selectedYear)}
+                    {selectedSucursal !== 'all' && ` • ${sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}`}
                 </span>
             </div>
 

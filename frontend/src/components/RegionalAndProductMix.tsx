@@ -6,11 +6,11 @@ import {
 import { MapPin, Loader2, AlertTriangle, Inbox } from 'lucide-react';
 
 const PRODUCT_COLORS = [
-    '#4F46E5', // Indigo
-    '#06B6D4', // Cyan
-    '#10B981', // Emerald
-    '#F59E0B', // Amber
-    '#EC4899', // Pink
+    '#6366F1', // Indigo (Vibrant)
+    '#06B6D4', // Cyan (Vibrant)
+    '#10B981', // Emerald (Vibrant)
+    '#F59E0B', // Amber (Vibrant)
+    '#EC4899', // Pink (Vibrant)
 ];
 
 const BADGE_BG_COLORS = [
@@ -21,10 +21,31 @@ const BADGE_BG_COLORS = [
     'bg-pink-50 text-pink-700 border-pink-100 dark:bg-pink-50/10 dark:text-pink-400 dark:border-pink-900/30',
 ];
 
-const BRANCH_THEMES: Record<string, { bar: string, text: string, bg: string, ring: string }> = {
-    'Heroínas': { bar: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
-    'Calacoto': { bar: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50', ring: 'ring-indigo-100' },
-    'Recoleta': { bar: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', ring: 'ring-rose-100' }
+const BRANCH_THEMES: Record<string, { bar: string, text: string, bg: string, ring: string, gradient: string, shadow: string }> = {
+    'Heroínas': { 
+        bar: 'bg-emerald-500', 
+        text: 'text-emerald-700', 
+        bg: 'bg-emerald-50', 
+        ring: 'ring-emerald-100',
+        gradient: 'from-emerald-400 to-emerald-600',
+        shadow: 'shadow-[0_4px_12px_rgba(16,185,129,0.25)]'
+    },
+    'Calacoto': { 
+        bar: 'bg-indigo-500', 
+        text: 'text-indigo-700', 
+        bg: 'bg-indigo-50', 
+        ring: 'ring-indigo-100',
+        gradient: 'from-indigo-400 to-indigo-600',
+        shadow: 'shadow-[0_4px_12px_rgba(79,70,229,0.25)]'
+    },
+    'Recoleta': { 
+        bar: 'bg-rose-500', 
+        text: 'text-rose-700', 
+        bg: 'bg-rose-50', 
+        ring: 'ring-rose-100',
+        gradient: 'from-rose-400 to-rose-600',
+        shadow: 'shadow-[0_4px_12px_rgba(244,63,94,0.25)]'
+    }
 };
 
 const getBranchTheme = (name: string) => {
@@ -32,7 +53,14 @@ const getBranchTheme = (name: string) => {
     if (n.includes('heroinas') || n.includes('heroína')) return BRANCH_THEMES['Heroínas'];
     if (n.includes('calacoto')) return BRANCH_THEMES['Calacoto'];
     if (n.includes('recoleta')) return BRANCH_THEMES['Recoleta'];
-    return { bar: 'bg-slate-500', text: 'text-slate-700', bg: 'bg-slate-50', ring: 'ring-slate-100' };
+    return { 
+        bar: 'bg-slate-500', 
+        text: 'text-slate-700', 
+        bg: 'bg-slate-50', 
+        ring: 'ring-slate-100',
+        gradient: 'from-slate-400 to-slate-600',
+        shadow: 'shadow-[0_4px_12px_rgba(100,116,139,0.2)]'
+    };
 };
 
 const formatBs = (value: number) => {
@@ -294,22 +322,22 @@ export default function RegionalAndProductMix() {
                                     const theme = getBranchTheme(branch.name);
                                     const pct = totalBranchSales > 0 ? ((branch.ventas / totalBranchSales) * 100).toFixed(1) : '0';
                                     return (
-                                        <div key={i} className="bg-gray-50/50 hover:bg-gray-50 transition-all border border-gray-100 p-4 rounded-2xl flex flex-col gap-2">
+                                        <div key={i} className="group bg-white hover:bg-gray-50/50 hover:shadow-md hover:scale-[1.01] transition-all duration-300 border border-gray-100 p-5 rounded-2xl flex flex-col gap-3">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-sm font-black text-gray-800 flex items-center gap-1.5">
-                                                    <span className={`w-2 h-2 rounded-full ${theme.bar}`} />
+                                                <span className="text-sm font-black text-gray-800 flex items-center gap-2">
+                                                    <span className={`w-2.5 h-2.5 rounded-full ${theme.bar} shadow-sm`} />
                                                     {branch.name}
                                                 </span>
-                                                <span className="text-sm font-extrabold text-gray-900">
+                                                <span className="text-sm font-black text-gray-900 bg-gray-50 px-3 py-1 rounded-xl border border-gray-100">
                                                     {formatBs(branch.ventas)}
                                                 </span>
                                             </div>
-                                            <div className="relative w-full h-6 bg-gray-100 rounded-full overflow-hidden">
+                                            <div className="relative w-full h-8 bg-gray-100/70 rounded-2xl p-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-gray-200/30">
                                                 <div 
-                                                    className={`h-full ${theme.bar} rounded-full transition-all duration-500 flex items-center justify-end pr-3 min-w-[35px]`}
+                                                    className={`h-full bg-gradient-to-r ${theme.gradient} ${theme.shadow} rounded-xl transition-all duration-500 flex items-center justify-end pr-4 min-w-[45px]`}
                                                     style={{ width: `${(branch.ventas / maxVentas) * 100}%` }}
                                                 >
-                                                    <span className="text-[10px] font-black text-white select-none">
+                                                    <span className="text-[11px] font-black text-white select-none">
                                                         {pct}%
                                                     </span>
                                                 </div>
@@ -329,18 +357,23 @@ export default function RegionalAndProductMix() {
                         
                         <div className="flex-1 w-full relative">
                             <div className="flex flex-col sm:flex-row items-center gap-6 h-full mt-2">
-                                {/* Left: Donut Chart */}
-                                <div className="w-full sm:w-[45%] h-[180px] min-h-[180px]">
+                                {/* Left: Donut Chart with Center Text */}
+                                <div className="w-full sm:w-[45%] h-[180px] min-h-[180px] relative">
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">PRODUCTOS</span>
+                                        <span className="text-xl font-black text-indigo-900 leading-none mt-1">TOP 5</span>
+                                    </div>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie 
                                                 data={topData} 
                                                 cx="50%" cy="50%" 
-                                                innerRadius={45} 
+                                                innerRadius={50} 
                                                 outerRadius={75} 
-                                                paddingAngle={3} 
+                                                paddingAngle={4} 
                                                 dataKey="value" 
-                                                stroke="none"
+                                                stroke="#ffffff"
+                                                strokeWidth={2}
                                             >
                                                 {topData.map((_, index) => (
                                                     <Cell key={`cell-${index}`} fill={PRODUCT_COLORS[index % PRODUCT_COLORS.length]} />
@@ -354,35 +387,38 @@ export default function RegionalAndProductMix() {
                                     </ResponsiveContainer>
                                 </div>
                                 
-                                {/* Right: Legend List */}
+                                {/* Right: Legend List (Premium Card Layout) */}
                                 <div className="w-full sm:w-[55%] flex flex-col justify-center gap-3">
-                                    <div className="flex text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 border-b border-gray-50 pb-2">
+                                    <div className="flex text-[11px] font-black text-gray-400 uppercase tracking-wider mb-1 border-b border-gray-50 pb-2">
                                         <span className="flex-1 ml-6">Producto</span>
                                         <span className="text-right pr-2">Mix</span>
                                     </div>
-                                    <div className="space-y-3 w-full">
+                                    <div className="space-y-2 w-full">
                                         {topData.map((cat: any, i: number) => {
                                             const color = PRODUCT_COLORS[i % PRODUCT_COLORS.length];
                                             const badgeClass = BADGE_BG_COLORS[i % BADGE_BG_COLORS.length];
                                             const ingresos = cat.ingresos || 0;
                                             
                                             return (
-                                                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50/80 transition-all border border-transparent hover:border-gray-100">
-                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                                                        <div className="min-w-0 flex-1">
+                                                <div key={i} className="group flex flex-col gap-1.5 p-3 rounded-2xl bg-gray-50/40 hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300 border border-gray-100/50">
+                                                    <div className="flex items-center justify-between min-w-0">
+                                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                            <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
                                                             <p className="text-sm font-bold text-gray-800 truncate" title={cat.name}>
                                                                 {cat.name}
                                                             </p>
-                                                            <p className="text-[11px] font-semibold text-gray-500 mt-0.5">
-                                                                {formatBs(ingresos)}
-                                                            </p>
+                                                        </div>
+                                                        <div className="ml-4 shrink-0">
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black border ${badgeClass}`}>
+                                                                {cat.value}%
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                    <div className="ml-4 shrink-0">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black border ${badgeClass}`}>
-                                                            {cat.value}%
-                                                        </span>
+                                                    <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 pl-5">
+                                                        <span>{formatBs(ingresos)}</span>
+                                                        <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${cat.value}%`, backgroundColor: color }} />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );

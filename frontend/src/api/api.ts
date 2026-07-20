@@ -55,7 +55,7 @@ export const uploadImage = async (file: File): Promise<{url: string}> => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://localhost:8000/api/v1');
+        : 'http://127.0.0.1:8001/api/v1');
 
     const res = await fetch(`${CACHE_URL}/upload`, {
         method: 'POST',
@@ -95,7 +95,7 @@ export const exportValuedInventory = async (date?: string, sucursal_id?: string)
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://localhost:8001/api/v1');
+        : 'http://127.0.0.1:8001/api/v1');
         
     const params = new URLSearchParams();
     if (date) params.append('date', date);
@@ -472,7 +472,7 @@ export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almac
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://localhost:8001/api/v1');
+        : 'http://127.0.0.1:8001/api/v1');
         
     const params = new URLSearchParams({ sucursal_id, almacen_id });
     if (producto_id) params.set('producto_id', producto_id);

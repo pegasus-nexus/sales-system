@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 def main():
-    uri = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/?appName=Cluster0"
+    uri = "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system"
     
     print("Conectando a la base de datos...")
     client = pymongo.MongoClient(uri)

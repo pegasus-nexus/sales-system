@@ -2,7 +2,7 @@ import os
 from pymongo import MongoClient, UpdateOne
 
 def main():
-    mongo_url = os.getenv("MONGODB_URL", "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/?appName=Cluster0")
+    mongo_url = os.getenv("MONGODB_URL", "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system")
     client = MongoClient(mongo_url)
     db = client.salessystem
 
