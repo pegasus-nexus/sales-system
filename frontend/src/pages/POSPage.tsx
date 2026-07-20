@@ -75,14 +75,34 @@ export default function POSPage() {
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
     const [almacenSelectorProduct, setAlmacenSelectorProduct] = useState<any | null>(null);
 
-    const { data: productsData, isLoading: loadingP } = useQuery({ queryKey: ['products'], queryFn: () => getProducts(1, 1000) });
+    const { data: productsData, isLoading: loadingP } = useQuery({ 
+        queryKey: ['products'], 
+        queryFn: () => getProducts(1, 1000),
+        staleTime: 5 * 60 * 1000,
+    });
     const products = productsData?.items || [];
-    const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
+    const { data: categories = [] } = useQuery({ 
+        queryKey: ['categories'], 
+        queryFn: getCategories,
+        staleTime: 10 * 60 * 1000,
+    });
 
     const { data: descuentosDisponibles = [], isLoading: loadingD } = useDescuentos();
-    const { data: usersData = [] } = useQuery({ queryKey: ['users'], queryFn: getUsers });
-    const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales });
-    const { data: almacenes = [] } = useQuery({ queryKey: ['almacenes', sucursalId], queryFn: () => getAlmacenes(sucursalId) });
+    const { data: usersData = [] } = useQuery({ 
+        queryKey: ['users'], 
+        queryFn: getUsers,
+        staleTime: 10 * 60 * 1000,
+    });
+    const { data: sucursales = [] } = useQuery({ 
+        queryKey: ['sucursales'], 
+        queryFn: getSucursales,
+        staleTime: 10 * 60 * 1000,
+    });
+    const { data: almacenes = [] } = useQuery({ 
+        queryKey: ['almacenes', sucursalId], 
+        queryFn: () => getAlmacenes(sucursalId),
+        staleTime: 10 * 60 * 1000,
+    });
     
     // Set default almacen if not set
     useEffect(() => {
@@ -104,12 +124,13 @@ export default function POSPage() {
 
     const stockMap = useStockMap(sucursalId, almacen_id);
 
-    // Stock de TODOS los almacenes en paralelo (para el modal selector de almacén)
+    // Stock de TODOS los almacenes en paralelo (solo cuando el modal selector de almacén esté abierto)
     const almacenesStockQueries = useQueries({
         queries: almacenes.map(a => ({
             queryKey: ['inventario', sucursalId, a.id],
             queryFn: () => getInventario(sucursalId, a.id, 1, 1000),
             staleTime: 30_000,
+            enabled: !!almacenSelectorProduct,
         })),
     });
     // Mapa: { almacen_id -> { producto_id -> cantidad } }
@@ -212,7 +233,9 @@ export default function POSPage() {
     const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
-        setCurrentPage(1);
+        requestAnimationFrame(() => {
+            setCurrentPage(1);
+        });
     }, [search, selectedCat]);
 
     const paginatedFiltered = useMemo(() => {
@@ -504,7 +527,7 @@ export default function POSPage() {
                                         </div>
                                         <div className="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden">
                                             {p.image_url
-                                                ? <img src={p.image_url} alt={p.descripcion} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                ? <img src={p.image_url} alt={p.descripcion} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                                 : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-gray-200" /></div>}
                                         </div>
                                         <p className="text-xs text-gray-900 font-semibold leading-tight mb-0.5">{p.descripcion}</p>

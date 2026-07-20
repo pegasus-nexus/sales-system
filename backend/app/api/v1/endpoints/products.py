@@ -79,7 +79,16 @@ async def get_products(
         for p in products:
             p.precios_sucursales = p_map.get(str(p.id), {})
 
-    items = [await _enrich(p) for p in products]
+    # Batch resolve category names in 1 query instead of N sequential queries
+    cat_ids = list(set([p.categoria_id for p in products if p.categoria_id]))
+    if cat_ids:
+        cats = await Category.find(In(Category.id, cat_ids)).to_list()
+        cat_map = {str(c.id): c.name for c in cats}
+        for p in products:
+            if p.categoria_id and str(p.categoria_id) in cat_map:
+                p.categoria_nombre = cat_map[str(p.categoria_id)]
+
+    items = products
     
     import math
     return {
