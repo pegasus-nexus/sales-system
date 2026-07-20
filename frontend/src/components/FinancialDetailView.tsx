@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales, getCategories, getProducts } from '../api/api';
 import { 
@@ -44,7 +44,27 @@ export default function FinancialDetailView() {
         queryFn: () => getProducts(1, 2000)
     });
 
-    const proveedores = Array.from(new Set(productsData?.items?.map((p: any) => p.proveedor_nombre || p.proveedor).filter(Boolean))) as string[];
+    const categoryList = useMemo(() => {
+        const set = new Set<string>();
+        categories?.forEach((c: any) => {
+            const name = c.name || c.nombre;
+            if (name) set.add(name);
+        });
+        productsData?.items?.forEach((p: any) => {
+            const cat = p.categoria_nombre || (typeof p.categoria === 'string' ? p.categoria : p.categoria?.nombre);
+            if (cat) set.add(cat);
+        });
+        return Array.from(set).sort();
+    }, [categories, productsData]);
+
+    const proveedoresList = useMemo(() => {
+        const set = new Set<string>();
+        productsData?.items?.forEach((p: any) => {
+            const prov = p.proveedor_nombre || (typeof p.proveedor === 'string' ? p.proveedor : p.proveedor?.nombre);
+            if (prov) set.add(prov);
+        });
+        return Array.from(set).sort();
+    }, [productsData]);
 
     const { data: reportData, isLoading, isError } = useQuery({
         queryKey: ['financial-report', startDate, endDate, selectedSucursal],
@@ -89,85 +109,87 @@ export default function FinancialDetailView() {
     return (
         <div className="space-y-6">
             {/* ── Filter Controls ───────────────────────────────────── */}
-            <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex flex-wrap gap-4 items-end print:hidden">
-                <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Fecha Inicio</label>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input 
-                            type="date" 
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                        />
+            <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex flex-col xl:flex-row xl:items-end justify-between gap-4 print:hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 flex-1">
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Fecha Inicio</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <input 
+                                type="date" 
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Fecha Fin</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <input 
+                                type="date" 
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Sucursal</label>
+                        <div className="relative">
+                            <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <select 
+                                value={selectedSucursal}
+                                onChange={(e) => setSelectedSucursal(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                            >
+                                <option value="all">Todas las Sucursales</option>
+                                {sucursales?.map((s: any) => (
+                                    <option key={s._id} value={s._id}>{s.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Categoría</label>
+                        <div className="relative">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <select 
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                            >
+                                <option value="">Todas las Categorías</option>
+                                {categoryList.map((cat: string) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Proveedor</label>
+                        <div className="relative">
+                            <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <select 
+                                value={selectedProveedor}
+                                onChange={(e) => setSelectedProveedor(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                            >
+                                <option value="">Todos los Proveedores</option>
+                                {proveedoresList.map((p: string) => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Fecha Fin</label>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input 
-                            type="date" 
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-1.5 min-w-[160px]">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Sucursal</label>
-                    <div className="relative">
-                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <select 
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales?.map((s: any) => (
-                                <option key={s._id} value={s._id}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="space-y-1.5 min-w-[160px]">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Categoría</label>
-                    <div className="relative">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <select 
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20"
-                        >
-                            <option value="">Todas las Categorías</option>
-                            {categories?.map((c: any) => (
-                                <option key={c.id || c._id} value={c.nombre}>{c.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="space-y-1.5 min-w-[160px]">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Proveedor</label>
-                    <div className="relative">
-                        <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <select 
-                            value={selectedProveedor}
-                            onChange={(e) => setSelectedProveedor(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20"
-                        >
-                            <option value="">Todos los Proveedores</option>
-                            {proveedores?.map((p: string) => (
-                                <option key={p} value={p}>{p}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0 pt-2 xl:pt-0">
                     <button 
                         onClick={handleExportExcel}
                         disabled={!report || !report.length}
