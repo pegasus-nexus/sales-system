@@ -126,7 +126,6 @@ export default function SalesPercentileTracker(){
   const p50  = p?.p50??0; const p25=p?.p25??0; const p75=p?.p75??0;
 
   const histPeriods = data?.periods ? data.periods.filter((x: any) => !x.is_future) : [];
-  const totalSalesHist = histPeriods.reduce((acc: number, curr: any) => acc + curr.total, 0);
 
   // Current year calculations
   const currentYearStr = String(now.getFullYear());

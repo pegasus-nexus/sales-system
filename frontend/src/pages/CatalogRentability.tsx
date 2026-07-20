@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { getAnalyticsDashboard, getRentabilidadReal, getProducts } from '../api/api';
 import {
-    AlertTriangle, Loader2, Target, Activity,
+    AlertTriangle, Loader2, Activity,
     TrendingUp, Package, Calendar, DollarSign,
     Search, FileSpreadsheet, Clock
 } from 'lucide-react';
@@ -37,9 +37,6 @@ export default function CatalogRentability() {
     const [selectedProveedor, setSelectedProveedor] = useState('');
     const [rentData, setRentData] = useState<any[]>([]);
     const [isRentLoading, setIsRentLoading] = useState(false);
-    // Vista semanal / mensual para el gráfico de evolución
-    const [chartView, setChartView] = useState<'day' | 'week' | 'month'>('week');
-    const [meta, setMeta] = useState<number>(0);
     const [trendDataRaw, setTrendDataRaw] = useState<any[]>([]);
     const [rendMonth, setRendMonth] = useState('2026-07');
     const [rendSucursal, setRendSucursal] = useState('');
@@ -171,7 +168,7 @@ export default function CatalogRentability() {
             const start_date = `${rendMonth}-01T00:00:00-04:00`;
             const end_date = `${rendMonth}-${String(lastDay).padStart(2, '0')}T23:59:59-04:00`;
             try {
-                const res = await getAnalyticsDashboard(start_date, end_date, rendSucursal || undefined, "custom");
+                const res = await getAnalyticsDashboard(start_date, end_date, rendSucursal || undefined, "custom") as any;
                 if (isMounted && res?.revenue_trend) {
                     setTrendDataRaw(res.revenue_trend);
                 }
@@ -262,12 +259,7 @@ export default function CatalogRentability() {
             }));
     };
 
-    const chartData = aggregateByPeriod(trendData, chartView);
-    // Media histórica de ingresos por período (EXCLUYE EL PERÍODO EN CURSO)
-    const dataCompletada = chartData.filter(d => !d.esCurso);
-    const mediaIngreso = dataCompletada.length
-        ? Math.round(dataCompletada.reduce((s, d) => s + d.ingresos, 0) / dataCompletada.length)
-        : 0;
+
 
     const processedRentData = useMemo(() => {
         // 1. Filtro estricto de Zona Horaria para "today"
@@ -773,14 +765,6 @@ export default function CatalogRentability() {
                             const worst = [...weeklyData].sort((a, b) => a.ingresos - b.ingresos)[0];
 
                             // Paleta de Colores Pasteles Fijos para Comparación
-                            const pastelColors = [
-                                { card: 'bg-gradient-to-br from-indigo-50/80 to-blue-100/30 border-indigo-200 hover:shadow-indigo-100/50', bar: 'bg-indigo-500', text: 'text-indigo-900' },
-                                { card: 'bg-gradient-to-br from-emerald-50/80 to-emerald-100/30 border-emerald-200 hover:shadow-emerald-100/50', bar: 'bg-emerald-500', text: 'text-emerald-900' },
-                                { card: 'bg-gradient-to-br from-rose-50/80 to-pink-100/30 border-rose-200 hover:shadow-rose-100/50', bar: 'bg-rose-500', text: 'text-rose-900' },
-                                { card: 'bg-gradient-to-br from-amber-50/80 to-orange-100/30 border-amber-200 hover:shadow-amber-100/50', bar: 'bg-orange-500', text: 'text-orange-900' },
-                                { card: 'bg-gradient-to-br from-violet-50/80 to-purple-100/30 border-violet-200 hover:shadow-purple-100/50', bar: 'bg-purple-500', text: 'text-purple-900' },
-                                { card: 'bg-gradient-to-br from-sky-50/80 to-blue-100/30 border-sky-200 hover:shadow-sky-100/50', bar: 'bg-sky-500', text: 'text-sky-900' }
-                            ];
 
                             return (
                                 <>

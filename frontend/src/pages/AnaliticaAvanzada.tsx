@@ -4,13 +4,13 @@ import {
     BrainCircuit, TrendingUp, Cpu,
     AlertTriangle, Sparkles, Activity, ArrowUpRight, BarChart3,
     Star, Coins, ArrowDownCircle, HelpCircle, Package,
-    Zap, ShoppingCart, Building2, AlertCircle, Info, ChevronDown, ChevronUp
+    Zap, ShoppingCart, AlertCircle, Info, ChevronDown, ChevronUp
 } from 'lucide-react';
 import {
     ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip,
-    ScatterChart, Scatter, ZAxis, ReferenceLine, Area, AreaChart, BarChart, Bar, Cell, ComposedChart
+    ScatterChart, Scatter, ZAxis, ReferenceLine, BarChart, Bar, Cell
 } from 'recharts';
-import { getDemandPrediction, getAnalyticsBcg, getAnalyticsDashboard, getInventario } from '../api/api';
+import { getDemandPrediction, getAnalyticsBcg, getInventario } from '../api/api';
 import type { DemandPredictionResponse } from '../api/types';
 
 const fBs = (n?: number) => `Bs. ${(n||0).toLocaleString('es-BO',{minimumFractionDigits:0,maximumFractionDigits:0})}`;
@@ -124,7 +124,6 @@ export default function AnaliticaAvanzada() {
     const [err, setErr] = useState(false);
     const [mlData, setMlData] = useState<DemandPredictionResponse|null>(null);
     const [bcgRaw, setBcgRaw] = useState<any>(null);
-    const [dashData, setDashData] = useState<any>(null);
     const [horizonte, setHorizonte] = useState<Horizonte>('30d');
     const [expandedQ, setExpandedQ] = useState<string|null>('Estrella');
     const [inventoryMap, setInventoryMap] = useState<Record<string, number>>({});
@@ -141,16 +140,14 @@ export default function AnaliticaAvanzada() {
                 const end=new Date(); const start=new Date(); start.setDate(end.getDate()-90);
                 const sd=start.toISOString().split('T')[0]; const ed=end.toISOString().split('T')[0];
                 if (ok) setDateRange({start: sd, end: ed});
-                const [ml,bcg,dash,inv]=await Promise.all([
+                const [ml,bcg,inv]=await Promise.all([
                     getDemandPrediction(7),
                     getAnalyticsBcg(sd,ed),
-                    getAnalyticsDashboard(sd,ed,undefined,'custom'),
                     getInventario('CENTRAL', 'default', 1, 2000).catch(() => ({ items: [] }))
                 ]);
                 if(ok){
                     setMlData(ml);
                     setBcgRaw(bcg);
-                    setDashData(dash);
                     const map: Record<string, number> = {};
                     (inv?.items || []).forEach((item: any) => {
                         if (item.producto_nombre) {
@@ -173,7 +170,6 @@ export default function AnaliticaAvanzada() {
     const sugs=useMemo(()=>buildSugs(bcgFlat),[bcgFlat]);
     const hayEvento=!!(mlData?.insight&&(mlData.insight.includes('Feriado')||mlData.insight.includes('feriado')||mlData.insight.includes('Atención')||mlData.insight.includes('salto')||mlData.insight.includes('Anormal')||mlData.insight.includes('Pico')));
     const alertasStock=bcgFlat.filter(p=>p.tipo==='Perro'&&p.crecimiento<-0.05).length;
-    const sucursales=(dashData?.sales_by_branch??[]) as {name:string;ventas:number;margen:number}[];
     const topProds=useMemo(()=>bcgFlat.slice(0,limitProds),[bcgFlat, limitProds]);
 
     const handleDotClick = (d: any) => {
