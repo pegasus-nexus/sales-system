@@ -95,7 +95,7 @@ export const exportValuedInventory = async (date?: string, sucursal_id?: string)
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://localhost:8001/api/v1');
+        : 'http://localhost:8000/api/v1');
         
     const params = new URLSearchParams();
     if (date) params.append('date', date);
@@ -303,7 +303,7 @@ export const exportProductTemplate = async () => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     const response = await fetch(`${CACHE_URL}/productos/exportar-plantilla`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -324,7 +324,7 @@ export const importProductsExcel = async (file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     
     const formData = new FormData();
     formData.append('file', file);
@@ -354,7 +354,7 @@ export const importGlobalExcel = async (file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
         
     const response = await fetch(`${CACHE_URL}/productos/importacion-global`, {
         method: 'POST',
@@ -378,7 +378,7 @@ export const exportProductPriceTemplate = async (sucursal_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     const response = await fetch(`${CACHE_URL}/productos/exportar-plantilla-precios?sucursal_id=${sucursal_id}`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -403,7 +403,7 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
         
     const response = await fetch(`${CACHE_URL}/productos/importar-precios`, {
         method: 'POST',
@@ -472,7 +472,7 @@ export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almac
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://localhost:8001/api/v1');
+        : 'http://localhost:8000/api/v1');
         
     const params = new URLSearchParams({ sucursal_id, almacen_id });
     if (producto_id) params.set('producto_id', producto_id);
@@ -499,7 +499,7 @@ export const exportInventoryTemplate = async (sucursal_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     const response = await fetch(`${CACHE_URL}/inventario/exportar-plantilla?sucursal_id=${sucursal_id}`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -520,7 +520,7 @@ export const importInventoryExcel = async (sucursal_id: string, file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     
     const formData = new FormData();
     formData.append('file', file);
@@ -547,7 +547,7 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
     
     const formData = new FormData();
     formData.append('file', file);
@@ -595,7 +595,7 @@ export const downloadPedidoPDF = async (pedido_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
         ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+        : 'http://127.0.0.1:8000/api/v1');
         
     const response = await fetch(`${CACHE_URL}/pedidos/${pedido_id}/pdf`, {
         method: 'GET',
@@ -832,6 +832,35 @@ export interface ProductStatsRequest {
 
 export const getProductStatsReport = (data: ProductStatsRequest) => {
     return client<unknown[]>(`/reports/product-stats`, { method: 'POST', body: data });
+};
+
+export const getPurchasesByClient = (startDate: string, endDate: string, sucursalId?: string) => {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+    return client<{
+        resumen: {
+            total_comprado: number;
+            clientes_unicos: number;
+            total_transacciones: number;
+            ticket_promedio_general: number;
+            por_metodo: { EFECTIVO: number; QR: number; TARJETA: number; TRANSFERENCIA: number; CREDITO: number };
+        };
+        por_cliente: {
+            nit: string | null;
+            razon_social: string;
+            telefono: string | null;
+            cantidad_compras: number;
+            total_comprado: number;
+            ticket_promedio: number;
+            efectivo: number;
+            qr: number;
+            tarjeta: number;
+            transferencia: number;
+            credito: number;
+            metodo_preferido: string;
+        }[];
+        filtros: { start_date: string; end_date: string; sucursal_id: string };
+    }>(`/reports/purchases-by-client?${params.toString()}`);
 };
 
 // ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
