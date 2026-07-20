@@ -692,7 +692,10 @@ async def get_dashboard_metrics(
             "recent_activity":            []
         }
         
-        _dashboard_cache[cache_key] = (time.time(), result)
+        if result.get("kpis", {}).get("ingresos_totales", 0) > 0:
+            _dashboard_cache[cache_key] = (time.time(), result)
+        else:
+            _dashboard_cache.pop(cache_key, None)
         return result
         
     except Exception as e:

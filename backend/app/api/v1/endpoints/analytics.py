@@ -22,11 +22,15 @@ async def get_dashboard(
     time_range: str = Query("30days", description="Filtro rápido temporal"),
     clima_evento: Optional[str] = Query(None, description="Factor externo AI"),
     sucursal_id: Optional[str] = Query(None, description="Filtra las métricas por una sucursal en específico"),
+    clear_cache: Optional[bool] = Query(False, description="Forzar limpieza de caché"),
     current_user = Depends(get_current_active_user)
 ) -> Dict[str, Any]:
     """
     Ruta maestra para el Dashboard comparativo (Real vs Pasado vs Previsto).
     """
+    if clear_cache:
+        _dashboard_cache.clear()
+
     return await get_dashboard_metrics(
         tenant_id=current_user.tenant_id,
         start_date=start_date,

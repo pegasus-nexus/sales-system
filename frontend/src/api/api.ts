@@ -135,6 +135,7 @@ export const getAnalyticsDashboard = (start_date: string, end_date: string, sucu
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
     if (time_range) params.append('time_range', time_range);
     if (clima_evento) params.append('clima_evento', clima_evento);
+    params.append('clear_cache', 'true');
     params.append('_t', new Date().getTime().toString()); // Evitar caché del navegador
     return client<unknown>(`/analytics/dashboard?${params.toString()}`);
 };
