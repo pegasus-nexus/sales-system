@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFinancialReport, getSucursales } from '../api/api';
+import { getFinancialReport, getSucursales, getCategories, getProducts } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    FileDown, FileSpreadsheet
+    FileDown, FileSpreadsheet, Tag, Truck
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
@@ -26,11 +26,25 @@ export default function FinancialDetailView() {
     const [startDate, setStartDate] = useState(sevenDaysAgo);
     const [endDate, setEndDate] = useState(today);
     const [selectedSucursal, setSelectedSucursal] = useState('all');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedProveedor, setSelectedProveedor] = useState('');
 
     const { data: sucursales } = useQuery({
         queryKey: ['sucursales'],
         queryFn: getSucursales
     });
+
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: getCategories
+    });
+
+    const { data: productsData } = useQuery({
+        queryKey: ['products-for-filters'],
+        queryFn: () => getProducts(1, 2000)
+    });
+
+    const proveedores = Array.from(new Set(productsData?.items?.map((p: any) => p.proveedor_nombre || p.proveedor).filter(Boolean))) as string[];
 
     const { data: report, isLoading, isError } = useQuery({
         queryKey: ['financial-report', startDate, endDate, selectedSucursal],
@@ -101,7 +115,7 @@ export default function FinancialDetailView() {
                     </div>
                 </div>
 
-                <div className="space-y-1.5 grow max-w-xs">
+                <div className="space-y-1.5 min-w-[160px]">
                     <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Sucursal</label>
                     <div className="relative">
                         <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -113,6 +127,40 @@ export default function FinancialDetailView() {
                             <option value="all">Todas las Sucursales</option>
                             {sucursales?.map((s: any) => (
                                 <option key={s._id} value={s._id}>{s.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="space-y-1.5 min-w-[160px]">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Categoría</label>
+                    <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        <select 
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            <option value="">Todas las Categorías</option>
+                            {categories?.map((c: any) => (
+                                <option key={c.id || c._id} value={c.nombre}>{c.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="space-y-1.5 min-w-[160px]">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Proveedor</label>
+                    <div className="relative">
+                        <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                        <select 
+                            value={selectedProveedor}
+                            onChange={(e) => setSelectedProveedor(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-4 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            <option value="">Todos los Proveedores</option>
+                            {proveedores?.map((p: string) => (
+                                <option key={p} value={p}>{p}</option>
                             ))}
                         </select>
                     </div>
