@@ -21,8 +21,13 @@ DUMMY_HASH = "$2b$12$EP.cEit4Tq3J2kI4kC/uFOq/jN0uC.P0oW.Hl0Qy5W7u3l/L8Q0H2"
 @limiter.limit("5/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     import re
-    # Use native re case-insensitive regex match — re.escape() prevents dots/@ in emails from breaking the pattern
-    user = await User.find_one({"username": re.compile(f"^{re.escape(form_data.username)}$", re.IGNORECASE)})
+    # Allow login by matching either username or email (case-insensitive)
+    user = await User.find_one({
+        "$or": [
+            {"username": re.compile(f"^{re.escape(form_data.username)}$", re.IGNORECASE)},
+            {"email": re.compile(f"^{re.escape(form_data.username)}$", re.IGNORECASE)}
+        ]
+    })
     
     # Prevenimos el Timing Attack: Siempre evaluamos un hash, exista el usuario o no
     password_valid = verify_password(form_data.password, user.hashed_password if user else DUMMY_HASH)
