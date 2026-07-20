@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales, getCategories, getProducts } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    FileDown, FileSpreadsheet, Tag, Truck, Filter
+    FileDown, FileSpreadsheet, Tag, Truck, Filter, AlertCircle
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
@@ -246,8 +246,41 @@ export default function FinancialDetailView() {
                     <p className="text-gray-400 font-medium animate-pulse">Calculando márgenes detallados...</p>
                 </div>
             ) : isError ? (
-                <div className="p-10 bg-red-50 text-red-600 rounded-[32px] text-center border border-red-100 italic font-medium">
-                    Ocurrió un error al procesar el reporte financiero.
+                <div className="p-8 bg-amber-50 rounded-[32px] border border-amber-200 text-amber-900 text-center space-y-3">
+                    <AlertCircle size={36} className="mx-auto text-amber-500" />
+                    <h4 className="font-black text-lg">No se pudo consultar el reporte</h4>
+                    <p className="text-sm font-medium text-amber-700 max-w-md mx-auto">
+                        Ocurrió un inconveniente temporal al procesar la búsqueda. Por favor verifique su conexión o modifique los filtros aplicados.
+                    </p>
+                </div>
+            ) : !report || report.length === 0 ? (
+                <div className="p-12 bg-white rounded-[32px] border border-gray-100 shadow-sm text-center space-y-4">
+                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
+                        <Filter size={32} />
+                    </div>
+                    <div className="space-y-1">
+                        <h4 className="text-lg font-black text-gray-900">Sin resultados para los filtros aplicados</h4>
+                        <p className="text-sm font-medium text-gray-500 max-w-md mx-auto">
+                            {appliedFilters.category || appliedFilters.proveedor ? (
+                                <>No existen ventas registradas con la combinación de {appliedFilters.category ? `categoría "${appliedFilters.category}"` : ''}{appliedFilters.category && appliedFilters.proveedor ? ' y ' : ''}{appliedFilters.proveedor ? `proveedor "${appliedFilters.proveedor}"` : ''} entre el {appliedFilters.startDate} y el {appliedFilters.endDate}.</>
+                            ) : (
+                                <>No se registraron ventas en la sucursal seleccionada entre el {appliedFilters.startDate} y el {appliedFilters.endDate}.</>
+                            )}
+                        </p>
+                    </div>
+                    <div className="pt-2">
+                        <button 
+                            onClick={() => {
+                                setSelectedCategory('');
+                                setSelectedProveedor('');
+                                setSelectedSucursal('all');
+                                setAppliedFilters(prev => ({ ...prev, category: '', proveedor: '', sucursal: 'all' }));
+                            }}
+                            className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all"
+                        >
+                            Restablecer Filtros
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">

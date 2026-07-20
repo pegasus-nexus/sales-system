@@ -9,6 +9,7 @@ from app.domain.models.sale import Sale
 from app.domain.models.caja import CajaMovimiento, SubtipoMovimiento, CajaGastoCategoria
 from app.domain.models.inventario import Inventario
 from app.domain.models.product import Product
+from app.domain.models.category import Category
 from app.utils.serializers import normalize_bson
 from datetime import datetime, timedelta, time, timezone
 from app.utils.date_utils import BOLIVIA_TZ, get_day_range_bolivia, get_range_bolivia
@@ -473,6 +474,9 @@ async def get_financial_report(
         matching_products = await Product.find(prod_query).to_list()
         matching_ids = [str(p.id) for p in matching_products]
         matching_names = [p.descripcion for p in matching_products if p.descripcion]
+
+        if not matching_ids and not matching_names:
+            return []
 
         match_filter["$or"] = [
             {"items.producto_id": {"$in": matching_ids}},
