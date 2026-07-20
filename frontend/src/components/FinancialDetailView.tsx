@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
-    FileDown
+    FileDown, FileSpreadsheet
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
@@ -47,6 +47,29 @@ export default function FinancialDetailView() {
     }), {
         total_publico: 0, total_fabrica: 0, margen_distribuidor: 0, margen_retail: 0, margen_total: 0
     });
+
+    const handleExportExcel = () => {
+        if (!report || !report.length) return;
+        const header = ["Fecha", "Sucursal", "Venta Público (Bs)", "Costo Fábrica (Bs)", "Margen Matriz 15% (Bs)", "Margen Retail (Bs)", "Margen Total (Bs)"];
+        const rows = report.map((r: any) => [
+            r.fecha,
+            `"${(r.sucursal_nombre || r.sucursal_id).replace(/"/g, '""')}"`,
+            (r.total_publico || 0).toFixed(2),
+            (r.total_fabrica || 0).toFixed(2),
+            (r.margen_distribuidor || 0).toFixed(2),
+            (r.margen_retail || 0).toFixed(2),
+            (r.margen_total || 0).toFixed(2)
+        ].join(","));
+
+        const csvContent = "\uFEFF" + [header.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Reporte_Financiero_${startDate}_a_${endDate}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="space-y-6">
@@ -95,18 +118,28 @@ export default function FinancialDetailView() {
                     </div>
                 </div>
 
-                <button 
-                    onClick={() => {
-                        if (report && totals) {
-                            const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales?.find((s: any) => s._id === selectedSucursal)?.nombre || selectedSucursal);
-                            descargarPDFFinanzas(report, totals, startDate, endDate, sucNombre);
-                        }
-                    }}
-                    disabled={!report}
-                    className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
-                >
-                    <FileDown size={18} /> Descargar PDF
-                </button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleExportExcel}
+                        disabled={!report || !report.length}
+                        className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50"
+                    >
+                        <FileSpreadsheet size={18} /> Exportar Excel
+                    </button>
+
+                    <button 
+                        onClick={() => {
+                            if (report && totals) {
+                                const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales?.find((s: any) => s._id === selectedSucursal)?.nombre || selectedSucursal);
+                                descargarPDFFinanzas(report, totals, startDate, endDate, sucNombre);
+                            }
+                        }}
+                        disabled={!report}
+                        className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                    >
+                        <FileDown size={18} /> Descargar PDF
+                    </button>
+                </div>
             </div>
 
             {isLoading ? (

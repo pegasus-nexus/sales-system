@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
 
 interface ClientConfig extends Omit<RequestInit, 'body'> {
-    body?: any;
+    body?: unknown;
 }
 
 const isProductionUrl = window.location.hostname.includes('vercel.app');

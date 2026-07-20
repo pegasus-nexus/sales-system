@@ -1,0 +1,37 @@
+# ------------------------------------------------------------------------------
+# PEGASUS SALES SYSTEM - CONFIGURACIÓN DE RUFF (LINTER Y FORMATEADOR)
+# ------------------------------------------------------------------------------
+
+[tool.ruff]
+# Compatibilidad mínima con la versión de Python del proyecto (3.11)
+target-version = "py311"
+
+# Longitud máxima de línea estándar
+line-length = 88
+
+# Reglas activas para validación de calidad de código
+select = [
+    "E",    # pycodestyle - errores
+    "W",    # pycodestyle - advertencias
+    "F",    # pyflakes - errores de lógica/importación básica
+    "I",    # isort - ordenamiento de imports
+    "B",    # flake8-bugbear - malas prácticas y potenciales bugs
+    "UP",   # pyupgrade - sugerencias para sintaxis moderna de Python
+    "N",    # pep8-naming - convenciones de nombrado
+    "RUF"   # Reglas específicas de Ruff (ej: chequear diccionarios, variables)
+]
+
+# Reglas específicas a ignorar (si hubiese conflictos menores)
+ignore = []
+
+[tool.ruff.isort]
+# Declarar módulos de primer nivel del proyecto para agruparlos correctamente
+known-first-party = ["app"]
+combine-as-imports = true
+
+[tool.ruff.format]
+# Configuración del formateador automático
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

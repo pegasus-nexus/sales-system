@@ -33,6 +33,8 @@ export default function CatalogRentability() {
     // Estado de filtro LOCAL para la tabla de Rentabilidad (independiente del filtro global)
     const [rentRange, setRentRange] = useState('30days');
     const [rentSucursal, setRentSucursal] = useState('');
+    const [selectedCategoria, setSelectedCategoria] = useState('');
+    const [selectedProveedor, setSelectedProveedor] = useState('');
     const [rentData, setRentData] = useState<any[]>([]);
     const [isRentLoading, setIsRentLoading] = useState(false);
     // Vista semanal / mensual para el gráfico de evolución
@@ -101,7 +103,7 @@ export default function CatalogRentability() {
                     50
                 );
                 if (isMounted) setRentData(Array.isArray(res) ? res : []);
-            } catch (e) {
+            } catch {
                 if (isMounted) setRentData([]);
             } finally {
                 if (isMounted) setIsRentLoading(false);
@@ -154,15 +156,6 @@ export default function CatalogRentability() {
     };
 
     const esAdmin = ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(role || '');
-
-    if (!esAdmin) {
-        return (
-            <div className="flex flex-col items-center justify-center p-20 text-center">
-                <AlertTriangle className="text-amber-500 mb-4" size={48} />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h2>
-            </div>
-        );
-    }
 
     
     // Filtramos la tendencia por sucursalTrend en el frontend si es que está todo mezclado, 
@@ -306,9 +299,10 @@ export default function CatalogRentability() {
                 return desc === cleanName;
             });
 
-            const proveedor = String(prodCat?.proveedor || '').toLowerCase();
+            const proveedorNombre = prodCat?.proveedor || 'Sin Proveedor';
+            const categoriaNombre = prodCat?.categoria_nombre || prodCat?.categoria_id || 'Sin Categoría';
             const costoBase = Number(prodCat?.costo_producto || prodCat?.costo_base || 0);
-            const esTaboada = proveedor.includes('taboada');
+            const esTaboada = String(proveedorNombre).toLowerCase().includes('taboada');
 
             let ganancia_matriz = 0;
             let ganancia_sucursal = 0;
@@ -328,6 +322,8 @@ export default function CatalogRentability() {
 
             return {
                 nombreLimpio: cleanName,
+                categoria: categoriaNombre,
+                proveedor: proveedorNombre,
                 unidades,
                 ingreso_bruto,
                 costo_real,
@@ -340,18 +336,54 @@ export default function CatalogRentability() {
         });
     }, [rentData, catalogo, rentRange]);
 
+    const categoriasDisponibles = useMemo(() => {
+        const set = new Set<string>();
+        catalogo.forEach((p: any) => {
+            const cat = p.categoria_nombre || p.categoria_id;
+            if (cat) set.add(cat);
+        });
+        return Array.from(set).sort();
+    }, [catalogo]);
+
+    const proveedoresDisponibles = useMemo(() => {
+        const set = new Set<string>();
+        catalogo.forEach((p: any) => {
+            if (p.proveedor) set.add(p.proveedor);
+        });
+        return Array.from(set).sort();
+    }, [catalogo]);
+
+    const filteredRentData = useMemo(() => {
+        return processedRentData.filter((p: any) => {
+            const matchesSearch = p.nombreLimpio.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCat = !selectedCategoria || p.categoria === selectedCategoria;
+            const matchesProv = !selectedProveedor || p.proveedor === selectedProveedor;
+            return matchesSearch && matchesCat && matchesProv;
+        });
+    }, [processedRentData, searchTerm, selectedCategoria, selectedProveedor]);
+
     const handleExportCSV = () => {
-        const rows = processedRentData.filter((p: any) => p.nombreLimpio.toLowerCase().includes(searchTerm.toLowerCase()));
-        if (!rows.length) return;
-        const header = ["Producto","Unidades","Ingreso Bruto","Costo Real","Ganancia Sucursal","Ganancia Matriz","% Margen","PR Venta","Costo Unit."];
-        const csv = [header.join(","), ...rows.map((p: any) =>
-            `"${p.nombreLimpio}",${p.unidades},${p.ingreso_bruto},${p.costo_real},${p.ganancia_suc},${p.ganancia_matriz},${p.margen_pct}%,${p.precio_prom},${p.costo_prom}`
-        )].join("\n");
-        const blob = new Blob([csv], { type: 'text/csv' });
+        if (!filteredRentData.length) return;
+        const header = ["Producto", "Categoría", "Proveedor", "Unidades Vendidas", "Ingreso Bruto (Bs)", "Costo Real (Bs)", "Ganancia Sucursal (Bs)", "Ganancia Matriz (Bs)", "Precio Prom. Venta (Bs)", "Costo Unit. Base (Bs)", "% Margen"];
+        const csvRows = filteredRentData.map((p: any) =>
+            `"${p.nombreLimpio.replace(/"/g, '""')}","${String(p.categoria).replace(/"/g, '""')}","${String(p.proveedor).replace(/"/g, '""')}",${p.unidades},${p.ingreso_bruto.toFixed(2)},${p.costo_real.toFixed(2)},${p.ganancia_suc.toFixed(2)},${p.ganancia_matriz.toFixed(2)},${p.precio_prom.toFixed(2)},${p.costo_prom.toFixed(2)},${p.margen_pct.toFixed(1)}%`
+        );
+        const csvContent = "\uFEFF" + [header.join(","), ...csvRows].join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url;
-        a.download = `Rentabilidad_Real_${rentRange}.csv`; a.click();
+        a.download = `Reporte_Rentabilidad_${rentRange}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+        window.URL.revokeObjectURL(url);
     };
+
+    if (!esAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center p-20 text-center">
+                <AlertTriangle className="text-amber-500 mb-4" size={48} />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h2>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-24">
@@ -493,23 +525,47 @@ export default function CatalogRentability() {
                                         ))}
                                         {isRentLoading && <Loader2 size={14} className="animate-spin text-emerald-500 ml-2" />}
                                     </div>
-                                    <div className="relative w-full sm:w-auto min-w-[160px]">
-                                        <select
-                                            value={rentSucursal}
-                                            onChange={(e) => setRentSucursal(e.target.value)}
-                                            className="w-full pl-4 pr-8 py-2 text-xs font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white appearance-none cursor-pointer transition-all"
-                                        >
-                                            {SUCS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                                        </select>
+                                    <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                                        <div className="relative min-w-[150px]">
+                                            <select
+                                                value={selectedCategoria}
+                                                onChange={(e) => setSelectedCategoria(e.target.value)}
+                                                className="w-full pl-3 pr-8 py-2 text-xs font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white appearance-none cursor-pointer transition-all"
+                                            >
+                                                <option value="">Todas las Categorías</option>
+                                                {categoriasDisponibles.map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="relative min-w-[150px]">
+                                            <select
+                                                value={selectedProveedor}
+                                                onChange={(e) => setSelectedProveedor(e.target.value)}
+                                                className="w-full pl-3 pr-8 py-2 text-xs font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white appearance-none cursor-pointer transition-all"
+                                            >
+                                                <option value="">Todos los Proveedores</option>
+                                                {proveedoresDisponibles.map(prov => (
+                                                    <option key={prov} value={prov}>{prov}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="relative min-w-[150px]">
+                                            <select
+                                                value={rentSucursal}
+                                                onChange={(e) => setRentSucursal(e.target.value)}
+                                                className="w-full pl-3 pr-8 py-2 text-xs font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white appearance-none cursor-pointer transition-all"
+                                            >
+                                                {SUCS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {(() => {
-                            const rows = processedRentData.filter((p: any) =>
-                                p.nombreLimpio.toLowerCase().includes(searchTerm.toLowerCase())
-                            );
+                            const rows = filteredRentData;
                             const totIngreso   = rows.reduce((s: number, p: any) => s + (p.ingreso_bruto  || 0), 0);
                             const totCosto     = rows.reduce((s: number, p: any) => s + (p.costo_real     || 0), 0);
                             const totGanSuc    = rows.reduce((s: number, p: any) => s + (p.ganancia_suc   || 0), 0);

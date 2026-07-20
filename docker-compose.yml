@@ -12,5 +12,21 @@ services:
       MONGO_INITDB_ROOT_USERNAME: user
       MONGO_INITDB_ROOT_PASSWORD: password
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      # Conectar al contenedor 'db' de MongoDB usando sus credenciales configuradas
+      - MONGODB_URL=mongodb://user:password@db:27017
+      - MONGODB_DB_NAME=sales_system_dev
+      - JWT_SECRET_KEY=supersecretkey_change_me_in_production
+    depends_on:
+      - db
+
 volumes:
   mongo_data:

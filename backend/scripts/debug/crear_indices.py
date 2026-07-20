@@ -3,17 +3,17 @@ Crea índices optimizados en ventas_historicas_crudas para acelerar
 los queries de analytics de 4-5 minutos a menos de 5 segundos.
 """
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+from app.infrastructure.db import init_db, get_client
+from app.infrastructure.core.config import settings
 from pymongo import ASCENDING, DESCENDING, TEXT
 
-URI = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/salessystem?appName=Cluster0"
-
 async def main():
-    client = AsyncIOMotorClient(URI)
-    db = client['salessystem']
+    await init_db()
+    client = get_client()
+    db = client[settings.MONGODB_DB_NAME]
     col = db.ventas_historicas_crudas
 
-    print("Creando índices optimizados en ventas_historicas_crudas...")
+    print(f"Creando índices optimizados en {settings.MONGODB_DB_NAME}.ventas_historicas_crudas...")
 
     # 1. Índice compuesto principal: fecha + sucursal (cubre 90% de los queries)
     try:

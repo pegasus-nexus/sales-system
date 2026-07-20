@@ -6,6 +6,10 @@
 .env
 .env.local
 .env.*.local
+backend/.env
+
+# Exportaciones temporales
+exports/
 
 # Sistemas Operativos
 .DS_Store

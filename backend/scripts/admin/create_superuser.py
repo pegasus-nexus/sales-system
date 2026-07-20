@@ -1,7 +1,7 @@
 import asyncio
-from app.db import init_db
-from app.models.user import User, UserRole
-from app.auth import get_password_hash
+from app.infrastructure.db import init_db
+from app.domain.models.user import User, UserRole
+from app.infrastructure.auth import get_password_hash
 
 async def main():
     print("Initializing DB...")

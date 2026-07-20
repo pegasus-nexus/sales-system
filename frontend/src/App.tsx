@@ -37,7 +37,6 @@ import AuditLogsPage from './pages/AuditLogsPage';
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
-import ChatbotAnalitico from './components/ChatbotAnalitico';
 import { ErrorModalProvider, useErrorModal } from './components/ErrorModal';
 import { ConfirmProvider } from './components/ConfirmModal';
 
@@ -393,8 +392,6 @@ function App() {
             </Layout>
           } />
         </Routes>
-        {/* Chatbot siempre visible pero fuera del sistema de rutas */}
-        <ChatbotAnalitico />
       </BrowserRouter>
         </ConfirmProvider>
       </ErrorModalProvider>

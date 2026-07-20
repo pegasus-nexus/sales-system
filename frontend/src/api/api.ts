@@ -38,14 +38,14 @@ export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/
 export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string }>('/tenants/my-features');
 export const getMyTenant = () => client<Tenant>('/tenants/me');
 export const updateMyTenantSettings = (data: Partial<TenantSettings>) => client<Tenant>('/tenants/me/settings', { method: 'PUT', body: data });
-export const updateMyTenantConfiguracion = (data: Record<string, any>) => client<Record<string, any>>('/tenants/me/configuracion', { method: 'PUT', body: data });
+export const updateMyTenantConfiguracion = (data: Record<string, unknown>) => client<Record<string, unknown>>('/tenants/me/configuracion', { method: 'PUT', body: data });
 
 export const getAuditLogs = (limit: number = 100, skip: number = 0, action?: string, entity?: string, username?: string) => {
     const params = new URLSearchParams({ limit: String(limit), skip: String(skip) });
     if (action) params.append('action', action);
     if (entity) params.append('entity', entity);
     if (username) params.append('username', username);
-    return client<any[]>(`/audit-logs?${params.toString()}`);
+    return client<unknown[]>(`/audit-logs?${params.toString()}`);
 };
 
 export const uploadImage = async (file: File): Promise<{url: string}> => {
@@ -81,14 +81,14 @@ export const getGeneralReports = (days: number = 30) =>
 export const getDailyReport = (date: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ date });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<any>(`/reports/daily-report?${params.toString()}`);
+    return client<unknown>(`/reports/daily-report?${params.toString()}`);
 };
 
 export const getValuedInventory = async (date?: string, sucursal_id?: string) => {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
     if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
-    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: any[], historical?: boolean, date?: string}>(`/reports/valued-inventory${params.toString() ? '?' + params.toString() : ''}`);
+    return client<{total_general_fabrica: number; total_general_publico: number; ganancia_potencial: number; por_sucursal: unknown[], historical?: boolean, date?: string}>(`/reports/valued-inventory${params.toString() ? '?' + params.toString() : ''}`);
 };
 
 export const exportValuedInventory = async (date?: string, sucursal_id?: string) => {
@@ -125,7 +125,7 @@ export const getFinancialReport = (startDate: string, endDate: string, sucursal_
         end_date: endDate,
         sucursal_id: sucursal_id
     });
-    return client<any[]>(`/reports/financial-report?${params.toString()}`);
+    return client<unknown[]>(`/reports/financial-report?${params.toString()}`);
 };
 
 export const getAnalyticsDashboard = (start_date: string, end_date: string, sucursal_id?: string, time_range?: string, clima_evento?: string) => {
@@ -134,19 +134,19 @@ export const getAnalyticsDashboard = (start_date: string, end_date: string, sucu
     if (time_range) params.append('time_range', time_range);
     if (clima_evento) params.append('clima_evento', clima_evento);
     params.append('_t', new Date().getTime().toString()); // Evitar caché del navegador
-    return client<any>(`/analytics/dashboard?${params.toString()}`);
+    return client<unknown>(`/analytics/dashboard?${params.toString()}`);
 };
 
 export const getAnalyticsBcg = (start_date: string, end_date: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ start_date, end_date });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<any>(`/analytics/bcg?${params.toString()}`);
+    return client<unknown>(`/analytics/bcg?${params.toString()}`);
 };
 
 export const getRentabilidadReal = (start_date: string, end_date: string, sucursal_id?: string, limit: number = 50) => {
     const params = new URLSearchParams({ start_date, end_date, limit: String(limit) });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<any[]>(`/analytics/rentabilidad-real?${params.toString()}`);
+    return client<unknown[]>(`/analytics/rentabilidad-real?${params.toString()}`);
 };
 
 export const getOrchestration = (days: number = 30) => {
@@ -158,13 +158,13 @@ export const getHourlyMultiyear = (fecha_referencia: string, sucursal?: string, 
     if (sucursal) params.append('sucursal', sucursal);
     if (fecha_anio1) params.append('fecha_anio1', fecha_anio1);
     if (fecha_anio2) params.append('fecha_anio2', fecha_anio2);
-    return client<any>(`/analytics/hourly-multiyear?${params.toString()}`);
+    return client<unknown>(`/analytics/hourly-multiyear?${params.toString()}`);
 };
 
 export const getSalesPercentiles = (sucursal?: string, days_history: number = 90, group_by: string = 'day') => {
     const params = new URLSearchParams({ days_history: String(days_history), group_by });
     if (sucursal) params.append('sucursal', sucursal);
-    return client<any>(`/analytics/percentiles?${params.toString()}`);
+    return client<unknown>(`/analytics/percentiles?${params.toString()}`);
 };
 
 export const getTopProducts = (start_date?: string, end_date?: string, time_range?: string) => {
@@ -172,7 +172,7 @@ export const getTopProducts = (start_date?: string, end_date?: string, time_rang
     if (start_date) params.append('start_date', start_date);
     if (end_date) params.append('end_date', end_date);
     if (time_range) params.append('time_range', time_range);
-    return client<any>(`/analytics/top-products?${params.toString()}`);
+    return client<unknown>(`/analytics/top-products?${params.toString()}`);
 };
 
 export const getSalesByBranch = (start_date?: string, end_date?: string, time_range?: string) => {
@@ -180,13 +180,13 @@ export const getSalesByBranch = (start_date?: string, end_date?: string, time_ra
     if (start_date) params.append('start_date', start_date);
     if (end_date) params.append('end_date', end_date);
     if (time_range) params.append('time_range', time_range);
-    return client<any>(`/analytics/sales-by-branch?${params.toString()}`);
+    return client<unknown>(`/analytics/sales-by-branch?${params.toString()}`);
 };
 
 export const getBcgMatrix = (start_date: string, end_date: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ start_date, end_date });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<any>(`/analytics/bcg?${params.toString()}`);
+    return client<unknown>(`/analytics/bcg?${params.toString()}`);
 };
 
 
@@ -203,14 +203,14 @@ export const getDemandPrediction = (predict_days: number = 7, sucursal_id?: stri
     return client<DemandPredictionResponse>(`/analytics/ml/predict-demand?${params.toString()}`);
 };
 
-export const uploadHistoricalData = (data: { sucursal_id: string, rows: any[] }) => {
-    return client<any>('/analytics/import-historical', { method: 'POST', body: data });
+export const uploadHistoricalData = (data: { sucursal_id: string, rows: unknown[] }) => {
+    return client<unknown>('/analytics/import-historical', { method: 'POST', body: data });
 };
 
 export const getSalesByHour = (date: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ date });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<any[]>(`/reports/sales-by-hour?${params.toString()}`);
+    return client<unknown[]>(`/reports/sales-by-hour?${params.toString()}`);
 };
 
 export const getStaffPerformanceReport = (date?: string, sucursal_id?: string, startDate?: string, endDate?: string) => {
@@ -238,20 +238,20 @@ export const getStaffPerformanceReport = (date?: string, sucursal_id?: string, s
 export const getAnulacionesReport = (startDate: string, endDate: string, sucursalId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
-    return client<any[]>(`/reports/anulaciones?${params.toString()}`);
+    return client<unknown[]>(`/reports/anulaciones?${params.toString()}`);
 };
 
 export const getVentasMatrix = (startDate: string, endDate: string, sucursalId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (sucursalId && sucursalId !== 'all') params.set('sucursal_id', sucursalId);
-    return client<any>(`/reports/sales-matrix?${params.toString()}`);
+    return client<unknown>(`/reports/sales-matrix?${params.toString()}`);
 };
 
 export const getExpensesReport = (startDate: string, endDate: string, sucursalId?: string, categoriaId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (sucursalId && sucursalId !== 'all') params.set('sucursal_id', sucursalId);
     if (categoriaId && categoriaId !== 'all') params.set('categoria_id', categoriaId);
-    return client<any>(`/reports/expenses-report?${params.toString()}`);
+    return client<unknown>(`/reports/expenses-report?${params.toString()}`);
 };
 
 export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id?: string) => {
@@ -268,7 +268,7 @@ export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id
 
 
 // ─── Sucursales ───────────────────────────────────────────────────────────
-export const getSucursales = (allBranches?: boolean | any) => {
+export const getSucursales = (allBranches?: boolean | unknown) => {
     const isAll = typeof allBranches === 'boolean' ? allBranches : true;
     return client<Sucursal[]>(`/sucursales?all_branches=${isAll}`);
 };
@@ -338,7 +338,7 @@ export const importProductsExcel = async (file: File) => {
         try {
             const errData = await response.json();
             errMsg = errData.detail || errMsg;
-        } catch(e) {}
+        } catch { /* ignorar */ }
         throw new Error(errMsg);
     }
     
@@ -365,7 +365,7 @@ export const importGlobalExcel = async (file: File) => {
         try {
             const errData = await response.json();
             errMsg = errData.detail || errMsg;
-        } catch(e) {}
+        } catch { /* ignorar */ }
         throw new Error(errMsg);
     }
     
@@ -414,7 +414,7 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
         try {
             const errData = await response.json();
             errMsg = errData.detail || errMsg;
-        } catch(e) {}
+        } catch { /* ignorar */ }
         throw new Error(errMsg);
     }
     
@@ -534,7 +534,7 @@ export const importInventoryExcel = async (sucursal_id: string, file: File) => {
         try {
             const errData = await response.json();
             errMsg = errData.detail || errMsg;
-        } catch(e) {}
+        } catch { /* ignorar */ }
         throw new Error(errMsg);
     }
     
@@ -561,7 +561,7 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
         try {
             const errData = await response.json();
             errMsg = errData.detail || errMsg;
-        } catch(e) {}
+        } catch { /* ignorar */ }
         throw new Error(errMsg);
     }
     
@@ -623,7 +623,7 @@ export const createCategory = (data: CategoryCreate) =>
 export const getUsers = () => client<User[]>('/users');
 export const createEmployee = (data: EmployeeCreate) =>
     client<User>('/users/employee', { body: data });
-export const updateEmployee = (id: string, data: any) =>
+export const updateEmployee = (id: string, data: unknown) =>
     client<User>(`/users/${id}`, { method: 'PUT', body: data });
 export const toggleEmployeeStatus = (id: string, is_active: boolean) =>
     client<{message: string, is_active: boolean}>(`/users/${id}/status?is_active=${is_active}`, { method: 'PATCH' });
@@ -747,30 +747,30 @@ export const getClientes = (searchTerm?: string) => {
     const params = new URLSearchParams();
     if (searchTerm) params.set('q', searchTerm);
     const qs = params.toString();
-    return client<any[]>(`/clientes${qs ? '?' + qs : ''}`);
+    return client<unknown[]>(`/clientes${qs ? '?' + qs : ''}`);
 };
 
-export const createCliente = (data: any) =>
-    client<any>('/clientes', { method: 'POST', body: data });
+export const createCliente = (data: unknown) =>
+    client<unknown>('/clientes', { method: 'POST', body: data });
 
-export const updateCliente = (id: string, data: any) =>
-    client<any>(`/clientes/${id}`, { method: 'PUT', body: data });
+export const updateCliente = (id: string, data: unknown) =>
+    client<unknown>(`/clientes/${id}`, { method: 'PUT', body: data });
 
 export const deleteCliente = (id: string) =>
     client(`/clientes/${id}`, { method: 'DELETE' });
 
 // ── Listas de Precios ─────────────────────────────────────────────────────
-export const getSesionesCaja = () => client<any[]>(`/caja/sesiones`);
-export const getSesionesAbiertas = () => client<any[]>(`/caja/sesiones/abiertas`);
-export const getSesionActiva = () => client<any>(`/caja/sesion/activa`);
-export const getListasPrecios = () => client<any[]>('/listas-precios');
-export const createListaPrecio = (data: any) => client<any>('/listas-precios', { method: 'POST', body: data });
-export const updateListaPrecio = (id: string, data: any) => client<any>(`/listas-precios/${id}`, { method: 'PUT', body: data });
+export const getSesionesCaja = () => client<unknown[]>(`/caja/sesiones`);
+export const getSesionesAbiertas = () => client<unknown[]>(`/caja/sesiones/abiertas`);
+export const getSesionActiva = () => client<unknown>(`/caja/sesion/activa`);
+export const getListasPrecios = () => client<unknown[]>('/listas-precios');
+export const createListaPrecio = (data: unknown) => client<unknown>('/listas-precios', { method: 'POST', body: data });
+export const updateListaPrecio = (id: string, data: unknown) => client<unknown>(`/listas-precios/${id}`, { method: 'PUT', body: data });
 export const deleteListaPrecio = (id: string) => client(`/listas-precios/${id}`, { method: 'DELETE' });
 
-export const getListaPreciosItems = (lista_id: string) => client<any[]>(`/listas-precios/${lista_id}/items`);
-export const addListaPrecioItem = (lista_id: string, data: any) => client<any>(`/listas-precios/${lista_id}/items`, { method: 'POST', body: data });
-export const updateListaPrecioItem = (lista_id: string, item_id: string, data: any) => client<any>(`/listas-precios/${lista_id}/items/${item_id}`, { method: 'PUT', body: data });
+export const getListaPreciosItems = (lista_id: string) => client<unknown[]>(`/listas-precios/${lista_id}/items`);
+export const addListaPrecioItem = (lista_id: string, data: unknown) => client<unknown>(`/listas-precios/${lista_id}/items`, { method: 'POST', body: data });
+export const updateListaPrecioItem = (lista_id: string, item_id: string, data: unknown) => client<unknown>(`/listas-precios/${lista_id}/items/${item_id}`, { method: 'PUT', body: data });
 export const deleteListaPrecioItem = (lista_id: string, item_id: string) => client(`/listas-precios/${lista_id}/items/${item_id}`, { method: 'DELETE' });
 
 // ── Gestión de Créditos ───────────────────────────────────────────────────
@@ -779,44 +779,44 @@ export const getCuentasCredito = (q?: string, estado?: string, page: number = 1,
     if (q) params.set('q', q);
     if (estado) params.set('estado', estado);
     const qs = params.toString();
-    return client<any>(`/creditos${qs ? '?' + qs : ''}`);
+    return client<unknown>(`/creditos${qs ? '?' + qs : ''}`);
 };
 
 export const getDeudasPorCuenta = (cuenta_id: string, estado?: string) => {
     const params = new URLSearchParams();
     if (estado) params.set('estado', estado);
     const qs = params.toString();
-    return client<any[]>(`/creditos/${cuenta_id}/deudas${qs ? '?' + qs : ''}`);
+    return client<unknown[]>(`/creditos/${cuenta_id}/deudas${qs ? '?' + qs : ''}`);
 };
 
 export const getTransaccionesCuenta = (cuenta_id: string) => {
-    return client<any[]>(`/creditos/${cuenta_id}/transacciones`);
+    return client<unknown[]>(`/creditos/${cuenta_id}/transacciones`);
 };
 
-export const registrarAbonosMultiple = (cuenta_id: string, data: { pagos: any[], deuda_id?: string, notas?: string }) => {
-    return client<any>(`/creditos/${cuenta_id}/abonos`, { method: 'POST', body: data });
+export const registrarAbonosMultiple = (cuenta_id: string, data: { pagos: unknown[], deuda_id?: string, notas?: string }) => {
+    return client<unknown>(`/creditos/${cuenta_id}/abonos`, { method: 'POST', body: data });
 };
 
 export const anularAbono = (cuenta_id: string, transaccion_id: string, motivo: string) => {
     const params = new URLSearchParams({ motivo });
-    return client<any>(`/creditos/${cuenta_id}/transacciones/${transaccion_id}/anular?${params.toString()}`, { method: 'POST' });
+    return client<unknown>(`/creditos/${cuenta_id}/transacciones/${transaccion_id}/anular?${params.toString()}`, { method: 'POST' });
 };
 
 // ── Logística B2B y Mermas ────────────────────────────────────────────────
-export const crearMermaReclamo = (sucursal_id: string, supermercado_id: string, data: { items: any[], notas?: string }) => {
+export const crearMermaReclamo = (sucursal_id: string, supermercado_id: string, data: { items: unknown[], notas?: string }) => {
     const params = new URLSearchParams({ sucursal_id, supermercado_id });
-    return client<any>(`/b2b/mermas?${params.toString()}`, { method: 'POST', body: data });
+    return client<unknown>(`/b2b/mermas?${params.toString()}`, { method: 'POST', body: data });
 };
 
 export const getMermasReclamos = (page: number = 1, limit: number = 50, estado?: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (estado) params.set('estado', estado);
     if (sucursal_id) params.set('sucursal_id', sucursal_id);
-    return client<any>(`/b2b/mermas?${params.toString()}`);
+    return client<unknown>(`/b2b/mermas?${params.toString()}`);
 };
 
 export const compensarMermaReclamo = (merma_id: string) => {
-    return client<any>(`/b2b/mermas/${merma_id}/compensar`, { method: 'POST' });
+    return client<unknown>(`/b2b/mermas/${merma_id}/compensar`, { method: 'POST' });
 };
 
 // ── Estadísticas de Productos ────────────────────────────────────────────
@@ -829,7 +829,7 @@ export interface ProductStatsRequest {
 }
 
 export const getProductStatsReport = (data: ProductStatsRequest) => {
-    return client<any[]>(`/reports/product-stats`, { method: 'POST', body: data });
+    return client<unknown[]>(`/reports/product-stats`, { method: 'POST', body: data });
 };
 
 // ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
@@ -862,7 +862,7 @@ export const assignPlanToClient = (clienteId: string, templateId: string, fechaI
 
 // Production Schedules
 export const getDailyProductionReport = (fecha: string) => 
-    client<{schedules_count: number; ingredients: any[]}>(`/production/daily-report?fecha=${fecha}`);
+    client<{schedules_count: number; ingredients: unknown[]}>(`/production/daily-report?fecha=${fecha}`);
 
 export const getMealSchedules = (params: { cliente_id?: string; fecha_programada?: string; estado?: string; parent_id?: string }) => {
     const qParams = new URLSearchParams();

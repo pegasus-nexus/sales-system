@@ -35,7 +35,7 @@ export interface Tenant {
     is_active: boolean;
     plan_expires_at?: string;
     settings?: TenantSettings;
-    configuracion?: Record<string, any>;
+    configuracion?: Record<string, unknown>;
     created_at: string;
 }
 
@@ -132,7 +132,7 @@ export interface ProductCreate {
     meal_plan_template_id?: string;
 }
 
-export interface ProductUpdate extends Partial<ProductCreate> { }
+export type ProductUpdate = Partial<ProductCreate>;
 
 export interface InventarioItem {
     inventario_id: string;

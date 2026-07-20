@@ -40,7 +40,7 @@ export const cancelarTraslado = async (trasladoId: string) => {
 
 export const getTraslados = async (params: { tipo: 'enviados' | 'recibidos' | 'todos', estado?: string, page?: number, page_size?: number }) => {
     const validParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
-    const queryParams = new URLSearchParams(validParams as any).toString();
+    const queryParams = new URLSearchParams(validParams as Record<string, string>).toString();
     return await client(`/traslados/?${queryParams}`);
 };
 

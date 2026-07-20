@@ -8,8 +8,7 @@ import DashboardMaestro from './DashboardMaestro';
 import CatalogRentability from './CatalogRentability';
 import AnaliticaAvanzada from './AnaliticaAvanzada';
 
-import ImportadorInteligente from '../components/DataImporterWizard'; 
-import ChatbotAnalitico from '../components/ChatbotAnalitico';
+import ImportadorInteligente from '../components/DataImporterWizard';
 
 
 function cn(...inputs: ClassValue[]) {
@@ -29,8 +28,11 @@ export default function ExecutiveDashboard() {
         const scrollContainer = document.getElementById('main-scroll-container');
         if (!scrollContainer) return;
 
-        // Establecer estado inicial
-        setIsScrolled(scrollContainer.scrollTop > 40);
+        requestAnimationFrame(() => {
+            if (scrollContainer) {
+                setIsScrolled(scrollContainer.scrollTop > 40);
+            }
+        });
 
         const handleScroll = (e: Event) => {
             const target = e.target as HTMLElement;
@@ -143,9 +145,6 @@ export default function ExecutiveDashboard() {
                 {activeTab === 'ml' && <AnaliticaAvanzada />}
                 {activeTab === 'importar' && <ImportadorInteligente />}
             </div>
-
-            {/* AI Assistant Floating Component */}
-            <ChatbotAnalitico />
         </div>
     );
 }

@@ -62,8 +62,10 @@ async def init_db():
     # Resolver dinámicamente la base de datos por defecto de la URI (evita problemas de permisos en Atlas)
     try:
         database = _client.get_default_database()
+        if database.name == "admin" or not database.name:
+            database = _client[settings.MONGODB_DB_NAME]
     except Exception:
-        database = _client.salessystem
+        database = _client[settings.MONGODB_DB_NAME]
 
     await init_beanie(
         database=BeanieFixWrapper(database),
@@ -123,6 +125,4 @@ def get_client() -> motor.motor_asyncio.AsyncIOMotorClient:
         raise RuntimeError("Database not initialized")
     return _client
 
-# Monkey-patch Beanie Document to support get_pymongo_collection across the application
-from beanie import Document
-Document.get_pymongo_collection = classmethod(lambda cls: cls.get_motor_collection())
+
