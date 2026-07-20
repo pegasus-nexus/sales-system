@@ -447,7 +447,7 @@ export default function ProductionCalendarPage() {
                                     onChange={e => setSelectedCliente(e.target.value)}
                                 >
                                     <option value="">-- Seleccionar Cliente --</option>
-                                    {clients?.map(c => (
+                                    {clients?.map((c: any) => (
                                         <option key={c._id} value={c._id}>{c.nombre} ({c.telefono || 'sin tel.'})</option>
                                     ))}
                                 </select>

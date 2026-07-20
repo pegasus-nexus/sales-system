@@ -55,23 +55,26 @@ export default function CreditosPage() {
     const [activeTab, setActiveTab] = useState<'DEUDAS' | 'HISTORIAL'>('DEUDAS');
 
     // Drawer Queries
-    const { data: deudas = [], isLoading: loadingDeudas } = useQuery<Deuda[]>({
+    const { data: rawDeudas = [], isLoading: loadingDeudas } = useQuery({
         queryKey: ['deudas', selectedCuenta?.id],
         queryFn: () => getDeudasPorCuenta(selectedCuenta?.id as string),
         enabled: !!selectedCuenta
     });
+    const deudas: any[] = rawDeudas as any[];
 
-    const { data: transacciones = [], isLoading: loadingHistorial } = useQuery<Transaccion[]>({
+    const { data: rawTransacciones = [], isLoading: loadingHistorial } = useQuery({
         queryKey: ['transacciones', selectedCuenta?.id],
         queryFn: () => getTransaccionesCuenta(selectedCuenta?.id as string),
         enabled: !!selectedCuenta && activeTab === 'HISTORIAL'
     });
+    const transacciones: any[] = rawTransacciones as any[];
 
 
-    const { data: creditosRes, isLoading } = useQuery({
+    const { data: rawCreditosRes, isLoading } = useQuery({
         queryKey: ['cuentas-credito', page, searchTerm, filterEstado],
         queryFn: () => getCuentasCredito(searchTerm || undefined, filterEstado || undefined, page, limit)
     });
+    const creditosRes: any = rawCreditosRes;
 
     const cuentas = creditosRes?.items || [];
 
@@ -369,7 +372,7 @@ export default function CreditosPage() {
                                 {activeTab === 'DEUDAS' ? (
                                     <div className="space-y-4">
                                         {loadingDeudas ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-600" /></div> : deudas.length === 0 ? <p className="text-center py-10 text-gray-500 italic">No hay deudas pendientes.</p> : (
-                                            deudas.map(d => (
+                                            deudas.map((d: any) => (
                                                 <div key={d.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:border-indigo-100 transition-colors">
                                                     <div>
                                                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">Ticket #{d.sale_id_corto}</span>
@@ -392,7 +395,7 @@ export default function CreditosPage() {
                                 ) : (
                                     <div className="space-y-4">
                                         {loadingHistorial ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-600" /></div> : transacciones.length === 0 ? <p className="text-center py-10 text-gray-500 italic">No hay historial de movimientos.</p> : (
-                                            transacciones.map(h => (
+                                            transacciones.map((h: any) => (
                                                 <div key={h.id} className={`bg-white border rounded-2xl p-4 flex justify-between items-center shadow-sm ${h.anulada ? 'border-rose-100 opacity-60' : 'border-gray-200'}`}>
                                                     <div>
                                                         <div className="flex items-center gap-2">
@@ -420,7 +423,7 @@ export default function CreditosPage() {
                                                         </span>
                                                         {h.pagos && h.pagos.length > 0 && !h.anulada && (
                                                             <div className="mt-1 flex flex-col items-end gap-0.5">
-                                                                {h.pagos.map((p, idx) => (
+                                                                {h.pagos.map((p: any, idx: number) => (
                                                                     <span key={idx} className="text-[8px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
                                                                         {p.metodo}
                                                                     </span>

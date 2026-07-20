@@ -109,14 +109,14 @@ export default function RegionalAndProductMix() {
             ]);
             
             if (results[0].status === 'fulfilled') {
-                setBranchData(results[0].value.sales_by_branch || []);
+                setBranchData((results[0].value as any)?.sales_by_branch || []);
             } else {
                 console.error("Error fetching sales by branch:", results[0].reason);
                 setBranchData([]);
             }
             
             if (results[1].status === 'fulfilled') {
-                setTopData(results[1].value.top_categories || []);
+                setTopData((results[1].value as any)?.top_categories || []);
             } else {
                 console.error("Error fetching top products:", results[1].reason);
                 setTopData([]);

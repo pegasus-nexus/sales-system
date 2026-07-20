@@ -53,7 +53,7 @@ export default function DailyReportView() {
         </div>
     );
 
-    const { resumen_ventas, gastos, items_vendidos, balance_neto } = report;
+    const { resumen_ventas, gastos, items_vendidos, balance_neto } = (report as any) || {};
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">

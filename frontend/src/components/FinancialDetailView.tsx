@@ -46,11 +46,12 @@ export default function FinancialDetailView() {
 
     const proveedores = Array.from(new Set(productsData?.items?.map((p: any) => p.proveedor_nombre || p.proveedor).filter(Boolean))) as string[];
 
-    const { data: report, isLoading, isError } = useQuery({
+    const { data: reportData, isLoading, isError } = useQuery({
         queryKey: ['financial-report', startDate, endDate, selectedSucursal],
         queryFn: () => getFinancialReport(startDate, endDate, selectedSucursal),
         enabled: !!startDate && !!endDate
     });
+    const report: any = reportData;
 
     const totals = report?.reduce((acc: any, curr: any) => ({
         total_publico: acc.total_publico + curr.total_publico,

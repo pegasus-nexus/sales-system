@@ -104,13 +104,13 @@ export default function BcgMatrix() {
         if (!dates.start || !dates.end) return;
         setIsLoading(true); setIsError(false);
         try { 
-            const rawBcg = await getBcgMatrix(dates.start, dates.end, sucursal || undefined); 
+            const rawBcg: any = await getBcgMatrix(dates.start, dates.end, sucursal || undefined); 
             
             const allProducts = [
-                ...(rawBcg.estrellas || []),
-                ...(rawBcg.vacas || []),
-                ...(rawBcg.interrogantes || []),
-                ...(rawBcg.perros || [])
+                ...(rawBcg?.estrellas || []),
+                ...(rawBcg?.vacas || []),
+                ...(rawBcg?.interrogantes || []),
+                ...(rawBcg?.perros || [])
             ];
             
             setRawProducts(allProducts);

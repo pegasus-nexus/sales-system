@@ -44,10 +44,11 @@ export default function ExpensesReportView() {
         queryFn: getCategoriasGasto
     });
 
-    const { data: report, isLoading } = useQuery({
+    const { data: reportData, isLoading } = useQuery({
         queryKey: ['expenses-report', startDate, endDate, selectedSucursal, selectedCategory],
         queryFn: () => getExpensesReport(startDate, endDate, selectedSucursal, selectedCategory)
     });
+    const report: any = reportData;
 
     // Mutations
     const createCatMut = useMutation({

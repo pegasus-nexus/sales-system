@@ -18,10 +18,11 @@ export default function ReclamosFabrica() {
     const [page, setPage] = useState(1);
     const [filterEstado, setFilterEstado] = useState<'' | 'PENDIENTE' | 'COMPENSADO'>('PENDIENTE');
 
-    const { data, isLoading } = useQuery({
+    const { data: rawData, isLoading } = useQuery({
         queryKey: ['mermas', page, filterEstado],
         queryFn: () => getMermasReclamos(page, 20, filterEstado || undefined)
     });
+    const data: any = rawData;
 
     const mermas = data?.items || [];
     const deudaGlobal = data?.deuda_pendiente_global || 0;

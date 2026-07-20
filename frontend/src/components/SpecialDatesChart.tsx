@@ -232,9 +232,9 @@ export default function SpecialDatesChart() {
         setIsLoading(true);
         setIsError(false);
         try {
-            const res = await getHourlyMultiyear(holiday.fechas.current, suc || undefined, holiday.fechas.past1, holiday.fechas.past2);
-            setChartData(res.horas || []);
-            setMeta(res.meta || null);
+            const res: any = await getHourlyMultiyear(holiday.fechas.current, suc || undefined, holiday.fechas.past1, holiday.fechas.past2);
+            setChartData(res?.horas || []);
+            setMeta(res?.meta || null);
         } catch (e) {
             console.error('SpecialDatesChart error:', e);
             setIsError(true);

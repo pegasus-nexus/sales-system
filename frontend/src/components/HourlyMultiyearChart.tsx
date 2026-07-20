@@ -321,9 +321,9 @@ export default function HourlyMultiyearChart() {
         setIsLoading(true);
         setIsError(false);
         try {
-            const res = await getHourlyMultiyear(fecha, suc || undefined);
-            setChartData(res.horas || []);
-            setMeta(res.meta || null);
+            const res: any = await getHourlyMultiyear(fecha, suc || undefined);
+            setChartData(res?.horas || []);
+            setMeta(res?.meta || null);
         } catch (e) {
             console.error('HourlyMultiyear error:', e);
             setIsError(true);

@@ -28,10 +28,11 @@ export default function HourlySalesView() {
         enabled: esMatriz
     });
 
-    const { data, isLoading, isError } = useQuery({
+    const { data: rawData, isLoading, isError } = useQuery({
         queryKey: ['sales-by-hour', date, selectedSucursal],
         queryFn: () => getSalesByHour(date, selectedSucursal === 'all' ? undefined : selectedSucursal),
     });
+    const data: any[] | undefined = rawData as any;
 
     const totalVentas = useMemo(() => {
         if (!data) return 0;
