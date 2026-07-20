@@ -20,7 +20,7 @@ _rent_cache: Dict[str, tuple] = {}
 # Excluye: Distribución, Fuerza de Ventas, Supermercados, FEXCO, etc.
 SUCURSALES_RETAIL_IDS = [
     "69cd80098f3f6866d4cfbb64",  # Suc. Heroinas
-    "69cd84c58f3f6866d4cfbc8b",  # Suc. Recoleta
+    "69cd84c58f3f6866d4cfbc8b",  # Suc. Recoletaa
     "69ce6b7e8a00124dac6ecc99",  # Suc. Calacoto
     "69d7a199640252a16936cb0b",  # Vendedor: Rodrigo.heroinas (asoc. Heroinas)
 ]

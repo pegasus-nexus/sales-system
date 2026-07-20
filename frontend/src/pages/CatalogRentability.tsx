@@ -719,7 +719,7 @@ export default function CatalogRentability() {
                                     >
                                         <option value="" className="text-slate-900">Todas las Sucursales</option>
                                         <option value="Heroinas" className="text-slate-900">Suc. Heroínas</option>
-                                        <option value="Recoleta" className="text-slate-900">Suc. Recoleta</option>
+                                        <option value="Recoleta" className="text-slate-900">Suc. Recoletaabaa</option>
                                         <option value="Calacoto" className="text-slate-900">Suc. Calacoto</option>
                                     </select>
                                 </div>
