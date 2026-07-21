@@ -75,7 +75,7 @@ export default function DashboardMaestro() {
     const [data, setData] = useState<any>(null);
     const [climaEvento, setClimaEvento] = useState('');
     const [isBackendOffline, setIsBackendOffline] = useState(false);
-    const [selectedSucursal, setSelectedSucursal] = useState('all');
+    const [selectedSucursal] = useState('all');
     const [sucursales, setSucursales] = useState<any[]>([]);
     const [showRevenueBreakdown, setShowRevenueBreakdown] = useState(false);
     const [showMargenDetails, setShowMargenDetails] = useState(false);

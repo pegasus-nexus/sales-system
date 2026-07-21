@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { getDemandPrediction, getAnalyticsBcg, getInventario } from '../api/api';
 import type { DemandPredictionResponse } from '../api/types';
+import { toast } from 'sonner';
 
 const fBs = (n?: number) => `Bs. ${(n||0).toLocaleString('es-BO',{minimumFractionDigits:0,maximumFractionDigits:0})}`;
 const fPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
