@@ -19,6 +19,8 @@ import AnulacionesReportView from '../components/AnulacionesReportView';
 import ProductTrendsView from '../components/ProductTrendsView';
 import ProductStatsView from '../components/ProductStatsView';
 import PurchasesByClientView from '../components/PurchasesByClientView';
+import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
+import BcgMatrix from '../components/BcgMatrix';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, BarChart, Bar, Legend
@@ -32,14 +34,14 @@ function cn(...inputs: ClassValue[]) {
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente';
+type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
     const [searchParams, setSearchParams] = useSearchParams();
     
     const days = parseInt(searchParams.get('days') || '30', 10);
-    const activeTab = (searchParams.get('tab') as TabType) || (role === 'ADMIN_SUCURSAL' ? 'daily' : 'general');
+    const activeTab = (searchParams.get('tab') as TabType) || 'evolucion_mensual';
     const selectedSucursal = searchParams.get('sucursal') || 'all';
 
     const setDays = (val: number) => { const p = new URLSearchParams(searchParams); p.set('days', val.toString()); setSearchParams(p); };
@@ -102,6 +104,8 @@ export default function ReportsPage() {
             {/* ── Tabs Navigation ────────────────────────────────────── */}
             <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 print:hidden">
                 {[
+                    { id: 'evolucion_mensual', label: 'Evolución Mensual (MoM)', icon: <TrendingUp size={16} /> },
+                    { id: 'matriz_bcg', label: 'Matriz BCG', icon: <Store size={16} /> },
                     { id: 'general', label: 'Visión General', icon: <TrendingUp size={16} />, hidden: !esMatriz },
                     { id: 'sucursales', label: 'Rendimiento Sucursales', icon: <Store size={16} />, hidden: !esMatriz },
                     { id: 'finanzas', label: 'Finanzas y Márgenes', icon: <DollarSign size={16} />, hidden: !esMatriz },
@@ -133,7 +137,13 @@ export default function ReportsPage() {
                 ))}
             </div>
 
-            {activeTab === 'daily' ? (
+            {activeTab === 'evolucion_mensual' ? (
+                <MonthlyEvolutionView />
+            ) : activeTab === 'matriz_bcg' ? (
+                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <BcgMatrix />
+                </div>
+            ) : activeTab === 'daily' ? (
                 <DailyReportView />
             ) : activeTab === 'finanzas' ? (
                 <FinancialDetailView />

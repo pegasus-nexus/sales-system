@@ -1815,3 +1815,185 @@ async def get_purchases_by_client(
         }
     }
 
+
+# ─── GET /monthly-evolution ───────────────────────────────────────────────────
+
+@router.get("/monthly-evolution")
+async def get_monthly_evolution(
+    months: int = 12,
+    sucursal_id: Optional[str] = None,
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN, UserRole.ADMIN]))
+):
+    """
+    Reporte de Evolución Mensual (Month-over-Month - MoM).
+    Proporciona:
+    - Resumen del mes actual vs mes anterior (Diferencia $ y %, ticket promedio)
+    - Evolución mensual por periodo (%Y-%m) de ventas, transacciones y unidades
+    - Cuota de participación (%) por cada sucursal en el último mes
+    - Rendimiento MoM individual de cada sucursal
+    """
+    tenant_id = current_user.tenant_id or "default"
+    
+    # Restricción por rol de sucursal
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+        sucursal_id = current_user.sucursal_id
+
+    # 1. Obtener todas las sucursales del tenant para mapeo
+    sucursales_list = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
+    sucursal_names_map = {str(s.id): s.nombre for s in sucursales_list}
+    if not sucursal_names_map:
+        sucursal_names_map = {"CENTRAL": "Central"}
+
+    # 2. Calcular rango de fechas para los meses solicitados
+    now = datetime.now(BOLIVIA_TZ)
+    year = now.year
+    month = now.month - months + 1
+    while month <= 0:
+        month += 12
+        year -= 1
+    start_date = datetime(year, month, 1, 0, 0, 0, tzinfo=BOLIVIA_TZ)
+
+    # 3. Consultar ventas activas (no anuladas) del tenant en el periodo
+    filters = [
+        Sale.tenant_id == tenant_id,
+        Sale.anulada == False,
+        Sale.created_at >= start_date
+    ]
+    if sucursal_id and sucursal_id != "all":
+        filters.append(Sale.sucursal_id == sucursal_id)
+
+    sales = await Sale.find(*filters).sort(Sale.created_at).to_list()
+
+    # 4. Agrupar por mes (%Y-%m)
+    monthly_data: Dict[str, Dict[str, Any]] = {}
+    curr_yr, curr_mo = start_date.year, start_date.month
+    while (curr_yr < now.year) or (curr_yr == now.year and curr_mo <= now.month):
+        key = f"{curr_yr:04d}-{curr_mo:02d}"
+        monthly_data[key] = {
+            "periodo": key,
+            "total_ventas": 0.0,
+            "transacciones": 0,
+            "unidades": 0,
+            "por_sucursal": {}
+        }
+        curr_mo += 1
+        if curr_mo > 12:
+            curr_mo = 1
+            curr_yr += 1
+
+    sucursal_totals_latest_month: Dict[str, Dict[str, Any]] = {}
+    sucursal_totals_prev_month: Dict[str, Dict[str, Any]] = {}
+
+    all_period_keys = sorted(list(monthly_data.keys()))
+    latest_month_key = all_period_keys[-1] if all_period_keys else f"{now.year:04d}-{now.month:02d}"
+    prev_month_key = all_period_keys[-2] if len(all_period_keys) >= 2 else None
+
+    for sale in sales:
+        m_key = sale.created_at.strftime("%Y-%m")
+        if m_key not in monthly_data:
+            monthly_data[m_key] = {
+                "periodo": m_key,
+                "total_ventas": 0.0,
+                "transacciones": 0,
+                "unidades": 0,
+                "por_sucursal": {}
+            }
+        
+        m_obj = monthly_data[m_key]
+        sale_total = float(sale.total)
+        m_obj["total_ventas"] += sale_total
+        m_obj["transacciones"] += 1
+        
+        sum_items = sum(float(i.cantidad) for i in sale.items)
+        m_obj["unidades"] += sum_items
+
+        suc_name = sucursal_names_map.get(str(sale.sucursal_id), sale.sucursal_name or sale.sucursal_id or "Central")
+        m_obj["por_sucursal"][suc_name] = m_obj["por_sucursal"].get(suc_name, 0.0) + sale_total
+
+        # Comparación de sucursales en el mes actual vs previo
+        if m_key == latest_month_key:
+            if suc_name not in sucursal_totals_latest_month:
+                sucursal_totals_latest_month[suc_name] = {"total": 0.0, "transacciones": 0}
+            sucursal_totals_latest_month[suc_name]["total"] += sale_total
+            sucursal_totals_latest_month[suc_name]["transacciones"] += 1
+        elif prev_month_key and m_key == prev_month_key:
+            if suc_name not in sucursal_totals_prev_month:
+                sucursal_totals_prev_month[suc_name] = {"total": 0.0, "transacciones": 0}
+            sucursal_totals_prev_month[suc_name]["total"] += sale_total
+            sucursal_totals_prev_month[suc_name]["transacciones"] += 1
+
+    # Lista ordenada de evolución
+    evolution_list = []
+    for k in sorted(monthly_data.keys()):
+        item = monthly_data[k]
+        tx = item["transacciones"]
+        item["ticket_promedio"] = round(item["total_ventas"] / tx, 2) if tx > 0 else 0.0
+        item["total_ventas"] = round(item["total_ventas"], 2)
+        evolution_list.append(item)
+
+    # Variaciones MoM globales del último mes
+    latest = monthly_data.get(latest_month_key, {"total_ventas": 0.0, "transacciones": 0, "ticket_promedio": 0.0})
+    prev = monthly_data.get(prev_month_key, {"total_ventas": 0.0, "transacciones": 0, "ticket_promedio": 0.0}) if prev_month_key else {"total_ventas": 0.0, "transacciones": 0, "ticket_promedio": 0.0}
+
+    total_latest = float(latest["total_ventas"])
+    total_prev = float(prev["total_ventas"])
+    diff_abs = total_latest - total_prev
+    diff_pct = ((total_latest - total_prev) / total_prev * 100.0) if total_prev > 0 else (100.0 if total_latest > 0 else 0.0)
+
+    tx_latest = int(latest["transacciones"])
+    tx_prev = int(prev["transacciones"])
+    diff_tx_pct = ((tx_latest - tx_prev) / tx_prev * 100.0) if tx_prev > 0 else (100.0 if tx_latest > 0 else 0.0)
+
+    tkt_latest = float(latest.get("ticket_promedio", 0.0))
+    tkt_prev = float(prev.get("ticket_promedio", 0.0))
+    diff_tkt_pct = ((tkt_latest - tkt_prev) / tkt_prev * 100.0) if tkt_prev > 0 else (100.0 if tkt_latest > 0 else 0.0)
+
+    # Participación (%) y variación MoM por sucursal
+    participacion_sucursales = []
+    all_suc_names = set(list(sucursal_totals_latest_month.keys()) + list(sucursal_totals_prev_month.keys()))
+    
+    for s_name in sorted(all_suc_names):
+        curr_data = sucursal_totals_latest_month.get(s_name, {"total": 0.0, "transacciones": 0})
+        prev_data = sucursal_totals_prev_month.get(s_name, {"total": 0.0, "transacciones": 0})
+        
+        s_total = float(curr_data["total"])
+        s_prev_total = float(prev_data["total"])
+        
+        share_pct = (s_total / total_latest * 100.0) if total_latest > 0 else 0.0
+        suc_mom_pct = ((s_total - s_prev_total) / s_prev_total * 100.0) if s_prev_total > 0 else (100.0 if s_total > 0 else 0.0)
+        
+        s_tx = int(curr_data["transacciones"])
+        s_tkt = (s_total / s_tx) if s_tx > 0 else 0.0
+
+        participacion_sucursales.append({
+            "sucursal_nombre": s_name,
+            "total_ventas": round(s_total, 2),
+            "participacion_porcentaje": round(share_pct, 1),
+            "variacion_mom_porcentaje": round(suc_mom_pct, 1),
+            "variacion_mom_abs": round(s_total - s_prev_total, 2),
+            "transacciones": s_tx,
+            "ticket_promedio": round(s_tkt, 2)
+        })
+
+    participacion_sucursales.sort(key=lambda x: x["total_ventas"], reverse=True)
+
+    return {
+        "resumen_mom": {
+            "periodo_actual": latest_month_key,
+            "periodo_anterior": prev_month_key,
+            "ingresos_actual": round(total_latest, 2),
+            "ingresos_anterior": round(total_prev, 2),
+            "diferencia_abs": round(diff_abs, 2),
+            "diferencia_pct": round(diff_pct, 1),
+            "transacciones_actual": tx_latest,
+            "transacciones_anterior": tx_prev,
+            "diferencia_tx_pct": round(diff_tx_pct, 1),
+            "ticket_promedio_actual": round(tkt_latest, 2),
+            "ticket_promedio_anterior": round(tkt_prev, 2),
+            "diferencia_tkt_pct": round(diff_tkt_pct, 1)
+        },
+        "evolucion_mensual": evolution_list,
+        "participacion_sucursales": participacion_sucursales
+    }
+
+

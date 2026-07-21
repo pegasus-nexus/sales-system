@@ -250,6 +250,46 @@ export const getVentasMatrix = (startDate: string, endDate: string, sucursalId?:
     return client<unknown>(`/reports/sales-matrix?${params.toString()}`);
 };
 
+export interface MonthlyEvolutionResponse {
+    resumen_mom: {
+        periodo_actual: string;
+        periodo_anterior: string | null;
+        ingresos_actual: number;
+        ingresos_anterior: number;
+        diferencia_abs: number;
+        diferencia_pct: number;
+        transacciones_actual: number;
+        transacciones_anterior: number;
+        diferencia_tx_pct: number;
+        ticket_promedio_actual: number;
+        ticket_promedio_anterior: number;
+        diferencia_tkt_pct: number;
+    };
+    evolucion_mensual: {
+        periodo: string;
+        total_ventas: number;
+        transacciones: number;
+        unidades: number;
+        ticket_promedio: number;
+        por_sucursal: Record<string, number>;
+    }[];
+    participacion_sucursales: {
+        sucursal_nombre: string;
+        total_ventas: number;
+        participacion_porcentaje: number;
+        variacion_mom_porcentaje: number;
+        variacion_mom_abs: number;
+        transacciones: number;
+        ticket_promedio: number;
+    }[];
+}
+
+export const getMonthlyEvolution = (months: number = 12, sucursalId?: string) => {
+    const params = new URLSearchParams({ months: String(months) });
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+    return client<MonthlyEvolutionResponse>(`/reports/monthly-evolution?${params.toString()}`);
+};
+
 export const getExpensesReport = (startDate: string, endDate: string, sucursalId?: string, categoriaId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (sucursalId && sucursalId !== 'all') params.set('sucursal_id', sucursalId);
