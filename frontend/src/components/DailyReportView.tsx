@@ -125,17 +125,19 @@ export default function DailyReportView() {
                     <h3 className="text-lg font-bold text-red-900">Error al cargar el reporte</h3>
                     <p className="text-red-600 text-sm">No se pudo obtener la información para los filtros seleccionados.</p>
                 </div>
-            ) : (
-                <div className="space-y-6">
-                    {/* Print Header (Only visible when printing) */}
-                    <div className="hidden print:block text-center border-b-2 border-gray-900 pb-6 mb-8">
-                        <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Cierre de Jornada</h1>
-                        <p className="text-lg font-bold text-gray-700">Sucursal: {sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal}</p>
-                        <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
-                            <span>Fecha: {appliedFilters.date}</span>
-                            <span>Generado: {new Date().toLocaleDateString()}</span>
+            ) : (() => {
+                const { resumen_ventas = { por_metodo: {}, anuladas: {} }, gastos = { detalle: [] }, items_vendidos = [], balance_neto = 0 } = (report as any) || {};
+                return (
+                    <div className="space-y-6">
+                        {/* Print Header (Only visible when printing) */}
+                        <div className="hidden print:block text-center border-b-2 border-gray-900 pb-6 mb-8">
+                            <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Cierre de Jornada</h1>
+                            <p className="text-lg font-bold text-gray-700">Sucursal: {sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal}</p>
+                            <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
+                                <span>Fecha: {appliedFilters.date}</span>
+                                <span>Generado: {new Date().toLocaleDateString()}</span>
+                            </div>
                         </div>
-                    </div>
 
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -294,7 +296,8 @@ export default function DailyReportView() {
                 </div>
             </div>
             </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

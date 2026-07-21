@@ -153,8 +153,8 @@ export default function HourlySalesView() {
                 <button
                     onClick={() => {
                         if (data && data.length > 0) {
-                            const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === selectedSucursal)?.nombre || selectedSucursal);
-                            descargarPDFHoras(data, date, sucNombre, totalVentas, picoHora);
+                            const sucNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
+                            descargarPDFHoras(data, appliedFilters.date, sucNombre, totalVentas, picoHora);
                         }
                     }}
                     disabled={!data || totalVentas === 0}

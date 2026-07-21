@@ -92,9 +92,9 @@ export default function ExpensesReportView() {
 
     const handleDownloadPDF = () => {
         if (!report) return;
-        const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === selectedSucursal)?.nombre || selectedSucursal);
-        const catNombre = selectedCategory === 'all' ? 'Todas' : (categories.find(c => c._id === selectedCategory)?.nombre || 'Desconocida');
-        descargarPDFGastos(report, startDate, endDate, sucNombre, catNombre);
+        const sucNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
+        const catNombre = appliedFilters.category === 'all' ? 'Todas' : (categories.find(c => c._id === appliedFilters.category)?.nombre || 'Desconocida');
+        descargarPDFGastos(report, appliedFilters.startDate, appliedFilters.endDate, sucNombre, catNombre);
     };
 
     return (
