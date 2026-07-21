@@ -432,9 +432,16 @@ class SalesService:
         # --- Sincronización automática en segundo plano con ventas_historicas_crudas (BI) ---
         async def _sync_background():
             try:
-                sucursal_obj = await Sucursal.get(sale.sucursal_id)
-                sucursal_name = sucursal_obj.nombre if sucursal_obj else sale.sucursal_id
-                
+                sucursal_name = "Central"
+                if sale.sucursal_id and sale.sucursal_id != "CENTRAL":
+                    try:
+                        from beanie import PydanticObjectId
+                        sucursal_obj = await Sucursal.get(PydanticObjectId(sale.sucursal_id))
+                        if sucursal_obj:
+                            sucursal_name = sucursal_obj.nombre
+                    except Exception:
+                        sucursal_name = sale.sucursal_id
+
                 # Normalizar nombre sucursal según estándares de analítica
                 name_lower = sucursal_name.lower()
                 if 'heroinas' in name_lower or 'heroína' in name_lower or 'hero' in name_lower:
@@ -452,9 +459,9 @@ class SalesService:
                     new_historical_records.append({
                         "fecha_transaccion": sale.created_at,
                         "nombre_producto": item.descripcion.upper().strip(),
-                        "cantidad_vendida": float(item.cantidad),
+                        "cantidad_vendida": float(str(item.cantidad)),
                         "sucursal": sucursal_name_mapped,
-                        "monto_total_bs": float(item.subtotal),
+                        "monto_total_bs": float(str(item.subtotal)),
                         "tenant_id": sale.tenant_id,
                         "original_sale_id": sale.id
                     })
