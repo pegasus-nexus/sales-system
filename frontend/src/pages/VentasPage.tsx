@@ -409,7 +409,12 @@ export default function VentasPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Historial de Ventas</h1>
-                    <p className="text-gray-500 mt-1 text-sm">Consulta y administra tickets emitidos.</p>
+                    <p className="text-gray-500 mt-1 text-sm flex flex-wrap items-center gap-2">
+                        <span>Consulta y administra tickets emitidos.</span>
+                        <span className="font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full text-xs">
+                            📍 {esMatriz && !selectedSucursal ? 'Todas las Sucursales' : (sucursales.find(s => s._id === (selectedSucursal || user?.sucursal_id))?.nombre || 'Sucursal Asignada')}
+                        </span>
+                    </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">

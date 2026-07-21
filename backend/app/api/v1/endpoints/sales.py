@@ -177,15 +177,23 @@ async def get_sales(
         filters.append({"$expr": {"$lt": [{"$sum": "$pagos.monto"}, {"$subtract": ["$total", 0.1]}]}})
 
         
-    # Superadmins / Matriz see all based on filter, Sucursal sees only theirs
-    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
-        if sucursal_id and sucursal_id != current_user.sucursal_id:
-            raise HTTPException(status_code=403, detail="Cannot view sales of another branch")
-        filters.append(Sale.sucursal_id == current_user.sucursal_id)
-
-    # Cashiers can see sales of their own branch only
-    if current_user.role in [UserRole.CAJERO, UserRole.USER, "CAJERO", "USER"]:
-        filters.append(Sale.sucursal_id == (current_user.sucursal_id or "CENTRAL"))
+    # Permisos por Rol para Visualizar Ventas:
+    # 1. ADMIN_MATRIZ / ADMIN / SUPERADMIN / FACTURADOR: Ven todas las ventas de la empresa (o filtradas por sucursal elegida).
+    # 2. ADMIN_SUCURSAL / CAJERO / SUPERVISOR / VENDEDOR / USER: Ven las ventas de su sucursal únicamente.
+    if current_user.role in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.FACTURADOR]:
+        if sucursal_id and sucursal_id not in ["all", ""]:
+            from beanie.operators import Or
+            filters.append(Or(
+                Sale.sucursal_id == sucursal_id,
+                Sale.sucursal_id == (None if sucursal_id == "CENTRAL" else sucursal_id)
+            ))
+    else:
+        user_suc = current_user.sucursal_id or "CENTRAL"
+        from beanie.operators import Or
+        filters.append(Or(
+            Sale.sucursal_id == user_suc,
+            Sale.sucursal_id == (None if user_suc == "CENTRAL" else user_suc)
+        ))
 
     skip = (page - 1) * limit
     
