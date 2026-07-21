@@ -183,9 +183,8 @@ async def get_sales(
             raise HTTPException(status_code=403, detail="Cannot view sales of another branch")
         filters.append(Sale.sucursal_id == current_user.sucursal_id)
 
-    # Cashiers can ONLY see their own generated sales in their own branch
+    # Cashiers can see sales of their own branch only
     if current_user.role in [UserRole.CAJERO, UserRole.USER, "CAJERO", "USER"]:
-        filters.append(Sale.cashier_id == str(current_user.id))
         filters.append(Sale.sucursal_id == (current_user.sucursal_id or "CENTRAL"))
 
     skip = (page - 1) * limit
@@ -306,11 +305,10 @@ async def update_qr_info(
     if not sale or sale.tenant_id != (current_user.tenant_id or "default"):
         raise HTTPException(status_code=404, detail="Sale not found")
         
-    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR] and sale.sucursal_id != current_user.sucursal_id:
-        raise HTTPException(status_code=403, detail="Solo puedes confirmar pagos de tu propia sucursal")
-        
-    if current_user.role == UserRole.CAJERO and sale.cashier_id != str(current_user.id):
-        raise HTTPException(status_code=403, detail="Los cajeros solo pueden confirmar QR de sus propias ventas")
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, "ADMIN_MATRIZ", "ADMIN", "SUPERADMIN"]:
+        user_suc = current_user.sucursal_id or "CENTRAL"
+        if sale.sucursal_id != user_suc:
+            raise HTTPException(status_code=403, detail="Solo puedes confirmar pagos QR de tu propia sucursal")
     if not sale.qr_info:
         from app.domain.models.sale import QRInfo
         sale.qr_info = QRInfo()

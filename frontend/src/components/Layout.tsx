@@ -87,8 +87,8 @@ export default function Layout({ children }: LayoutProps) {
         return allItems
             .filter(item => item.roles.includes(role ?? ''))
             .filter(item => {
-                // CAJERO/USER siempre ven pos, ventas, caja, inventario y créditos independiente del plan
-                if (['CAJERO', 'USER'].includes(role ?? '') && ['/pos', '/ventas', '/caja', '/inventario', '/creditos'].includes(item.path)) {
+                // CAJERO/USER siempre ven pos, ventas, caja, inventario, créditos y control qr independiente del plan
+                if (['CAJERO', 'USER'].includes(role ?? '') && ['/pos', '/ventas', '/caja', '/inventario', '/creditos', '/qr-control'].includes(item.path)) {
                     return true;
                 }
                 return !item.feature || hasFeature(item.feature);
