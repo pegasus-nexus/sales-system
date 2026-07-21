@@ -30,6 +30,7 @@ class User(Document, SoftDeleteMixin):
     role: UserRole = UserRole.CAJERO
     tenant_id: Optional[str] = None    # Links to Tenant (Empresa)
     sucursal_id: Optional[str] = None  # Links to Sucursal, None = Matriz level
+    last_active_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

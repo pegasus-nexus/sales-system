@@ -29,8 +29,32 @@ export default function UsersPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 12;
 
-    const { data: employees, isLoading } = useQuery({ queryKey: ['employees'], queryFn: getUsers });
+    const { data: employees, isLoading } = useQuery({ 
+        queryKey: ['employees'], 
+        queryFn: getUsers,
+        refetchInterval: 10000
+    });
     const { data: sucursales } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales, enabled: user?.role === 'ADMIN_MATRIZ' || user?.role === 'SUPERADMIN' });
+
+    const renderOnlineBadge = (emp: any) => {
+        if (emp.is_online) {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    En línea
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                {emp.last_active_text || 'Desconectado'}
+            </span>
+        );
+    };
 
     const paginatedEmployees = useMemo(() => {
         if (!employees) return [];
@@ -164,6 +188,9 @@ export default function UsersPage() {
                                                                         {emp.role}
                                                                     </span>
                                                                 </div>
+                                                                <div className="mt-1">
+                                                                    {renderOnlineBadge(emp)}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase shrink-0 ${emp.is_active === false ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -220,6 +247,9 @@ export default function UsersPage() {
                                                         <span className={`text-[10px] font-bold px-1.5 rounded uppercase ${emp.role === 'VENDEDOR' ? 'bg-amber-100 text-amber-700' : emp.role === 'SUPERVISOR' ? 'bg-purple-100 text-purple-700' : emp.role === 'FACTURADOR' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
                                                             {emp.role}
                                                         </span>
+                                                    </div>
+                                                    <div className="mt-1">
+                                                        {renderOnlineBadge(emp)}
                                                     </div>
                                                 </div>
                                             </div>

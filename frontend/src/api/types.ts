@@ -8,6 +8,9 @@ export interface User {
     tenant_id?: string;
     sucursal_id?: string;
     is_active?: boolean;
+    is_online?: boolean;
+    last_active_text?: string;
+    last_active_at?: string;
 }
 
 export interface WhatsAppSettings {

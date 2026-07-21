@@ -11,7 +11,7 @@ import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getMe } from '../api/api';
+import { getMe, pingUser } from '../api/api';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -29,6 +29,14 @@ export default function Layout({ children }: LayoutProps) {
     const [isCollapsed, setIsCollapsed] = useLocalStorage('choco-sidebar-collapsed', false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    React.useEffect(() => {
+        pingUser().catch(() => {});
+        const interval = setInterval(() => {
+            pingUser().catch(() => {});
+        }, 45000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleLogout = () => {
         localStorage.clear();

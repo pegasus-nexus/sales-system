@@ -682,6 +682,7 @@ export const createCategory = (data: CategoryCreate) =>
 
 // ─── Users / Employees ────────────────────────────────────────────────────
 export const getUsers = () => client<User[]>('/users');
+export const pingUser = () => client<{status: string, is_online: boolean}>('/users/ping', { method: 'POST' });
 export const createEmployee = (data: EmployeeCreate) =>
     client<User>('/users/employee', { body: data });
 export const updateEmployee = (id: string, data: unknown) =>

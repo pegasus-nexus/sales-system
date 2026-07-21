@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -48,6 +48,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     user = await User.find_one(User.username == username)
     if user is None:
         raise credentials_exception
+
+    # Heartbeat de actividad (máximo 1 vez cada 60s)
+    now = datetime.now(timezone.utc)
+    if not user.last_active_at:
+        user.last_active_at = now
+        await user.save()
+    else:
+        last = user.last_active_at.replace(tzinfo=timezone.utc) if user.last_active_at.tzinfo is None else user.last_active_at
+        if (now - last).total_seconds() > 60:
+            user.last_active_at = now
+            await user.save()
+
     return user
 
 

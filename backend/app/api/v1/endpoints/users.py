@@ -60,37 +60,108 @@ class EmployeeUpdate(BaseModel):
 
 
 
-@router.get("/users", response_model=List[User])
+from datetime import datetime, timezone
+
+class UserResponse(BaseModel):
+    id: str = Field(alias="_id")
+    username: str
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    role: UserRole
+    tenant_id: Optional[str] = None
+    sucursal_id: Optional[str] = None
+    is_active: bool = True
+    last_active_at: Optional[datetime] = None
+    is_online: bool = False
+    last_active_text: str = "Desconectado"
+    created_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+def format_user_response(user: User) -> dict:
+    now = datetime.now(timezone.utc)
+    last_active = user.last_active_at
+
+    is_online = False
+    last_active_text = "Desconectado"
+
+    if last_active:
+        if last_active.tzinfo is None:
+            last_active = last_active.replace(tzinfo=timezone.utc)
+
+        diff_seconds = (now - last_active).total_seconds()
+        diff_minutes = int(diff_seconds / 60)
+
+        if diff_seconds <= 180:  # Activo dentro de los últimos 3 minutos
+            is_online = True
+            last_active_text = "En línea"
+        elif diff_minutes < 60:
+            last_active_text = f"Hace {diff_minutes} min"
+        elif diff_minutes < 1440:
+            hours = int(diff_minutes / 60)
+            last_active_text = f"Hace {hours}h"
+        else:
+            days = int(diff_minutes / 1440)
+            last_active_text = f"Hace {days}d"
+
+    return {
+        "_id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "tenant_id": user.tenant_id,
+        "sucursal_id": user.sucursal_id,
+        "is_active": getattr(user, "is_active", True),
+        "last_active_at": user.last_active_at,
+        "is_online": is_online,
+        "last_active_text": last_active_text,
+        "created_at": user.created_at
+    }
+
+
+@router.post("/users/ping")
+async def ping_user(current_user: User = Depends(get_current_active_user)):
+    """
+    Heartbeat de presencia activa en línea.
+    """
+    now = datetime.now(timezone.utc)
+    current_user.last_active_at = now
+    await current_user.save()
+    return {"status": "ok", "is_online": True, "last_active_at": now}
+
+
+@router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: User = Depends(get_current_active_user)):
     """
-    Returns users scoped to the current user's context:
-    - ADMIN_MATRIZ: all employees of the tenant
-    - ADMIN_SUCURSAL / CAJERO / etc: only staff in their own sucursal (including Vendedores)
+    Returns users scoped to the current user's context with online/offline status.
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.SUPERADMIN, UserRole.CAJERO]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     if current_user.role == UserRole.SUPERADMIN:
-        return await User.find(User.role == UserRole.CAJERO).to_list()
+        users = await User.find(User.role == UserRole.CAJERO).to_list()
+        return [format_user_response(u) for u in users]
 
-    # Define roles that are considered "Staff" for sale assignment or branch view
     staff_roles = [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.ADMIN_SUCURSAL, UserRole.FACTURADOR]
 
+    from beanie.operators import In
+
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO]:
-        # Scoped view: staff of their own sucursal
-        from beanie.operators import In
-        return await User.find(
+        users = await User.find(
             User.tenant_id == current_user.tenant_id,
             User.sucursal_id == current_user.sucursal_id,
             In(User.role, staff_roles),
         ).to_list()
+        return [format_user_response(u) for u in users]
 
-    # ADMIN_MATRIZ: all employees of the tenant
-    from beanie.operators import In
-    return await User.find(
+    users = await User.find(
         User.tenant_id == current_user.tenant_id,
         In(User.role, staff_roles),
     ).to_list()
+    return [format_user_response(u) for u in users]
 
 
 @router.post("/users/employee", response_model=User)
