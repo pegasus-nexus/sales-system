@@ -279,7 +279,7 @@ export default function ControlQRPage() {
             ) : filteredSales.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm">
                     <QrCode size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-gray-500 font-medium text-sm">No hay pagos por QR {filterStatus === 'PENDIENTES' ? 'pendientes' : 'para mostrar'}.</p>
+                    <p className="text-gray-500 font-medium text-sm">No hay pagos por QR {appliedFilters.status === 'PENDIENTES' ? 'pendientes' : 'para mostrar'}.</p>
                 </div>
             ) : (
                 <>
