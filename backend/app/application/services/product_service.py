@@ -24,9 +24,9 @@ async def _enrich(product: Product) -> Product:
 class ProductService:
     @staticmethod
     async def create_product(data: ProductCreate, current_user: User) -> Product:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
-            raise HTTPException(status_code=403, detail="Not authorized")
-    
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+            raise HTTPException(status_code=403, detail="Solo administradores de matriz pueden crear nuevos productos")
+
         tenant_id = current_user.tenant_id or "default"
     
         # Validate category belongs to tenant
@@ -75,9 +75,14 @@ class ProductService:
     
     @staticmethod
     async def update_product(product_id: str, data: ProductUpdate, current_user: User) -> Product:
+        # Role permission checks
         if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="Not authorized")
-    
+
+        if current_user.role == UserRole.ADMIN_SUCURSAL:
+            # ADMIN_SUCURSAL is strictly restricted to updating product image_url
+            data = ProductUpdate(image_url=data.image_url)
+
         product = await Product.get(product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -153,8 +158,8 @@ class ProductService:
     
     @staticmethod
     async def deactivate_product(product_id: str, current_user: User):
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
-            raise HTTPException(status_code=403, detail="Not authorized")
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+            raise HTTPException(status_code=403, detail="Solo administradores de matriz pueden desactivar productos")
         product = await Product.get(product_id)
         if not product or (current_user.role != UserRole.SUPERADMIN and product.tenant_id != current_user.tenant_id):
             raise HTTPException(status_code=404, detail="Product not found")

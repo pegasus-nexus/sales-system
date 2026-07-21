@@ -63,13 +63,14 @@ async def get_products(
     p_ids = [str(p.id) for p in products]
     from beanie.operators import In
     
-    if current_user.sucursal_id:
-        invs = await Inventario.find(In(Inventario.producto_id, p_ids), Inventario.sucursal_id == current_user.sucursal_id).to_list()
+    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
+        invs = await Inventario.find(In(Inventario.producto_id, p_ids), Inventario.sucursal_id == current_user.sucursal_id).to_list() if current_user.sucursal_id else []
         price_map = {i.producto_id: i.precio_sucursal for i in invs if i.precio_sucursal is not None}
         for p in products:
             if str(p.id) in price_map:
                 p.precio_venta = price_map[str(p.id)]
-            p.precios_sucursales = {} # Hide from branch
+            p.precios_sucursales = {} # Hide prices of other branches
+            p.costo_producto = 0.0 # Hide product cost from branch users
     else:
         invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
         p_map = {str(p.id): {} for p in products}
@@ -102,7 +103,7 @@ async def get_products(
 @router.post("/products", response_model=Product)
 async def create_product(
     data: ProductCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.create_product(data, current_user)
@@ -112,7 +113,7 @@ async def create_product(
 async def update_product(
     product_id: str,
     data: ProductUpdate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.update_product(product_id, data, current_user)
@@ -121,7 +122,7 @@ async def update_product(
 @router.delete("/products/{product_id}")
 async def deactivate_product(
     product_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.deactivate_product(product_id, current_user)
@@ -176,7 +177,7 @@ async def export_product_template(
 @router.post("/productos/importar")
 async def import_products(
     file: UploadFile = File(...),
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     from app.application.services.excel_import_service import ExcelImportService
     contents = await file.read()
@@ -186,7 +187,7 @@ async def import_products(
 @router.post("/productos/importacion-global")
 async def importacion_global_excel(
     file: UploadFile = File(...),
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     from app.application.services.excel_import_service import ExcelImportService
     contents = await file.read()
@@ -196,7 +197,7 @@ async def importacion_global_excel(
 @router.get("/productos/exportar-plantilla-precios")
 async def export_product_price_template(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     tenant_id = current_user.tenant_id or "default"
     

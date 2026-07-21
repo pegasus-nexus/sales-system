@@ -52,7 +52,9 @@ export default function CatalogoPage() {
         if (!categorySearch) return categories;
         return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
     }, [categories, categorySearch]);
-    const isEditor = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN' || user?.role === 'ADMIN_SUCURSAL';
+    const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
+    const isBranchAdmin = user?.role === 'ADMIN_SUCURSAL';
+    const isEditor = isMatrizAdmin || isBranchAdmin;
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -131,7 +133,7 @@ export default function CatalogoPage() {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Catálogo Maestro</h1>
                     <p className="text-sm text-gray-500 mt-1">Gestión centralizada de productos e información base.</p>
                 </div>
-                {isEditor && (
+                {isMatrizAdmin && (
                     <div className="flex gap-2">
                         <button onClick={() => setIsImportGlobalModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-transparent px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-105">
                             <Package size={18} />
@@ -240,7 +242,7 @@ export default function CatalogoPage() {
                                 ) : (
                                     <th className="px-6 py-4 text-right">Precios (Bs)</th>
                                 )}
-                                {isEditor && <th className="px-6 py-4 text-right">Costo (Bs)</th>}
+                                {isMatrizAdmin && <th className="px-6 py-4 text-right">Costo (Bs)</th>}
                                 <th className="px-6 py-4 text-center">Estado</th>
                                 {isEditor && <th className="px-6 py-4 text-right">Acciones</th>}
                             </tr>
@@ -248,14 +250,14 @@ export default function CatalogoPage() {
                         <tbody className="divide-y divide-gray-100">
                             {loadingProducts ? (
                                 <tr>
-                                    <td colSpan={isEditor ? 6 : 4} className="px-6 py-12 text-center text-gray-400">
+                                    <td colSpan={isMatrizAdmin ? 6 : 5} className="px-6 py-12 text-center text-gray-400">
                                         <Loader2 size={32} className="mx-auto animate-spin mb-3 text-indigo-400" />
                                         <p>Cargando catálogo...</p>
                                     </td>
                                 </tr>
                             ) : products.length === 0 ? (
                                 <tr>
-                                    <td colSpan={isEditor ? 6 : 4} className="px-6 py-12 text-center text-gray-400">
+                                    <td colSpan={isMatrizAdmin ? 6 : 5} className="px-6 py-12 text-center text-gray-400">
                                         <Package size={48} className="mx-auto mb-4 opacity-20 text-indigo-500" />
                                         <p className="text-base text-gray-800 font-medium">No se encontraron productos</p>
                                         <p className="text-sm mt-1">Ajusta los filtros o intenta otra búsqueda.</p>
@@ -295,7 +297,7 @@ export default function CatalogoPage() {
                                                 <span className="text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-1 rounded-md">Por Sucursal</span>
                                             )}
                                         </td>
-                                        {isEditor && (
+                                        {isMatrizAdmin && (
                                             <td className="px-6 py-4 text-right text-gray-500">
                                                 {(p.costo_producto || 0).toFixed(2)}
                                             </td>
@@ -307,17 +309,26 @@ export default function CatalogoPage() {
                                         </td>
                                         {isEditor && (
                                             <td className="px-6 py-4 text-right flex justify-end gap-1">
-                                                <button onClick={() => handleOpenEdit(p)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Editar">
-                                                    <Edit2 size={18} />
-                                                </button>
-                                                {p.is_active !== false ? (
-                                                    <button onClick={() => handleDeactivateProduct(p._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Desactivar">
-                                                        <Trash2 size={18} />
+                                                {isBranchAdmin ? (
+                                                    <button onClick={() => handleOpenEdit(p)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-colors" title="Gestionar foto del producto">
+                                                        <ImageIcon size={16} />
+                                                        <span>Foto</span>
                                                     </button>
                                                 ) : (
-                                                    <button onClick={() => handleReactivateProduct(p)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Reactivar">
-                                                        <Check size={18} />
-                                                    </button>
+                                                    <>
+                                                        <button onClick={() => handleOpenEdit(p)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Editar">
+                                                            <Edit2 size={18} />
+                                                        </button>
+                                                        {p.is_active !== false ? (
+                                                            <button onClick={() => handleDeactivateProduct(p._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Desactivar">
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        ) : (
+                                                            <button onClick={() => handleReactivateProduct(p)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Reactivar">
+                                                                <Check size={18} />
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                             </td>
                                         )}
@@ -347,6 +358,7 @@ export default function CatalogoPage() {
                     product={editingProduct}
                     categories={categories}
                     sucursales={sucursales}
+                    isBranchAdmin={isBranchAdmin}
                 />
             )}
             
@@ -538,7 +550,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
     );
 }
 
-function ProductModal({ onClose, product, categories, sucursales }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[] }) {
+function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[], isBranchAdmin?: boolean }) {
     const isEditing = !!product;
     const queryClient = useQueryClient();
     const [isUploading, setIsUploading] = useState(false);
@@ -624,19 +636,28 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
-                    <h3 className="text-lg font-bold text-gray-900">{isEditing ? 'Editar Producto' : 'Crear Nuevo Producto'}</h3>
+                    <h3 className="text-lg font-bold text-gray-900">
+                        {isBranchAdmin ? 'Gestionar Foto del Producto' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
+                    </h3>
                     <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
+                    {isBranchAdmin && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+                            🔒 Como Administrador de Sucursal solo puedes actualizar o eliminar la fotografía del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Descripción / Nombre</label>
                         <input
                             required
                             type="text"
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
+                            disabled={isBranchAdmin}
+                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                             value={formData.descripcion}
                             onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
                             placeholder="Ej. Coca Cola 2L"
@@ -647,7 +668,8 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Categoría</label>
                         <select
                             required
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                            disabled={isBranchAdmin}
+                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                             value={formData.categoria_id}
                             onChange={e => setFormData({ ...formData, categoria_id: e.target.value })}
                         >
@@ -661,7 +683,8 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">SKU (Código Corto)</label>
                             <input
                                 type="text"
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 uppercase font-mono"
+                                disabled={isBranchAdmin}
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 uppercase font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={formData.codigo_corto}
                                 onChange={e => setFormData({ ...formData, codigo_corto: e.target.value })}
                                 placeholder="Ej: C-COLA-2L"
@@ -671,7 +694,8 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">EAN (Código Largo)</label>
                             <input
                                 type="text"
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 font-mono"
+                                disabled={isBranchAdmin}
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={formData.codigo_largo}
                                 onChange={e => setFormData({ ...formData, codigo_largo: e.target.value })}
                                 placeholder="Ej: 777123456789"
@@ -679,41 +703,47 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                         </div>
                     </div>
 
-                    <div className="pb-4 border-b border-gray-100">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Costo Base (Bs) (Opcional)</label>
-                        <input
-                            type="number" step="0.01" min="0" required
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                            value={formData.costo_producto === 0 ? '' : formData.costo_producto}
-                            onChange={e => setFormData({ ...formData, costo_producto: parseFloat(e.target.value) || 0 })}
-                            placeholder="Costo de adquisición"
-                        />
-                    </div>
+                    {!isBranchAdmin && (
+                        <div className="pb-4 border-b border-gray-100">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Costo Base (Bs) (Opcional)</label>
+                            <input
+                                type="number" step="0.01" min="0" required
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                value={formData.costo_producto === 0 ? '' : formData.costo_producto}
+                                onChange={e => setFormData({ ...formData, costo_producto: parseFloat(e.target.value) || 0 })}
+                                placeholder="Costo de adquisición"
+                            />
+                        </div>
+                    )}
 
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedor (Opcional)</label>
-                        <input
-                            type="text"
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
-                            value={formData.proveedor || ''}
-                            onChange={e => setFormData({ ...formData, proveedor: e.target.value })}
-                            placeholder="Nombre del proveedor"
-                        />
-                    </div>
+                    {!isBranchAdmin && (
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedor (Opcional)</label>
+                            <input
+                                type="text"
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
+                                value={formData.proveedor || ''}
+                                onChange={e => setFormData({ ...formData, proveedor: e.target.value })}
+                                placeholder="Nombre del proveedor"
+                            />
+                        </div>
+                    )}
 
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Vincular a Plan de Comidas (Opcional)</label>
-                        <select
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                            value={formData.meal_plan_template_id || ''}
-                            onChange={e => setFormData({ ...formData, meal_plan_template_id: e.target.value || '' })}
-                        >
-                            <option value="">No vincular a ningún plan</option>
-                            {planTemplates?.map((t: any) => (
-                                <option key={t._id} value={t._id}>{t.nombre} ({t.cantidad_comidas} comidas)</option>
-                            ))}
-                        </select>
-                    </div>
+                    {!isBranchAdmin && (
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Vincular a Plan de Comidas (Opcional)</label>
+                            <select
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                value={formData.meal_plan_template_id || ''}
+                                onChange={e => setFormData({ ...formData, meal_plan_template_id: e.target.value || '' })}
+                            >
+                                <option value="">No vincular a ningún plan</option>
+                                {planTemplates?.map((t: any) => (
+                                    <option key={t._id} value={t._id}>{t.nombre} ({t.cantidad_comidas} comidas)</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="flex gap-4 items-end">
                         <div className="flex-1">
@@ -729,14 +759,14 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                         {formData.image_url && (
                             <div className="shrink-0 relative group h-12 w-12 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
                                 <img src={formData.image_url} alt="Preview" className="h-full w-full object-cover" />
-                                <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Eliminar foto">
                                     <X size={16} />
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {sucursales.length > 0 && (
+                    {!isBranchAdmin && sucursales.length > 0 && (
                         <div className="border-t border-gray-100 pt-5 mt-2">
                             <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                                 <Tag size={16} className="text-indigo-500" />
@@ -774,7 +804,7 @@ function ProductModal({ onClose, product, categories, sucursales }: { isOpen: bo
                         </button>
                         <button type="submit" disabled={isPending} className="flex-1 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2">
                             {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                            {isEditing ? 'Guardar Cambios' : 'Crear Producto'}
+                            {isBranchAdmin ? 'Guardar Foto' : (isEditing ? 'Guardar Cambios' : 'Crear Producto')}
                         </button>
                     </div>
                 </form>
