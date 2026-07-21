@@ -55,41 +55,36 @@ export default function Layout({ children }: LayoutProps) {
 
         // Todas las rutas posibles con su feature requerido y los roles que pueden verlo
         const allItems = [
-            // Dashboard (sin feature — siempre visible según rol)
-            { icon: LayoutDashboard, label: 'Dashboard',    path: '/dashboard',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: BarChart3,       label: 'Plataforma Analítica', path: '/inteligencia', feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: LayoutDashboard, label: 'Dashboard',    path: '/dashboard-sucursal', feature: null,                   roles: ['ADMIN_SUCURSAL'] },
-            // Módulos con feature flag
-            { icon: ShoppingBag,     label: 'POS',          path: '/pos',                feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: RotateCcw,       label: 'Ventas',       path: '/ventas',             feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
-            { icon: Wallet,          label: 'Caja',         path: '/caja',               feature: 'CAJA',                 roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Package,         label: 'Catálogo',     path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Warehouse,       label: 'Inventario',   path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: Truck,           label: 'Traslados',    path: '/traslados',          feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            // Dark Kitchen Module
-            { icon: Utensils,        label: 'Recetas',      path: '/recetas',            feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: CalendarRange,   label: 'Planes Comida',path: '/planes-comida',      feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Calendar,        label: 'Producción',   path: '/produccion',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
-            
-            // Restaurante (Fase 1 Infraestructura)
-            { icon: Store,           label: 'Mesas',        path: '/mesas',              feature: 'MESAS',                roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
-            { icon: ClipboardList,   label: 'Comandas',     path: '/comandas',           feature: 'COMANDAS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
+            // ─── PRINCIPAL & ANALÍTICA ───
+            { icon: LayoutDashboard, label: 'Dashboard',            path: '/dashboard',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: BarChart3,       label: 'Plataforma Analítica', path: '/inteligencia',       feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            { icon: LayoutDashboard, label: 'Dashboard',            path: '/dashboard-sucursal', feature: null,                   roles: ['ADMIN_SUCURSAL'] },
 
-            { icon: Banknote,        label: 'Créditos',     path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
-            { icon: Percent,         label: 'Descuentos',   path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
-            { icon: Tag,             label: 'Precios',      path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Tag,             label: 'Categorías',   path: '/categories',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
-            { icon: Store,           label: 'Sucursales',   path: '/sucursales',         feature: 'MULTI_SUCURSAL',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: ClipboardList,   label: 'Pedidos',      path: '/pedidos',            feature: 'PEDIDOS_INTERNOS',     roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: Users,           label: 'Personal',     path: '/usuarios',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
-            { icon: Users,           label: 'Clientes',     path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Briefcase,       label: 'Proveedores',  path: '/proveedores',        feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
-            { icon: QrCode,          label: 'Control QR',   path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
-            { icon: Users,           label: 'Comunidad',    path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            // { icon: Warehouse,       label: 'Deuda Fábrica',path: '/b2b/mermas',         feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: Settings,        label: 'Configuración',path: '/configuracion',      feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Shield,          label: 'Auditoría',    path: '/auditoria',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            // ─── OPERACIÓN DÍA A DÍA ───
+            { icon: ShoppingBag,     label: 'POS',                  path: '/pos',                feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+            { icon: RotateCcw,       label: 'Ventas',               path: '/ventas',             feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
+            { icon: Wallet,          label: 'Caja',                 path: '/caja',               feature: 'CAJA',                 roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+            { icon: Package,         label: 'Catálogo',             path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+            { icon: Warehouse,       label: 'Inventario',           path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+            { icon: Truck,           label: 'Traslados',            path: '/traslados',          feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+            { icon: ClipboardList,   label: 'Pedidos',              path: '/pedidos',            feature: 'PEDIDOS_INTERNOS',     roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+            { icon: Banknote,        label: 'Créditos',             path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+            { icon: BarChart3,       label: 'Reportes',             path: '/reportes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+
+            // ─── GESTIÓN & CONFIGURACIÓN ───
+            { icon: Store,           label: 'Sucursales',           path: '/sucursales',         feature: 'MULTI_SUCURSAL',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: Tag,             label: 'Categorías',           path: '/categories',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+            { icon: Percent,         label: 'Descuentos',           path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+            { icon: Tag,             label: 'Precios',              path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: Users,           label: 'Personal',             path: '/usuarios',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+            { icon: Users,           label: 'Clientes',             path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+            { icon: Briefcase,       label: 'Proveedores',          path: '/proveedores',        feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+            { icon: QrCode,          label: 'Control QR',           path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
+
+            // ─── SISTEMA & AUDITORÍA ───
+            { icon: Users,           label: 'Comunidad',            path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+            { icon: Settings,        label: 'Configuración',        path: '/configuracion',      feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+            { icon: Shield,          label: 'Auditoría',            path: '/auditoria',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
         ];
 
         return allItems

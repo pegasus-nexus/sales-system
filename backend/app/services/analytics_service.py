@@ -513,8 +513,10 @@ async def get_dashboard_metrics(
             else:
                 target_local = hoy_local
                 
-            start_hoy_utc = target_local.tz_convert('UTC').to_pydatetime()
-            end_hoy_utc = (target_local + pd.Timedelta(days=1)).tz_convert('UTC').to_pydatetime()
+            start_hoy_tz = target_local.tz_convert('UTC').to_pydatetime()
+            end_hoy_tz = (target_local + pd.Timedelta(days=1)).tz_convert('UTC').to_pydatetime()
+            start_hoy_naive = start_hoy_tz.replace(tzinfo=None)
+            end_hoy_naive = end_hoy_tz.replace(tzinfo=None)
             
             # =========================================================
             # 2. MAPEO DINÁMICO Y SEGURO DE SUCURSALES (LISTA BLANCA)
@@ -557,7 +559,10 @@ async def get_dashboard_metrics(
             # 3. Consultar directamente a la colección operativa (db.sales)
             filtro_sales = {
                 "tenant_id": tenant_id,
-                "created_at": {"$gte": start_hoy_utc, "$lt": end_hoy_utc},
+                "$or": [
+                    {"created_at": {"$gte": start_hoy_tz, "$lt": end_hoy_tz}},
+                    {"created_at": {"$gte": start_hoy_naive, "$lt": end_hoy_naive}}
+                ],
                 "anulada": {"$ne": True}
             }
             cursor_sales = db.sales.find(filtro_sales, {"_id": 1, "sucursal_id": 1, "created_at": 1, "total": 1, "anulada": 1, "items": 1})
