@@ -1840,7 +1840,7 @@ async def get_monthly_evolution(
     sucursal_names_map = {str(s.id): s.nombre for s in sucursales_list}
 
     categories_list = await Category.find(Category.tenant_id == tenant_id).to_list()
-    cat_names_map = {str(c.id): c.nombre for c in categories_list}
+    cat_names_map = {str(c.id): c.name for c in categories_list}
 
     products_list = await Product.find(Product.tenant_id == tenant_id).to_list()
     product_cat_map = {str(p.id): str(p.categoria_id) if p.categoria_id else "" for p in products_list}
