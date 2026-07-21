@@ -80,10 +80,12 @@ async def get_products(
         for p in products:
             p.precios_sucursales = p_map.get(str(p.id), {})
 
-    # Batch resolve category names in 1 query instead of N sequential queries
+    # Batch resolve category names in 1 query with ObjectId conversion
     cat_ids = list(set([p.categoria_id for p in products if p.categoria_id]))
     if cat_ids:
-        cats = await Category.find(In(Category.id, cat_ids)).to_list()
+        from bson import ObjectId
+        obj_ids = [ObjectId(cid) for cid in cat_ids if ObjectId.is_valid(cid)]
+        cats = await Category.find(In(Category.id, obj_ids)).to_list() if obj_ids else []
         cat_map = {str(c.id): c.name for c in cats}
         for p in products:
             if p.categoria_id and str(p.categoria_id) in cat_map:

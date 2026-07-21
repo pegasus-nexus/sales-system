@@ -48,6 +48,16 @@ export default function CatalogoPage() {
         queryFn: getCategories
     });
     
+    const categoryMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        categories.forEach((c: any) => {
+            if (c._id && c.name) {
+                map[c._id] = c.name;
+            }
+        });
+        return map;
+    }, [categories]);
+
     const filteredCategories = useMemo(() => {
         if (!categorySearch) return categories;
         return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
@@ -287,7 +297,11 @@ export default function CatalogoPage() {
                                         <td className="px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium border border-gray-200">
                                                 <Tag size={12} className="text-gray-400" />
-                                                {p.categoria_nombre || p.categoria_id || 'General'}
+                                                {p.categoria_nombre && !p.categoria_nombre.match(/^[0-9a-fA-F]{24}$/)
+                                                    ? p.categoria_nombre
+                                                    : (p.categoria_id && categoryMap[p.categoria_id]
+                                                        ? categoryMap[p.categoria_id]
+                                                        : 'General')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right font-semibold text-gray-900">
