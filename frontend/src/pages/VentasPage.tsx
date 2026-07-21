@@ -342,7 +342,7 @@ export default function VentasPage() {
     // Draft Filtros
     const searchId = searchParams.get('search') || '';
     const [draftSucursal, setDraftSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
-    const [draftSoloFacturas, setDraftSoloFacturas] = useState(false);
+    const [draftSoloFacturas, setDraftSoloFacturas] = useState(role === 'FACTURADOR');
     const [draftSoloAnomalias, setDraftSoloAnomalias] = useState(false);
     const [draftStartDate, setDraftStartDate] = useState('');
     const [draftEndDate, setDraftEndDate] = useState('');
@@ -352,7 +352,7 @@ export default function VentasPage() {
     // Applied Filtros (solo se ejecutan al hacer clic en Aplicar Filtros o buscar)
     const [appliedFilters, setAppliedFilters] = useState({
         sucursal: esMatriz ? '' : (user?.sucursal_id || ''),
-        soloFacturas: false,
+        soloFacturas: role === 'FACTURADOR',
         soloAnomalias: false,
         startDate: '',
         endDate: '',
@@ -380,15 +380,16 @@ export default function VentasPage() {
 
     const handleResetFilters = () => {
         const defaultSuc = esMatriz ? '' : (user?.sucursal_id || '');
+        const defaultFacturas = role === 'FACTURADOR';
         setDraftSucursal(defaultSuc);
-        setDraftSoloFacturas(false);
+        setDraftSoloFacturas(defaultFacturas);
         setDraftSoloAnomalias(false);
         setDraftStartDate('');
         setDraftEndDate('');
         setDraftMetodoPago('');
         setAppliedFilters({
             sucursal: defaultSuc,
-            soloFacturas: false,
+            soloFacturas: defaultFacturas,
             soloAnomalias: false,
             startDate: '',
             endDate: '',
@@ -485,14 +486,17 @@ export default function VentasPage() {
                     )}
 
                     {/* Filtro Sólo Facturas */}
-                    <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
+                    <label className={`flex items-center gap-2 border px-3 py-1.5 rounded-lg shadow-sm h-[32px] shrink-0 ${role === 'FACTURADOR' ? 'bg-indigo-50 border-indigo-200 cursor-default' : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50'} transition-colors`}>
                         <input 
                             type="checkbox" 
-                            checked={draftSoloFacturas} 
+                            checked={role === 'FACTURADOR' ? true : draftSoloFacturas} 
+                            disabled={role === 'FACTURADOR'}
                             onChange={e => setDraftSoloFacturas(e.target.checked)}
                             className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
-                        <span className="text-xs font-semibold text-gray-700">Solo Facturas / NIT</span>
+                        <span className={`text-xs font-semibold ${role === 'FACTURADOR' ? 'text-indigo-800' : 'text-gray-700'}`}>
+                            {role === 'FACTURADOR' ? 'Solo Ventas con Factura / NIT' : 'Solo Facturas / NIT'}
+                        </span>
                     </label>
 
                     {esMatriz && (
