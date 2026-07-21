@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getBcgMatrix, getProducts, getCategories } from '../api/api';
 import {
     Target, Star, Package, HelpCircle, ArrowDownCircle,
