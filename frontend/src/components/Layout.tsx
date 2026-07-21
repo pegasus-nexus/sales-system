@@ -95,8 +95,8 @@ export default function Layout({ children }: LayoutProps) {
         return allItems
             .filter(item => item.roles.includes(role ?? ''))
             .filter(item => {
-                // CAJERO/USER siempre ven pos, ventas, caja, inventario, créditos y control qr independiente del plan
-                if (['CAJERO', 'USER'].includes(role ?? '') && ['/pos', '/ventas', '/caja', '/inventario', '/creditos', '/qr-control'].includes(item.path)) {
+                // Módulos operativos principales (pos, ventas, caja, inventario, créditos, control qr) siempre visibles para roles autorizados
+                if (['/pos', '/ventas', '/caja', '/inventario', '/creditos', '/qr-control'].includes(item.path)) {
                     return true;
                 }
                 return !item.feature || hasFeature(item.feature);
