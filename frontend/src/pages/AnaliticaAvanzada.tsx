@@ -156,7 +156,13 @@ export default function AnaliticaAvanzada() {
                     });
                     setInventoryMap(map);
                 }
-            }catch(e){console.error(e);if(ok)setErr(true);}
+            }catch(e){
+                console.error(e);
+                if(ok){
+                    setErr(true);
+                    toast.error("Error de conexión al cargar la Matriz BCG. El servidor podría estar inactivo.");
+                }
+            }
             finally{if(ok)setLoading(false);}
         };
         load();

@@ -121,6 +121,32 @@ async def init_db():
         ],
         skip_indexes=True
     )
+    # Crear índices optimizados para ventas_historicas_crudas y sales
+    # Crear índices optimizados para ventas_historicas_crudas y sales
+    from pymongo import ASCENDING, DESCENDING
+    
+    col_hist = database["ventas_historicas_crudas"]
+    for idx_spec, idx_name in [
+        ([("fecha_transaccion", DESCENDING), ("sucursal", ASCENDING)], "fecha_sucursal_opt"),
+        ([("fecha_transaccion", ASCENDING)], "fecha_asc_opt"),
+        ([("nombre_producto", ASCENDING), ("fecha_transaccion", DESCENDING)], "producto_fecha_opt")
+    ]:
+        try:
+            await col_hist.create_index(idx_spec, name=idx_name, background=True)
+        except Exception as e:
+            print(f"Skipping index {idx_name} creation: {e}", flush=True)
+
+    col_sales = database["sales"]
+    for idx_spec, idx_name in [
+        ([("created_at", DESCENDING), ("sucursal_id", ASCENDING)], "created_sucursal_opt"),
+        ([("created_at", ASCENDING)], "created_asc_opt")
+    ]:
+        try:
+            await col_sales.create_index(idx_spec, name=idx_name, background=True)
+        except Exception as e:
+            print(f"Skipping index {idx_name} creation: {e}", flush=True)
+
+    print("Optimized indexes setup completed.", flush=True)
 
 def get_client() -> motor.motor_asyncio.AsyncIOMotorClient:
     """

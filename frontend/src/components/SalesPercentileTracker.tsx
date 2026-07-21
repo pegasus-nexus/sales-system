@@ -47,7 +47,8 @@ const ZONES = {
   },
 } as const;
 const SUCS = [
-  {value:"",label:"Todas las Sucursales"},{value:"Heroinas",label:"Heroínas"},
+  {value:"",label:"Tiendas Minoristas (Consolidado)"},
+  {value:"Heroinas",label:"Heroínas"},
   {value:"Recoleta",label:"Recoleta"},
   {value:"Calacoto",label:"Calacoto"},
 ];

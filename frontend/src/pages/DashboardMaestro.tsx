@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 import { getAnalyticsDashboard, getSucursales } from '../api/api';
 import {
     LayoutDashboard, DollarSign,
@@ -182,6 +183,9 @@ export default function DashboardMaestro() {
                     // Detectar si es error de conexión (backend apagado)
                     if (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
                         setIsBackendOffline(true);
+                        toast.error("Error crítico: No se pudo contactar al servidor. Revisa tu conexión o inicia el backend.");
+                    } else {
+                        toast.error("Ocurrió un error al cargar las métricas financieras.");
                     }
                     setIsError(true);
                 }
@@ -259,19 +263,6 @@ export default function DashboardMaestro() {
                     </p>
                 </div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full border-t border-gray-100 pt-5">
-                    {/* Filtro de Sucursal */}
-                    <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100 transition-all hover:bg-indigo-100/50">
-                        <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent text-sm outline-none font-black cursor-pointer text-indigo-700 w-[140px]"
-                        >
-                            <option value="all"></option>
-                            {sucursales.map((s, index) => (
-                                <option key={s.id || s._id || index} value={s.id || s._id || index}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
 
                     <div className="w-px bg-gray-300 mx-1 my-1"></div>
 

@@ -49,8 +49,12 @@ async def get_sales_percentiles(
         mongo_filter: Dict[str, Any] = {
             "fecha_transaccion": {"$gte": start_dt, "$lte": end_dt},
         }
-        if sucursal and sucursal.strip():
+        
+        retail_regex = "Hero.*nas|Calacoto|Recoleta"
+        if sucursal and sucursal.strip() and sucursal.lower() != 'all':
             mongo_filter["sucursal"] = {"$regex": sucursal.strip(), "$options": "i"}
+        else:
+            mongo_filter["sucursal"] = {"$regex": retail_regex, "$options": "i"}
 
         cursor = db.ventas_historicas_crudas.find(
             mongo_filter,
@@ -79,11 +83,28 @@ async def get_sales_percentiles(
             suc_id_to_name[sid] = suc_name
 
         # 2) Buscar ventas POS en el rango
+        # Valid filter by branch in POS to reduce payload
+        valid_pos_sids = []
+        for sid, sname in suc_id_to_name.items():
+            if sucursal and sucursal.strip() and sucursal.lower() != 'all':
+                if re.search(sucursal.strip(), sname, re.IGNORECASE):
+                    valid_pos_sids.append(sid)
+            else:
+                if re.search(retail_regex, sname, re.IGNORECASE):
+                    valid_pos_sids.append(sid)
+                    
         pos_filter = {
             "anulada": {"$ne": True},
             "created_at": {"$gte": start_dt, "$lte": end_dt}
         }
-        
+        if valid_pos_sids:
+            from bson import ObjectId
+            oids = []
+            for v in valid_pos_sids:
+                try: oids.append(ObjectId(v))
+                except: pass
+            pos_filter["sucursal_id"] = {"$in": valid_pos_sids + oids}
+
         pos_cursor = db.sales.find(
             pos_filter, 
             {"_id": 0, "created_at": 1, "total": 1, "sucursal_id": 1, "items": 1}
@@ -93,14 +114,6 @@ async def get_sales_percentiles(
         for sale in pos_sales:
             sid = str(sale.get("sucursal_id", ""))
             suc_name = suc_id_to_name.get(sid, "")
-            
-            # Filtro por sucursal
-            if sucursal and sucursal.strip():
-                suc_pattern = sucursal.strip()
-                if suc_pattern.lower() == "heroinas":
-                    suc_pattern = "Heroínas"
-                if not re.search(suc_pattern, suc_name, re.IGNORECASE):
-                    continue
                     
             items = sale.get("items", [])
             for item in items:

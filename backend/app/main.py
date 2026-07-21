@@ -57,9 +57,19 @@ def index():
     return {"message": "Welcome to Choco-Sys API", "docs": "/docs"}
 
 @app.get("/health")
-def health():
-    """Safe health check — does not expose any environment variables."""
-    return {"status": "ok", "environment": settings.ENVIRONMENT}
+async def health():
+    """Real-time health check — verifies API status and MongoDB connection."""
+    try:
+        from app.infrastructure.db import get_client
+        client = get_client()
+        # Ping a MongoDB
+        await client.admin.command('ping')
+        return {"status": "ok", "database": "connected", "environment": settings.ENVIRONMENT}
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "disconnected", "detail": str(e)}
+        )
 
 # Parse allowed origins from comma-separated env var
 origins = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",") if origin.strip() and origin.strip() != "*"]

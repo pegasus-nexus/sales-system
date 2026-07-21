@@ -84,6 +84,7 @@ async def get_ml_demand_prediction(
 
 from app.schemas.analytics import HistoricalImportRequest
 from app.services.import_historical_service import process_historical_import
+from app.infrastructure.core.audit import log_audit
 
 @router.post("/import-historical")
 async def import_historical_data(
@@ -97,6 +98,18 @@ async def import_historical_data(
         tenant_id=current_user.tenant_id,
         import_data=payload
     )
+    
+    # LOG DE AUDITORÍA
+    await log_audit(
+        tenant_id=current_user.tenant_id,
+        user_id=str(current_user.id),
+        username=current_user.email,
+        action="IMPORT_HISTORICAL_DATA",
+        entity="ventas_historicas_crudas",
+        entity_id="bulk_upload",
+        details={"filas_recibidas": len(payload.rows), "filas_importadas": res.get("imported", 0)}
+    )
+    
     return {"message": "Importación exitosa", "data": res}
 
 
