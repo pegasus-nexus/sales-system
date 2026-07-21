@@ -1907,7 +1907,7 @@ async def get_monthly_evolution(
         sum_items = sum(float(i.cantidad) for i in sale.items)
         m_obj["unidades"] += sum_items
 
-        suc_name = sucursal_names_map.get(str(sale.sucursal_id), sale.sucursal_name or sale.sucursal_id or "Central")
+        suc_name = sucursal_names_map.get(str(sale.sucursal_id), str(sale.sucursal_id) if sale.sucursal_id else "Central")
         m_obj["por_sucursal"][suc_name] = m_obj["por_sucursal"].get(suc_name, 0.0) + sale_total
 
         # Comparación de sucursales en el mes actual vs previo
