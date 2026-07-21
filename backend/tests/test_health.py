@@ -10,7 +10,7 @@ async def test_health_check_endpoint():
     This acts as a deployment readiness probe.
     """
     # Mocking the get_client call to bypass actual MongoDB connection during tests
-    with patch("app.main.get_client") as mock_get_client:
+    with patch("app.infrastructure.db.get_client") as mock_get_client:
         mock_client = AsyncMock()
         # Ensure await client.admin.command() returns successfully
         mock_client.admin.command = AsyncMock(return_value={"ok": 1})
