@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search, LayoutDashboard, Wallet, ShoppingBag, RotateCcw,
+    Search, Wallet, ShoppingBag, RotateCcw,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
     Percent, QrCode, BarChart3, Banknote, Truck, Settings, Shield,
     Briefcase, TrendingUp, X, Sparkles, ArrowRight
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ViewItem {
@@ -21,7 +20,6 @@ interface ViewItem {
 
 export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const navigate = useNavigate();
-    const { role } = useAuthStore();
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
