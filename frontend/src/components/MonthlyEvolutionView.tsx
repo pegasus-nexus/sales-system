@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getMonthlyEvolution, getSucursales } from '../api/api';
+import { getMonthlyEvolution, getSucursales, getCategories, getProducts } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     TrendingUp, TrendingDown, DollarSign, ShoppingBag, CreditCard, 
-    Store, Calendar, Loader2, AlertTriangle, Building2, Percent, ArrowUpRight, ArrowDownRight 
+    Store, Calendar, Loader2, AlertTriangle, Building2, Percent, ArrowUpRight, ArrowDownRight,
+    Tag, Package
 } from 'lucide-react';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, PieChart, Pie, Cell 
 } from 'recharts';
+import type { Category, Product } from '../api/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,7 +19,7 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#3b82f6'];
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#3b82f6', '#f43f5e', '#84cc16'];
 
 export default function MonthlyEvolutionView() {
     const { role } = useAuthStore();
@@ -25,6 +27,9 @@ export default function MonthlyEvolutionView() {
 
     const [months, setMonths] = useState<number>(12);
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
+    const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
+    const [selectedProducto, setSelectedProducto] = useState<string>('all');
+    const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>('sucursales');
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -32,9 +37,20 @@ export default function MonthlyEvolutionView() {
         enabled: esMatriz
     });
 
+    const { data: categorias = [] } = useQuery<Category[]>({
+        queryKey: ['categories'],
+        queryFn: getCategories
+    });
+
+    const { data: productosRes } = useQuery({
+        queryKey: ['products'],
+        queryFn: () => getProducts(1, 100)
+    });
+    const productos: Product[] = productosRes?.items || [];
+
     const { data, isLoading, isError } = useQuery({
-        queryKey: ['monthly-evolution', months, selectedSucursal],
-        queryFn: () => getMonthlyEvolution(months, selectedSucursal)
+        queryKey: ['monthly-evolution', months, selectedSucursal, selectedCategoria, selectedProducto],
+        queryFn: () => getMonthlyEvolution(months, selectedSucursal, selectedCategoria, selectedProducto)
     });
 
     if (isLoading) {
@@ -56,39 +72,80 @@ export default function MonthlyEvolutionView() {
         );
     }
 
-    const { resumen_mom, evolucion_mensual, participacion_sucursales } = data;
+    const { resumen_mom, evolucion_mensual, participacion_sucursales, participacion_categorias = [], participacion_productos = [] } = data;
 
     const isIngresosPositive = resumen_mom.diferencia_pct >= 0;
     const isTxPositive = resumen_mom.diferencia_tx_pct >= 0;
     const isTktPositive = resumen_mom.diferencia_tkt_pct >= 0;
 
+    // Seleccionar datos de desglose según dimensión activa
+    const chartData = activeDimension === 'sucursales'
+        ? participacion_sucursales.map(s => ({ name: s.sucursal_nombre, value: s.total_ventas, share: s.participacion_porcentaje }))
+        : activeDimension === 'categorias'
+        ? participacion_categorias.map(c => ({ name: c.categoria_nombre, value: c.total_ventas, share: c.participacion_porcentaje }))
+        : participacion_productos.map(p => ({ name: p.producto_nombre, value: p.total_ventas, share: p.participacion_porcentaje }));
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* ── Controles de Filtros ─────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+            {/* ── Controles de Filtros Multinivel ─────────────────────────── */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
-                        <Calendar size={20} />
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                        <Calendar size={22} />
                     </div>
                     <div>
-                        <h2 className="font-extrabold text-gray-900">Evolución e Indicadores MoM</h2>
-                        <p className="text-xs text-gray-400">Análisis comparativo contra el mes anterior y distribución por sucursal</p>
+                        <h2 className="font-extrabold text-gray-900 text-lg">Evolución e Indicadores MoM</h2>
+                        <p className="text-xs text-gray-400">Análisis comparativo por Sucursales, Categorías y Productos</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
                     {/* Selector de Sucursal */}
                     {esMatriz && sucursales.length > 0 && (
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-sm font-medium">
-                            <Building2 size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold">
+                            <Building2 size={15} className="text-gray-400" />
                             <select
                                 value={selectedSucursal}
                                 onChange={(e) => setSelectedSucursal(e.target.value)}
-                                className="bg-transparent border-none text-gray-700 font-bold focus:outline-none cursor-pointer"
+                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer"
                             >
                                 <option value="all">Todas las Sucursales</option>
                                 {sucursales.map((s) => (
                                     <option key={s._id} value={s._id}>{s.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Selector de Categoría */}
+                    {categorias.length > 0 && (
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold">
+                            <Tag size={15} className="text-gray-400" />
+                            <select
+                                value={selectedCategoria}
+                                onChange={(e) => setSelectedCategoria(e.target.value)}
+                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer"
+                            >
+                                <option value="all">Todas las Categorías</option>
+                                {categorias.map((c) => (
+                                    <option key={c._id} value={c._id}>{c.name || (c as any).nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Selector de Producto */}
+                    {productos.length > 0 && (
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold max-w-[200px]">
+                            <Package size={15} className="text-gray-400 shrink-0" />
+                            <select
+                                value={selectedProducto}
+                                onChange={(e) => setSelectedProducto(e.target.value)}
+                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer truncate"
+                            >
+                                <option value="all">Todos los Productos</option>
+                                {productos.map((p) => (
+                                    <option key={p._id} value={p._id}>{p.descripcion}</option>
                                 ))}
                             </select>
                         </div>
@@ -175,6 +232,41 @@ export default function MonthlyEvolutionView() {
                 </div>
             </div>
 
+            {/* ── Selector de Dimensión de Análisis ──────────────────────── */}
+            <div className="flex justify-center border-b border-gray-200 pb-2">
+                <div className="flex bg-gray-100 p-1 rounded-2xl gap-1 font-extrabold text-xs">
+                    <button
+                        onClick={() => setActiveDimension('sucursales')}
+                        className={cn(
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            activeDimension === 'sucursales' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
+                        )}
+                    >
+                        <Store size={16} /> Por Sucursales
+                    </button>
+
+                    <button
+                        onClick={() => setActiveDimension('categorias')}
+                        className={cn(
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            activeDimension === 'categorias' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
+                        )}
+                    >
+                        <Tag size={16} /> Por Categorías
+                    </button>
+
+                    <button
+                        onClick={() => setActiveDimension('productos')}
+                        className={cn(
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            activeDimension === 'productos' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
+                        )}
+                    >
+                        <Package size={16} /> Por Productos
+                    </button>
+                </div>
+            </div>
+
             {/* ── Gráficos Principales (Evolución Historica + Participación) ──── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Evolución Mensual Historica (Area Chart) */}
@@ -209,31 +301,32 @@ export default function MonthlyEvolutionView() {
                     </div>
                 </div>
 
-                {/* Participación por Sucursal (Donut Chart) */}
+                {/* Participación (Donut Chart) */}
                 <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="font-extrabold text-gray-900 flex items-center gap-2">
-                            <Store size={18} className="text-emerald-600" /> Participación por Sucursal
+                            {activeDimension === 'sucursales' ? <Store size={18} className="text-emerald-600" /> : activeDimension === 'categorias' ? <Tag size={18} className="text-indigo-600" /> : <Package size={18} className="text-pink-600" />} 
+                            Participación por {activeDimension === 'sucursales' ? 'Sucursal' : activeDimension === 'categorias' ? 'Categoría' : 'Producto'}
                         </h3>
                         <span className="text-xs text-gray-400 font-medium">Mes {resumen_mom.periodo_actual}</span>
                     </div>
 
-                    {participacion_sucursales.length > 0 ? (
+                    {chartData.length > 0 ? (
                         <>
                             <div className="w-full h-52 flex justify-center items-center">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={participacion_sucursales}
-                                            dataKey="total_ventas"
-                                            nameKey="sucursal_nombre"
+                                            data={chartData}
+                                            dataKey="value"
+                                            nameKey="name"
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={55}
                                             outerRadius={85}
                                             paddingAngle={4}
                                         >
-                                            {participacion_sucursales.map((_, idx) => (
+                                            {chartData.map((_, idx) => (
                                                 <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                                             ))}
                                         </Pie>
@@ -244,13 +337,13 @@ export default function MonthlyEvolutionView() {
 
                             {/* Legend / Breakdown */}
                             <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                                {participacion_sucursales.map((item, idx) => (
-                                    <div key={item.sucursal_nombre} className="flex items-center justify-between text-xs font-semibold">
+                                {chartData.slice(0, 10).map((item, idx) => (
+                                    <div key={item.name} className="flex items-center justify-between text-xs font-semibold">
                                         <div className="flex items-center gap-2 truncate">
                                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                            <span className="text-gray-700 truncate">{item.sucursal_nombre}</span>
+                                            <span className="text-gray-700 truncate">{item.name}</span>
                                         </div>
-                                        <span className="text-gray-900 font-black">{item.participacion_porcentaje}%</span>
+                                        <span className="text-gray-900 font-black">{item.share}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -264,70 +357,174 @@ export default function MonthlyEvolutionView() {
                 </div>
             </div>
 
-            {/* ── Tabla Ejecutiva de Desempeño por Sucursal (MoM Analysis) ───── */}
+            {/* ── Tabla Ejecutiva de Desempeño (MoM Analysis) ───── */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                     <div>
                         <h3 className="font-extrabold text-gray-900 text-lg flex items-center gap-2">
-                            <Percent size={20} className="text-indigo-600" /> Desempeño y Crecimiento Individual por Sucursal
+                            <Percent size={20} className="text-indigo-600" /> Desempeño y Crecimiento ({activeDimension === 'sucursales' ? 'Sucursales' : activeDimension === 'categorias' ? 'Categorías' : 'Productos'})
                         </h3>
-                        <p className="text-xs text-gray-400">Comparativa intermensual de cada sucursal y cuota de participación sobre el total</p>
+                        <p className="text-xs text-gray-400">Comparativa intermensual de facturación, porcentaje de participación y delta MoM</p>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-gray-100 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
-                                <th className="py-3 px-4">Sucursal</th>
-                                <th className="py-3 px-4">Facturación Mes Actual</th>
-                                <th className="py-3 px-4 text-center">Cuota de Participación</th>
-                                <th className="py-3 px-4 text-center">Variación MoM (%)</th>
-                                <th className="py-3 px-4 text-right">Variación MoM ($)</th>
-                                <th className="py-3 px-4 text-right">Transacciones</th>
-                                <th className="py-3 px-4 text-right">Ticket Prom.</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 text-sm">
-                            {participacion_sucursales.map((s, idx) => {
-                                const isPositive = s.variacion_mom_porcentaje >= 0;
-                                return (
-                                    <tr key={s.sucursal_nombre} className="hover:bg-gray-50/80 transition-colors font-medium">
-                                        <td className="py-3.5 px-4 font-extrabold text-gray-900 flex items-center gap-2">
-                                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                            {s.sucursal_nombre}
-                                        </td>
-                                        <td className="py-3.5 px-4 font-black text-gray-900">{formatBs(s.total_ventas)}</td>
-                                        <td className="py-3.5 px-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <div className="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
-                                                    <div 
-                                                        className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
-                                                        style={{ width: `${Math.min(s.participacion_porcentaje, 100)}%` }}
-                                                    />
+                    {activeDimension === 'sucursales' ? (
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-100 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+                                    <th className="py-3 px-4">Sucursal</th>
+                                    <th className="py-3 px-4">Facturación Mes Actual</th>
+                                    <th className="py-3 px-4 text-center">Cuota de Participación</th>
+                                    <th className="py-3 px-4 text-center">Variación MoM (%)</th>
+                                    <th className="py-3 px-4 text-right">Variación MoM ($)</th>
+                                    <th className="py-3 px-4 text-right">Transacciones</th>
+                                    <th className="py-3 px-4 text-right">Ticket Prom.</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 text-sm">
+                                {participacion_sucursales.map((s, idx) => {
+                                    const isPositive = s.variacion_mom_porcentaje >= 0;
+                                    return (
+                                        <tr key={s.sucursal_nombre} className="hover:bg-gray-50/80 transition-colors font-medium">
+                                            <td className="py-3.5 px-4 font-extrabold text-gray-900 flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                                {s.sucursal_nombre}
+                                            </td>
+                                            <td className="py-3.5 px-4 font-black text-gray-900">{formatBs(s.total_ventas)}</td>
+                                            <td className="py-3.5 px-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                        <div 
+                                                            className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                                                            style={{ width: `${Math.min(s.participacion_porcentaje, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs font-extrabold text-gray-700">{s.participacion_porcentaje}%</span>
                                                 </div>
-                                                <span className="text-xs font-extrabold text-gray-700">{s.participacion_porcentaje}%</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-center">
-                                            <span className={cn(
-                                                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black",
-                                                isPositive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"
-                                            )}>
-                                                {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                                                {isPositive ? '+' : ''}{s.variacion_mom_porcentaje}%
-                                            </span>
-                                        </td>
-                                        <td className={cn("py-3.5 px-4 text-right font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>
-                                            {isPositive ? '+' : ''}{formatBs(s.variacion_mom_abs)}
-                                        </td>
-                                        <td className="py-3.5 px-4 text-right text-gray-700 font-bold">{s.transacciones.toLocaleString()}</td>
-                                        <td className="py-3.5 px-4 text-right font-bold text-gray-900">{formatBs(s.ticket_promedio)}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black",
+                                                    isPositive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"
+                                                )}>
+                                                    {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                    {isPositive ? '+' : ''}{s.variacion_mom_porcentaje}%
+                                                </span>
+                                            </td>
+                                            <td className={cn("py-3.5 px-4 text-right font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>
+                                                {isPositive ? '+' : ''}{formatBs(s.variacion_mom_abs)}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right text-gray-700 font-bold">{s.transacciones.toLocaleString()}</td>
+                                            <td className="py-3.5 px-4 text-right font-bold text-gray-900">{formatBs(s.ticket_promedio)}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    ) : activeDimension === 'categorias' ? (
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-100 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+                                    <th className="py-3 px-4">Categoría</th>
+                                    <th className="py-3 px-4">Facturación Mes Actual</th>
+                                    <th className="py-3 px-4 text-center">Cuota de Participación</th>
+                                    <th className="py-3 px-4 text-center">Variación MoM (%)</th>
+                                    <th className="py-3 px-4 text-right">Variación MoM ($)</th>
+                                    <th className="py-3 px-4 text-right">Unidades Vendidas</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 text-sm">
+                                {participacion_categorias.map((c, idx) => {
+                                    const isPositive = c.variacion_mom_porcentaje >= 0;
+                                    return (
+                                        <tr key={c.categoria_nombre} className="hover:bg-gray-50/80 transition-colors font-medium">
+                                            <td className="py-3.5 px-4 font-extrabold text-gray-900 flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                                {c.categoria_nombre}
+                                            </td>
+                                            <td className="py-3.5 px-4 font-black text-gray-900">{formatBs(c.total_ventas)}</td>
+                                            <td className="py-3.5 px-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                        <div 
+                                                            className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                                                            style={{ width: `${Math.min(c.participacion_porcentaje, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs font-extrabold text-gray-700">{c.participacion_porcentaje}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black",
+                                                    isPositive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"
+                                                )}>
+                                                    {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                    {isPositive ? '+' : ''}{c.variacion_mom_porcentaje}%
+                                                </span>
+                                            </td>
+                                            <td className={cn("py-3.5 px-4 text-right font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>
+                                                {isPositive ? '+' : ''}{formatBs(c.variacion_mom_abs)}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right text-gray-700 font-bold">{c.unidades.toLocaleString()}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-100 text-xs font-extrabold text-gray-400 uppercase tracking-wider">
+                                    <th className="py-3 px-4">Producto</th>
+                                    <th className="py-3 px-4">Facturación Mes Actual</th>
+                                    <th className="py-3 px-4 text-center">Cuota de Participación</th>
+                                    <th className="py-3 px-4 text-center">Variación MoM (%)</th>
+                                    <th className="py-3 px-4 text-right">Variación MoM ($)</th>
+                                    <th className="py-3 px-4 text-right">Unidades Vendidas</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 text-sm">
+                                {participacion_productos.map((p, idx) => {
+                                    const isPositive = p.variacion_mom_porcentaje >= 0;
+                                    return (
+                                        <tr key={p.producto_nombre} className="hover:bg-gray-50/80 transition-colors font-medium">
+                                            <td className="py-3.5 px-4 font-extrabold text-gray-900 flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                                {p.producto_nombre}
+                                            </td>
+                                            <td className="py-3.5 px-4 font-black text-gray-900">{formatBs(p.total_ventas)}</td>
+                                            <td className="py-3.5 px-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                        <div 
+                                                            className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                                                            style={{ width: `${Math.min(p.participacion_porcentaje, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs font-extrabold text-gray-700">{p.participacion_porcentaje}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black",
+                                                    isPositive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"
+                                                )}>
+                                                    {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                    {isPositive ? '+' : ''}{p.variacion_mom_porcentaje}%
+                                                </span>
+                                            </td>
+                                            <td className={cn("py-3.5 px-4 text-right font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>
+                                                {isPositive ? '+' : ''}{formatBs(p.variacion_mom_abs)}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right text-gray-700 font-bold">{p.unidades.toLocaleString()}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

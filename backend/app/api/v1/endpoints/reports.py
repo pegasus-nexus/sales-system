@@ -1822,27 +1822,29 @@ async def get_purchases_by_client(
 async def get_monthly_evolution(
     months: int = 12,
     sucursal_id: Optional[str] = None,
+    categoria_id: Optional[str] = None,
+    producto_id: Optional[str] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN, UserRole.ADMIN]))
 ):
     """
     Reporte de Evolución Mensual (Month-over-Month - MoM).
-    Proporciona:
-    - Resumen del mes actual vs mes anterior (Diferencia $ y %, ticket promedio)
-    - Evolución mensual por periodo (%Y-%m) de ventas, transacciones y unidades
-    - Cuota de participación (%) por cada sucursal en el último mes
-    - Rendimiento MoM individual de cada sucursal
+    Proporciona desgloses y filtros por Sucursal, Categoría y Producto.
     """
     tenant_id = current_user.tenant_id or "default"
     
-    # Restricción por rol de sucursal
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
         sucursal_id = current_user.sucursal_id
 
-    # 1. Obtener todas las sucursales del tenant para mapeo
+    # 1. Mapeos
     sucursales_list = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
     sucursal_names_map = {str(s.id): s.nombre for s in sucursales_list}
-    if not sucursal_names_map:
-        sucursal_names_map = {"CENTRAL": "Central"}
+
+    categories_list = await Category.find(Category.tenant_id == tenant_id).to_list()
+    cat_names_map = {str(c.id): c.nombre for c in categories_list}
+
+    products_list = await Product.find(Product.tenant_id == tenant_id).to_list()
+    product_cat_map = {str(p.id): str(p.categoria_id) if p.categoria_id else "" for p in products_list}
+    product_names_map = {str(p.id): p.descripcion for p in products_list}
 
     # 2. Calcular rango de fechas para los meses solicitados
     now = datetime.now(BOLIVIA_TZ)
@@ -1853,7 +1855,7 @@ async def get_monthly_evolution(
         year -= 1
     start_date = datetime(year, month, 1, 0, 0, 0, tzinfo=BOLIVIA_TZ)
 
-    # 3. Consultar ventas activas (no anuladas) del tenant en el periodo
+    # 3. Consultar ventas activas del tenant en el periodo
     filters = [
         Sale.tenant_id == tenant_id,
         Sale.anulada == False,
@@ -1881,12 +1883,18 @@ async def get_monthly_evolution(
             curr_mo = 1
             curr_yr += 1
 
-    sucursal_totals_latest_month: Dict[str, Dict[str, Any]] = {}
-    sucursal_totals_prev_month: Dict[str, Dict[str, Any]] = {}
-
     all_period_keys = sorted(list(monthly_data.keys()))
     latest_month_key = all_period_keys[-1] if all_period_keys else f"{now.year:04d}-{now.month:02d}"
     prev_month_key = all_period_keys[-2] if len(all_period_keys) >= 2 else None
+
+    sucursal_totals_latest_month: Dict[str, Dict[str, Any]] = {}
+    sucursal_totals_prev_month: Dict[str, Dict[str, Any]] = {}
+
+    category_totals_latest_month: Dict[str, Dict[str, Any]] = {}
+    category_totals_prev_month: Dict[str, Dict[str, Any]] = {}
+
+    product_totals_latest_month: Dict[str, Dict[str, Any]] = {}
+    product_totals_prev_month: Dict[str, Dict[str, Any]] = {}
 
     for sale in sales:
         m_key = sale.created_at.strftime("%Y-%m")
@@ -1898,19 +1906,40 @@ async def get_monthly_evolution(
                 "unidades": 0,
                 "por_sucursal": {}
             }
-        
+
+        # Filtrado de ítems por categoría o producto si se solicitó
+        sale_items_matching = []
+        for item in sale.items:
+            item_prod_id = str(item.producto_id) if item.producto_id else None
+            item_cat_id = product_cat_map.get(item_prod_id, "") if item_prod_id else ""
+
+            if categoria_id and categoria_id != "all" and item_cat_id != categoria_id:
+                continue
+            if producto_id and producto_id != "all" and item_prod_id != producto_id:
+                continue
+
+            sale_items_matching.append((item, item_prod_id, item_cat_id))
+
+        if (categoria_id and categoria_id != "all" or producto_id and producto_id != "all") and not sale_items_matching:
+            continue
+
         m_obj = monthly_data[m_key]
-        sale_total = float(sale.total)
+
+        if (categoria_id and categoria_id != "all") or (producto_id and producto_id != "all"):
+            sale_total = sum(float(i[0].subtotal or (i[0].precio_unitario * i[0].cantidad)) for i in sale_items_matching)
+            sum_items = sum(float(i[0].cantidad) for i in sale_items_matching)
+        else:
+            sale_total = float(sale.total)
+            sum_items = sum(float(i.cantidad) for i in sale.items)
+
         m_obj["total_ventas"] += sale_total
         m_obj["transacciones"] += 1
-        
-        sum_items = sum(float(i.cantidad) for i in sale.items)
         m_obj["unidades"] += sum_items
 
         suc_name = sucursal_names_map.get(str(sale.sucursal_id), str(sale.sucursal_id) if sale.sucursal_id else "Central")
         m_obj["por_sucursal"][suc_name] = m_obj["por_sucursal"].get(suc_name, 0.0) + sale_total
 
-        # Comparación de sucursales en el mes actual vs previo
+        # Acumuladores de sucursales
         if m_key == latest_month_key:
             if suc_name not in sucursal_totals_latest_month:
                 sucursal_totals_latest_month[suc_name] = {"total": 0.0, "transacciones": 0}
@@ -1921,6 +1950,38 @@ async def get_monthly_evolution(
                 sucursal_totals_prev_month[suc_name] = {"total": 0.0, "transacciones": 0}
             sucursal_totals_prev_month[suc_name]["total"] += sale_total
             sucursal_totals_prev_month[suc_name]["transacciones"] += 1
+
+        # Acumuladores de categorías y productos
+        items_to_aggregate = sale_items_matching if ((categoria_id and categoria_id != "all") or (producto_id and producto_id != "all")) else [(i, str(i.producto_id) if i.producto_id else None, product_cat_map.get(str(i.producto_id), "") if i.producto_id else "") for i in sale.items]
+
+        for item_obj, item_prod_id, item_cat_id in items_to_aggregate:
+            item_total = float(item_obj.subtotal or (item_obj.precio_unitario * item_obj.cantidad))
+            item_qty = float(item_obj.cantidad)
+            
+            c_name = cat_names_map.get(item_cat_id, "General")
+            p_name = product_names_map.get(item_prod_id, item_obj.descripcion)
+
+            if m_key == latest_month_key:
+                if c_name not in category_totals_latest_month:
+                    category_totals_latest_month[c_name] = {"total": 0.0, "unidades": 0.0}
+                category_totals_latest_month[c_name]["total"] += item_total
+                category_totals_latest_month[c_name]["unidades"] += item_qty
+
+                if p_name not in product_totals_latest_month:
+                    product_totals_latest_month[p_name] = {"total": 0.0, "unidades": 0.0}
+                product_totals_latest_month[p_name]["total"] += item_total
+                product_totals_latest_month[p_name]["unidades"] += item_qty
+
+            elif prev_month_key and m_key == prev_month_key:
+                if c_name not in category_totals_prev_month:
+                    category_totals_prev_month[c_name] = {"total": 0.0, "unidades": 0.0}
+                category_totals_prev_month[c_name]["total"] += item_total
+                category_totals_prev_month[c_name]["unidades"] += item_qty
+
+                if p_name not in product_totals_prev_month:
+                    product_totals_prev_month[p_name] = {"total": 0.0, "unidades": 0.0}
+                product_totals_prev_month[p_name]["total"] += item_total
+                product_totals_prev_month[p_name]["unidades"] += item_qty
 
     # Lista ordenada de evolución
     evolution_list = []
@@ -1948,20 +2009,16 @@ async def get_monthly_evolution(
     tkt_prev = float(prev.get("ticket_promedio", 0.0))
     diff_tkt_pct = ((tkt_latest - tkt_prev) / tkt_prev * 100.0) if tkt_prev > 0 else (100.0 if tkt_latest > 0 else 0.0)
 
-    # Participación (%) y variación MoM por sucursal
+    # 1. Participación y MoM por sucursal
     participacion_sucursales = []
     all_suc_names = set(list(sucursal_totals_latest_month.keys()) + list(sucursal_totals_prev_month.keys()))
-    
     for s_name in sorted(all_suc_names):
         curr_data = sucursal_totals_latest_month.get(s_name, {"total": 0.0, "transacciones": 0})
         prev_data = sucursal_totals_prev_month.get(s_name, {"total": 0.0, "transacciones": 0})
-        
         s_total = float(curr_data["total"])
         s_prev_total = float(prev_data["total"])
-        
         share_pct = (s_total / total_latest * 100.0) if total_latest > 0 else 0.0
         suc_mom_pct = ((s_total - s_prev_total) / s_prev_total * 100.0) if s_prev_total > 0 else (100.0 if s_total > 0 else 0.0)
-        
         s_tx = int(curr_data["transacciones"])
         s_tkt = (s_total / s_tx) if s_tx > 0 else 0.0
 
@@ -1974,8 +2031,49 @@ async def get_monthly_evolution(
             "transacciones": s_tx,
             "ticket_promedio": round(s_tkt, 2)
         })
-
     participacion_sucursales.sort(key=lambda x: x["total_ventas"], reverse=True)
+
+    # 2. Participación y MoM por categoría
+    participacion_categorias = []
+    all_cat_names = set(list(category_totals_latest_month.keys()) + list(category_totals_prev_month.keys()))
+    for c_name in sorted(all_cat_names):
+        c_curr = category_totals_latest_month.get(c_name, {"total": 0.0, "unidades": 0.0})
+        c_prev = category_totals_prev_month.get(c_name, {"total": 0.0, "unidades": 0.0})
+        c_total = float(c_curr["total"])
+        c_prev_total = float(c_prev["total"])
+        share_pct = (c_total / total_latest * 100.0) if total_latest > 0 else 0.0
+        c_mom_pct = ((c_total - c_prev_total) / c_prev_total * 100.0) if c_prev_total > 0 else (100.0 if c_total > 0 else 0.0)
+
+        participacion_categorias.append({
+            "categoria_nombre": c_name,
+            "total_ventas": round(c_total, 2),
+            "participacion_porcentaje": round(share_pct, 1),
+            "variacion_mom_porcentaje": round(c_mom_pct, 1),
+            "variacion_mom_abs": round(c_total - c_prev_total, 2),
+            "unidades": round(c_curr["unidades"], 2)
+        })
+    participacion_categorias.sort(key=lambda x: x["total_ventas"], reverse=True)
+
+    # 3. Participación y MoM por producto
+    participacion_productos = []
+    all_prod_names = set(list(product_totals_latest_month.keys()) + list(product_totals_prev_month.keys()))
+    for p_name in sorted(all_prod_names):
+        p_curr = product_totals_latest_month.get(p_name, {"total": 0.0, "unidades": 0.0})
+        p_prev = product_totals_prev_month.get(p_name, {"total": 0.0, "unidades": 0.0})
+        p_total = float(p_curr["total"])
+        p_prev_total = float(p_prev["total"])
+        share_pct = (p_total / total_latest * 100.0) if total_latest > 0 else 0.0
+        p_mom_pct = ((p_total - p_prev_total) / p_prev_total * 100.0) if p_prev_total > 0 else (100.0 if p_total > 0 else 0.0)
+
+        participacion_productos.append({
+            "producto_nombre": p_name,
+            "total_ventas": round(p_total, 2),
+            "participacion_porcentaje": round(share_pct, 1),
+            "variacion_mom_porcentaje": round(p_mom_pct, 1),
+            "variacion_mom_abs": round(p_total - p_prev_total, 2),
+            "unidades": round(p_curr["unidades"], 2)
+        })
+    participacion_productos.sort(key=lambda x: x["total_ventas"], reverse=True)
 
     return {
         "resumen_mom": {
@@ -1993,7 +2091,9 @@ async def get_monthly_evolution(
             "diferencia_tkt_pct": round(diff_tkt_pct, 1)
         },
         "evolucion_mensual": evolution_list,
-        "participacion_sucursales": participacion_sucursales
+        "participacion_sucursales": participacion_sucursales,
+        "participacion_categorias": participacion_categorias,
+        "participacion_productos": participacion_productos[:25]
     }
 
 

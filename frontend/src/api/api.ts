@@ -282,11 +282,29 @@ export interface MonthlyEvolutionResponse {
         transacciones: number;
         ticket_promedio: number;
     }[];
+    participacion_categorias?: {
+        categoria_nombre: string;
+        total_ventas: number;
+        participacion_porcentaje: number;
+        variacion_mom_porcentaje: number;
+        variacion_mom_abs: number;
+        unidades: number;
+    }[];
+    participacion_productos?: {
+        producto_nombre: string;
+        total_ventas: number;
+        participacion_porcentaje: number;
+        variacion_mom_porcentaje: number;
+        variacion_mom_abs: number;
+        unidades: number;
+    }[];
 }
 
-export const getMonthlyEvolution = (months: number = 12, sucursalId?: string) => {
+export const getMonthlyEvolution = (months: number = 12, sucursalId?: string, categoriaId?: string, productoId?: string) => {
     const params = new URLSearchParams({ months: String(months) });
     if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+    if (categoriaId && categoriaId !== 'all') params.append('categoria_id', categoriaId);
+    if (productoId && productoId !== 'all') params.append('producto_id', productoId);
     return client<MonthlyEvolutionResponse>(`/reports/monthly-evolution?${params.toString()}`);
 };
 
