@@ -11,7 +11,7 @@ Routes:
   GET    /caja/categorias-gasto        — list expense categories
   POST   /caja/categorias-gasto        — create an expense category
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from bson import ObjectId
 
