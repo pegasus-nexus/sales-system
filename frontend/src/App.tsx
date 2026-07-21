@@ -150,8 +150,8 @@ const ProtectedRoute = ({
 
   // Verificar feature flag si se especificó
   if (requiredFeature && !hasFeature(requiredFeature)) {
-    // Módulos operativos principales (ventas, caja, inventario, créditos, control qr) siempre están disponibles para roles autorizados
-    if (['VENTAS', 'CAJA', 'INVENTARIO', 'CREDITOS', 'CONTROL_QR'].includes(requiredFeature)) {
+    // Módulos operativos principales (ventas, caja, inventario, pedidos internos, créditos, control qr) siempre están disponibles para roles autorizados
+    if (['VENTAS', 'CAJA', 'INVENTARIO', 'CREDITOS', 'CONTROL_QR', 'PEDIDOS_INTERNOS', 'PEDIDOS'].includes(requiredFeature)) {
       return children;
     }
     return <Navigate to="/" replace />;

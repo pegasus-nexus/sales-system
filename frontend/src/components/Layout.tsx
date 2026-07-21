@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
-    Tag, Store, Package, ClipboardList, Warehouse, Users,
+    Tag, Store, Package, ClipboardList, Warehouse, Users, Search,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getMe, pingUser } from '../api/api';
+import ViewSearchModal from './ViewSearchModal';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -44,6 +45,18 @@ export default function Layout({ children }: LayoutProps) {
     const [isCollapsed, setIsCollapsed] = useLocalStorage('choco-sidebar-collapsed', false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchModalOpen, setSearchModalOpen] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setSearchModalOpen(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Estado de acordeones desplegables
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -176,7 +189,7 @@ export default function Layout({ children }: LayoutProps) {
         return rawGroups.map(group => {
             const filteredItems = group.items.filter(item => {
                 if (!item.roles.includes(role ?? '')) return false;
-                if (['/pos', '/ventas', '/caja', '/inventario', '/creditos', '/qr-control'].includes(item.path)) {
+                if (['/pos', '/ventas', '/caja', '/inventario', '/pedidos', '/traslados', '/creditos', '/qr-control'].includes(item.path)) {
                     return true;
                 }
                 return !item.feature || hasFeature(item.feature);
@@ -392,18 +405,42 @@ export default function Layout({ children }: LayoutProps) {
                 )}
                 
                 <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
-                    {/* Mobile Top Bar (hidden for CAJERO) */}
-                    {role !== 'CAJERO' && (
-                        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shrink-0">
-                            <img src="/vite.svg" alt="Sales System" className="h-7 w-auto object-contain" />
+                    {/* Top Bar with Global View Search */}
+                    <div className="bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
+                        <div className="flex items-center gap-3">
+                            <div className="md:hidden flex items-center gap-2">
+                                <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
+                            </div>
+                            {/* Buscador de Vistas */}
                             <button
-                                onClick={() => setMobileMenuOpen(true)}
-                                className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600"
+                                onClick={() => setSearchModalOpen(true)}
+                                className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200/80 text-gray-500 rounded-xl text-xs font-medium transition-all border border-gray-200/60 shadow-xs hover:text-gray-800 w-48 sm:w-72"
                             >
-                                <Menu size={20} />
+                                <Search size={14} className="text-indigo-600 shrink-0" />
+                                <span className="truncate">Buscar vista rápida...</span>
+                                <kbd className="hidden sm:inline-block ml-auto text-[10px] font-bold bg-white text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded shadow-2xs">
+                                    Ctrl+K
+                                </kbd>
                             </button>
                         </div>
-                    )}
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                {user?.username} ({role})
+                            </span>
+                            {role !== 'CAJERO' && (
+                                <button
+                                    onClick={() => setMobileMenuOpen(true)}
+                                    className="md:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
+                                >
+                                    <Menu size={18} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* View Search Modal */}
+                    <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
 
 
                     {/* Scrollable Content */}
