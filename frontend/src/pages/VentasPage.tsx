@@ -339,15 +339,65 @@ export default function VentasPage() {
     const { user, role, tenantSettings } = useAuthStore();
     const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'FACTURADOR'].includes(role || '');
 
-    // Filtros
+    // Draft Filtros
     const searchId = searchParams.get('search') || '';
-    const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
+    const [draftSucursal, setDraftSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
+    const [draftSoloFacturas, setDraftSoloFacturas] = useState(role === 'FACTURADOR');
+    const [draftSoloAnomalias, setDraftSoloAnomalias] = useState(false);
+    const [draftStartDate, setDraftStartDate] = useState('');
+    const [draftEndDate, setDraftEndDate] = useState('');
+    const [draftMetodoPago, setDraftMetodoPago] = useState('');
     const [searchTerm, setSearchTerm] = useState(searchId);
-    const [soloFacturas, setSoloFacturas] = useState(role === 'FACTURADOR');
-    const [soloAnomalias, setSoloAnomalias] = useState(false);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [metodoPago, setMetodoPago] = useState('');
+
+    // Applied Filtros (solo se ejecutan al hacer clic en Aplicar Filtros o buscar)
+    const [appliedFilters, setAppliedFilters] = useState({
+        sucursal: esMatriz ? '' : (user?.sucursal_id || ''),
+        soloFacturas: role === 'FACTURADOR',
+        soloAnomalias: false,
+        startDate: '',
+        endDate: '',
+        metodoPago: ''
+    });
+
+    const isFilterDirty = draftSucursal !== appliedFilters.sucursal ||
+                          draftSoloFacturas !== appliedFilters.soloFacturas ||
+                          draftSoloAnomalias !== appliedFilters.soloAnomalias ||
+                          draftStartDate !== appliedFilters.startDate ||
+                          draftEndDate !== appliedFilters.endDate ||
+                          draftMetodoPago !== appliedFilters.metodoPago;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            sucursal: draftSucursal,
+            soloFacturas: draftSoloFacturas,
+            soloAnomalias: draftSoloAnomalias,
+            startDate: draftStartDate,
+            endDate: draftEndDate,
+            metodoPago: draftMetodoPago
+        });
+        setPage(1);
+    };
+
+    const handleResetFilters = () => {
+        const defaultSuc = esMatriz ? '' : (user?.sucursal_id || '');
+        const defaultFact = role === 'FACTURADOR';
+        setDraftSucursal(defaultSuc);
+        setDraftSoloFacturas(defaultFact);
+        setDraftSoloAnomalias(false);
+        setDraftStartDate('');
+        setDraftEndDate('');
+        setDraftMetodoPago('');
+        setAppliedFilters({
+            sucursal: defaultSuc,
+            soloFacturas: defaultFact,
+            soloAnomalias: false,
+            startDate: '',
+            endDate: '',
+            metodoPago: ''
+        });
+        setPage(1);
+    };
+
     const [expanded, setExpanded] = useState<string | null>(searchId ? searchId : null);
     const [printSale, setPrintSale] = useState<Sale | null>(null);
     const [page, setPage] = useState(1);
@@ -355,7 +405,8 @@ export default function VentasPage() {
 
     useEffect(() => {
         if (role === 'FACTURADOR') {
-            setSoloFacturas(true);
+            setDraftSoloFacturas(true);
+            setAppliedFilters(prev => ({ ...prev, soloFacturas: true }));
         }
     }, [role]);
 
@@ -378,8 +429,8 @@ export default function VentasPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history', selectedSucursal, page, soloFacturas, soloAnomalias, startDate, endDate, metodoPago, debouncedSearch, limit],
-        queryFn: () => getSales(selectedSucursal || undefined, page, limit, metodoPago || undefined, soloFacturas, undefined, undefined, startDate || undefined, endDate || undefined, debouncedSearch || undefined, soloAnomalias)
+        queryKey: ['sales-history', appliedFilters.sucursal, page, appliedFilters.soloFacturas, appliedFilters.soloAnomalias, appliedFilters.startDate, appliedFilters.endDate, appliedFilters.metodoPago, debouncedSearch, limit],
+        queryFn: () => getSales(appliedFilters.sucursal || undefined, page, limit, appliedFilters.metodoPago || undefined, appliedFilters.soloFacturas, undefined, undefined, appliedFilters.startDate || undefined, appliedFilters.endDate || undefined, debouncedSearch || undefined, appliedFilters.soloAnomalias)
     });
 
     const ventas = ventasRes?.items || [];
@@ -401,7 +452,6 @@ export default function VentasPage() {
         onError: (err: any) => toast.error(err.message || 'Error al actualizar el estado de la factura.')
     });
 
-    // We now filter on the server
     const filteredVentas = ventas;
 
     return (
@@ -412,7 +462,7 @@ export default function VentasPage() {
                     <p className="text-gray-500 mt-1 text-sm flex flex-wrap items-center gap-2">
                         <span>Consulta y administra tickets emitidos.</span>
                         <span className="font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full text-xs">
-                            📍 {esMatriz && !selectedSucursal ? 'Todas las Sucursales' : (sucursales.find(s => s._id === (selectedSucursal || user?.sucursal_id))?.nombre || 'Sucursal Asignada')}
+                            📍 {esMatriz && !appliedFilters.sucursal ? 'Todas las Sucursales' : (sucursales.find(s => s._id === (appliedFilters.sucursal || user?.sucursal_id))?.nombre || 'Sucursal Asignada')}
                         </span>
                     </p>
                 </div>
@@ -433,8 +483,8 @@ export default function VentasPage() {
                     {/* Filtro Sucursal (Matriz) */}
                     {esMatriz && (
                         <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
+                            value={draftSucursal}
+                            onChange={(e) => setDraftSucursal(e.target.value)}
                             className="bg-white border border-gray-200 text-gray-900 text-xs font-semibold rounded-lg px-3 py-1.5 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none shadow-sm h-[32px]"
                         >
                             <option value="">Todas las Sucursales</option>
@@ -447,11 +497,8 @@ export default function VentasPage() {
                         <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
                             <input 
                                 type="checkbox" 
-                                checked={soloFacturas} 
-                                onChange={e => {
-                                    setSoloFacturas(e.target.checked);
-                                    setPage(1);
-                                }}
+                                checked={draftSoloFacturas} 
+                                onChange={e => setDraftSoloFacturas(e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
                             <span className="text-xs font-semibold text-gray-700">Solo Facturas</span>
@@ -462,11 +509,8 @@ export default function VentasPage() {
                         <label className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-red-100 transition-colors h-[32px] shrink-0">
                             <input 
                                 type="checkbox" 
-                                checked={soloAnomalias} 
-                                onChange={e => {
-                                    setSoloAnomalias(e.target.checked);
-                                    setPage(1);
-                                }}
+                                checked={draftSoloAnomalias} 
+                                onChange={e => setDraftSoloAnomalias(e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
                             />
                             <span className="text-xs font-semibold text-red-700">Anomalías</span>
@@ -475,22 +519,22 @@ export default function VentasPage() {
                 </div>
             </div>
 
-            {/* ── Filtros Avanzados ── */}
-            <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                    <CalendarDays size={14} className="text-gray-400" />
+            {/* ── Filtros Avanzados con Botón Aplicar ── */}
+            <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+                    <CalendarDays size={14} className="text-indigo-500" />
                     <input 
                         type="date" 
-                        value={startDate}
-                        onChange={e => { setStartDate(e.target.value); setPage(1); }}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-200"
+                        value={draftStartDate}
+                        onChange={e => setDraftStartDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
-                    <span className="text-gray-400 text-[10px] font-bold uppercase">al</span>
+                    <span className="text-gray-400 font-bold text-xs">a</span>
                     <input 
                         type="date" 
-                        value={endDate}
-                        onChange={e => { setEndDate(e.target.value); setPage(1); }}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-200"
+                        value={draftEndDate}
+                        onChange={e => setDraftEndDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
                 </div>
 
@@ -499,9 +543,9 @@ export default function VentasPage() {
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Método:</span>
                     <select
-                        value={metodoPago}
-                        onChange={e => { setMetodoPago(e.target.value); setPage(1); }}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-200"
+                        value={draftMetodoPago}
+                        onChange={e => setDraftMetodoPago(e.target.value)}
+                        className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-700 outline-none cursor-pointer"
                     >
                         <option value="">Todos</option>
                         <option value="EFECTIVO">Efectivo 💵</option>
@@ -511,9 +555,20 @@ export default function VentasPage() {
                     </select>
                 </div>
 
-                {(startDate || endDate || metodoPago) && (
+                <button
+                    onClick={handleApplyFilters}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm ${
+                        isFilterDirty
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                            : "bg-gray-900 hover:bg-black text-white"
+                    }`}
+                >
+                    {isFilterDirty ? '⚡ Aplicar Filtros' : '✓ Filtros Aplicados'}
+                </button>
+
+                {(draftStartDate || draftEndDate || draftMetodoPago || isFilterDirty) && (
                     <button 
-                        onClick={() => { setStartDate(''); setEndDate(''); setMetodoPago(''); setPage(1); }}
+                        onClick={handleResetFilters}
                         className="ml-auto text-[10px] font-black text-red-500 uppercase hover:text-red-600 transition-colors"
                     >
                         Limpiar Filtros

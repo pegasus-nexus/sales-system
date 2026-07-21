@@ -4,10 +4,14 @@ import { getHistorialCaja, getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     Calendar, Loader2, FileDown, 
-    LayoutGrid, Store, Info
+    LayoutGrid, Store, Info, Filter, CheckCircle2
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFVentasCaja } from '../utils/reportPDF';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -15,11 +19,30 @@ export default function CashSalesSummaryView() {
     const { role } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     
-    // Filters
+    // Draft Filters
     const today = getBoliviaTodayISO();
-    const [startDate, setStartDate] = useState(today);
-    const [endDate, setEndDate] = useState(today);
-    const [selectedSucursal, setSelectedSucursal] = useState('all');
+    const [draftStartDate, setDraftStartDate] = useState(today);
+    const [draftEndDate, setDraftEndDate] = useState(today);
+    const [draftSucursal, setDraftSucursal] = useState('all');
+
+    // Applied Filters
+    const [appliedFilters, setAppliedFilters] = useState({
+        startDate: today,
+        endDate: today,
+        sucursal: 'all'
+    });
+
+    const isFilterDirty = draftStartDate !== appliedFilters.startDate || 
+                          draftEndDate !== appliedFilters.endDate || 
+                          draftSucursal !== appliedFilters.sucursal;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            startDate: draftStartDate,
+            endDate: draftEndDate,
+            sucursal: draftSucursal
+        });
+    };
 
     // Queries
     const { data: sucursales = [] } = useQuery({
@@ -29,16 +52,16 @@ export default function CashSalesSummaryView() {
     });
 
     const { data: history, isLoading } = useQuery({
-        queryKey: ['cash-sales-summary', startDate, endDate, selectedSucursal],
-        queryFn: () => getHistorialCaja(startDate, endDate, 1, 1000, selectedSucursal)
+        queryKey: ['cash-sales-summary', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal],
+        queryFn: () => getHistorialCaja(appliedFilters.startDate, appliedFilters.endDate, 1, 1000, appliedFilters.sucursal)
     });
 
     const sessions = history?.items || [];
 
     const handleDownloadPDF = () => {
         if (!sessions.length) return;
-        const sucNombre = selectedSucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === selectedSucursal)?.nombre || selectedSucursal);
-        descargarPDFVentasCaja(sessions, startDate, endDate, sucNombre);
+        const sucNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
+        descargarPDFVentasCaja(sessions, appliedFilters.startDate, appliedFilters.endDate, sucNombre);
     };
 
     // Totals
@@ -64,31 +87,31 @@ export default function CashSalesSummaryView() {
             </div>
 
             {/* Filters Bar */}
-            <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+                    <Calendar size={15} className="text-indigo-500" />
                     <input 
                         type="date" 
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        value={draftStartDate}
+                        onChange={e => setDraftStartDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
-                    <span className="text-gray-400 font-bold">al</span>
+                    <span className="text-gray-400 font-bold text-xs">a</span>
                     <input 
                         type="date" 
-                        value={endDate}
-                        onChange={e => setEndDate(e.target.value)}
-                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        value={draftEndDate}
+                        onChange={e => setDraftEndDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
                 </div>
 
                 {esMatriz && (
                     <div className="flex items-center gap-2">
-                        <Store size={16} className="text-gray-400" />
+                        <Store size={15} className="text-gray-400" />
                         <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            value={draftSucursal}
+                            onChange={(e) => setDraftSucursal(e.target.value)}
+                            className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
                         >
                             <option value="all">Todas las Sucursales</option>
                             <option value="CENTRAL">Central</option>
@@ -98,6 +121,20 @@ export default function CashSalesSummaryView() {
                         </select>
                     </div>
                 )}
+
+                <button
+                    onClick={handleApplyFilters}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm",
+                        isFilterDirty
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                            : "bg-gray-900 hover:bg-black text-white"
+                    )}
+                >
+                    {isFilterDirty ? <Filter size={14} className="animate-bounce" /> : <CheckCircle2 size={14} />}
+                    Aplicar Filtros
+                    {isFilterDirty && <span className="w-2 h-2 rounded-full bg-amber-400"></span>}
+                </button>
 
                 <div className="ml-auto flex items-center gap-3 flex-wrap">
                     <div className="bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 flex items-center gap-3">

@@ -4,26 +4,52 @@ import { getExpensesReport, getCategoriasGasto, getSucursales, createCategoriaGa
 import { useAuthStore } from '../store/authStore';
 import { 
     Calendar, Loader2, ArrowDownCircle, FileDown, 
-    Tag, Edit2, Trash2, X, Check, Receipt
+    Tag, Edit2, Trash2, X, Check, Receipt, Filter, CheckCircle2
 } from 'lucide-react';
 import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFGastos } from '../utils/reportPDF';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ExpensesReportView() {
     const { role, sucursal_id } = useAuthStore();
     
-    // Filters
+    // Draft Filters
     const today = getBoliviaTodayISO();
-    const [startDate, setStartDate] = useState(today);
-    const [endDate, setEndDate] = useState(today);
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     const defaultSucursal = esMatriz ? 'all' : (sucursal_id || 'CENTRAL');
-    const [selectedSucursal, setSelectedSucursal] = useState(defaultSucursal);
+
+    const [draftStartDate, setDraftStartDate] = useState(today);
+    const [draftEndDate, setDraftEndDate] = useState(today);
+    const [draftSucursal, setDraftSucursal] = useState(defaultSucursal);
+    const [draftCategory, setDraftCategory] = useState('all');
+
+    // Applied Filters
+    const [appliedFilters, setAppliedFilters] = useState({
+        startDate: today,
+        endDate: today,
+        sucursal: defaultSucursal,
+        category: 'all'
+    });
+
+    const isFilterDirty = draftStartDate !== appliedFilters.startDate ||
+                          draftEndDate !== appliedFilters.endDate ||
+                          draftSucursal !== appliedFilters.sucursal ||
+                          draftCategory !== appliedFilters.category;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            startDate: draftStartDate,
+            endDate: draftEndDate,
+            sucursal: draftSucursal,
+            category: draftCategory
+        });
+    };
 
     // Categories CRUD state
     const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -45,8 +71,8 @@ export default function ExpensesReportView() {
     });
 
     const { data: reportData, isLoading } = useQuery({
-        queryKey: ['expenses-report', startDate, endDate, selectedSucursal, selectedCategory],
-        queryFn: () => getExpensesReport(startDate, endDate, selectedSucursal, selectedCategory)
+        queryKey: ['expenses-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category],
+        queryFn: () => getExpensesReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category)
     });
     const report: any = reportData;
 
@@ -206,31 +232,29 @@ export default function ExpensesReportView() {
             </AnimatePresence>
 
             {/* Filters Bar */}
-            <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+                    <Calendar size={15} className="text-indigo-500" />
                     <input 
                         type="date" 
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        value={draftStartDate}
+                        onChange={e => setDraftStartDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
-                    <span className="text-gray-400 font-bold">al</span>
+                    <span className="text-gray-400 font-bold text-xs">a</span>
                     <input 
                         type="date" 
-                        value={endDate}
-                        onChange={e => setEndDate(e.target.value)}
-                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        value={draftEndDate}
+                        onChange={e => setDraftEndDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
                     />
                 </div>
 
-                <div className="h-6 w-px bg-gray-100 mx-2 hidden md:block" />
-
                 {esMatriz && (
                     <select
-                        value={selectedSucursal}
-                        onChange={(e) => setSelectedSucursal(e.target.value)}
-                        className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        value={draftSucursal}
+                        onChange={(e) => setDraftSucursal(e.target.value)}
+                        className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
                     >
                         <option value="all">Todas las Sucursales</option>
                         <option value="CENTRAL">Central</option>
@@ -241,15 +265,29 @@ export default function ExpensesReportView() {
                 )}
 
                 <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    value={draftCategory}
+                    onChange={(e) => setDraftCategory(e.target.value)}
+                    className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
                 >
                     <option value="all">Todas las Categorías</option>
                     {categories.map((c: any) => (
                         <option key={c._id} value={c._id}>{c.nombre}</option>
                     ))}
                 </select>
+
+                <button
+                    onClick={handleApplyFilters}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm",
+                        isFilterDirty
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                            : "bg-gray-900 hover:bg-black text-white"
+                    )}
+                >
+                    {isFilterDirty ? <Filter size={14} className="animate-bounce" /> : <CheckCircle2 size={14} />}
+                    Aplicar Filtros
+                    {isFilterDirty && <span className="w-2 h-2 rounded-full bg-amber-400"></span>}
+                </button>
 
                 <div className="ml-auto flex items-center gap-3">
                     <div className="bg-red-50 px-4 py-2 rounded-xl border border-red-100 flex items-center gap-3">

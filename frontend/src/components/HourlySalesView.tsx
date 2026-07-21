@@ -2,12 +2,16 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesByHour, getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { Loader2, AlertTriangle, Calendar, Clock, BarChart3, TrendingUp, FileDown } from 'lucide-react';
+import { Loader2, AlertTriangle, Calendar, Clock, BarChart3, TrendingUp, FileDown, Filter, CheckCircle2 } from 'lucide-react';
 import { descargarPDFHoras } from '../utils/reportPDF';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, Cell, LabelList
 } from 'recharts';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -15,12 +19,27 @@ export default function HourlySalesView() {
     const { role, sucursal_id } = useAuthStore();
     
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' });
-    const [date, setDate] = useState<string>(today);
-    
-    // Only Matriz/Superadmin can filter by all branches
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     const defaultSucursal = esMatriz ? 'all' : (sucursal_id || 'CENTRAL');
-    const [selectedSucursal, setSelectedSucursal] = useState<string>(defaultSucursal);
+
+    // Draft filter state
+    const [draftDate, setDraftDate] = useState<string>(today);
+    const [draftSucursal, setDraftSucursal] = useState<string>(defaultSucursal);
+
+    // Applied filter state
+    const [appliedFilters, setAppliedFilters] = useState({
+        date: today,
+        sucursal: defaultSucursal
+    });
+
+    const isFilterDirty = draftDate !== appliedFilters.date || draftSucursal !== appliedFilters.sucursal;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            date: draftDate,
+            sucursal: draftSucursal
+        });
+    };
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -29,8 +48,8 @@ export default function HourlySalesView() {
     });
 
     const { data: rawData, isLoading, isError } = useQuery({
-        queryKey: ['sales-by-hour', date, selectedSucursal],
-        queryFn: () => getSalesByHour(date, selectedSucursal === 'all' ? undefined : selectedSucursal),
+        queryKey: ['sales-by-hour', appliedFilters.date, appliedFilters.sucursal],
+        queryFn: () => getSalesByHour(appliedFilters.date, appliedFilters.sucursal === 'all' ? undefined : appliedFilters.sucursal),
     });
     const data: any[] | undefined = rawData as any;
 
@@ -76,18 +95,18 @@ export default function HourlySalesView() {
                         <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
                             type="date" 
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
+                            value={draftDate}
+                            onChange={e => setDraftDate(e.target.value)}
                             max={today}
-                            className="w-full md:w-auto pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                            className="w-full md:w-auto pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                         />
                     </div>
                     
                     {esMatriz && (
                         <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="flex-1 md:w-48 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                            value={draftSucursal}
+                            onChange={(e) => setDraftSucursal(e.target.value)}
+                            className="flex-1 md:w-48 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                         >
                             <option value="all">Todas las Sucursales</option>
                             <option value="CENTRAL">Central</option>
@@ -96,6 +115,20 @@ export default function HourlySalesView() {
                             ))}
                         </select>
                     )}
+
+                    <button
+                        onClick={handleApplyFilters}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-sm shrink-0",
+                            isFilterDirty
+                                ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                                : "bg-gray-900 hover:bg-black text-white"
+                        )}
+                    >
+                        {isFilterDirty ? <Filter size={14} className="animate-bounce" /> : <CheckCircle2 size={14} />}
+                        Aplicar Filtros
+                        {isFilterDirty && <span className="w-2 h-2 rounded-full bg-amber-400"></span>}
+                    </button>
                 </div>
 
                 <div className="flex gap-4 w-full md:w-auto">

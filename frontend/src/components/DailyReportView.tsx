@@ -3,12 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { getDailyReport, getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
-    Calendar, Loader2, TrendingUp, Wallet, 
-    ShoppingBag, Ban, ArrowDownCircle, Printer, Package, FileDown, Tag, Coins
+    Calendar, Loader2, Wallet, 
+    ShoppingBag, Ban, Printer, FileDown, Filter, CheckCircle2,
+    TrendingUp, ArrowDownCircle, Package, Coins, Tag
 } from 'lucide-react';
-import { getBoliviaTodayISO, formatFullDate } from '../utils/dateUtils';
+import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFJornada } from '../utils/reportPDF';
 
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -16,9 +21,24 @@ export default function DailyReportView() {
     const { user, role } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     
-    const [selectedDate, setSelectedDate] = useState(getBoliviaTodayISO());
+    // Draft filters state
+    const [draftDate, setDraftDate] = useState(getBoliviaTodayISO());
+    const [draftSucursal, setDraftSucursal] = useState(user?.sucursal_id || 'CENTRAL');
 
-    const [selectedSucursal, setSelectedSucursal] = useState(user?.sucursal_id || 'CENTRAL');
+    // Applied filters state (executes API query only when clicking "Aplicar Filtros")
+    const [appliedFilters, setAppliedFilters] = useState({
+        date: getBoliviaTodayISO(),
+        sucursal: user?.sucursal_id || 'CENTRAL'
+    });
+
+    const isFilterDirty = draftDate !== appliedFilters.date || draftSucursal !== appliedFilters.sucursal;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            date: draftDate,
+            sucursal: draftSucursal
+        });
+    };
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -27,85 +47,95 @@ export default function DailyReportView() {
     });
 
     const { data: report, isLoading, isError } = useQuery({
-        queryKey: ['daily-report', selectedDate, selectedSucursal],
-        queryFn: () => getDailyReport(selectedDate, selectedSucursal)
+        queryKey: ['daily-report', appliedFilters.date, appliedFilters.sucursal],
+        queryFn: () => getDailyReport(appliedFilters.date, appliedFilters.sucursal)
     });
 
     const handlePrint = () => window.print();
     const handleDownloadPDF = () => {
         if (!report) return;
-        const sucNombre = sucursales.find(s => s._id === selectedSucursal)?.nombre || selectedSucursal;
-        descargarPDFJornada(report, selectedDate, sucNombre);
+        const sucNombre = sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal;
+        descargarPDFJornada(report, appliedFilters.date, sucNombre);
     };
-
-    if (isLoading) return (
-        <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="animate-spin text-indigo-600 mb-4" size={48} />
-            <p className="text-gray-500 font-medium">Generando reporte detallado...</p>
-        </div>
-    );
-
-    if (isError || !report) return (
-        <div className="p-10 text-center bg-red-50 rounded-2xl border border-red-100">
-            <Ban className="text-red-500 mx-auto mb-4" size={48} />
-            <h3 className="text-lg font-bold text-red-900">Error al cargar el reporte</h3>
-            <p className="text-red-600">No se pudo obtener la información para la fecha y sucursal seleccionada.</p>
-        </div>
-    );
-
-    const { resumen_ventas, gastos, items_vendidos, balance_neto } = (report as any) || {};
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-            {/* Controls */}
+            {/* Control Panel con Filtros & Botón Aplicar */}
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center justify-between gap-4 print:hidden">
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Calendar size={18} className="text-gray-400" />
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                        <Calendar size={16} className="text-indigo-500" />
                         <input 
                             type="date" 
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="bg-gray-50 text-gray-900 border-transparent focus:ring-2 focus:ring-indigo-200 rounded-xl px-4 py-2 text-sm font-semibold outline-none transition-all"
+                            value={draftDate}
+                            onChange={(e) => setDraftDate(e.target.value)}
+                            className="bg-transparent text-gray-900 text-xs font-bold outline-none"
                         />
                     </div>
                     {esMatriz && (
                         <select 
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-gray-50 text-gray-900 border-transparent focus:ring-2 focus:ring-indigo-200 rounded-xl px-4 py-2 text-sm font-semibold outline-none transition-all"
+                            value={draftSucursal}
+                            onChange={(e) => setDraftSucursal(e.target.value)}
+                            className="bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold outline-none cursor-pointer"
                         >
                             {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
                         </select>
                     )}
+
+                    <button
+                        onClick={handleApplyFilters}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm",
+                            isFilterDirty
+                                ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                                : "bg-gray-900 hover:bg-black text-white"
+                        )}
+                    >
+                        {isFilterDirty ? <Filter size={14} className="animate-bounce" /> : <CheckCircle2 size={14} />}
+                        Aplicar Filtros
+                        {isFilterDirty && <span className="w-2 h-2 rounded-full bg-amber-400"></span>}
+                    </button>
                 </div>
+
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={handlePrint}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-sm transition-all"
+                        className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all"
                     >
-                        <Printer size={16} /> Imprimir
+                        <Printer size={15} /> Imprimir
                     </button>
                     <button 
                         onClick={handleDownloadPDF}
                         disabled={!report}
-                        className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-indigo-200 disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs transition-all disabled:opacity-50"
                     >
-                        <FileDown size={16} /> Descargar PDF
+                        <FileDown size={15} /> Descargar PDF
                     </button>
                 </div>
             </div>
 
-            {/* Print Header (Only visible when printing) */}
-            <div className="hidden print:block text-center border-b-2 border-gray-900 pb-6 mb-8">
-                <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Cierre de Jornada</h1>
-                <p className="text-lg font-bold text-gray-700">Sucursal: {sucursales.find(s => s._id === selectedSucursal)?.nombre || selectedSucursal}</p>
-                <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
-                    <span>Fecha: {selectedDate}</span>
-                    <span>Generado: {formatFullDate(new Date())}</span>
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="animate-spin text-indigo-600 mb-4" size={48} />
+                    <p className="text-gray-500 font-medium text-sm">Generando reporte de jornada...</p>
                 </div>
-
-            </div>
+            ) : isError || !report ? (
+                <div className="p-10 text-center bg-red-50 rounded-2xl border border-red-100">
+                    <Ban className="text-red-500 mx-auto mb-4" size={48} />
+                    <h3 className="text-lg font-bold text-red-900">Error al cargar el reporte</h3>
+                    <p className="text-red-600 text-sm">No se pudo obtener la información para los filtros seleccionados.</p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Print Header (Only visible when printing) */}
+                    <div className="hidden print:block text-center border-b-2 border-gray-900 pb-6 mb-8">
+                        <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Cierre de Jornada</h1>
+                        <p className="text-lg font-bold text-gray-700">Sucursal: {sucursales.find(s => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal}</p>
+                        <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
+                            <span>Fecha: {appliedFilters.date}</span>
+                            <span>Generado: {new Date().toLocaleDateString()}</span>
+                        </div>
+                    </div>
 
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -263,6 +293,8 @@ export default function DailyReportView() {
                     </table>
                 </div>
             </div>
+            </div>
+            )}
         </div>
     );
 }
