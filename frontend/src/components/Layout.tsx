@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
-    Briefcase
+    Briefcase, ChevronDown
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -21,6 +21,21 @@ interface LayoutProps {
     children: React.ReactNode;
 }
 
+interface NavSubItem {
+    icon: any;
+    label: string;
+    path: string;
+    feature: string | null;
+    roles: string[];
+}
+
+interface NavGroup {
+    groupKey: string;
+    title: string;
+    icon: any;
+    items: NavSubItem[];
+}
+
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role, hasFeature } = useAuthStore();
@@ -29,6 +44,16 @@ export default function Layout({ children }: LayoutProps) {
     const [isCollapsed, setIsCollapsed] = useLocalStorage('choco-sidebar-collapsed', false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Estado de acordeones desplegables
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+        dashboard: true,
+        ventas_caja: true,
+        analitica_reportes: true,
+        inventario_productos: true,
+        gestion_contactos: false,
+        sistema: false
+    });
 
     React.useEffect(() => {
         pingUser().catch(() => {});
@@ -44,69 +69,126 @@ export default function Layout({ children }: LayoutProps) {
         navigate('/login');
     };
 
-    const getNavItems = () => {
+    const getNavGroups = (): NavGroup[] => {
         if (role === 'SUPERADMIN') {
             return [
-                { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard' },
-                { icon: Building, label: 'Empresas', path: '/admin/empresas' },
-                { icon: Layers, label: 'Planes', path: '/admin/planes' },
+                {
+                    groupKey: 'saas',
+                    title: 'Administración SaaS',
+                    icon: Building,
+                    items: [
+                        { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Building, label: 'Empresas', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Layers, label: 'Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: BarChart3, label: 'Reportes', path: '/reportes', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Shield, label: 'Auditoría', path: '/auditoria', feature: null, roles: ['SUPERADMIN'] },
+                    ]
+                }
             ];
         }
 
-        // Todas las rutas posibles con su feature requerido y los roles que pueden verlo
-        const allItems = [
-            // ─── PRINCIPAL & ANALÍTICA ───
-            { icon: LayoutDashboard, label: 'Dashboard',            path: '/dashboard',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: BarChart3,       label: 'Plataforma Analítica', path: '/inteligencia',       feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: LayoutDashboard, label: 'Dashboard',            path: '/dashboard-sucursal', feature: null,                   roles: ['ADMIN_SUCURSAL'] },
-
-            // ─── OPERACIÓN DÍA A DÍA ───
-            { icon: ShoppingBag,     label: 'POS',                  path: '/pos',                feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: RotateCcw,       label: 'Ventas',               path: '/ventas',             feature: 'VENTAS',               roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
-            { icon: Wallet,          label: 'Caja',                 path: '/caja',               feature: 'CAJA',                 roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Package,         label: 'Catálogo',             path: '/catalogo',           feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Warehouse,       label: 'Inventario',           path: '/inventario',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: Truck,           label: 'Traslados',            path: '/traslados',          feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: ClipboardList,   label: 'Pedidos',              path: '/pedidos',            feature: 'PEDIDOS_INTERNOS',     roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: Banknote,        label: 'Créditos',             path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: BarChart3,       label: 'Reportes',             path: '/reportes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
-
-            // ─── GESTIÓN & CONFIGURACIÓN ───
-            { icon: Store,           label: 'Sucursales',           path: '/sucursales',         feature: 'MULTI_SUCURSAL',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Tag,             label: 'Categorías',           path: '/categories',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
-            { icon: Percent,         label: 'Descuentos',           path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
-            { icon: Tag,             label: 'Precios',              path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Users,           label: 'Personal',             path: '/usuarios',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
-            { icon: Users,           label: 'Clientes',             path: '/clientes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
-            { icon: Briefcase,       label: 'Proveedores',          path: '/proveedores',        feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
-            { icon: QrCode,          label: 'Control QR',           path: '/qr-control',         feature: 'CONTROL_QR',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
-
-            // ─── SISTEMA & AUDITORÍA ───
-            { icon: Users,           label: 'Comunidad',            path: '/comunidad',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-            { icon: Settings,        label: 'Configuración',        path: '/configuracion',      feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-            { icon: Shield,          label: 'Auditoría',            path: '/auditoria',          feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+        const rawGroups: NavGroup[] = [
+            {
+                groupKey: 'dashboard',
+                title: 'Principal',
+                icon: LayoutDashboard,
+                items: [
+                    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard-sucursal', feature: null, roles: ['ADMIN_SUCURSAL'] },
+                ]
+            },
+            {
+                groupKey: 'ventas_caja',
+                title: 'Ventas & Caja',
+                icon: ShoppingBag,
+                items: [
+                    { icon: ShoppingBag, label: 'POS (Punto de Venta)', path: '/pos', feature: 'VENTAS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+                    { icon: RotateCcw, label: 'Ventas', path: '/ventas', feature: 'VENTAS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
+                    { icon: Wallet, label: 'Caja', path: '/caja', feature: 'CAJA', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+                    { icon: Banknote, label: 'Créditos', path: '/creditos', feature: 'CREDITOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                ]
+            },
+            {
+                groupKey: 'inventario_productos',
+                title: 'Inventario & Productos',
+                icon: Package,
+                items: [
+                    { icon: Package, label: 'Catálogo', path: '/catalogo', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+                    { icon: Warehouse, label: 'Inventario', path: '/inventario', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: Tag, label: 'Categorías', path: '/categories', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+                    { icon: Truck, label: 'Traslados', path: '/traslados', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+                    { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                ]
+            },
+            {
+                groupKey: 'analitica_reportes',
+                title: 'Analítica & Reportes',
+                icon: BarChart3,
+                items: [
+                    { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: BarChart3, label: 'Reportes Financieros', path: '/reportes', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                ]
+            },
+            {
+                groupKey: 'gestion_contactos',
+                title: 'Gestión & Contactos',
+                icon: Users,
+                items: [
+                    { icon: Store, label: 'Sucursales', path: '/sucursales', feature: 'MULTI_SUCURSAL', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: Users, label: 'Personal', path: '/usuarios', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+                    { icon: Users, label: 'Clientes', path: '/clientes', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+                    { icon: Briefcase, label: 'Proveedores', path: '/proveedores', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+                    { icon: QrCode, label: 'Control QR', path: '/qr-control', feature: 'CONTROL_QR', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
+                ]
+            },
+            {
+                groupKey: 'sistema',
+                title: 'Sistema & Auditoría',
+                icon: Settings,
+                items: [
+                    { icon: Users, label: 'Comunidad', path: '/comunidad', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Settings, label: 'Configuración', path: '/configuracion', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: Shield, label: 'Auditoría', path: '/auditoria', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                ]
+            }
         ];
 
-        return allItems
-            .filter(item => item.roles.includes(role ?? ''))
-            .filter(item => {
-                // Módulos operativos principales (pos, ventas, caja, inventario, créditos, control qr) siempre visibles para roles autorizados
+        return rawGroups.map(group => {
+            const filteredItems = group.items.filter(item => {
+                if (!item.roles.includes(role ?? '')) return false;
                 if (['/pos', '/ventas', '/caja', '/inventario', '/creditos', '/qr-control'].includes(item.path)) {
                     return true;
                 }
                 return !item.feature || hasFeature(item.feature);
             });
+            return { ...group, items: filteredItems };
+        }).filter(group => group.items.length > 0);
     };
 
+    const navGroups = getNavGroups();
+    const allFlatNavItems = navGroups.flatMap(g => g.items);
+    const mobileBottomItems = allFlatNavItems.slice(0, 4);
 
-    const navItems = getNavItems();
-    // Mobile bottom bar shows just top 4 items (most used)
-    const mobileBottomItems = navItems.slice(0, 4);
+    // Desplegar automáticamente el grupo que contenga la ruta activa
+    React.useEffect(() => {
+        navGroups.forEach(g => {
+            if (g.items.some(item => location.pathname.startsWith(item.path))) {
+                setOpenGroups(prev => ({ ...prev, [g.groupKey]: true }));
+            }
+        });
+    }, [location.pathname]);
+
+    const toggleGroup = (key: string) => {
+        setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+    };
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
             {/* ── Desktop Sidebar ── */}
-                <aside className={cn("hidden md:flex flex-col p-4 gap-5 transition-all duration-300 relative", isCollapsed ? "w-20" : "w-52")}>
+                <aside className={cn("hidden md:flex flex-col p-4 gap-4 transition-all duration-300 relative select-none", isCollapsed ? "w-20" : "w-56")}>
 
                     {/* Header (Menu Toggle + Brand) */}
                     <div className="flex items-center gap-3 px-1 h-8">
@@ -121,37 +203,94 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
                     </div>
 
-                    {/* Navigation */}
-                    <nav className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1 custom-scrollbar">
-                        <p className={cn("text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 transition-all", isCollapsed ? "text-center px-0" : "px-1")}>
-                            {isCollapsed ? '•••' : 'Menu'}
-                        </p>
-                        {navItems.map((item) => {
-                            const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
+                    {/* Navigation Groups (Desplegables) */}
+                    <nav className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
+                        {navGroups.map((group) => {
+                            const isGroupActive = group.items.some(item => item.path !== '/' && location.pathname.startsWith(item.path));
+                            const isOpen = !!openGroups[group.groupKey];
+
+                            // Si el grupo solo tiene 1 ítem (ej. Dashboard), renderizar ítem directo
+                            if (group.items.length === 1) {
+                                const singleItem = group.items[0];
+                                const isActive = singleItem.path !== '/' && location.pathname.startsWith(singleItem.path);
+                                return (
+                                    <Link
+                                        key={singleItem.path}
+                                        to={singleItem.path}
+                                        title={isCollapsed ? singleItem.label : undefined}
+                                        className={cn(
+                                            'flex items-center gap-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden text-sm shrink-0',
+                                            isCollapsed ? 'justify-center w-11 h-11 mx-auto' : 'py-2.5 px-3',
+                                            isActive
+                                                ? 'bg-white text-black shadow-lg shadow-white/10 font-bold'
+                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        )}
+                                    >
+                                        <singleItem.icon size={isCollapsed ? 18 : 16} className={cn("transition-colors shrink-0", isActive ? "text-black" : "text-gray-400 group-hover:text-white")} />
+                                        <div className={cn("overflow-hidden transition-all duration-300 flex items-center", isCollapsed ? "w-0 opacity-0" : "w-full opacity-100")}>
+                                            <span className="whitespace-nowrap">{singleItem.label}</span>
+                                        </div>
+                                    </Link>
+                                );
+                            }
+
                             return (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    title={isCollapsed ? item.label : undefined}
-                                    className={cn(
-                                        'flex items-center gap-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden text-sm shrink-0',
-                                        isCollapsed ? 'justify-center w-11 h-11 mx-auto' : 'py-2.5 px-3',
-                                        isActive
-                                            ? 'bg-white text-black shadow-lg shadow-white/10 font-medium'
-                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                <div key={group.groupKey} className="flex flex-col gap-0.5">
+                                    {/* Cabecera del Grupo Desplegable */}
+                                    {!isCollapsed ? (
+                                        <button
+                                            onClick={() => toggleGroup(group.groupKey)}
+                                            className={cn(
+                                                "w-full flex items-center justify-between py-2 px-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200",
+                                                isGroupActive ? "text-indigo-400 bg-white/5" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <group.icon size={15} className={cn("transition-colors", isGroupActive ? "text-indigo-400" : "text-gray-400")} />
+                                                <span>{group.title}</span>
+                                            </div>
+                                            <ChevronDown size={14} className={cn("transition-transform duration-200 text-gray-500", isOpen ? "rotate-180 text-white" : "")} />
+                                        </button>
+                                    ) : (
+                                        <div className="w-full text-center py-1">
+                                            <div className="w-8 h-0.5 bg-gray-800 mx-auto my-1 rounded-full"></div>
+                                        </div>
                                     )}
-                                >
-                                    <item.icon size={isCollapsed ? 18 : 16} className={cn("transition-colors shrink-0", isActive ? "text-black" : "text-gray-400 group-hover:text-white")} />
-                                    <div className={cn("overflow-hidden transition-all duration-300 flex items-center", isCollapsed ? "w-0 opacity-0" : "w-full opacity-100")}>
-                                        <span className="whitespace-nowrap">{item.label}</span>
-                                    </div>
-                                </Link>
+
+                                    {/* Sub-ítems desplegables */}
+                                    {(isOpen || isCollapsed) && (
+                                        <div className={cn("flex flex-col gap-1 transition-all", !isCollapsed ? "pl-2 ml-2 border-l border-white/10" : "")}>
+                                            {group.items.map((item) => {
+                                                const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
+                                                return (
+                                                    <Link
+                                                        key={item.path}
+                                                        to={item.path}
+                                                        title={isCollapsed ? item.label : undefined}
+                                                        className={cn(
+                                                            'flex items-center gap-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden text-sm shrink-0',
+                                                            isCollapsed ? 'justify-center w-11 h-11 mx-auto' : 'py-2 px-3',
+                                                            isActive
+                                                                ? 'bg-white text-black shadow-lg shadow-white/10 font-bold'
+                                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                        )}
+                                                    >
+                                                        <item.icon size={isCollapsed ? 18 : 15} className={cn("transition-colors shrink-0", isActive ? "text-black" : "text-gray-400 group-hover:text-white")} />
+                                                        <div className={cn("overflow-hidden transition-all duration-300 flex items-center", isCollapsed ? "w-0 opacity-0" : "w-full opacity-100")}>
+                                                            <span className="whitespace-nowrap font-medium text-xs">{item.label}</span>
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })}
                     </nav>
 
                     {/* User Profile / Logout */}
-                    <div className="mt-auto pt-4 border-t border-gray-800 flex flex-col gap-2">
+                    <div className="mt-auto pt-3 border-t border-gray-800 flex flex-col gap-2">
                         <div className={cn("flex items-center gap-2 p-1 rounded-xl", isCollapsed ? "justify-center" : "")}>
                             <div className="w-8 h-8 rounded-full border-2 border-gray-700 bg-white/10 flex items-center justify-center shrink-0">
                                 <span className="text-xs font-bold text-white uppercase">
@@ -281,7 +420,7 @@ export default function Layout({ children }: LayoutProps) {
                     );
                 })}
                 {/* "Más" button if there are more items */}
-                {navItems.length > 4 && (
+                {allFlatNavItems.length > 4 && (
                     <button
                         onClick={() => setMobileMenuOpen(true)}
                         className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-400"
@@ -333,7 +472,7 @@ export default function Layout({ children }: LayoutProps) {
 
                             {/* All Nav Items */}
                             <div className="flex flex-col gap-1 flex-1">
-                                {navItems.map((item) => {
+                                {allFlatNavItems.map((item: NavSubItem) => {
                                     const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
                                     return (
                                         <Link
