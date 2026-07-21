@@ -9,6 +9,7 @@ target-version = "py311"
 # Longitud máxima de línea estándar
 line-length = 88
 
+[tool.ruff.lint]
 # Reglas activas para validación de calidad de código
 select = [
     "E",    # pycodestyle - errores
@@ -24,7 +25,7 @@ select = [
 # Reglas específicas a ignorar (si hubiese conflictos menores)
 ignore = []
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 # Declarar módulos de primer nivel del proyecto para agruparlos correctamente
 known-first-party = ["app"]
 combine-as-imports = true

@@ -1,4 +1,5 @@
 from app.infrastructure.db import get_client
+from app.infrastructure.core.config import settings
 import math
 import logging
 import asyncio
@@ -445,7 +446,7 @@ class SalesService:
                 else:
                     sucursal_name_mapped = sucursal_name
                     
-                    db_raw = get_client()[settings.MONGODB_DB_NAME]
+                db_raw = get_client()[settings.MONGODB_DB_NAME]
                 new_historical_records = []
                 for item in sale.items:
                     new_historical_records.append({
@@ -834,7 +835,7 @@ class SalesService:
             # --- Sincronización en segundo plano para eliminar los ítems de ventas_historicas_crudas ---
             async def _sync_anular_background():
                 try:
-                        db_raw = get_client()[settings.MONGODB_DB_NAME]
+                    db_raw = get_client()[settings.MONGODB_DB_NAME]
                     await db_raw.ventas_historicas_crudas.delete_many(
                         {"original_sale_id": sale_obj.id}
                     )
