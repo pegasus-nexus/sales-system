@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { 
     TrendingUp, TrendingDown, DollarSign, ShoppingBag, CreditCard, 
     Store, Calendar, Loader2, AlertTriangle, Building2, Percent, ArrowUpRight, ArrowDownRight,
-    Tag, Package
+    Tag, Package, Filter, ChevronDown
 } from 'lucide-react';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -25,10 +25,20 @@ export default function MonthlyEvolutionView() {
     const { role } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
 
-    const [months, setMonths] = useState<number>(12);
-    const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
-    const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
-    const [selectedProducto, setSelectedProducto] = useState<string>('all');
+    // Estado borrador (controles UI)
+    const [pendingSucursal, setPendingSucursal] = useState<string>('all');
+    const [pendingCategoria, setPendingCategoria] = useState<string>('all');
+    const [pendingProducto, setPendingProducto] = useState<string>('all');
+    const [pendingMonths, setPendingMonths] = useState<number>(12);
+
+    // Estado aplicado (dispara la consulta API al presionar "Aplicar Filtros")
+    const [appliedFilters, setAppliedFilters] = useState({
+        sucursal: 'all',
+        categoria: 'all',
+        producto: 'all',
+        months: 12
+    });
+
     const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>('sucursales');
 
     const { data: sucursales = [] } = useQuery({
@@ -44,14 +54,26 @@ export default function MonthlyEvolutionView() {
 
     const { data: productosRes } = useQuery({
         queryKey: ['products'],
-        queryFn: () => getProducts(1, 100)
+        queryFn: () => getProducts(1, 150)
     });
     const productos: Product[] = productosRes?.items || [];
 
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ['monthly-evolution', months, selectedSucursal, selectedCategoria, selectedProducto],
-        queryFn: () => getMonthlyEvolution(months, selectedSucursal, selectedCategoria, selectedProducto)
+    const { data, isLoading, isError, isFetching } = useQuery({
+        queryKey: ['monthly-evolution', appliedFilters.months, appliedFilters.sucursal, appliedFilters.categoria, appliedFilters.producto],
+        queryFn: () => getMonthlyEvolution(appliedFilters.months, appliedFilters.sucursal, appliedFilters.categoria, appliedFilters.producto)
     });
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            sucursal: pendingSucursal,
+            categoria: pendingCategoria,
+            producto: pendingProducto,
+            months: pendingMonths
+        });
+    };
+
+    const selectedSucursalObj = sucursales.find(s => s._id === appliedFilters.sucursal);
+    const selectedSucursalNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (selectedSucursalObj?.nombre || 'Sucursal Seleccionada');
 
     if (isLoading) {
         return (
@@ -87,67 +109,75 @@ export default function MonthlyEvolutionView() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* ── Controles de Filtros Multinivel ─────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+            {/* ── Controles de Filtros Multinivel con Botón Aplicar ─────────────────── */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0">
                         <Calendar size={22} />
                     </div>
                     <div>
-                        <h2 className="font-extrabold text-gray-900 text-lg">Evolución e Indicadores MoM</h2>
-                        <p className="text-xs text-gray-400">Análisis comparativo por Sucursales, Categorías y Productos</p>
+                        <div className="flex items-center gap-2">
+                            <h2 className="font-extrabold text-gray-900 text-lg">Evolución e Indicadores MoM</h2>
+                            {isFetching && <Loader2 size={16} className="animate-spin text-indigo-600" />}
+                        </div>
+                        <p className="text-xs text-gray-400">
+                            Mostrando datos de: <span className="font-bold text-indigo-600">{selectedSucursalNombre}</span>
+                        </p>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5">
                     {/* Selector de Sucursal */}
                     {esMatriz && sucursales.length > 0 && (
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold">
-                            <Building2 size={15} className="text-gray-400" />
+                        <div className="relative flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold hover:bg-gray-100 transition-colors">
+                            <Building2 size={15} className="text-gray-400 shrink-0" />
                             <select
-                                value={selectedSucursal}
-                                onChange={(e) => setSelectedSucursal(e.target.value)}
-                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer"
+                                value={pendingSucursal}
+                                onChange={(e) => setPendingSucursal(e.target.value)}
+                                className="bg-transparent text-gray-800 font-bold focus:outline-none cursor-pointer pr-4 appearance-none"
                             >
                                 <option value="all">Todas las Sucursales</option>
                                 {sucursales.map((s) => (
                                     <option key={s._id} value={s._id}>{s.nombre}</option>
                                 ))}
                             </select>
+                            <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-2.5" />
                         </div>
                     )}
 
                     {/* Selector de Categoría */}
                     {categorias.length > 0 && (
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold">
-                            <Tag size={15} className="text-gray-400" />
+                        <div className="relative flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold hover:bg-gray-100 transition-colors">
+                            <Tag size={15} className="text-gray-400 shrink-0" />
                             <select
-                                value={selectedCategoria}
-                                onChange={(e) => setSelectedCategoria(e.target.value)}
-                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer"
+                                value={pendingCategoria}
+                                onChange={(e) => setPendingCategoria(e.target.value)}
+                                className="bg-transparent text-gray-800 font-bold focus:outline-none cursor-pointer pr-4 appearance-none"
                             >
                                 <option value="all">Todas las Categorías</option>
                                 {categorias.map((c) => (
                                     <option key={c._id} value={c._id}>{c.name || (c as any).nombre}</option>
                                 ))}
                             </select>
+                            <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-2.5" />
                         </div>
                     )}
 
-                    {/* Selector de Producto */}
+                    {/* Selector de Producto (Alineación y flecha tight ajustada) */}
                     {productos.length > 0 && (
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold max-w-[200px]">
+                        <div className="relative flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold hover:bg-gray-100 transition-colors max-w-[220px]">
                             <Package size={15} className="text-gray-400 shrink-0" />
                             <select
-                                value={selectedProducto}
-                                onChange={(e) => setSelectedProducto(e.target.value)}
-                                className="bg-transparent border-none text-gray-800 font-bold focus:outline-none cursor-pointer truncate"
+                                value={pendingProducto}
+                                onChange={(e) => setPendingProducto(e.target.value)}
+                                className="bg-transparent text-gray-800 font-bold focus:outline-none cursor-pointer pr-5 appearance-none truncate w-full"
                             >
                                 <option value="all">Todos los Productos</option>
                                 {productos.map((p) => (
                                     <option key={p._id} value={p._id}>{p.descripcion}</option>
                                 ))}
                             </select>
+                            <ChevronDown size={14} className="text-gray-400 pointer-events-none absolute right-2 shrink-0" />
                         </div>
                     )}
 
@@ -156,18 +186,52 @@ export default function MonthlyEvolutionView() {
                         {[6, 12, 24].map((m) => (
                             <button
                                 key={m}
-                                onClick={() => setMonths(m)}
+                                onClick={() => setPendingMonths(m)}
                                 className={cn(
-                                    "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                                    months === m ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"
+                                    "px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer",
+                                    pendingMonths === m ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-900"
                                 )}
                             >
                                 {m} Meses
                             </button>
                         ))}
                     </div>
+
+                    {/* Botón Aplicar Filtros */}
+                    <button
+                        onClick={handleApplyFilters}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer"
+                    >
+                        <Filter size={14} /> Aplicar Filtros
+                    </button>
                 </div>
             </div>
+
+            {/* ── Indicador de Ámbito de Sucursal Activo ─────────────────────────── */}
+            {appliedFilters.sucursal !== 'all' && (
+                <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Store className="text-indigo-600" size={20} />
+                        <div>
+                            <p className="text-xs font-extrabold text-indigo-950">
+                                Filtrando métricas exclusivamente para la sucursal: <span className="underline">{selectedSucursalNombre}</span>
+                            </p>
+                            <p className="text-[11px] text-indigo-600/80">
+                                Todas las comparativas MoM, ventas por categoría y productos mostrados abajo corresponden 100% a esta sucursal.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setPendingSucursal('all');
+                            setAppliedFilters(prev => ({ ...prev, sucursal: 'all' }));
+                        }}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                    >
+                        Ver Todas
+                    </button>
+                </div>
+            )}
 
             {/* ── KPI Cards Resumen MoM ───────────────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -238,7 +302,7 @@ export default function MonthlyEvolutionView() {
                     <button
                         onClick={() => setActiveDimension('sucursales')}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all cursor-pointer",
                             activeDimension === 'sucursales' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
                         )}
                     >
@@ -248,7 +312,7 @@ export default function MonthlyEvolutionView() {
                     <button
                         onClick={() => setActiveDimension('categorias')}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all cursor-pointer",
                             activeDimension === 'categorias' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
                         )}
                     >
@@ -258,7 +322,7 @@ export default function MonthlyEvolutionView() {
                     <button
                         onClick={() => setActiveDimension('productos')}
                         className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all cursor-pointer",
                             activeDimension === 'productos' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
                         )}
                     >
@@ -275,7 +339,7 @@ export default function MonthlyEvolutionView() {
                         <h3 className="font-extrabold text-gray-900 flex items-center gap-2">
                             <TrendingUp size={18} className="text-indigo-600" /> Evolución Mensual de Facturación
                         </h3>
-                        <span className="text-xs text-gray-400 font-medium">Últimos {months} meses</span>
+                        <span className="text-xs text-gray-400 font-medium">Últimos {appliedFilters.months} meses</span>
                     </div>
 
                     <div className="w-full">
@@ -351,7 +415,7 @@ export default function MonthlyEvolutionView() {
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <Building2 size={32} className="mb-2 opacity-50" />
-                            <p className="text-xs">Sin registros de ventas en el período</p>
+                            <p className="text-xs text-center">Sin registros de ventas en el período para la selección actual</p>
                         </div>
                     )}
                 </div>
@@ -364,7 +428,9 @@ export default function MonthlyEvolutionView() {
                         <h3 className="font-extrabold text-gray-900 text-lg flex items-center gap-2">
                             <Percent size={20} className="text-indigo-600" /> Desempeño y Crecimiento ({activeDimension === 'sucursales' ? 'Sucursales' : activeDimension === 'categorias' ? 'Categorías' : 'Productos'})
                         </h3>
-                        <p className="text-xs text-gray-400">Comparativa intermensual de facturación, porcentaje de participación y delta MoM</p>
+                        <p className="text-xs text-gray-400">
+                            Comparativa intermensual de facturación en <span className="font-bold text-gray-700">{selectedSucursalNombre}</span>
+                        </p>
                     </div>
                 </div>
 
