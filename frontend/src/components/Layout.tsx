@@ -68,7 +68,7 @@ export default function Layout({ children }: LayoutProps) {
             { icon: ClipboardList,   label: 'Comandas',     path: '/comandas',           feature: 'COMANDAS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
 
             { icon: Banknote,        label: 'Créditos',     path: '/creditos',           feature: 'CREDITOS',             roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-            { icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: 'REPORTES_AVANZADOS',   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+            { icon: BarChart3,       label: 'Reportes',     path: '/reportes',           feature: null,                   roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
             { icon: Percent,         label: 'Descuentos',   path: '/descuentos',         feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
             { icon: Tag,             label: 'Precios',      path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS',       roles: ['ADMIN_MATRIZ', 'ADMIN'] },
             { icon: Tag,             label: 'Categorías',   path: '/categories',         feature: 'INVENTARIO',           roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },

@@ -228,7 +228,7 @@ function App() {
                       } />
 
                       <Route path="/reportes" element={
-                        <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="REPORTES_AVANZADOS">
+                        <ProtectedRoute allowedRoles={BRANCH_ROLES}>
                           <ReportsPage />
                         </ProtectedRoute>
                       } />
