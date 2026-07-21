@@ -1,11 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getGeneralReports } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { 
-    BarChart3, Loader2, DollarSign, Package, TrendingUp, Calendar, 
-    AlertTriangle, ShoppingBag, Store, Layers, Building2, FileText, Clock, Users, Scale, Wallet, Ban
-} from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import DailyReportView from '../components/DailyReportView';
 import FinancialDetailView from '../components/FinancialDetailView';
 import ValuedInventoryView from '../components/ValuedInventoryView';
@@ -21,43 +16,13 @@ import ProductStatsView from '../components/ProductStatsView';
 import PurchasesByClientView from '../components/PurchasesByClientView';
 import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import BcgMatrix from '../components/BcgMatrix';
-import { 
-    ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, BarChart, Bar, Legend
-} from 'recharts';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
-
-const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
-    const [searchParams, setSearchParams] = useSearchParams();
-    
-    const days = parseInt(searchParams.get('days') || '30', 10);
+    const [searchParams] = useSearchParams();
     const activeTab = (searchParams.get('tab') as TabType) || 'evolucion_mensual';
-    const selectedSucursal = searchParams.get('sucursal') || 'all';
-
-    const setDays = (val: number) => { const p = new URLSearchParams(searchParams); p.set('days', val.toString()); setSearchParams(p); };
-    const setActiveTab = (val: TabType) => { const p = new URLSearchParams(searchParams); p.set('tab', val); setSearchParams(p); };
-    const setSelectedSucursal = (val: string) => { const p = new URLSearchParams(searchParams); p.set('sucursal', val); setSearchParams(p); };
-
-    const { data: reporte, isLoading, isError } = useQuery({
-        queryKey: ['reports', days],
-        queryFn: () => getGeneralReports(days),
-        enabled: ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '')
-    });
-
-    const sucursalNames = reporte ? Array.from(new Set(reporte.por_sucursal.map(s => s.sucursal))) : [];
-    const filteredSucursales = reporte?.por_sucursal.filter(s => 
-        selectedSucursal === 'all' || s.sucursal === selectedSucursal
-    ) || [];
 
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     const esSucursal = role === 'ADMIN_SUCURSAL';
@@ -73,70 +38,7 @@ export default function ReportsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 pb-20 md:pb-8">
-            {/* ── Header ─────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><BarChart3 size={24} /></div>
-                        Analítica Avanzada
-                    </h1>
-                    <p className="text-gray-500 mt-2 text-sm">Resumen de ventas y cálculo de ganancias del sistema.</p>
-                </div>
-                
-                {activeTab !== 'daily' && activeTab !== 'finanzas' && esMatriz && (
-                    <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200 w-fit print:hidden">
-                        {[7, 15, 30, 90].map(d => (
-                            <button 
-                                key={d} 
-                                onClick={() => setDays(d)}
-                                className={cn(
-                                    "px-4 py-1.5 text-sm font-bold rounded-lg transition-all",
-                                    days === d ? "bg-indigo-600 text-white shadow-md" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-                                )}>
-                                {d} Días
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* ── Tabs Navigation ────────────────────────────────────── */}
-            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 print:hidden">
-                {[
-                    { id: 'evolucion_mensual', label: 'Evolución Mensual (MoM)', icon: <TrendingUp size={16} /> },
-                    { id: 'matriz_bcg', label: 'Matriz BCG', icon: <Store size={16} /> },
-                    { id: 'general', label: 'Visión General', icon: <TrendingUp size={16} />, hidden: !esMatriz },
-                    { id: 'sucursales', label: 'Rendimiento Sucursales', icon: <Store size={16} />, hidden: !esMatriz },
-                    { id: 'finanzas', label: 'Finanzas y Márgenes', icon: <DollarSign size={16} />, hidden: !esMatriz },
-                    { id: 'conciliacion', label: 'Auditoría', icon: <Scale size={16} />, hidden: !esMatriz },
-                    { id: 'daily', label: 'Reporte de Jornada', icon: <FileText size={16} /> },
-                    { id: 'hourly', label: 'Ventas por Hora', icon: <Clock size={16} /> },
-                    { id: 'staff', label: 'Desempeño Staff', icon: <Users size={16} /> },
-                    { id: 'matrix', label: 'Matriz de Ventas', icon: <BarChart3 size={16} /> },
-                    { id: 'tendencias', label: 'Tendencias', icon: <TrendingUp size={16} /> },
-                    { id: 'product_stats', label: 'Estadísticas de Producto', icon: <BarChart3 size={16} /> },
-                    { id: 'caja_ventas', label: 'Ventas por Caja', icon: <Wallet size={16} /> },
-                    { id: 'inventario_valorado', label: 'Inventario Valorado', icon: <Package size={16} /> },
-                    { id: 'gastos', label: 'Gastos', icon: <DollarSign size={16} /> },
-                    { id: 'anulaciones', label: 'Anulaciones', icon: <Ban size={16} /> },
-                    { id: 'compras_cliente', label: 'Compras por Cliente', icon: <Users size={16} /> },
-                ].filter(t => !t.hidden).map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as TabType)}
-                        className={cn(
-                            "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-t-xl transition-colors",
-                            activeTab === tab.id 
-                                ? "bg-white text-indigo-600 border-t border-x border-gray-200 shadow-[0_-4px_6px_-2px_rgba(0,0,0,0.05)] translate-y-[1px]" 
-                                : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 border border-transparent"
-                        )}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
-            </div>
-
+        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
             {activeTab === 'evolucion_mensual' ? (
                 <MonthlyEvolutionView />
             ) : activeTab === 'matriz_bcg' ? (
