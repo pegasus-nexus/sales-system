@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import Pagination from '../components/Pagination';
 import { 
     QrCode, Search, CheckCircle2, Clock, CalendarDays, Loader2, 
-    Building2
+    Building2, Filter
 } from 'lucide-react';
 import type { Sale } from '../api/types';
 import { clsx } from 'clsx';
@@ -40,17 +40,57 @@ export default function ControlQRPage() {
     const { user, role } = useAuthStore();
     const esMatriz = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'].includes(role || '');
 
-    const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
+    // Draft Filters
+    const defaultSucursal = esMatriz ? '' : (user?.sucursal_id || '');
+    const [draftSucursal, setDraftSucursal] = useState<string>(defaultSucursal);
+    const [draftStatus, setDraftStatus] = useState<'TODOS' | 'PENDIENTES' | 'CONFIRMADOS'>('PENDIENTES');
+    const [draftStartDate, setDraftStartDate] = useState('');
+    const [draftEndDate, setDraftEndDate] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'TODOS' | 'PENDIENTES' | 'CONFIRMADOS'>('PENDIENTES');
+
+    // Applied Filters
+    const [appliedFilters, setAppliedFilters] = useState({
+        sucursal: defaultSucursal,
+        status: 'PENDIENTES' as 'TODOS' | 'PENDIENTES' | 'CONFIRMADOS',
+        startDate: '',
+        endDate: ''
+    });
+
+    const isFilterDirty = draftSucursal !== appliedFilters.sucursal ||
+                          draftStatus !== appliedFilters.status ||
+                          draftStartDate !== appliedFilters.startDate ||
+                          draftEndDate !== appliedFilters.endDate;
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            sucursal: draftSucursal,
+            status: draftStatus,
+            startDate: draftStartDate,
+            endDate: draftEndDate
+        });
+        setPage(1);
+    };
+
+    const handleResetFilters = () => {
+        setDraftSucursal(defaultSucursal);
+        setDraftStatus('PENDIENTES');
+        setDraftStartDate('');
+        setDraftEndDate('');
+        setAppliedFilters({
+            sucursal: defaultSucursal,
+            status: 'PENDIENTES',
+            startDate: '',
+            endDate: ''
+        });
+        setPage(1);
+    };
+
     const [page, setPage] = useState(1);
     const limit = 12;
     
     // Modal State
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [qrData, setQrData] = useState({ banco: '', referencia: '', monto_transferido: '' });
-
-    const activeSucursalId = esMatriz ? selectedSucursal : (user?.sucursal_id || '');
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -59,10 +99,20 @@ export default function ControlQRPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history-qr', activeSucursalId, page, filterStatus],
+        queryKey: ['sales-history-qr', appliedFilters.sucursal, page, appliedFilters.status, appliedFilters.startDate, appliedFilters.endDate],
         queryFn: () => {
-            const confirmed = filterStatus === 'CONFIRMADOS' ? true : (filterStatus === 'PENDIENTES' ? false : undefined);
-            return getSales(activeSucursalId || undefined, page, limit, 'QR', undefined, confirmed);
+            const confirmed = appliedFilters.status === 'CONFIRMADOS' ? true : (appliedFilters.status === 'PENDIENTES' ? false : undefined);
+            return getSales(
+                appliedFilters.sucursal || undefined, 
+                page, 
+                limit, 
+                'QR', 
+                undefined, 
+                confirmed, 
+                undefined, 
+                appliedFilters.startDate || undefined, 
+                appliedFilters.endDate || undefined
+            );
         }
     });
 
@@ -77,13 +127,10 @@ export default function ControlQRPage() {
         onError: (err: any) => toast.error(err.message || 'Error al confirmar QR.')
     });
 
-    // Apply UI Filters on top of what came from server (for status and search)
-    // Note: If we had a lot of data, we'd move status/search to server too.
     const filteredSales = useMemo(() => {
         return ventasItems.filter(v => {
             if (v.anulada) return false;
             
-            // Search filter
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
                 if (!v._id.toLowerCase().includes(term) && 
@@ -107,15 +154,21 @@ export default function ControlQRPage() {
         });
     };
 
-    const handleConfirm = (e: React.FormEvent) => {
+    const handleSaveQR = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedSale || qrMut.isPending) return;
+        if (!qrData.banco || !qrData.referencia || !qrData.monto_transferido) {
+            toast.error('Todos los campos son obligatorios');
+            return;
+        }
+
         qrMut.mutate({
             id: selectedSale._id,
             data: {
                 banco: qrData.banco,
                 referencia: qrData.referencia,
-                monto_transferido: parseFloat(qrData.monto_transferido)
+                monto_transferido: parseFloat(qrData.monto_transferido),
+                confirmado: true
             }
         });
     };
@@ -142,36 +195,82 @@ export default function ControlQRPage() {
                             className="w-full pl-8 pr-3 py-1.5 bg-white text-gray-900 border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg outline-none text-xs font-medium shadow-sm transition-all"
                         />
                     </div>
+                </div>
+            </div>
 
-                    {/* Filter Status */}
+            {/* ── Control Panel de Filtros ── */}
+            <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-3">
+                {/* Rango de Fechas */}
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+                    <CalendarDays size={14} className="text-indigo-500" />
+                    <input 
+                        type="date" 
+                        value={draftStartDate}
+                        onChange={e => setDraftStartDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
+                    />
+                    <span className="text-gray-400 font-bold text-xs">a</span>
+                    <input 
+                        type="date" 
+                        value={draftEndDate}
+                        onChange={e => setDraftEndDate(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-gray-800 outline-none"
+                    />
+                </div>
+
+                <div className="h-4 w-[1px] bg-gray-200 hidden sm:block" />
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado:</span>
                     <select
-                        value={filterStatus}
-                        onChange={(e) => {
-                            setFilterStatus(e.target.value as any);
-                            setPage(1);
-                        }}
-                        className="bg-white border border-gray-200 text-gray-900 text-xs font-semibold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none shadow-sm h-[32px]"
+                        value={draftStatus}
+                        onChange={(e) => setDraftStatus(e.target.value as any)}
+                        className="bg-gray-50 border border-gray-200 text-gray-900 text-xs font-bold rounded-lg px-2.5 py-1 outline-none shadow-sm cursor-pointer"
                     >
-                        <option value="TODOS">Todos los Estados</option>
                         <option value="PENDIENTES">Sólo Pendientes</option>
                         <option value="CONFIRMADOS">Sólo Confirmados</option>
+                        <option value="TODOS">Todos los Estados</option>
                     </select>
+                </div>
 
-                    {/* Filter Branch */}
-                    {esMatriz && (
+                {/* Branch Filter (Matriz) */}
+                {esMatriz && (
+                    <div className="flex items-center gap-2">
+                        <Building2 size={14} className="text-gray-400" />
                         <select
-                            value={selectedSucursal}
-                            onChange={(e) => {
-                                setSelectedSucursal(e.target.value);
-                                setPage(1);
-                            }}
-                            className="bg-white border border-gray-200 text-gray-900 text-xs font-semibold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none shadow-sm h-[32px]"
+                            value={draftSucursal}
+                            onChange={(e) => setDraftSucursal(e.target.value)}
+                            className="bg-gray-50 border border-gray-200 text-gray-900 text-xs font-bold rounded-lg px-2.5 py-1 outline-none shadow-sm cursor-pointer"
                         >
                             <option value="">Todas las Sucursales</option>
                             {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
                         </select>
+                    </div>
+                )}
+
+                {/* Botón Aplicar Filtros */}
+                <button
+                    onClick={handleApplyFilters}
+                    className={cn(
+                        "flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm",
+                        isFilterDirty
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 animate-pulse"
+                            : "bg-gray-900 hover:bg-black text-white"
                     )}
-                </div>
+                >
+                    {isFilterDirty ? <Filter size={14} className="animate-bounce" /> : <CheckCircle2 size={14} />}
+                    {isFilterDirty ? '⚡ Aplicar Filtros' : '✓ Filtros Aplicados'}
+                </button>
+
+                {(draftStartDate || draftEndDate || draftStatus !== 'PENDIENTES' || (esMatriz && draftSucursal) || isFilterDirty) && (
+                    <button 
+                        onClick={handleResetFilters}
+                        className="ml-auto text-[10px] font-black text-red-500 uppercase hover:text-red-600 transition-colors"
+                    >
+                        Limpiar Filtros
+                    </button>
+                )}
             </div>
 
             {/* List */}
@@ -280,7 +379,7 @@ export default function ControlQRPage() {
                             <button onClick={() => setSelectedSale(null)} className="text-gray-400 hover:text-gray-600">×</button>
                         </div>
                         
-                        <form onSubmit={handleConfirm} className="p-5 space-y-4">
+                        <form onSubmit={handleSaveQR} className="p-5 space-y-4">
                             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center mb-6">
                                 <span className="text-indigo-900 font-medium text-sm">Ticket #{selectedSale._id.slice(-6).toUpperCase()}</span>
                                 <span className="font-black text-indigo-700">Bs. {selectedSale.pagos.find(p => p.metodo === 'QR')?.monto.toFixed(2)}</span>
