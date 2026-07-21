@@ -18,6 +18,7 @@ import CashSalesSummaryView from '../components/CashSalesSummaryView';
 import AnulacionesReportView from '../components/AnulacionesReportView';
 import ProductTrendsView from '../components/ProductTrendsView';
 import ProductStatsView from '../components/ProductStatsView';
+import PurchasesByClientView from '../components/PurchasesByClientView';
 import { 
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, BarChart, Bar, Legend
@@ -31,7 +32,7 @@ function cn(...inputs: ClassValue[]) {
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones';
+type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
@@ -115,6 +116,7 @@ export default function ReportsPage() {
                     { id: 'inventario_valorado', label: 'Inventario Valorado', icon: <Package size={16} /> },
                     { id: 'gastos', label: 'Gastos', icon: <DollarSign size={16} /> },
                     { id: 'anulaciones', label: 'Anulaciones', icon: <Ban size={16} /> },
+                    { id: 'compras_cliente', label: 'Compras por Cliente', icon: <Users size={16} /> },
                 ].filter(t => !t.hidden).map((tab) => (
                     <button
                         key={tab.id}
@@ -155,6 +157,8 @@ export default function ReportsPage() {
                 <CashSalesSummaryView />
             ) : activeTab === 'anulaciones' ? (
                 <AnulacionesReportView />
+            ) : activeTab === 'compras_cliente' ? (
+                <PurchasesByClientView />
             ) : (
                 <>
                     {isLoading ? (
