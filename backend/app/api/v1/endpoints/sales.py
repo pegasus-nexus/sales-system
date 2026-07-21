@@ -118,9 +118,6 @@ async def get_sales(
     current_user: User = Depends(get_current_active_user)
 ):
     """List all sales for the tenant, optionally filtered by sucursal, payment method or invoice status with pagination."""
-    if current_user.role == UserRole.FACTURADOR:
-        solo_facturas = True
-
     filters = []
     
     # Superadmins bypass primary tenant filter to see everything
@@ -129,13 +126,13 @@ async def get_sales(
         filters.append(Sale.tenant_id == tenant_id)
         
     # Aislamiento estricto por Sucursal según Rol
-    is_admin_matriz = current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN]
+    is_admin_matriz = current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.FACTURADOR]
     if not is_admin_matriz:
         if current_user.sucursal_id:
             filters.append(Sale.sucursal_id == current_user.sucursal_id)
         else:
             filters.append(Sale.sucursal_id == "__none__")
-    elif sucursal_id and sucursal_id != "all":
+    elif sucursal_id and sucursal_id not in ["all", ""]:
         filters.append(Sale.sucursal_id == sucursal_id)
 
     if search and search.strip():
