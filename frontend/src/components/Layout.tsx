@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
-    Briefcase, ChevronDown
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -69,6 +69,14 @@ export default function Layout({ children }: LayoutProps) {
         navigate('/login');
     };
 
+    const isItemActive = (itemPath: string) => {
+        const fullPath = location.pathname + location.search;
+        if (itemPath.includes('?')) {
+            return fullPath === itemPath;
+        }
+        return location.pathname === itemPath || (itemPath !== '/' && location.pathname.startsWith(itemPath) && !location.search);
+    };
+
     const getNavGroups = (): NavGroup[] => {
         if (role === 'SUPERADMIN') {
             return [
@@ -81,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
                         { icon: Building, label: 'Empresas', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
                         { icon: Layers, label: 'Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
                         { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: BarChart3, label: 'Reportes', path: '/reportes', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: TrendingUp, label: 'Evolución Mensual', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['SUPERADMIN'] },
                         { icon: Shield, label: 'Auditoría', path: '/auditoria', feature: null, roles: ['SUPERADMIN'] },
                     ]
                 }
@@ -96,6 +104,24 @@ export default function Layout({ children }: LayoutProps) {
                 items: [
                     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard-sucursal', feature: null, roles: ['ADMIN_SUCURSAL'] },
+                ]
+            },
+            {
+                groupKey: 'analitica_reportes',
+                title: 'Analítica & Reportes',
+                icon: BarChart3,
+                items: [
+                    { icon: BarChart3, label: 'Plataforma Analítica BI', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: TrendingUp, label: 'Evolución Mensual (MoM)', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: FileText, label: 'Reporte de Jornada', path: '/reportes?tab=daily', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: DollarSign, label: 'Finanzas y Márgenes', path: '/reportes?tab=finanzas', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Wallet, label: 'Reporte de Gastos', path: '/reportes?tab=gastos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Clock, label: 'Ventas por Hora', path: '/reportes?tab=hourly', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Package, label: 'Inventario Valorado', path: '/reportes?tab=inventario_valorado', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Users, label: 'Desempeño Staff', path: '/reportes?tab=staff', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Store, label: 'Matriz BCG', path: '/reportes?tab=matriz_bcg', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Ban, label: 'Anulaciones', path: '/reportes?tab=anulaciones', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Users, label: 'Compras por Cliente', path: '/reportes?tab=compras_cliente', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                 ]
             },
             {
@@ -121,15 +147,6 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-                ]
-            },
-            {
-                groupKey: 'analitica_reportes',
-                title: 'Analítica & Reportes',
-                icon: BarChart3,
-                items: [
-                    { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-                    { icon: BarChart3, label: 'Reportes Financieros', path: '/reportes', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                 ]
             },
             {
@@ -175,11 +192,11 @@ export default function Layout({ children }: LayoutProps) {
     // Desplegar automáticamente el grupo que contenga la ruta activa
     React.useEffect(() => {
         navGroups.forEach(g => {
-            if (g.items.some(item => location.pathname.startsWith(item.path))) {
+            if (g.items.some(item => isItemActive(item.path))) {
                 setOpenGroups(prev => ({ ...prev, [g.groupKey]: true }));
             }
         });
-    }, [location.pathname]);
+    }, [location.pathname, location.search]);
 
     const toggleGroup = (key: string) => {
         setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
@@ -206,13 +223,13 @@ export default function Layout({ children }: LayoutProps) {
                     {/* Navigation Groups (Desplegables) */}
                     <nav className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1 custom-scrollbar">
                         {navGroups.map((group) => {
-                            const isGroupActive = group.items.some(item => item.path !== '/' && location.pathname.startsWith(item.path));
+                            const isGroupActive = group.items.some(item => isItemActive(item.path));
                             const isOpen = !!openGroups[group.groupKey];
 
                             // Si el grupo solo tiene 1 ítem (ej. Dashboard), renderizar ítem directo
                             if (group.items.length === 1) {
                                 const singleItem = group.items[0];
-                                const isActive = singleItem.path !== '/' && location.pathname.startsWith(singleItem.path);
+                                const isActive = isItemActive(singleItem.path);
                                 return (
                                     <Link
                                         key={singleItem.path}
@@ -261,7 +278,7 @@ export default function Layout({ children }: LayoutProps) {
                                     {(isOpen || isCollapsed) && (
                                         <div className={cn("flex flex-col gap-1 transition-all", !isCollapsed ? "pl-2 ml-2 border-l border-white/10" : "")}>
                                             {group.items.map((item) => {
-                                                const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
+                                                const isActive = isItemActive(item.path);
                                                 return (
                                                     <Link
                                                         key={item.path}
