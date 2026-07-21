@@ -128,7 +128,14 @@ async def get_sales(
         tenant_id = current_user.tenant_id or "default"
         filters.append(Sale.tenant_id == tenant_id)
         
-    if sucursal_id:
+    # Aislamiento estricto por Sucursal según Rol
+    is_admin_matriz = current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN]
+    if not is_admin_matriz:
+        if current_user.sucursal_id:
+            filters.append(Sale.sucursal_id == current_user.sucursal_id)
+        else:
+            filters.append(Sale.sucursal_id == "__none__")
+    elif sucursal_id and sucursal_id != "all":
         filters.append(Sale.sucursal_id == sucursal_id)
 
     if search and search.strip():

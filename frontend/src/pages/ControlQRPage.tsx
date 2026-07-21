@@ -50,6 +50,8 @@ export default function ControlQRPage() {
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [qrData, setQrData] = useState({ banco: '', referencia: '', monto_transferido: '' });
 
+    const activeSucursalId = esMatriz ? selectedSucursal : (user?.sucursal_id || '');
+
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
         queryFn: getSucursales,
@@ -57,10 +59,10 @@ export default function ControlQRPage() {
     });
 
     const { data: ventasRes, isLoading } = useQuery({
-        queryKey: ['sales-history-qr', selectedSucursal, page, filterStatus],
+        queryKey: ['sales-history-qr', activeSucursalId, page, filterStatus],
         queryFn: () => {
             const confirmed = filterStatus === 'CONFIRMADOS' ? true : (filterStatus === 'PENDIENTES' ? false : undefined);
-            return getSales(selectedSucursal || undefined, page, limit, 'QR', undefined, confirmed);
+            return getSales(activeSucursalId || undefined, page, limit, 'QR', undefined, confirmed);
         }
     });
 
