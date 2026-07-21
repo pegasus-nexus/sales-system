@@ -171,11 +171,12 @@ async def get_sales(
         filters.append(Sale.qr_info.confirmado == qr_confirmed)
 
     if solo_facturas:
-        # Filter sales where customer requested invoice (NIT present and not empty, OR es_factura flag)
+        # Filter sales where customer requested invoice (valid NIT != '0', '', None, OR es_factura flag, OR factura_emitida)
         from beanie.operators import Or, And
         filters.append(Or(
-            And(Sale.cliente.nit != None, Sale.cliente.nit != ""),
-            Sale.cliente.es_factura == True
+            And(Sale.cliente.nit != None, Sale.cliente.nit != "", Sale.cliente.nit != "0"),
+            Sale.cliente.es_factura == True,
+            Sale.factura_emitida == True
         ))
 
     if solo_anomalias:

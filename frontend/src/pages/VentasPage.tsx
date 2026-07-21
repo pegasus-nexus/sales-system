@@ -342,7 +342,7 @@ export default function VentasPage() {
     // Draft Filtros
     const searchId = searchParams.get('search') || '';
     const [draftSucursal, setDraftSucursal] = useState<string>(esMatriz ? '' : (user?.sucursal_id || ''));
-    const [draftSoloFacturas, setDraftSoloFacturas] = useState(role === 'FACTURADOR');
+    const [draftSoloFacturas, setDraftSoloFacturas] = useState(false);
     const [draftSoloAnomalias, setDraftSoloAnomalias] = useState(false);
     const [draftStartDate, setDraftStartDate] = useState('');
     const [draftEndDate, setDraftEndDate] = useState('');
@@ -352,7 +352,7 @@ export default function VentasPage() {
     // Applied Filtros (solo se ejecutan al hacer clic en Aplicar Filtros o buscar)
     const [appliedFilters, setAppliedFilters] = useState({
         sucursal: esMatriz ? '' : (user?.sucursal_id || ''),
-        soloFacturas: role === 'FACTURADOR',
+        soloFacturas: false,
         soloAnomalias: false,
         startDate: '',
         endDate: '',
@@ -380,16 +380,15 @@ export default function VentasPage() {
 
     const handleResetFilters = () => {
         const defaultSuc = esMatriz ? '' : (user?.sucursal_id || '');
-        const defaultFact = role === 'FACTURADOR';
         setDraftSucursal(defaultSuc);
-        setDraftSoloFacturas(defaultFact);
+        setDraftSoloFacturas(false);
         setDraftSoloAnomalias(false);
         setDraftStartDate('');
         setDraftEndDate('');
         setDraftMetodoPago('');
         setAppliedFilters({
             sucursal: defaultSuc,
-            soloFacturas: defaultFact,
+            soloFacturas: false,
             soloAnomalias: false,
             startDate: '',
             endDate: '',
@@ -401,14 +400,7 @@ export default function VentasPage() {
     const [expanded, setExpanded] = useState<string | null>(searchId ? searchId : null);
     const [printSale, setPrintSale] = useState<Sale | null>(null);
     const [page, setPage] = useState(1);
-    const limit = role === 'FACTURADOR' ? 10 : 50;
-
-    useEffect(() => {
-        if (role === 'FACTURADOR') {
-            setDraftSoloFacturas(true);
-            setAppliedFilters(prev => ({ ...prev, soloFacturas: true }));
-        }
-    }, [role]);
+    const limit = role === 'FACTURADOR' ? 20 : 50;
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -493,17 +485,15 @@ export default function VentasPage() {
                     )}
 
                     {/* Filtro Sólo Facturas */}
-                    {role !== 'FACTURADOR' && (
-                        <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
-                            <input 
-                                type="checkbox" 
-                                checked={draftSoloFacturas} 
-                                onChange={e => setDraftSoloFacturas(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <span className="text-xs font-semibold text-gray-700">Solo Facturas</span>
-                        </label>
-                    )}
+                    <label className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 transition-colors h-[32px] shrink-0">
+                        <input 
+                            type="checkbox" 
+                            checked={draftSoloFacturas} 
+                            onChange={e => setDraftSoloFacturas(e.target.checked)}
+                            className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-xs font-semibold text-gray-700">Solo Facturas / NIT</span>
+                    </label>
 
                     {esMatriz && (
                         <label className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer hover:bg-red-100 transition-colors h-[32px] shrink-0">

@@ -50,19 +50,23 @@ async def get_sesiones(
     sucursal_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Return sessions. By default returns last 5 (page 1, size 5), or filters by date range with pagination."""
+    """Return sessions with pagination, sucursal filtering and date range."""
     tenant_id   = current_user.tenant_id or "default"
     # Permission check for sucursal filtering
     if current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
         target_sucursal = sucursal_id if sucursal_id and sucursal_id != "all" else None
     else:
-        target_sucursal = current_user.sucursal_id or "CENTRAL"
+        target_sucursal = current_user.sucursal_id
 
     query_args = [
         CajaSesion.tenant_id == tenant_id
     ]
     if target_sucursal:
-        query_args.append(CajaSesion.sucursal_id == target_sucursal)
+        from beanie.operators import Or
+        query_args.append(Or(
+            CajaSesion.sucursal_id == target_sucursal,
+            CajaSesion.sucursal_id == (None if target_sucursal == "CENTRAL" else target_sucursal)
+        ))
     
     if start_date and end_date:
         from app.utils.date_utils import get_range_bolivia
@@ -74,8 +78,7 @@ async def get_sesiones(
     
     total = await find_query.count()
     
-    # Si no hay fechas, forzamos limit 5 para la "vista rápida"
-    actual_limit = page_size if (start_date or end_date) else 5
+    actual_limit = page_size if page_size > 0 else 10
     skip = (page - 1) * actual_limit
     
     sesiones = await find_query.skip(skip).limit(actual_limit).to_list()
@@ -90,15 +93,35 @@ async def get_sesiones(
         aj   = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.AJUSTE)
         saldo = float(s.monto_inicial) + ef + ef_ing - cc - gs + aj
 
-        # Digital totals from sales during this session
-        cerrada_at = s.cerrada_at or datetime.utcnow()
-        sales = await Sale.find(
-            Sale.tenant_id   == tenant_id,
-            Sale.sucursal_id == s.sucursal_id,
-            Sale.created_at  >= s.abierta_at,
-            Sale.created_at  <= cerrada_at,
-            Sale.anulada     == False,
-        ).to_list()
+        # Digital totals from sales during this session (with BSON date compatibility)
+        cerrada_at = s.cerrada_at or datetime.now(timezone.utc)
+        abierta_naive = s.abierta_at.replace(tzinfo=None) if s.abierta_at else None
+        cerrada_naive = cerrada_at.replace(tzinfo=None) if cerrada_at else None
+
+        sales_query = [
+            Sale.tenant_id == tenant_id,
+            Sale.anulada == False,
+        ]
+        if s.sucursal_id:
+            from beanie.operators import Or
+            sales_query.append(Or(
+                Sale.sucursal_id == s.sucursal_id,
+                Sale.sucursal_id == (None if s.sucursal_id == "CENTRAL" else s.sucursal_id)
+            ))
+        if s.abierta_at:
+            from beanie.operators import Or
+            sales_query.append(Or(
+                Sale.created_at >= s.abierta_at,
+                Sale.created_at >= abierta_naive
+            ))
+        if cerrada_at:
+            from beanie.operators import Or
+            sales_query.append(Or(
+                Sale.created_at <= cerrada_at,
+                Sale.created_at <= cerrada_naive
+            ))
+
+        sales = await Sale.find(*sales_query).to_list()
         total_qr      = sum(float(p.monto) for sale in sales for p in (sale.pagos or []) if str(p.metodo).upper() == "QR") + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
         total_tarjeta = sum(float(p.monto) for sale in sales for p in (sale.pagos or []) if str(p.metodo).upper() == "TARJETA") + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
         total_ventas  = sum(float(p.monto) for sale in sales for p in (sale.pagos or []))
