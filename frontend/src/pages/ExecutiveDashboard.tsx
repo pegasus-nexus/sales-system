@@ -9,7 +9,8 @@ import CatalogRentability from './CatalogRentability';
 import AnaliticaAvanzada from './AnaliticaAvanzada';
 
 import ImportadorInteligente from '../components/DataImporterWizard';
-import ChatbotAnalitico from '../components/ChatbotAnalitico';
+// DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
+// import ChatbotAnalitico from '../components/ChatbotAnalitico';
 
 
 function cn(...inputs: ClassValue[]) {
@@ -148,7 +149,8 @@ export default function ExecutiveDashboard() {
             </div>
 
             {/* AI Assistant Floating Component */}
-            <ChatbotAnalitico />
+            {/* DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice. */}
+            {/* <ChatbotAnalitico /> */}
         </div>
     );
 }

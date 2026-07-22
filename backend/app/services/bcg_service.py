@@ -77,7 +77,7 @@ async def calculate_bcg_matrix(
                 "$project": {
                     "nombre_producto": 1,
                     "monto_total_bs": 1,
-                    "cantidad": 1
+                    "cantidad_vendida": 1
                 }
             },
             {
@@ -85,7 +85,7 @@ async def calculate_bcg_matrix(
                     "_id": "$nombre_producto",
                     "nombre": {"$first": "$nombre_producto"},
                     "ingresos": {"$sum": "$monto_total_bs"},
-                    "cantidad": {"$sum": "$cantidad"}
+                    "cantidad": {"$sum": {"$toDouble": "$cantidad_vendida"}}
                 }
             }
         ]

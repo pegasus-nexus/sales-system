@@ -4,7 +4,8 @@ from app.api.v1.endpoints import (
     caja, categories, upload, analytics,
     sucursales, inventario, pedidos, descuentos,
     price_requests, clientes, price_lists, reports, creditos, b2b,
-    comunidad, traslados, chat, audit, almacenes, recipes, meal_plans, production, proveedores
+    comunidad, traslados, audit, almacenes, recipes, meal_plans, production, proveedores
+    # chat,  # DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
 )
 
 api_router = APIRouter()
@@ -29,7 +30,8 @@ api_router.include_router(proveedores.router, tags=["proveedores"])
 api_router.include_router(price_lists.router, prefix="/listas-precios", tags=["price_lists"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
-api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
+# DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
+# api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(b2b.router, prefix="/b2b", tags=["b2b"])
 api_router.include_router(comunidad.router, prefix="/comunidad", tags=["comunidad"])
 api_router.include_router(traslados.router, prefix="/traslados", tags=["traslados"])
