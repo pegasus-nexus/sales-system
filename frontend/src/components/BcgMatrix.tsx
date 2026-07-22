@@ -303,7 +303,7 @@ export default function BcgMatrix() {
     }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 overflow-hidden flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="bg-[#f0f4f8] rounded-2xl shadow-sm border border-slate-200 p-5 overflow-hidden flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* ── Header ──────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full">

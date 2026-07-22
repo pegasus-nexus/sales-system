@@ -2,6 +2,11 @@
 title SalesSystem - Iniciando Servidores...
 color 0A
 
+:: Liberar puertos 8001 y 5173 si quedaron colgados de ejecuciones anteriores
+echo  Liberando puertos 8001 y 5173 (si estan en uso)...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8001 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
 echo.
 echo  ==========================================
 echo   SALSSYSTEM - Iniciando entorno completo
@@ -10,19 +15,19 @@ echo.
 
 :: ── BACKEND ──────────────────────────────────
 echo  [1/2] Iniciando Backend (FastAPI)...
-cd /d "%~dp0"
+cd /d "%~dp0."
 
-if not exist ".venv\Scripts\activate.bat" (
-    echo  [ERROR] No se encontro el entorno virtual en la raiz (.venv)
+if not exist "%~dp0.venv\Scripts\activate.bat" (
+    echo  [ERROR] No se encontro el entorno virtual en la raiz .venv
     echo  Ejecuta: python -m venv .venv ^&^& .venv\Scripts\pip install -r requirements.txt
     pause
     exit /b 1
 )
 
-start "SalesSystem Backend :8000" cmd /k "cd /d %~dp0backend && call ..\.venv\Scripts\activate.bat && python -m uvicorn app.main:app --reload --port 8000"
+start "SalesSystem Backend :8001" cmd /k "cd /d %~dp0backend && call ..\.venv\Scripts\activate.bat && python -m uvicorn app.main:app --reload --port 8001"
 
-:: Esperar 3 segundos para que el backend inicie
-timeout /t 3 /nobreak > nul
+:: Esperar 8 segundos para que el backend inicie
+timeout /t 8 /nobreak > nul
 
 :: ── FRONTEND ─────────────────────────────────
 echo  [2/2] Iniciando Frontend (Vite/React)...

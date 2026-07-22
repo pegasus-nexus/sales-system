@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson.decimal128 import Decimal128
 
 async def check_anomalies():
-    uri = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/?appName=Cluster0"
+    uri = "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system"
     import certifi
     client = AsyncIOMotorClient(uri, tlsCAFile=certifi.where())
     db = client.get_database("salessystem")

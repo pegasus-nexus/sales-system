@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List
 import re
 from app.db import get_raw_db
+from app.services.analytics_service import get_unified_sales_df
 
 def get_easter_sunday(year: int) -> date:
     a_val = year % 19
@@ -56,7 +57,7 @@ async def get_hourly_multiyear(
     fecha_anio2: date = None,
     sucursal: str = None,
 ) -> Dict[str, Any]:
-    print(f"\n>>> MOTOR MULTI-AÑO (ARQUITECTURA SEPARADA V2 STRICT): f_ref={fecha_referencia}, sucursal={sucursal or 'TODAS'}")
+    print(f"\n>>> MOTOR MULTI-AÑO (SINGLE SOURCE OF TRUTH): f_ref={fecha_referencia}, sucursal={sucursal or 'TODAS'}")
 
     try:
         db = await get_raw_db()
@@ -87,161 +88,68 @@ async def get_hourly_multiyear(
 
         local_tz = 'America/La_Paz'
         
-        def get_tz_bounds(f_date):
+        # El Business Day de Taboada va de 04:00 AM del día D a 03:59 AM del día D+1
+        def get_bday_tz_bounds(f_date):
             d_obj = f_date.date() if hasattr(f_date, 'date') else f_date
-            t_start = pd.Timestamp(d_obj, tz=local_tz).tz_convert('UTC')
-            t_end = (pd.Timestamp(d_obj, tz=local_tz) + pd.Timedelta(days=1)).tz_convert('UTC')
+            t_start = (pd.Timestamp(d_obj, tz=local_tz) + pd.Timedelta(hours=4)).tz_convert('UTC')
+            t_end = (pd.Timestamp(d_obj, tz=local_tz) + pd.Timedelta(days=1, hours=4)).tz_convert('UTC')
             return t_start.to_pydatetime(), t_end.to_pydatetime()
 
-        f0_start, f0_end = get_tz_bounds(f0)
-        f1_start, f1_end = get_tz_bounds(f1)
-        f2_start, f2_end = get_tz_bounds(f2)
-
-        # ---------------------------------------------------------
-        # MAPEO DINÁMICO LISTA BLANCA (IGNORAR FEXCO, ETC)
-        # ---------------------------------------------------------
-        sucursales_list = await db.sucursales.find({"tenant_id": tenant_id}).to_list(length=None)
-        suc_id_to_name = {}
-        for s in sucursales_list:
-            nl = str(s.get("nombre", "")).lower()
-            sid = str(s["_id"])
-            if any(bad in nl for bad in ["fexco", "sucre", "distribucion", "vendedores", "mayorista"]):
-                continue
-            if 'heroina' in nl or 'hero' in nl:
-                suc_id_to_name[sid] = "Heroínas"
-            elif 'recoleta' in nl:
-                suc_id_to_name[sid] = "Recoleta"
-            elif 'calacoto' in nl:
-                suc_id_to_name[sid] = "Calacoto"
+        f0_start, f0_end = get_bday_tz_bounds(f0)
+        f1_start, f1_end = get_bday_tz_bounds(f1)
+        f2_start, f2_end = get_bday_tz_bounds(f2)
 
         target_sucursal = None
         if sucursal and sucursal.strip():
             target_sucursal = sucursal.strip()
             if target_sucursal.lower() == "heroinas": target_sucursal = "Heroínas"
 
-        # ---------------------------------------------------------
-        # CATÁLOGO DICT PARA MARGEN LÍQUIDO REAL
-        # ---------------------------------------------------------
-        cursor_productos = db.products.find({"tenant_id": tenant_id})
-        catalogo_dict = {}
-        async for p in cursor_productos:
-            p_id = str(p["_id"])
-            costo_base = float(str(p.get("costo_producto", 0)))
-            catalogo_dict[p_id] = round(costo_base, 2)
+        min_start_utc = min(f0_start, f1_start, f2_start)
+        max_end_utc = max(f0_end, f1_end, f2_end)
 
-        datos = []
-        margen_liquido_2026 = 0.0
-
-        # =========================================================
-        # 1. DÍA DE REFERENCIA (f0) -> DESDE POS / SALES EN VIVO
-        # =========================================================
-        filtro_vivo = {
-            "tenant_id": tenant_id,
-            "created_at": {"$gte": f0_start, "$lt": f0_end},
-            "anulada": {"$ne": True}
-        }
-        
-        cursor_vivo = db.sales.find(filtro_vivo, {"_id": 1, "sucursal_id": 1, "created_at": 1, "total": 1, "anulada": 1, "items": 1})
-        ventas_vivo = await cursor_vivo.to_list(length=None)
-        
-        for v in ventas_vivo:
-            sid = str(v.get("sucursal_id", ""))
-            sname = suc_id_to_name.get(sid, "")
-            
-            if not sname: continue
-            if target_sucursal and target_sucursal != sname: continue
-            
-            try: monto_venta = float(str(v.get("total", 0)))
-            except: monto_venta = 0.0
-            
-            # Cálculo de Margen Real
-            items = v.get("items", [])
-            for item in items:
-                prod_id = str(item.get("producto_id", "")).strip()
-                cantidad = float(str(item.get("cantidad", 1)))
-                precio_venta = float(str(item.get("precio_unitario", 0)))
-                subtotal_item = float(str(item.get("subtotal", 0)))
-                if cantidad > 0 and subtotal_item > 0 and precio_venta == 0:
-                    precio_venta = subtotal_item / cantidad
-                    
-                costo_base = catalogo_dict.get(prod_id)
-                if costo_base is None or costo_base == 0.0:
-                    costo_base = precio_venta * 0.85
-                    
-                margen_retail = (precio_venta - costo_base) * cantidad
-                comision_matriz = (costo_base * cantidad) * 0.15
-                margen_liquido_2026 += (margen_retail + comision_matriz)
-            
-            datos.append({"fecha": v.get("created_at"), "monto": monto_venta})
-
-        # =========================================================
-        # 2. AÑOS ANTERIORES (f1, f2) -> REGLA DEL ESPEJO
-        # =========================================================
+        # CONSUMIR SINGLE SOURCE OF TRUTH (Fetch sólo los 3 días específicos en paralelo, NO todo el rango de 3 años)
+        import asyncio
+        df0, df1, df2 = await asyncio.gather(
+            get_unified_sales_df(tenant_id, f0_start, f0_end, target_sucursal),
+            get_unified_sales_df(tenant_id, f1_start, f1_end, target_sucursal),
+            get_unified_sales_df(tenant_id, f2_start, f2_end, target_sucursal)
+        )
+        dfs_to_concat = [d for d in [df0, df1, df2] if not d.empty]
+        if dfs_to_concat:
+            df = pd.concat(dfs_to_concat, ignore_index=True)
+        else:
+            df = pd.DataFrame()
         es_espejo = target_sucursal in ["Recoleta", "Calacoto"]
 
-        if es_espejo:
-            filtro_hist = {
-                "tenant_id": tenant_id,
-                "fecha_transaccion": {"$gte": f2_start, "$lt": f2_end},
-                "sucursal": {"$regex": "Hero[íi]nas", "$options": "i"}
-            }
-        else:
-            filtro_hist = {
-                "tenant_id": tenant_id,
-                "$or": [
-                    {"fecha_transaccion": {"$gte": f1_start, "$lt": f1_end}},
-                    {"fecha_transaccion": {"$gte": f2_start, "$lt": f2_end}}
-                ]
-            }
-            if target_sucursal:
-                pat = "Hero[íi]nas" if target_sucursal == "Heroínas" else target_sucursal
-                filtro_hist["sucursal"] = {"$regex": pat, "$options": "i"}
+        def agrupar_hora(fecha_target, is_mirror=False):
+            if df.empty: return {}
+            fecha_date = fecha_target.date() if hasattr(fecha_target, 'date') else fecha_target
             
-        cursor_hist = db.ventas_historicas_crudas.find(filtro_hist, {"_id": 0, "fecha_transaccion": 1, "monto_total_bs": 1})
-        ventas_hist = await cursor_hist.to_list(length=None)
-        
-        for v in ventas_hist:
-            fecha_t = v.get("fecha_transaccion")
-            monto_h = float(str(v.get("monto_total_bs", 0)))
-            
-            if es_espejo and pd.notnull(fecha_t):
-                # Clonar fecha de F2 hacia F1
-                ts_local = pd.Timestamp(fecha_t, tz='UTC').tz_convert(local_tz)
-                f1_dt = pd.Timestamp(f1.date() if hasattr(f1, 'date') else f1, tz=local_tz)
-                try:
-                    ts_local = ts_local.replace(year=f1_dt.year, month=f1_dt.month, day=f1_dt.day)
-                    fecha_t = ts_local.tz_convert('UTC').to_pydatetime()
-                except ValueError:
-                    pass
-                    
-            if pd.notnull(fecha_t):
-                datos.append({"fecha": fecha_t, "monto": monto_h})
+            if is_mirror:
+                sub = df[(df['fecha_solo_local'] == fecha_date) & (df['sucursal'] == "Heroínas")]
+            else:
+                sub = df[df['fecha_solo_local'] == fecha_date]
 
-        # =========================================================
-        # AGRUPACIÓN Y CONSTRUCCIÓN DEL GRÁFICO
-        # =========================================================
-        df = pd.DataFrame(datos)
-        if not df.empty:
-            df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce', utc=True)
-            df.dropna(subset=['fecha'], inplace=True)
-            df['fecha_local'] = df['fecha'].dt.tz_convert(local_tz)
-            df['fecha_solo'] = df['fecha_local'].dt.date
-            df['hora_str'] = df['fecha_local'].dt.strftime('%H:00')
-
-            def agrupar_hora(fecha_target):
-                fecha_date = fecha_target.date() if hasattr(fecha_target, 'date') else fecha_target
-                sub = df[df['fecha_solo'] == fecha_date]
-                if sub.empty: return {}
-                return sub.groupby('hora_str')['monto'].sum().to_dict()
-        else:
-            def agrupar_hora(fecha_target): return {}
+            if sub.empty: return {}
+            return sub.groupby('hora_str')['monto_total_bs'].sum().to_dict()
 
         gr0 = agrupar_hora(f0)
-        gr1 = agrupar_hora(f1)
-        gr2 = agrupar_hora(f2)
+        gr1 = agrupar_hora(f1, is_mirror=es_espejo)
+        gr2 = agrupar_hora(f2, is_mirror=es_espejo)
 
-        horas = [f"{h:02d}:00" for h in range(8, 22)]  # 14 horas
-        
+        todas_horas = set(gr0.keys()) | set(gr1.keys()) | set(gr2.keys())
+        min_h = 8
+        max_h = 21
+        for h_str in todas_horas:
+            try:
+                h_int = int(h_str.split(":")[0])
+                if h_int < min_h: min_h = h_int
+                if h_int > max_h: max_h = h_int
+            except ValueError:
+                pass
+
+        horas = [f"{h:02d}:00" for h in range(min_h, max_h + 1)]
+
         hoy_real = pd.Timestamp.now(tz=local_tz).date()
         f0_date = f0.date() if hasattr(f0, 'date') else f0
         es_hoy = f0_date == hoy_real
@@ -325,7 +233,7 @@ async def get_hourly_multiyear(
             "venta_promedio_horaria": venta_promedio_horaria,
             "venta_pico_maxima": venta_pico_maxima,
             "hora_pico": hora_pico,
-            "margen_liquido": round(margen_liquido_2026, 2),
+            "margen_liquido": round(total_real * 0.15, 2),
             "desempeno_yoy": desempeno_yoy,
             "variacion_vs_anio1": desempeno_yoy,
             "variacion_vs_anio2": round(((total_real - total_a2) / total_a2) * 100, 1) if total_a2 > 0 else 0.0,

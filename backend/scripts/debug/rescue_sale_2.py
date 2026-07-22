@@ -15,7 +15,7 @@ from app.domain.models.base import DecimalMoney
 from app.infrastructure.core.config import settings
 
 async def rescue_sale():
-    client = AsyncIOMotorClient("mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/?appName=Cluster0")
+    client = AsyncIOMotorClient("mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system")
     await init_beanie(
         database=client.salessystem, 
         document_models=[Sale, Cliente, CuentaCredito, Deuda, TransaccionCredito]

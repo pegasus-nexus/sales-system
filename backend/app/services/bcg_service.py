@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+import time
+import asyncio
 from app.utils.cache import ttl_cache
 from app.schemas.analytics import BCGMatrixResponse, BCGProduct
 
@@ -32,14 +34,23 @@ async def calculate_bcg_matrix(
     print(f"[BCG] Periodo actual: {start_date} -> {end_date}")
     print(f"[BCG] Periodo previo: {prev_start_date} -> {prev_end_date}")
 
+    # Lista blanca de sucursales minoristas para POS 'sales'
+    cursor_sucursales = db.sucursales.find({"tenant_id": tenant_id})
+    retail_ids = []
+    async for s in cursor_sucursales:
+        nl = str(s.get("nombre", "")).lower()
+        if any(bad in nl for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista", "supermercados"]):
+            continue
+        if any(good in nl for good in ["hero", "calacoto", "recoleta"]):
+            retail_ids.append(str(s["_id"]))
+            try:
+                from bson import ObjectId
+                if ObjectId.is_valid(str(s["_id"])):
+                    retail_ids.append(ObjectId(s["_id"]))
+            except Exception:
+                pass
+
     # 2. Helper de pipeline sobre ventas_historicas_crudas (colección histórica plana)
-    def pipeline_for_period(start: datetime, end: datetime):
-        # Los datos históricos importados tienen tenant_id=None
-        # Solo filtramos por tenant cuando hay tenant_id real
-        match: Dict[str, Any] = {
-            "fecha_transaccion": {"$gte": start, "$lte": end},
-        }
-        # Solo agregar filtro de tenant si existe (algunos registros tienen tenant_id=None)
     def pipeline_for_period(start: datetime, end: datetime):
         match: Dict[str, Any] = {
             "fecha_transaccion": {"$gte": start, "$lte": end},
@@ -52,13 +63,22 @@ async def calculate_bcg_matrix(
             ]
         if sucursal_id:
             s_lower = sucursal_id.lower()
-            if 'heroina' in s_lower or 'heroína' in s_lower:
+            if 'hero' in s_lower:
                 match["sucursal"] = {"$regex": "hero.*nas?", "$options": "i"}
             else:
                 match["sucursal"] = {"$regex": s_lower, "$options": "i"}
+        else:
+            # Filtro estricto de inclusión minorista (Heroínas, Calacoto, Recoleta)
+            match["sucursal"] = {"$regex": "Hero.*nas|Calacoto|Recoleta", "$options": "i"}
 
         return [
             {"$match": match},
+            {
+                "$project": {
+                    "nombre_producto": 1,
+                    "monto_total_bs": 1
+                }
+            },
             {
                 "$group": {
                     "_id": "$nombre_producto",
@@ -75,12 +95,22 @@ async def calculate_bcg_matrix(
         }
         if sucursal_id:
             s_lower = sucursal_id.lower()
-            if 'heroina' in s_lower or 'heroína' in s_lower:
+            if 'hero' in s_lower:
                 match_pos["sucursal_id"] = {"$regex": "hero.*nas?", "$options": "i"}
             else:
                 match_pos["sucursal_id"] = {"$regex": s_lower, "$options": "i"}
+        else:
+            if retail_ids:
+                match_pos["sucursal_id"] = {"$in": retail_ids}
+
         return [
             {"$match": match_pos},
+            {
+                "$project": {
+                    "items.descripcion": 1,
+                    "items.subtotal": 1
+                }
+            },
             {"$unwind": "$items"},
             {
                 "$group": {
@@ -91,22 +121,22 @@ async def calculate_bcg_matrix(
             }
         ]
 
-    # 3. Ejecutar consultas paralelas (Historial + POS)
-    cursor_current_hist = await db["ventas_historicas_crudas"].aggregate(
-        pipeline_for_period(start_date, end_date)
-    ).to_list(length=2000)
+    import time
+    t_start = time.time()
     
-    cursor_current_pos = await db["sales"].aggregate(
-        pos_pipeline_for_period(start_date, end_date)
-    ).to_list(length=2000)
+    # 3. Ejecutar consultas paralelas (Historial + POS) con asyncio.gather
+    print(f"[BCG] Iniciando agregaciones en BD...", flush=True)
+    t_agg = time.time()
     
-    cursor_prev_hist = await db["ventas_historicas_crudas"].aggregate(
-        pipeline_for_period(prev_start_date, prev_end_date)
-    ).to_list(length=2000)
+    results = await asyncio.gather(
+        db["ventas_historicas_crudas"].aggregate(pipeline_for_period(start_date, end_date)).to_list(length=5000),
+        db["sales"].aggregate(pos_pipeline_for_period(start_date, end_date)).to_list(length=5000),
+        db["ventas_historicas_crudas"].aggregate(pipeline_for_period(prev_start_date, prev_end_date)).to_list(length=5000),
+        db["sales"].aggregate(pos_pipeline_for_period(prev_start_date, prev_end_date)).to_list(length=5000)
+    )
     
-    cursor_prev_pos = await db["sales"].aggregate(
-        pos_pipeline_for_period(prev_start_date, prev_end_date)
-    ).to_list(length=2000)
+    cursor_current_hist, cursor_current_pos, cursor_prev_hist, cursor_prev_pos = results
+    print(f"[BCG Profiling] Agregaciones completadas en {(time.time() - t_agg) * 1000:.2f} ms", flush=True)
 
     # Consolidar current y prev
     cursor_current = cursor_current_hist + cursor_current_pos
@@ -136,7 +166,7 @@ async def calculate_bcg_matrix(
             max_revenue = ingresos_curr
 
         if pid in productos_dict:
-            productos_dict[pid]["curr"] = ingresos_curr
+            productos_dict[pid]["curr"] += ingresos_curr
             productos_dict[pid]["nombre"] = doc.get("nombre") or pid
         else:
             productos_dict[pid] = {
@@ -147,7 +177,34 @@ async def calculate_bcg_matrix(
 
     print(f"[BCG] Total productos únicos: {len(productos_dict)} | Max revenue: {max_revenue}")
 
-    # 5. Calcular métricas BCG y clasificar
+    # 5. Calcular métricas BCG y crecimiento general
+    crecimientos = []
+    
+    # Pre-calcular todos los crecimientos para obtener la mediana (Eje Y Dinámico)
+    for pid, data in productos_dict.items():
+        curr = data["curr"]
+        prev = data["prev"]
+        if curr == 0 and prev == 0:
+            data["crecimiento"] = 0.0
+            continue
+            
+        if prev == 0 and curr > 0:
+            data["crecimiento"] = 1.0
+        elif prev > 0:
+            data["crecimiento"] = (curr - prev) / prev
+        else:
+            data["crecimiento"] = 0.0
+            
+        # Considerar para la mediana estadística solo los productos que tuvieron alguna venta o crecimiento
+        crecimientos.append(data["crecimiento"])
+        
+    # Calcular Mediana de Crecimiento (Umbral Eje Y)
+    mediana_crecimiento = 0.0
+    if crecimientos:
+        import statistics
+        mediana_crecimiento = statistics.median(crecimientos)
+    print(f"[BCG] Mediana de Crecimiento Dinámica (Corte Eje Y): {mediana_crecimiento*100:.2f}%")
+
     response = BCGMatrixResponse()
 
     for pid, data in productos_dict.items():
@@ -161,28 +218,26 @@ async def calculate_bcg_matrix(
         # Cuota Relativa (0.0 a 1.0) comparado con la Máxima Estrella actual
         cuota_relativa = (curr / max_revenue) if max_revenue > 0 else 0.0
 
-        # Crecimiento de ingresos (Tasa de Variación)
-        if prev == 0 and curr > 0:
-            crecimiento = 1.0  # Nuevo producto: crecimiento máximo capado al 100%
-        elif prev > 0:
-            crecimiento = (curr - prev) / prev
-        else:
-            crecimiento = 0.0
+        crecimiento = data["crecimiento"]
 
-        # Reglas de Clasificación BCG (Umbrales Gerenciales)
-        # ALTO CRECIMIENTO: > 5% (0.05)
-        # ALTA CUOTA: > 50% de las ventas del producto líder (0.50)
-        es_alto_crecimiento = crecimiento >= 0.05
+        # Reglas de Clasificación BCG (Umbrales Matemáticos)
+        # ALTO CRECIMIENTO: > mediana_crecimiento
+        # ALTA CUOTA: >= 0.50 (50% de penetración frente al líder)
+        es_alto_crecimiento = crecimiento > mediana_crecimiento
         es_alta_cuota = cuota_relativa >= 0.50
 
         if es_alto_crecimiento and es_alta_cuota:
             cuadrante = "ESTRELLA"
+            estrategia = "Inversión y Mantenimiento de Stock"
         elif not es_alto_crecimiento and es_alta_cuota:
             cuadrante = "VACA"
+            estrategia = "Optimización de Costos y Cosecha"
         elif es_alto_crecimiento and not es_alta_cuota:
             cuadrante = "INTERROGANTE"
+            estrategia = "Desarrollo Selectivo / Campaña Focalizada"
         else:
             cuadrante = "PERRO"
+            estrategia = "Desinversión / Liquidación de Inventario"
 
         # Generar tendencia legible
         pct = crecimiento * 100
@@ -201,7 +256,8 @@ async def calculate_bcg_matrix(
             crecimiento=crecimiento,
             cuota_relativa=cuota_relativa,
             cuadrante=cuadrante,
-            tendencia=tendencia_str,
+            estrategia_sugerida=estrategia,
+            tendencia_str=tendencia_str,
             badge="up" if crecimiento >= 0 else "down",
             nota="Sugerencia: Liquidación o descontinuar" if cuadrante == "PERRO" and crecimiento < -0.1 else None
         )
@@ -220,6 +276,24 @@ async def calculate_bcg_matrix(
     response.vacas.sort(key=lambda x: x.cuota_relativa, reverse=True)
     response.interrogantes.sort(key=lambda x: x.crecimiento, reverse=True)
     response.perros.sort(key=lambda x: x.ingresos_actuales, reverse=True)
+
+    # 6. PRINT AUDITORÍA TOP 5 PRODUCTOS EVALUADOS
+    all_evaluated = (
+        response.estrellas + response.vacas + response.interrogantes + response.perros
+    )
+    all_evaluated.sort(key=lambda x: x.ingresos_actuales, reverse=True)
+    top_5 = all_evaluated[:5]
+
+    print("\n" + "="*125)
+    print("AUDITORÍA DE DATOS CRUDOS MATRIZ BCG (TOP 5 PRODUCTOS RETAIL)")
+    print("="*125)
+    header = f"{'Nombre del Producto':<38} | {'V.Ant (Bs)':<10} | {'V.Act (Bs)':<10} | {'Líder (Bs)':<10} | {'Crec (%)':<9} | {'Cuota (Ratio)':<13} | {'Cuadrante':<12}"
+    print(header)
+    print("-" * len(header))
+    for p in top_5:
+        growth_pct = p.crecimiento * 100
+        print(f"{p.nombre[:38]:<38} | {p.ingresos_anteriores:<10.2f} | {p.ingresos_actuales:<10.2f} | {max_revenue:<10.2f} | {growth_pct:<9.1f} | {p.cuota_relativa:<13.3f} | {p.cuadrante:<12}")
+    print("="*125 + "\n")
 
     print(f"[BCG] Estrellas: {len(response.estrellas)} | Vacas: {len(response.vacas)} | Interrogantes: {len(response.interrogantes)} | Perros: {len(response.perros)}")
 

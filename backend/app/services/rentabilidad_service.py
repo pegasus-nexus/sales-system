@@ -15,6 +15,19 @@ from app.db import get_raw_db
 # ─── Caché en memoria ─────────────────────────────────────────────────────────
 _rent_cache: Dict[str, tuple] = {}
 
+# IDs de sucursales RETAIL (Heroínas, Recoleta, Calacoto).
+# Solo estas se cuentan por defecto, igual que el dashboard.
+# Excluye: Distribución, Fuerza de Ventas, Supermercados, FEXCO, etc.
+SUCURSALES_RETAIL_IDS = [
+    "69cd80098f3f6866d4cfbb64",  # Suc. Heroinas
+    "69cd84c58f3f6866d4cfbc8b",  # Suc. Recoletaa
+    "69ce6b7e8a00124dac6ecc99",  # Suc. Calacoto
+    "69d7a199640252a16936cb0b",  # Vendedor: Rodrigo.heroinas (asoc. Heroinas)
+]
+
+# Sucursales retail en historial (nombres que matchean)
+SUCURSALES_RETAIL_HIST_REGEX = r"hero|recoleta|calacoto|rodrigo"
+
 def _suc_regex(sucursal_id: str) -> dict:
     s = sucursal_id.lower()
     if "hero" in s:
@@ -38,11 +51,17 @@ async def get_rentabilidad_real(
     if end_date.tzinfo is None:
         end_date = end_date.replace(tzinfo=timezone.utc)
 
-    # Caché key — TTL corto si es "hoy"
+    # Caché key — incluye hora exacta para evitar colisiones entre rangos
     now_ts = time.time()
-    is_today = (datetime.now(timezone.utc).date() == start_date.date() == end_date.date())
-    ttl = 30 if is_today else 300
-    cache_key = f"rent_{sucursal_id}_{start_date.date()}_{end_date.date()}_{limit}"
+    # "Hoy" en Bolivia (UTC-4): comparar fecha local Bolivia
+    from datetime import timedelta
+    bolivia_offset = timedelta(hours=-4)
+    hoy_bo = (datetime.now(timezone.utc) + bolivia_offset).date()
+    start_bo = (start_date.astimezone(timezone.utc) + bolivia_offset).date()
+    end_bo   = (end_date.astimezone(timezone.utc) + bolivia_offset).date()
+    is_today = (start_bo == end_bo == hoy_bo)
+    ttl = 20 if is_today else 300
+    cache_key = f"rent_{sucursal_id}_{start_date.isoformat()}_{end_date.isoformat()}_{limit}"
     if cache_key in _rent_cache:
         cached_ts, cached_data = _rent_cache[cache_key]
         if now_ts - cached_ts < ttl:
@@ -61,15 +80,18 @@ async def get_rentabilidad_real(
 
     async def get_product_costs():
         prods = await db.products.find(
-            {}, {"descripcion": 1, "costo_producto": 1}
+            {}, {"descripcion": 1, "costo_producto": 1, "proveedor": 1}
         ).to_list(5000)
-        costs: Dict[str, float] = {}
+        costs: Dict[str, dict] = {}
         for p in prods:
             k = str(p.get("descripcion", "")).strip().upper()
             try:
-                costs[k] = float(str(p.get("costo_producto", 0)))
+                costs[k] = {
+                    "costo": float(str(p.get("costo_producto", 0))),
+                    "proveedor": str(p.get("proveedor", "")).strip().lower()
+                }
             except Exception:
-                costs[k] = 0.0
+                costs[k] = {"costo": 0.0, "proveedor": ""}
         return costs
 
     async def get_suc_names():
@@ -91,15 +113,22 @@ async def get_rentabilidad_real(
         "created_at": {"$gte": start_date, "$lte": end_date},
     }
     if suc_ids:
+        # Filtro por sucursal específica pedida por el usuario
         pos_match["sucursal_id"] = {"$in": suc_ids}
     elif sucursal_id:
         pos_match["sucursal_id"] = {"$regex": sucursal_id, "$options": "i"}
+    else:
+        # Sin filtro explícito → solo sucursales RETAIL (igual que el dashboard)
+        pos_match["sucursal_id"] = {"$in": SUCURSALES_RETAIL_IDS}
 
     hist_match: Dict[str, Any] = {
         "fecha_transaccion": {"$gte": start_date, "$lte": end_date},
     }
     if sucursal_id:
         hist_match["sucursal"] = _suc_regex(sucursal_id)
+    else:
+        # Solo historial de sucursales retail
+        hist_match["sucursal"] = {"$regex": SUCURSALES_RETAIL_HIST_REGEX, "$options": "i"}
 
     # ── Pipelines de aggregation (procesan en MongoDB, no en Python) ──────────
     pos_pipeline = [
@@ -139,11 +168,13 @@ async def get_rentabilidad_real(
     # ── Construir mapas ───────────────────────────────────────────────────────
     pos_map: Dict[str, dict] = {}
     for d in pos_docs:
-        name = str(d["_id"] or "Sin nombre")
-        pos_map[name] = {
+        name = str(d["_id"] or "Sin nombre").strip()
+        name_key = name.upper()
+        pos_map[name_key] = {
+            "nombre":          name,
             "unidades":        int(d.get("unidades", 0)),
             "ingreso_bruto":   float(d.get("ingreso_bruto", 0)),
-            "costo_real":      float(d.get("costo_real", 0)),
+            "costo_real_pos":  float(d.get("costo_real", 0)),
             "descuentos":      float(d.get("descuentos", 0)),
             "producto_id_ref": str(d.get("producto_id_ref", "")),
             "fuente": "POS",
@@ -151,30 +182,38 @@ async def get_rentabilidad_real(
 
     hist_map: Dict[str, dict] = {}
     for d in hist_docs:
-        name = str(d["_id"] or "Sin nombre")
+        name = str(d["_id"] or "Sin nombre").strip()
+        name_key = name.upper()
         unidades = float(d.get("unidades", 1) or 1)
         ingreso  = float(d.get("ingreso_bruto", 0))
-        costo_unit = product_costs.get(name.strip().upper(), 0.0)
-        hist_map[name] = {
+        prod_info = product_costs.get(name_key, {"costo": 0.0, "proveedor": ""})
+        costo_base = prod_info["costo"]
+        hist_map[name_key] = {
+            "nombre":          name,
             "unidades":        unidades,
             "ingreso_bruto":   ingreso,
-            "costo_real":      costo_unit * unidades,
+            "costo_real_pos":  costo_base * unidades,
             "descuentos":      0.0,
             "producto_id_ref": "",
             "fuente": "HIST",
         }
 
-    # ── MERGE ─────────────────────────────────────────────────────────────────
-    merged: Dict[str, dict] = dict(hist_map)
-    for name, data in pos_map.items():
-        if name in merged:
-            merged[name]["unidades"]      += data["unidades"]
-            merged[name]["ingreso_bruto"] += data["ingreso_bruto"]
-            merged[name]["costo_real"]    += data["costo_real"]
-            merged[name]["descuentos"]    += data["descuentos"]
-            merged[name]["fuente"] = "POS+HIST"
-        else:
-            merged[name] = dict(data)
+    # ── MERGE ──────────────────────────────────────────────────────────────────
+    # REGLA ANTI-DUPLICADO:
+    # Las ventas POS se copian automáticamente a ventas_historicas_crudas.
+    # Por eso: si un producto tiene datos POS en ese período → usar SOLO POS.
+    # El historial solo aporta productos que NO aparecen en POS (ej: datos importados
+    # de períodos anteriores al sistema POS).
+    merged: Dict[str, dict] = {}
+
+    # 1. Poblar con pos_map primero (fuente más confiable y sin duplicados)
+    for name_key, data in pos_map.items():
+        merged[name_key] = dict(data)
+
+    # 2. Agregar del historial SOLO los productos que NO tienen dato POS
+    for name_key, data in hist_map.items():
+        if name_key not in merged:
+            merged[name_key] = dict(data)
 
     # ── STOCK: query en paralelo al inventario ────────────────────────────────
     prod_ids = list({v["producto_id_ref"] for v in merged.values() if v.get("producto_id_ref")})
@@ -192,24 +231,40 @@ async def get_rentabilidad_real(
 
     # ── Calcular métricas finales ─────────────────────────────────────────────
     result = []
-    for nombre, d in merged.items():
+    for name_key, d in merged.items():
         ingreso  = d["ingreso_bruto"]
-        costo    = d["costo_real"]
         unidades = d["unidades"]
-        ganancia_suc    = ingreso - costo
-        ganancia_matriz = costo * 0.15
-        margen_pct      = (ganancia_suc / ingreso * 100) if ingreso > 0 else 0.0
+        
+        prod_info = product_costs.get(name_key, {"costo": 0.0, "proveedor": ""})
+        costo_base = prod_info["costo"]
+        proveedor = prod_info["proveedor"]
+        
+        costo_real = d["costo_real_pos"] if d["costo_real_pos"] > 0 else (costo_base * unidades)
+        
+        # Regla Taboada (alineada al Dashboard)
+        es_taboada = "taboada" in proveedor
+        if es_taboada:
+            # Matriz gana el 15% sobre el costo base de los productos
+            ganancia_matriz = costo_real * 0.15
+            # La sucursal gana la diferencia entre el ingreso y el costo base
+            ganancia_suc = ingreso - costo_real
+        else:
+            ganancia_matriz = 0.0
+            ganancia_suc = ingreso - costo_real
+            
+        margen_pct = (ganancia_suc / ingreso * 100) if ingreso > 0 else 0.0
+        
         result.append({
-            "nombre":          nombre,
+            "nombre":          d["nombre"],
             "unidades":        int(unidades),
             "ingreso_bruto":   round(ingreso, 2),
-            "costo_real":      round(costo, 2),
+            "costo_real":      round(costo_real, 2),
             "ganancia_suc":    round(ganancia_suc, 2),
             "ganancia_matriz": round(ganancia_matriz, 2),
             "descuentos":      round(d["descuentos"], 2),
             "margen_pct":      round(margen_pct, 1),
             "precio_prom":     round(ingreso / unidades, 2) if unidades > 0 else 0.0,
-            "costo_prom":      round(costo  / unidades, 2) if unidades > 0 else 0.0,
+            "costo_prom":      round(costo_base, 2) if costo_base > 0 else (round(costo_real / unidades, 2) if unidades > 0 else 0.0),
             "stock":           stock_map.get(d.get("producto_id_ref", ""), {}),
             "fuente":          d.get("fuente", "?"),
         })

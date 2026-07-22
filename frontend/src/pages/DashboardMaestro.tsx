@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 import { getAnalyticsDashboard, getSucursales } from '../api/api';
 import {
     LayoutDashboard, DollarSign,
@@ -21,7 +22,7 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 
 
-const getDynamicPeriodText = (timeRange: string, customStart: string, customEnd: string, selectedMonth: string, selectedYear: string) => {
+const getDynamicPeriodText = (timeRange: string, customStart: string, customEnd: string, selectedMonth: string, selectedYear: string, selectedDay?: string) => {
     const today = new Date();
     
     const formatDate = (date: Date) => date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -50,10 +51,18 @@ const getDynamicPeriodText = (timeRange: string, customStart: string, customEnd:
     } else if (timeRange === 'custom_year') {
         return `AÑO ${selectedYear}`;
     } else if (timeRange === 'custom_date') {
-        if (customStart && customEnd) {
+        if (customStart) {
             const s = new Date(`${customStart}T00:00:00`);
-            const e = new Date(`${customEnd}T00:00:00`);
-            return `del ${formatDate(s)} al ${formatDate(e)}`;
+            if (customEnd && customEnd !== customStart) {
+                const e = new Date(`${customEnd}T00:00:00`);
+                return `del ${formatDate(s)} al ${formatDate(e)}`;
+            }
+            return `el ${formatDate(s)}`;
+        }
+    } else if (timeRange === 'custom_day') {
+        if (selectedDay) {
+            const d = new Date(`${selectedDay}T00:00:00`);
+            return `el ${formatDate(d)}`;
         }
     }
     return "";
@@ -66,7 +75,7 @@ export default function DashboardMaestro() {
     const [data, setData] = useState<any>(null);
     const [climaEvento, setClimaEvento] = useState('');
     const [isBackendOffline, setIsBackendOffline] = useState(false);
-    const [selectedSucursal, setSelectedSucursal] = useState('all');
+    const [selectedSucursal] = useState('all');
     const [sucursales, setSucursales] = useState<any[]>([]);
     const [showRevenueBreakdown, setShowRevenueBreakdown] = useState(false);
     const [showMargenDetails, setShowMargenDetails] = useState(false);
@@ -77,6 +86,7 @@ export default function DashboardMaestro() {
     const [timeRange, setTimeRange] = useState('30days'); // 'today', '7days', '30days', 'this_month', 'this_year', 'historico', 'custom_month', 'custom_year', 'custom_date'
     const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
     const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
+    const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     
@@ -96,9 +106,16 @@ export default function DashboardMaestro() {
             end.setHours(23, 59, 59, 999);
             setDates({ start: start.toISOString(), end: end.toISOString() });
         } else if (timeRange === 'custom_date') {
-            if (customStartDate && customEndDate) {
+            if (customStartDate) {
                 const start = new Date(`${customStartDate}T00:00:00`);
-                const end = new Date(`${customEndDate}T23:59:59`);
+                const endLimit = customEndDate ? customEndDate : customStartDate;
+                const end = new Date(`${endLimit}T23:59:59`);
+                setDates({ start: start.toISOString(), end: end.toISOString() });
+            }
+        } else if (timeRange === 'custom_day') {
+            if (selectedDay) {
+                const start = new Date(`${selectedDay}T00:00:00`);
+                const end = new Date(`${selectedDay}T23:59:59`);
                 setDates({ start: start.toISOString(), end: end.toISOString() });
             }
         } else {
@@ -112,7 +129,7 @@ export default function DashboardMaestro() {
             }
             setDates({ start: `${startYear}-01-01T00:00:00.000Z`, end: '2026-12-31T23:59:59.000Z' });
         }
-    }, [timeRange, selectedMonth, selectedYear, customStartDate, customEndDate, selectedSucursal, sucursales]);
+    }, [timeRange, selectedMonth, selectedYear, selectedDay, customStartDate, customEndDate, selectedSucursal, sucursales]);
 
     useEffect(() => {
         getSucursales(false).then(setSucursales).catch(console.error);
@@ -166,6 +183,9 @@ export default function DashboardMaestro() {
                     // Detectar si es error de conexión (backend apagado)
                     if (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
                         setIsBackendOffline(true);
+                        toast.error("Error crítico: No se pudo contactar al servidor. Revisa tu conexión o inicia el backend.");
+                    } else {
+                        toast.error("Ocurrió un error al cargar las métricas financieras.");
                     }
                     setIsError(true);
                 }
@@ -242,27 +262,12 @@ export default function DashboardMaestro() {
                         <span>Orquestación en tiempo real sobre ~110k Registros Históricos.</span>
                     </p>
                 </div>
-
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full border-t border-gray-100 pt-5">
-                    
-                    {/* Filtro de Sucursal */}
-                    <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100 transition-all hover:bg-indigo-100/50">
-                        <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent text-sm outline-none font-black cursor-pointer text-indigo-700 w-[140px]"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales.map((s, index) => (
-                                <option key={s.id || s._id || index} value={s.id || s._id || index}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
 
                     <div className="w-px bg-gray-300 mx-1 my-1"></div>
 
-                    {/* Segmented Control Rango (Estilo Premium) */}
-                    <div className="flex bg-gray-100/80 p-1.5 rounded-xl shadow-inner border border-gray-200/60 overflow-x-auto w-full lg:w-auto custom-scrollbar">
+                    {/* Segmented Control Rango (Sin Fondo) */}
+                    <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto custom-scrollbar">
                         <button 
                             onClick={() => setTimeRange('today')} 
                             className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === 'today' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
@@ -275,12 +280,17 @@ export default function DashboardMaestro() {
                         >
                             Ayer
                         </button>
-                        <button 
-                            onClick={() => setTimeRange('7days')} 
-                            className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === '7days' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
-                        >
-                            7 Días
-                        </button>
+                        
+                        {/* Selector de día único rápido */}
+                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_day' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
+                            <input 
+                                type="date" 
+                                value={selectedDay} 
+                                onChange={(e) => { setSelectedDay(e.target.value); setTimeRange('custom_day'); }} 
+                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_day' ? "text-indigo-700" : "text-gray-500")}
+                            />
+                        </div>
+
                         <button 
                             onClick={() => setTimeRange('30days')} 
                             className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === '30days' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
@@ -320,14 +330,14 @@ export default function DashboardMaestro() {
                             <input 
                                 type="date" 
                                 value={customStartDate} 
-                                onChange={(e) => { setCustomStartDate(e.target.value); if(customEndDate) setTimeRange('custom_date'); }} 
+                                onChange={(e) => { setCustomStartDate(e.target.value); setTimeRange('custom_date'); }} 
                                 className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
                             />
                             <span className="text-gray-400 font-bold">-</span>
                             <input 
                                 type="date" 
                                 value={customEndDate} 
-                                onChange={(e) => { setCustomEndDate(e.target.value); if(e.target.value && customStartDate) setTimeRange('custom_date'); }} 
+                                onChange={(e) => { setCustomEndDate(e.target.value); setTimeRange('custom_date'); }} 
                                 className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
                             />
                         </div>
@@ -357,7 +367,8 @@ export default function DashboardMaestro() {
             {/* Sub-header text indicating period and branch for the data below */}
             <div className="flex justify-start mb-2 mt-0">
                 <span className="text-gray-500 font-black text-[11px] bg-white px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-widest shadow-sm">
-                    Mostrando: {getDynamicPeriodText(timeRange, customStartDate, customEndDate, selectedMonth, selectedYear)} • {selectedSucursal === 'all' ? 'Todas las Sucursales' : sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}
+                    Mostrando: {getDynamicPeriodText(timeRange, customStartDate, customEndDate, selectedMonth, selectedYear, selectedDay)}
+                    {selectedSucursal !== 'all' && ` • ${sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}`}
                 </span>
             </div>
 

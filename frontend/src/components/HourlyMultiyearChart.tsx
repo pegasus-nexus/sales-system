@@ -369,7 +369,7 @@ export default function HourlyMultiyearChart() {
                         Comparativa Horaria Multi-Año
                     </h3>
                     <p className="text-gray-500 text-sm flex flex-wrap items-center gap-2 mb-4">
-                        <span>Eje temporal: <strong>08:00 – 21:00</strong>.</span>
+                        <span>Eje temporal: <strong>{renderedData.length > 0 ? `${renderedData[0].hora} – ${renderedData[renderedData.length - 1].hora}` : '08:00 – 21:00'}</strong>.</span>
                         <span className="text-gray-300">•</span>
                         {meta ? (
                             <span className="text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">

@@ -4,7 +4,7 @@ Diagnóstico rápido de índices y tamaño de colecciones.
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
-URI = "mongodb+srv://rodrigorayomartinez_db_user:RqunkSiTBxQU2oew@cluster0.teutv4o.mongodb.net/salessystem?appName=Cluster0"
+URI = "mongodb+srv://sahian-dev-mongo:8wngkGRxGBKg3gsu@sales-system.hh277gd.mongodb.net/?appName=sales-system"
 
 async def main():
     client = AsyncIOMotorClient(URI)

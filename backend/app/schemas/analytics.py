@@ -54,6 +54,10 @@ class BCGProduct(BaseModel):
     crecimiento: float = Field(0.0, description="Porcentaje de crecimiento en decimal (-0.5 a 1.0+)")
     cuota_relativa: float = Field(0.0, description="Cuota respecto al producto líder (0.0 a 1.0)")
     cuadrante: str = Field(..., description="'ESTRELLA', 'VACA', 'INTERROGANTE', 'PERRO'")
+    estrategia_sugerida: Optional[str] = Field(None, description="Directriz de negocio (ej. Inversión, Liquidación, etc.)")
+    tendencia_str: Optional[str] = None
+    badge: Optional[str] = None
+    nota: Optional[str] = None
 
 class BCGMatrixResponse(BaseModel):
     estrellas: List[BCGProduct] = []

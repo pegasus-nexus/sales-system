@@ -1,14 +1,242 @@
 import traceback
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 import asyncio
 import time
 
 from app.db import get_raw_db
+from app.utils.cache import ttl_cache
 
 _dashboard_cache = {}
 _dashboard_locks = {}
+
+@ttl_cache(seconds=60)
+async def _get_unified_sales_df_cached(
+    tenant_id: str,
+    start_date_utc: datetime,
+    end_date_utc: datetime,
+    target_sucursal: str = None
+) -> pd.DataFrame:
+    """
+    SINGLE SOURCE OF TRUTH (SSOT):
+    Carga y unifica las colecciones 'ventas_historicas_crudas' (BI) y 'sales' (POS),
+    aplicando deduplicación estricta por original_sale_id, exclusión de tickets anulados,
+    filtro de INCLUSIÓN ESTRICTA para las 3 sucursales minoristas ('Heroínas', 'Calacoto', 'Recoleta')
+    y el Business Day Offset (04:00 AM - 03:59 AM) de Bolivia.
+    """
+    db = await get_raw_db()
+    LOCAL_TZ = 'America/La_Paz'
+
+    # 1. Lista blanca de sucursales
+    cursor_sucursales = db.sucursales.find({"tenant_id": tenant_id})
+    suc_id_to_name = {}
+    async for s in cursor_sucursales:
+        nombre = str(s.get("nombre", "")).strip()
+        n_lower = nombre.lower()
+        if any(bad in n_lower for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista", "supermercados"]):
+            continue
+        nombre_real = None
+        if "hero" in n_lower:
+            nombre_real = "Heroínas"
+        elif "calacoto" in n_lower:
+            nombre_real = "Calacoto"
+        elif "recoleta" in n_lower:
+            nombre_real = "Recoleta"
+        if nombre_real:
+            suc_id_to_name[str(s["_id"])] = nombre_real
+
+    # 2. Históricos desde 'ventas_historicas_crudas' (INCLUSIÓN ESTRICTA RETAIL - REGEX FAILPROOF)
+    rango_hist = {
+        "tenant_id": tenant_id,
+        "fecha_transaccion": {"$gte": start_date_utc, "$lt": end_date_utc}
+    }
+    if target_sucursal:
+        pat = "Hero.*nas" if "hero" in target_sucursal.lower() else target_sucursal
+        rango_hist["sucursal"] = {"$regex": pat, "$options": "i"}
+    else:
+        # Exigir estrictamente las 3 sucursales minoristas (Fail-proof)
+        rango_hist["sucursal"] = {"$regex": "Hero.*nas|Calacoto|Recoleta", "$options": "i"}
+
+    projection_hist = {
+        "_id": 0, 
+        "fecha_transaccion": 1, 
+        "monto_total_bs": 1,
+        "sucursal": 1,
+        "nombre_producto": 1,
+        "cantidad_vendida": 1,
+        "cliente": 1,
+        "estado": 1,
+        "original_sale_id": 1
+    }
+
+    t0 = time.time()
+    cursor_hist = db.ventas_historicas_crudas.find(rango_hist, projection_hist).batch_size(10000)
+    datos_hist = await cursor_hist.to_list(length=None)
+    t1 = time.time()
+    print(f"[PROFILING] MongoDB ventas_historicas_crudas find(): {(t1-t0)*1000:.2f}ms para {len(datos_hist)} registros", flush=True)
+
+    # Identificar IDs para deduplicación estricta
+    ids_migrados = {
+        str(d["original_sale_id"]).strip() 
+        for d in datos_hist 
+        if "original_sale_id" in d and d["original_sale_id"]
+    }
+    print(f"[PROFILING] Deduplicación Set Build: {(time.time()-t1)*1000:.2f}ms", flush=True)
+
+    # 3. Ventas en vivo desde 'sales' (POS) (INCLUSIÓN ESTRICTA RETAIL)
+    rango_sales = {
+        "tenant_id": tenant_id,
+        "created_at": {"$gte": start_date_utc, "$lt": end_date_utc}
+    }
+    
+    if target_sucursal:
+        matching_ids = [sid for sid, sname in suc_id_to_name.items() if sname == target_sucursal]
+    else:
+        matching_ids = list(suc_id_to_name.keys())
+
+    # Solo filtrar por sucursal_id si matching_ids no está vacío (evita $in: [] que devuelve 0 registros)
+    if matching_ids:
+        try:
+            from bson import ObjectId
+            oids = [ObjectId(sid) for sid in matching_ids if ObjectId.is_valid(sid)]
+            rango_sales["sucursal_id"] = {"$in": matching_ids + oids}
+        except Exception:
+            rango_sales["sucursal_id"] = {"$in": matching_ids}
+
+    sales_projection = {
+        "_id": 1,
+        "created_at": 1,
+        "total": 1,
+        "sucursal_id": 1,
+        "items": 1,
+        "cliente": 1,
+        "anulada": 1,
+        "estado": 1
+    }
+
+    cursor_sales = db.sales.find(rango_sales, sales_projection).batch_size(10000)
+    t2 = time.time()
+    live_sales = await cursor_sales.to_list(length=None)
+    t3 = time.time()
+    print(f"[PROFILING] MongoDB sales find(): {(t3-t2)*1000:.2f}ms para {len(live_sales)} registros", flush=True)
+
+    flat_live_records = []
+    for sale in live_sales:
+        sale_id_str = str(sale["_id"])
+        if sale_id_str in ids_migrados:
+            continue  # Deduplicación: ya está en datos_hist
+
+        suc_id = str(sale.get("sucursal_id", ""))
+        suc_nombre = suc_id_to_name.get(suc_id)
+        if not suc_nombre:
+            raw_s = str(sale.get("sucursal", "")).lower()
+            if "hero" in raw_s: suc_nombre = "Heroínas"
+            elif "calacoto" in raw_s: suc_nombre = "Calacoto"
+            elif "recoleta" in raw_s: suc_nombre = "Recoleta"
+
+        if not suc_nombre:
+            continue  # Excluir únicamente si no pertenece a las 3 sucursales minoristas
+
+        if target_sucursal and suc_nombre != target_sucursal:
+            continue
+
+        cliente_nombre = ""
+        cliente_obj = sale.get("cliente")
+        if cliente_obj:
+            cliente_nombre = cliente_obj.get("razon_social") or cliente_obj.get("nit") or ""
+
+        estado_ticket = "Anulado" if sale.get("anulada") else str(sale.get("estado", "Completado"))
+
+        items = sale.get("items", [])
+        if not items:
+            try: monto_item = float(str(sale.get("total", 0)))
+            except Exception: monto_item = 0.0
+            flat_live_records.append({
+                "fecha_transaccion": sale.get("created_at"),
+                "monto_total_bs": monto_item,
+                "sucursal": suc_nombre,
+                "nombre_producto": "GENERAL",
+                "cantidad_vendida": 1.0,
+                "cliente": cliente_nombre,
+                "estado": estado_ticket,
+                "original_sale_id": sale_id_str
+            })
+        else:
+            for item in items:
+                try: monto_item = float(str(item.get("subtotal", 0)))
+                except Exception: monto_item = 0.0
+                try: cant_item = float(str(item.get("cantidad", 1)))
+                except Exception: cant_item = 1.0
+                prod_desc = str(item.get("descripcion", "")).upper()
+
+                flat_live_records.append({
+                    "fecha_transaccion": sale.get("created_at"),
+                    "monto_total_bs": monto_item,
+                    "sucursal": suc_nombre,
+                    "nombre_producto": prod_desc,
+                    "cantidad_vendida": cant_item,
+                    "cliente": cliente_nombre,
+                    "estado": estado_ticket,
+                    "original_sale_id": sale_id_str
+                })
+
+    all_records = datos_hist + flat_live_records
+    if not all_records:
+        return pd.DataFrame()
+
+    t4 = time.time()
+    df = pd.DataFrame(all_records)
+    print(f"[PROFILING] Pandas DataFrame construction: {(time.time()-t4)*1000:.2f}ms para {len(all_records)} registros", flush=True)
+
+    if 'fecha_transaccion' in df.columns:
+        df['fecha_transaccion'] = pd.to_datetime(df['fecha_transaccion'], errors='coerce', utc=True)
+        df.dropna(subset=['fecha_transaccion'], inplace=True)
+    else:
+        return pd.DataFrame()
+
+    if 'monto_total_bs' in df.columns:
+        df['monto_total_bs'] = pd.to_numeric(df['monto_total_bs'], errors='coerce').fillna(0.0)
+
+    # Excluir tickets ANULADOS strictly
+    if 'estado' in df.columns:
+        df = df[df['estado'].astype(str).str.lower() != 'anulado']
+
+    # Filtro de INCLUSIÓN ESTRICTA a nivel Pandas (Solo las 3 sucursales minoristas)
+    if 'sucursal' in df.columns:
+        retail_pattern = "Hero[íi]nas|Calacoto|Recoleta"
+        df = df[df['sucursal'].astype(str).str.contains(retail_pattern, case=False, regex=True, na=False)]
+
+    # Business Day Offset (Desplazamiento de 4 horas para que 00:00-03:59 AM pertenezca al turno del día anterior)
+    df['fecha_local'] = df['fecha_transaccion'].dt.tz_convert(LOCAL_TZ)
+    df['fecha_logica'] = (df['fecha_local'] - pd.Timedelta(hours=4)).dt.date
+    df['fecha_solo_local'] = df['fecha_logica']
+
+    def format_extended_hour(dt_obj):
+        h = dt_obj.hour
+        if h < 4:
+            h += 24
+        return f"{h:02d}:00"
+
+    t5 = time.time()
+    df['hora_str'] = df['fecha_local'].apply(format_extended_hour)
+    print(f"[PROFILING] Pandas Data Munging (fechas/horas): {(time.time()-t5)*1000:.2f}ms", flush=True)
+
+    return df
+
+async def get_unified_sales_df(
+    tenant_id: str,
+    start_date_utc: datetime,
+    end_date_utc: datetime,
+    target_sucursal: str = None
+) -> pd.DataFrame:
+    df = await _get_unified_sales_df_cached(
+        tenant_id=tenant_id,
+        start_date_utc=start_date_utc,
+        end_date_utc=end_date_utc,
+        target_sucursal=target_sucursal
+    )
+    return df.copy()
 
 async def get_dashboard_metrics(
     tenant_id: str, 
@@ -53,9 +281,20 @@ async def get_dashboard_metrics(
     try:
         db = await get_raw_db()
         
-        filtro = {"tenant_id": tenant_id}
+        # Resolve sucursal_id to name if it is an ObjectId
+        nombre_sucursal_filtro = None
         if sucursal_id:
-            suc_pattern = sucursal_id.strip()
+            try:
+                from bson import ObjectId
+                suc_doc = await db.sucursales.find_one({"_id": ObjectId(sucursal_id)})
+                if suc_doc:
+                    nombre_sucursal_filtro = suc_doc.get("nombre")
+            except Exception:
+                nombre_sucursal_filtro = sucursal_id
+
+        filtro = {"tenant_id": tenant_id}
+        if nombre_sucursal_filtro:
+            suc_pattern = nombre_sucursal_filtro.strip()
             if suc_pattern.lower() == "heroinas":
                 suc_pattern = "Hero[íi]nas"
             filtro["sucursal"] = {"$regex": suc_pattern, "$options": "i"}
@@ -132,8 +371,8 @@ async def get_dashboard_metrics(
                 "tenant_id": tenant_id
             }
             
-            if sucursal_id:
-                suc_pattern = sucursal_id.strip()
+            if nombre_sucursal_filtro:
+                suc_pattern = nombre_sucursal_filtro.strip()
                 if suc_pattern.lower() == "heroinas":
                     suc_pattern = "Hero[íi]nas"
                 filtro_suc = {"$regex": suc_pattern, "$options": "i"}
@@ -142,83 +381,39 @@ async def get_dashboard_metrics(
                 
             filtro["$or"] = [rango_principal, rango_yoy]
             
-        print(f"Obteniendo registros filtrados de forma óptima...")
+        print(f"Obteniendo registros filtrados con la arquitectura SSOT...")
         t_mongo_start = __import__('time').time()
         
-        projection = {
-            "_id": 0, 
-            "fecha_transaccion": 1, 
-            "monto_total_bs": 1,
-            "sucursal": 1,
-            "nombre_producto": 1,
-            "cantidad_vendida": 1,
-            "cliente": 1,
-            "estado": 1
-        }
+        start_utc = fecha_minima_periodo.to_pydatetime()
+        end_utc = end_curr.to_pydatetime() if end_curr is not None else datetime.now(timezone.utc)
 
-        if "$or" in filtro:
-            # Separamos las consultas para evitar full collection scan por culpa del $or
-            cursor_principal = db.ventas_historicas_crudas.find(rango_principal, projection).batch_size(10000)
-            datos_principal = await cursor_principal.to_list(length=None)
-            
-            cursor_yoy = db.ventas_historicas_crudas.find(rango_yoy, projection).batch_size(10000)
-            datos_yoy = await cursor_yoy.to_list(length=None)
-            
-            datos = datos_principal + datos_yoy
-        else:
-            cursor = db.ventas_historicas_crudas.find(filtro, projection).batch_size(10000)
-            datos = await cursor.to_list(length=None)
+        df = await get_unified_sales_df(
+            tenant_id=tenant_id,
+            start_date_utc=start_utc,
+            end_date_utc=end_utc,
+            target_sucursal=nombre_sucursal_filtro
+        )
 
         t_mongo_end = __import__('time').time()
-        print(f"MONGO QUERY TOOK: {t_mongo_end - t_mongo_start:.4f}s, rows: {len(datos)}")
-        
-        if not datos:
-            return _empty_response()
-            
-        t_df_start = __import__('time').time()
-        df = pd.DataFrame(datos)
-        
-        # Limpieza de fechas UTC
-        if 'fecha_transaccion' in df.columns:
-            df['fecha_transaccion'] = pd.to_datetime(df['fecha_transaccion'], errors='coerce', utc=True)
-            df.dropna(subset=['fecha_transaccion'], inplace=True)
-        else:
-            return _empty_response()
-            
-        if 'monto_total_bs' in df.columns:
-            if isinstance(df['monto_total_bs'], pd.DataFrame):
-                 df = df.drop(columns=['monto_total_bs']).assign(monto_total_bs=df['monto_total_bs'].iloc[:, -1])
-            df['monto_total_bs'] = pd.to_numeric(df['monto_total_bs'], errors='coerce').fillna(0)
-        else:
-            df['monto_total_bs'] = 0.0
-            
-        df.dropna(subset=['monto_total_bs'], inplace=True)
-        
-        # Filtro de estados de ticket: Excluir estrictamente "Anulado"
-        if 'estado' in df.columns:
-            df = df[df['estado'].str.lower() != 'anulado']
-        t_df_end = __import__('time').time()
-        print(f"PANDAS CLEANING TOOK: {t_df_end - t_df_start:.4f}s")
+        print(f"SSOT QUERY TOOK: {t_mongo_end - t_mongo_start:.4f}s, rows: {len(df)}")
         
         if df.empty:
             return _empty_response()
         
-        # CONVERTIR TODAS LAS FECHAS A HORA LOCAL BOLIVIA para comparaciones correctas
-        df['fecha_local'] = df['fecha_transaccion'].dt.tz_convert(LOCAL_TZ)
-        df['fecha_solo_local'] = df['fecha_local'].dt.date
-            
-        # Filtros de Tiempo Dinámicos usando FECHA ESTRICTAMENTE LOCAL (UTC-4)
+        # Filtros de Tiempo Dinámicos usando FECHA LOGICA BOLIVIA (Business Day Offset)
         fecha_max_local = df['fecha_local'].max()
 
-        
         if time_range == 'today':
-            # "Hoy" = fecha actual en Bolivia desde 00:00 hasta 23:59 (sin offset de negocio)
             hoy_local_date = pd.Timestamp.now(tz=LOCAL_TZ).date()
-            print(f"[TODAY] Filtrando por fecha estricta Bolivia: {hoy_local_date}")
+            if pd.Timestamp.now(tz=LOCAL_TZ).hour < 4:
+                hoy_local_date = hoy_local_date - pd.Timedelta(days=1)
+            print(f"[TODAY] Filtrando por fecha lógica Bolivia: {hoy_local_date}")
             df_filtrado = df[df['fecha_solo_local'] == hoy_local_date]
         elif time_range == 'yesterday':
             ayer_local_date = (pd.Timestamp.now(tz=LOCAL_TZ) - pd.Timedelta(days=1)).date()
-            print(f"[YESTERDAY] Filtrando por fecha estricta Bolivia: {ayer_local_date}")
+            if pd.Timestamp.now(tz=LOCAL_TZ).hour < 4:
+                ayer_local_date = ayer_local_date - pd.Timedelta(days=1)
+            print(f"[YESTERDAY] Filtrando por fecha lógica Bolivia: {ayer_local_date}")
             df_filtrado = df[df['fecha_solo_local'] == ayer_local_date]
         elif time_range == '7days':
             df_filtrado = df[df['fecha_local'] >= (fecha_max_local - pd.DateOffset(days=7))]
@@ -237,15 +432,18 @@ async def get_dashboard_metrics(
 
         # KPIs Financieros Avanzados ==========================================
         total_ingresos = float(df_filtrado['monto_total_bs'].sum())
-        total_ordenes = len(df_filtrado)
+        
+        # Conteo exacto de Tickets Cliente (desduplicado por original_sale_id)
+        if 'original_sale_id' in df_filtrado.columns and not df_filtrado['original_sale_id'].dropna().empty:
+            total_ordenes = int(df_filtrado['original_sale_id'].dropna().nunique())
+        else:
+            total_ordenes = len(df_filtrado)
         
         clientes_activos = 0
         clientes_recurrentes = 0
         if 'cliente' in df_filtrado.columns:
-            # Drop null and blank clients
             valid_clients = df_filtrado[df_filtrado['cliente'].notna() & (df_filtrado['cliente'] != '')]
             clientes_activos = int(valid_clients['cliente'].nunique())
-            
             c_counts = valid_clients['cliente'].value_counts()
             clientes_recurrentes = int((c_counts > 1).sum())
             
@@ -481,7 +679,7 @@ async def get_dashboard_metrics(
                 bcg_data["perros"].sort(key=lambda x: x["ingresos_actuales"], reverse=True)
 
         t_bcg_end = __import__('time').time()
-        print(f"PANDAS METRICS & BCG TOOK: {t_bcg_end - t_df_end:.4f}s")
+        print(f"PANDAS METRICS & BCG TOOK: {t_bcg_end - t_mongo_end:.4f}s")
 
         print(">>> DATOS PROCESADOS CORRECTAMENTE <<<")
 
@@ -528,7 +726,7 @@ async def get_dashboard_metrics(
                 n_lower = nombre.lower()
                 
                 # Ignorar explícitamente sucursales basura de la DB
-                if any(bad in n_lower for bad in ["fexco", "distribucion", "vendedores", "sucre", "mayorista"]):
+                if any(bad in n_lower for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]):
                     continue
                     
                 nombre_real = None
