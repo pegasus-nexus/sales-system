@@ -51,23 +51,45 @@ export default function DashboardMaestro() {
     const [showTicketMedioDetails, setShowTicketMedioDetails] = useState(false);
     const [showTicketClienteDetails, setShowTicketClienteDetails] = useState(false);
 
-    // NUEVOS ESTADOS DE TIEMPO
-    const [timeRange, setTimeRange] = useState('custom_date');
     const [customStartDate, setCustomStartDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
     
     const [dates, setDates] = useState({ start: '2024-01-01T00:00:00.000Z', end: '2026-12-31T23:59:59.000Z' });
 
-    useEffect(() => {
-        if (timeRange === 'custom_date') {
-            if (customStartDate) {
-                const start = new Date(`${customStartDate}T00:00:00`);
-                const endLimit = customEndDate ? customEndDate : customStartDate;
-                const end = new Date(`${endLimit}T23:59:59`);
-                setDates({ start: start.toISOString(), end: end.toISOString() });
-            }
+    const handleApplyDates = () => {
+        if (customStartDate) {
+            const start = new Date(`${customStartDate}T00:00:00`);
+            const endLimit = customEndDate ? customEndDate : customStartDate;
+            const end = new Date(`${endLimit}T23:59:59`);
+            setDates({ start: start.toISOString(), end: end.toISOString() });
         }
-    }, [timeRange, customStartDate, customEndDate, selectedSucursal, sucursales]);
+    };
+
+    const setQuickDate = (type: 'today' | 'yesterday' | '30days') => {
+        const today = new Date();
+        if (type === 'today') {
+            const todayStr = today.toISOString().slice(0, 10);
+            setCustomStartDate(todayStr);
+            setCustomEndDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0, 10);
+            setCustomStartDate(yesterdayStr);
+            setCustomEndDate(yesterdayStr);
+        } else if (type === '30days') {
+            const past = new Date(today);
+            past.setDate(today.getDate() - 29);
+            setCustomStartDate(past.toISOString().slice(0, 10));
+            setCustomEndDate(today.toISOString().slice(0, 10));
+        }
+    };
+
+    // Aplicar las fechas iniciales
+    useEffect(() => {
+        handleApplyDates();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSucursal]);
 
     useEffect(() => {
         getSucursales(false).then(setSucursales).catch(console.error);
@@ -80,12 +102,11 @@ export default function DashboardMaestro() {
             setIsError(false);
             setIsBackendOffline(false);
             try {
-                const backendTimeRange = timeRange.startsWith('custom') ? 'custom' : timeRange;
                 const res = await getAnalyticsDashboard(
                     dates.start,
                     dates.end,
                     selectedSucursal === 'all' ? undefined : selectedSucursal,
-                    backendTimeRange,
+                    'custom',
                     climaEvento
                 );
                 if (isMounted) setData(res);
@@ -106,7 +127,7 @@ export default function DashboardMaestro() {
         };
         fetchData();
         return () => { isMounted = false; };
-    }, [timeRange, climaEvento, dates, selectedSucursal]);
+    }, [climaEvento, dates, selectedSucursal]);
 
     const esAdmin = ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(role || '');
 
@@ -175,27 +196,54 @@ export default function DashboardMaestro() {
                 </div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full border-t border-gray-100 pt-5">
 
-                    <div className="w-px bg-gray-300 mx-1 my-1"></div>
-
                     {/* Segmented Control Rango (Sin Fondo) */}
                     <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto custom-scrollbar">
 
+                        {/* Botones rápidos */}
+                        <button 
+                            onClick={() => setQuickDate('today')} 
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                        >
+                            Hoy
+                        </button>
+                        <button 
+                            onClick={() => setQuickDate('yesterday')} 
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                        >
+                            Ayer
+                        </button>
+                        <button 
+                            onClick={() => setQuickDate('30days')} 
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                        >
+                            30 Días
+                        </button>
+
+                        <div className="w-px bg-gray-300 mx-1 my-1 h-6"></div>
+
                         {/* Rango de Fechas Personalizado */}
-                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_date' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg transition-all bg-white shadow-sm border border-gray-200/50">
                             <input 
                                 type="date" 
                                 value={customStartDate} 
-                                onChange={(e) => { setCustomStartDate(e.target.value); setTimeRange('custom_date'); }} 
-                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
+                                onChange={(e) => setCustomStartDate(e.target.value)} 
+                                className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px] text-indigo-700"
                             />
                             <span className="text-gray-400 font-bold">-</span>
                             <input 
                                 type="date" 
                                 value={customEndDate} 
-                                onChange={(e) => { setCustomEndDate(e.target.value); setTimeRange('custom_date'); }} 
-                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_date' ? "text-indigo-700" : "text-gray-500")}
+                                onChange={(e) => setCustomEndDate(e.target.value)} 
+                                className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px] text-indigo-700"
                             />
                         </div>
+
+                        <button 
+                            onClick={handleApplyDates}
+                            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all ml-1"
+                        >
+                            Aplicar
+                        </button>
                     </div>
 
                     {/* Filtro Clima / Evento AI */}
