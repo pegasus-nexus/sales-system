@@ -48,9 +48,17 @@ const QUADRANTS_CONFIG = [
 const SUCS = [
     { value: '', label: 'Todas las Sucursales' },
     { value: 'Heroinas', label: 'Heroínas' },
-    { value: 'Recoleta', label: 'Recoleta' },
-    { value: 'Calacoto', label: 'Calacoto' },
+    { value: 'Cala Cala', label: 'Cala Cala' },
+    { value: 'America', label: 'América' },
 ];
+
+// Helper para escala logarítmica (distribuye mejor los valores atípicos)
+const getLogPos = (val: number, maxVal: number) => {
+    if (maxVal <= 0) return 0;
+    const logVal = Math.log10(Math.max(val, 0) + 1);
+    const logMax = Math.log10(maxVal + 1);
+    return logVal / logMax;
+};
 
 export interface BcgItem {
     nombre: string;
@@ -316,7 +324,7 @@ export default function BcgMatrix() {
         interrogantes.sort((a, b) => b.variacion - a.variacion);
         perros.sort((a, b) => b.actual - a.actual);
 
-        return { estrellas, vacas, interrogantes, perros, totalCount: filtered.length, itemsList, granTotalVentas, maxRevenue, maxVolume };
+        return { estrellas, vacas, interrogantes, perros, totalCount: filtered.length, itemsList, granTotalVentas, maxRevenue, maxVolume, avgRevenue, avgVolume };
     }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
 
     return (
@@ -477,54 +485,60 @@ export default function BcgMatrix() {
                         {/* Ejes & Fondo de Cuadrantes */}
                         <div className="relative w-full h-[520px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
                             
-                            {/* Cuadrante Top-Left: INTERROGANTES -> GENERADORES DE VOLUMEN */}
-                            <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-purple-950/20 border-r border-b border-purple-500/20 p-4 flex flex-col justify-start items-start pointer-events-none">
-                                <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
-                                    <HelpCircle size={14}/> Generadores de Volumen ({bcgData.interrogantes.length})
-                                </div>
-                                <span className="text-[10px] text-purple-300/60 mt-1">Alto volumen de unidades, bajas ventas Bs.</span>
-                            </div>
+                            {/* Cálculo de ejes dinámicos visuales (usando log scale para alinear matemática y gráfico) */}
+                            {(() => {
+                                const crossX = 5 + getLogPos(bcgData.avgRevenue, bcgData.maxRevenue) * 90;
+                                const crossY = 95 - getLogPos(bcgData.avgVolume, bcgData.maxVolume) * 90;
+                                return (
+                                    <>
+                                        {/* Cuadrante Top-Left: INTERROGANTES -> GENERADORES DE VOLUMEN */}
+                                        <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 p-4 flex flex-col justify-start items-start pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }}>
+                                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
+                                                <HelpCircle size={14}/> Generadores de Volumen ({bcgData.interrogantes.length})
+                                            </div>
+                                            <span className="text-[10px] text-purple-300/60 mt-1">Alto volumen, bajas ventas</span>
+                                        </div>
 
-                            {/* Cuadrante Top-Right: ESTRELLAS -> ALTO VALOR */}
-                            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-emerald-950/20 border-b border-emerald-500/20 p-4 flex flex-col justify-start items-end pointer-events-none">
-                                <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                                    <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
-                                </div>
-                                <span className="text-[10px] text-emerald-300/60 mt-1">Alto volumen de unidades, altas ventas Bs.</span>
-                            </div>
+                                        {/* Cuadrante Top-Right: ESTRELLAS -> ALTO VALOR */}
+                                        <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 p-4 flex flex-col justify-start items-end pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }}>
+                                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                                                <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
+                                            </div>
+                                            <span className="text-[10px] text-emerald-300/60 mt-1">Alto volumen, altas ventas</span>
+                                        </div>
 
-                            {/* Cuadrante Bottom-Left: PERROS -> PRODUCTOS A REVISAR */}
-                            <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-slate-900/40 border-r border-slate-700/30 p-4 flex flex-col justify-end items-start pointer-events-none">
-                                <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
-                                    <ArrowDownCircle size={14}/> Productos a Revisar ({bcgData.perros.length})
-                                </div>
-                                <span className="text-[10px] text-slate-400/60 mt-1">Bajo volumen de unidades, bajas ventas Bs.</span>
-                            </div>
+                                        {/* Cuadrante Bottom-Left: PERROS -> PRODUCTOS A REVISAR */}
+                                        <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 p-4 flex flex-col justify-end items-start pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }}>
+                                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
+                                                <ArrowDownCircle size={14}/> Productos a Revisar ({bcgData.perros.length})
+                                            </div>
+                                            <span className="text-[10px] text-slate-400/60 mt-1">Bajo volumen, bajas ventas</span>
+                                        </div>
 
-                            {/* Cuadrante Bottom-Right: VACAS -> PREMIUM / NICHO */}
-                            <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-blue-950/20 p-4 flex flex-col justify-end items-end pointer-events-none">
-                                <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
-                                    <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
-                                </div>
-                                <span className="text-[10px] text-blue-300/60 mt-1">Bajo volumen de unidades, altas ventas Bs.</span>
-                            </div>
+                                        {/* Cuadrante Bottom-Right: VACAS -> PREMIUM / NICHO */}
+                                        <div className="absolute bottom-0 right-0 bg-blue-950/20 p-4 flex flex-col justify-end items-end pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }}>
+                                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
+                                                <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
+                                            </div>
+                                            <span className="text-[10px] text-blue-300/60 mt-1">Bajo volumen, altas ventas</span>
+                                        </div>
 
-                            {/* Eje X y Eje Y Líneas Centrales Guía */}
-                            <div className="absolute top-1/2 left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none"/>
-                            <div className="absolute left-1/2 top-0 bottom-0 border-l-2 border-dashed border-indigo-500/40 pointer-events-none"/>
+                                        {/* Eje X y Eje Y Líneas Centrales Guía */}
+                                        <div className="absolute left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ top: `${crossY}%` }}/>
+                                        <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ left: `${crossX}%` }}/>
+                                    </>
+                                );
+                            })()}
 
                             {/* Puntos / Burbujas dibujadas en SVG */}
                             <svg className="w-full h-full absolute inset-0 overflow-visible">
                                 {bcgData.itemsList.map((item, idx) => {
-                                    // Mapeo X: Ventas (Bs) -> 5% a 95% del canvas width
-                                    const maxRev = Math.max(bcgData.maxRevenue, 1);
-                                    const posX = 5 + (Math.max(item.actual, 0) / maxRev) * 90;
-                                    
-                                    // Mapeo Y: Volumen (Cantidad) -> 95% a 5% del canvas height (invertido para que +Y sea Arriba)
-                                    const maxVol = Math.max(bcgData.maxVolume, 1);
-                                    const posY = 95 - (Math.max(item.cantidad, 0) / maxVol) * 90;
+                                    // Mapeo Logarítmico para suavizar outliers
+                                    const posX = 5 + getLogPos(item.actual, bcgData.maxRevenue) * 90;
+                                    const posY = 95 - getLogPos(item.cantidad, bcgData.maxVolume) * 90;
 
                                     // Tamaño de la burbuja proporcional a las ventas Bs. (radio 6px a 24px)
+                                    const maxRev = Math.max(bcgData.maxRevenue, 1);
                                     const radius = 6 + (Math.sqrt(Math.max(item.actual, 0) / maxRev) * 18);
 
                                     const isHovered = hoveredPoint?.nombre === item.nombre;
@@ -551,8 +565,8 @@ export default function BcgMatrix() {
                                                 strokeWidth={isHovered ? 3 : 1.5}
                                                 className="transition-all duration-200"
                                             />
-                                            {/* Etiqueta visible si el punto es grande o está sobrevolado */}
-                                            {(isHovered || radius > 14 || bcgData.itemsList.length <= 15) && (
+                                            {/* Etiqueta visible SOLO si está sobrevolado para evitar sopa de letras */}
+                                            {isHovered && (
                                                 <text
                                                     x={`${posX}%`}
                                                     y={`${posY - radius / 8}%`}
@@ -563,7 +577,7 @@ export default function BcgMatrix() {
                                                     fontWeight="bold"
                                                     className="pointer-events-none drop-shadow-md tracking-tight"
                                                 >
-                                                    {item.nombre.length > 15 ? item.nombre.slice(0, 15) + '...' : item.nombre}
+                                                    {item.nombre.length > 25 ? item.nombre.slice(0, 25) + '...' : item.nombre}
                                                 </text>
                                             )}
                                         </g>
