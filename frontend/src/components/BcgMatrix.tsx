@@ -480,8 +480,24 @@ export default function BcgMatrix() {
                     </div>
                 ) : viewMode === 'chart' ? (
                     /* ── VISTA DE GRÁFICA SCATTER 2D (X, Y) ───────────────── */
-                    <div className="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 rounded-3xl p-6 shadow-2xl border border-gray-800 text-white overflow-hidden">
+                    <div className="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 rounded-3xl p-4 md:p-6 shadow-2xl border border-gray-800 text-white overflow-hidden flex flex-col gap-4">
                         
+                        {/* LEYENDA EXTERIOR (Para que las burbujas no tapen el texto) */}
+                        <div className="flex flex-wrap gap-2 justify-center mb-2">
+                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
+                                <HelpCircle size={14}/> Gen. de Volumen ({bcgData.interrogantes.length})
+                            </div>
+                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                                <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
+                                <ArrowDownCircle size={14}/> A Revisar ({bcgData.perros.length})
+                            </div>
+                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
+                                <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
+                            </div>
+                        </div>
+
                         {/* Ejes & Fondo de Cuadrantes */}
                         <div className="relative w-full h-[520px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
                             
@@ -492,36 +508,16 @@ export default function BcgMatrix() {
                                 return (
                                     <>
                                         {/* Cuadrante Top-Left: INTERROGANTES -> GENERADORES DE VOLUMEN */}
-                                        <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 p-4 flex flex-col justify-start items-start pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }}>
-                                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
-                                                <HelpCircle size={14}/> Generadores de Volumen ({bcgData.interrogantes.length})
-                                            </div>
-                                            <span className="text-[10px] text-purple-300/60 mt-1">Alto volumen, bajas ventas</span>
-                                        </div>
+                                        <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }} />
 
                                         {/* Cuadrante Top-Right: ESTRELLAS -> ALTO VALOR */}
-                                        <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 p-4 flex flex-col justify-start items-end pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }}>
-                                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                                                <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
-                                            </div>
-                                            <span className="text-[10px] text-emerald-300/60 mt-1">Alto volumen, altas ventas</span>
-                                        </div>
+                                        <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }} />
 
                                         {/* Cuadrante Bottom-Left: PERROS -> PRODUCTOS A REVISAR */}
-                                        <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 p-4 flex flex-col justify-end items-start pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }}>
-                                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
-                                                <ArrowDownCircle size={14}/> Productos a Revisar ({bcgData.perros.length})
-                                            </div>
-                                            <span className="text-[10px] text-slate-400/60 mt-1">Bajo volumen, bajas ventas</span>
-                                        </div>
+                                        <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
 
                                         {/* Cuadrante Bottom-Right: VACAS -> PREMIUM / NICHO */}
-                                        <div className="absolute bottom-0 right-0 bg-blue-950/20 p-4 flex flex-col justify-end items-end pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }}>
-                                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
-                                                <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
-                                            </div>
-                                            <span className="text-[10px] text-blue-300/60 mt-1">Bajo volumen, altas ventas</span>
-                                        </div>
+                                        <div className="absolute bottom-0 right-0 bg-blue-950/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
 
                                         {/* Eje X y Eje Y Líneas Centrales Guía */}
                                         <div className="absolute left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ top: `${crossY}%` }}/>
@@ -565,31 +561,16 @@ export default function BcgMatrix() {
                                                 strokeWidth={isHovered ? 3 : 1.5}
                                                 className="transition-all duration-200"
                                             />
-                                            {/* Etiqueta visible SOLO si está sobrevolado para evitar sopa de letras */}
-                                            {isHovered && (
-                                                <text
-                                                    x={`${posX}%`}
-                                                    y={`${posY - radius / 8}%`}
-                                                    dy="-10"
-                                                    textAnchor="middle"
-                                                    fill="#ffffff"
-                                                    fontSize="10"
-                                                    fontWeight="bold"
-                                                    className="pointer-events-none drop-shadow-md tracking-tight"
-                                                >
-                                                    {item.nombre.length > 25 ? item.nombre.slice(0, 25) + '...' : item.nombre}
-                                                </text>
-                                            )}
                                         </g>
                                     );
                                 })}
                             </svg>
 
-                            {/* Leyendas de los Ejes */}
-                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                            {/* Leyendas de los Ejes (Ahora más sutiles y al borde absoluto) */}
+                            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pointer-events-none">
                                 &larr; Ventas Generadas (Bs) (Eje X) &rarr;
                             </div>
-                            <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 origin-center whitespace-nowrap">
+                            <div className="absolute left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-gray-500 uppercase tracking-widest origin-center whitespace-nowrap pointer-events-none">
                                 &larr; Volumen / Cantidad Vendida (Eje Y) &rarr;
                             </div>
 
