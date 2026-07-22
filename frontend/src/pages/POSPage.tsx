@@ -797,28 +797,32 @@ export default function POSPage() {
                                 ) : descuentosDisponibles.filter(d => d.is_active).length === 0 ? (
                                     <p className="text-[10px] text-gray-400 italic">No hay descuentos predefinidos habilitados.</p>
                                 ) : (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        <button
-                                            onClick={() => setDescuento('MONTO', '', '')}
-                                            className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${!descuento.valor ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                            <Tag size={12} className={!descuento.valor ? 'text-gray-400' : 'text-indigo-500'} />
+                                        </div>
+                                        <select
+                                            value={descuento.valor ? `${descuento.tipo}|${descuento.valor}|${descuento.nombre}` : ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (!val) {
+                                                    setDescuento('MONTO', '', '');
+                                                } else {
+                                                    const [tipo, valor, nombre] = val.split('|');
+                                                    setDescuento(tipo as 'PORCENTAJE' | 'MONTO', valor, nombre);
+                                                }
+                                            }}
+                                            disabled={ticketCovered}
+                                            className="w-full pl-8 pr-8 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 appearance-none cursor-pointer disabled:opacity-50 disabled:bg-gray-50 hover:border-gray-300 transition-colors"
                                         >
-                                            Ninguno
-                                        </button>
-                                        {descuentosDisponibles.filter(d => d.is_active).map(d => {
-                                            const isActive = descuento.nombre === d.nombre && descuento.valor === d.valor.toString();
-                                            return (
-                                                <button
-                                                    key={d._id}
-                                                    onClick={() => setDescuento(d.tipo, d.valor.toString(), d.nombre)}
-                                                    disabled={ticketCovered}
-                                                    className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 border ${isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed'}`}
-                                                    title={`${d.tipo === 'PORCENTAJE' ? d.valor + '%' : 'Bs. ' + d.valor}`}
-                                                >
-                                                    <Tag size={10} className={isActive ? 'text-indigo-500' : 'text-gray-400'} />
+                                            <option value="">Ningún descuento activo</option>
+                                            {descuentosDisponibles.filter(d => d.is_active).map(d => (
+                                                <option key={d._id} value={`${d.tipo}|${d.valor}|${d.nombre}`}>
                                                     {d.nombre} ({d.tipo === 'PORCENTAJE' ? `${d.valor}%` : `Bs.${d.valor}`})
-                                                </button>
-                                            );
-                                        })}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                     </div>
                                 )}
                             </div>
