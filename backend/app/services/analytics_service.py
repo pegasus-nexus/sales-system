@@ -408,13 +408,13 @@ async def get_dashboard_metrics(
             if pd.Timestamp.now(tz=LOCAL_TZ).hour < 4:
                 hoy_local_date = hoy_local_date - pd.Timedelta(days=1)
             print(f"[TODAY] Filtrando por fecha lógica Bolivia: {hoy_local_date}")
-            df_filtrado = df[df['fecha_solo_local'] == hoy_local_date]
+            df_filtrado = df[df['fecha_solo_local'].astype(str) == str(hoy_local_date)]
         elif time_range == 'yesterday':
             ayer_local_date = (pd.Timestamp.now(tz=LOCAL_TZ) - pd.Timedelta(days=1)).date()
             if pd.Timestamp.now(tz=LOCAL_TZ).hour < 4:
                 ayer_local_date = ayer_local_date - pd.Timedelta(days=1)
             print(f"[YESTERDAY] Filtrando por fecha lógica Bolivia: {ayer_local_date}")
-            df_filtrado = df[df['fecha_solo_local'] == ayer_local_date]
+            df_filtrado = df[df['fecha_solo_local'].astype(str) == str(ayer_local_date)]
         elif time_range == '7days':
             df_filtrado = df[df['fecha_local'] >= (fecha_max_local - pd.DateOffset(days=7))]
         elif time_range == '30days':

@@ -127,9 +127,14 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
                                 <X size={16} />
                             </button>
                         )}
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[10px] font-bold text-gray-500 bg-white border border-gray-200 rounded-md shadow-xs">
-                            ESC
-                        </kbd>
+                        <div className="flex items-center gap-2">
+                            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[10px] font-bold text-gray-500 bg-white border border-gray-200 rounded-md shadow-xs">
+                                ESC
+                            </kbd>
+                            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-900 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer" title="Cerrar (ESC)">
+                                <X size={18} strokeWidth={2.5} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Results List */}
