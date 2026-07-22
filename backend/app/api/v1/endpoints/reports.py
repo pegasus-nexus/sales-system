@@ -1866,11 +1866,12 @@ async def get_monthly_evolution(
 
     from pydantic import BaseModel
     from app.domain.models.sale import SaleItem
+    from app.domain.models.base import DecimalMoney
 
     class SaleLightProjection(BaseModel):
         created_at: datetime
         sucursal_id: Optional[str] = None
-        total: Any = 0
+        total: DecimalMoney = DecimalMoney("0")
         items: List[SaleItem] = []
         pagos: list = []
 
@@ -1936,10 +1937,10 @@ async def get_monthly_evolution(
         m_obj = monthly_data[m_key]
 
         if (categoria_id and categoria_id != "all") or (producto_id and producto_id != "all"):
-            sale_total = sum(float(i[0].subtotal or (i[0].precio_unitario * i[0].cantidad)) for i in sale_items_matching)
+            sale_total = sum(float(str(i[0].subtotal)) or (float(str(i[0].precio_unitario)) * int(i[0].cantidad)) for i in sale_items_matching)
             sum_items = sum(float(i[0].cantidad) for i in sale_items_matching)
         else:
-            sale_total = float(sale.total)
+            sale_total = float(str(sale.total))
             sum_items = sum(float(i.cantidad) for i in sale.items)
 
         m_obj["total_ventas"] += sale_total
