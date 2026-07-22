@@ -72,11 +72,11 @@ export default function DashboardMaestro() {
     const setQuickDate = (type: 'today' | 'yesterday' | '30days') => {
         const today = new Date();
         if (type === 'today') {
-            setDateRange([today, today]);
+            setDateRange([today, null]);
         } else if (type === 'yesterday') {
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
-            setDateRange([yesterday, yesterday]);
+            setDateRange([yesterday, null]);
         } else if (type === '30days') {
             const past = new Date(today);
             past.setDate(today.getDate() - 29);
@@ -228,7 +228,12 @@ export default function DashboardMaestro() {
                                 startDate={startDate || undefined}
                                 endDate={endDate || undefined}
                                 onChange={(update) => {
-                                    setDateRange(update);
+                                    const [start, end] = update;
+                                    if (start && end && start.getTime() === end.getTime()) {
+                                        setDateRange([start, null]);
+                                    } else {
+                                        setDateRange(update);
+                                    }
                                     setActiveQuickBtn(null);
                                 }}
                                 dateFormat="MM/dd/yyyy"
