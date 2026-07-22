@@ -1865,10 +1865,13 @@ async def get_monthly_evolution(
         filters.append(Sale.sucursal_id == sucursal_id)
 
     from pydantic import BaseModel
+    from app.domain.models.sale import SaleItem
+
     class SaleLightProjection(BaseModel):
         created_at: datetime
         sucursal_id: Optional[str] = None
-        items: list = []
+        total: Any = 0
+        items: List[SaleItem] = []
         pagos: list = []
 
     sales = await Sale.find(*filters).project(SaleLightProjection).sort(Sale.created_at).to_list()
