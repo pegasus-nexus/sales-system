@@ -190,7 +190,7 @@ async def get_sesiones(
             "total_tarjeta":   round(total_tarjeta, 2),
             "total_ventas":    round(total_ventas, 2),
             "total_descuentos": round(total_descuentos, 2),
-            "num_transacciones": len(sales),
+            "num_transacciones": await Sale.find(*sales_query).count(),
             "monto_cierre_fisico": float(s.monto_cierre_fisico) if s.monto_cierre_fisico is not None else None,
             "diferencia":      round(float(s.monto_cierre_fisico) - saldo, 2) if s.monto_cierre_fisico is not None else None,
             "notas_cierre":    s.notas_cierre,
