@@ -236,10 +236,12 @@ export default function DashboardMaestro() {
                                     }
                                     setActiveQuickBtn(null);
                                 }}
+                                onKeyDown={(e) => e.preventDefault()}
                                 dateFormat="MM/dd/yyyy"
                                 className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[190px] text-center text-indigo-700"
                                 placeholderText="Seleccionar fecha(s)"
                                 isClearable={false}
+                                portalId="root"
                             />
                         </div>
 
