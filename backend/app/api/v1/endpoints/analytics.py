@@ -13,8 +13,6 @@ from app.services.rentabilidad_service import get_rentabilidad_real
 
 router = APIRouter()
 
-from typing import Dict, Any
-
 @router.get("/dashboard")
 async def get_dashboard(
     start_date: datetime = Query(..., description="Fecha de inicio (ejemplo: 2023-01-01T00:00:00)"),
@@ -31,7 +29,8 @@ async def get_dashboard(
     if clear_cache:
         _dashboard_cache.clear()
 
-    return await get_dashboard_metrics(
+    from app.services.analytics_v2_service import get_dashboard_metrics_v2
+    return await get_dashboard_metrics_v2(
         tenant_id=current_user.tenant_id,
         start_date=start_date,
         end_date=end_date,
