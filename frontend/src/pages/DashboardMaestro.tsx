@@ -83,12 +83,12 @@ export default function DashboardMaestro() {
     const [showTicketClienteDetails, setShowTicketClienteDetails] = useState(false);
 
     // NUEVOS ESTADOS DE TIEMPO
-    const [timeRange, setTimeRange] = useState('30days'); // 'today', '7days', '30days', 'this_month', 'this_year', 'historico', 'custom_month', 'custom_year', 'custom_date'
+    const [timeRange, setTimeRange] = useState('custom_date');
     const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
     const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
     const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
-    const [customStartDate, setCustomStartDate] = useState('');
-    const [customEndDate, setCustomEndDate] = useState('');
+    const [customStartDate, setCustomStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+    const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
     
     const [dates, setDates] = useState({ start: '2024-01-01T00:00:00.000Z', end: '2026-12-31T23:59:59.000Z' });
 
@@ -268,62 +268,6 @@ export default function DashboardMaestro() {
 
                     {/* Segmented Control Rango (Sin Fondo) */}
                     <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto custom-scrollbar">
-                        <button 
-                            onClick={() => setTimeRange('today')} 
-                            className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === 'today' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
-                        >
-                            Hoy
-                        </button>
-                        <button 
-                            onClick={() => setTimeRange('yesterday')} 
-                            className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === 'yesterday' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
-                        >
-                            Ayer
-                        </button>
-                        
-                        {/* Selector de día único rápido */}
-                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_day' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
-                            <input 
-                                type="date" 
-                                value={selectedDay} 
-                                onChange={(e) => { setSelectedDay(e.target.value); setTimeRange('custom_day'); }} 
-                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px]", timeRange === 'custom_day' ? "text-indigo-700" : "text-gray-500")}
-                            />
-                        </div>
-
-                        <button 
-                            onClick={() => setTimeRange('30days')} 
-                            className={cn("px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all", timeRange === '30days' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
-                        >
-                            30 Días
-                        </button>
-
-                        <div className="w-px bg-gray-300 mx-1 my-1"></div>
-
-                        {/* Mes selector seamless */}
-                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_month' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
-                            <input 
-                                type="month" 
-                                value={selectedMonth} 
-                                onChange={(e) => { setSelectedMonth(e.target.value); setTimeRange('custom_month'); }} 
-                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[120px]", timeRange === 'custom_month' ? "text-indigo-700" : "text-gray-500")}
-                            />
-                        </div>
-
-                        {/* Año selector seamless */}
-                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_year' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
-                            <select 
-                                value={selectedYear} 
-                                onChange={(e) => { setSelectedYear(e.target.value); setTimeRange('custom_year'); }} 
-                                className={cn("bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[70px]", timeRange === 'custom_year' ? "text-indigo-700" : "text-gray-500")}
-                            >
-                                {availableYears.map((year, index) => (
-                                    <option key={year || index} value={year}>{year}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="w-px bg-gray-300 mx-1 my-1"></div>
 
                         {/* Rango de Fechas Personalizado */}
                         <div className={cn("flex items-center gap-2 px-3 py-1 rounded-lg transition-all", timeRange === 'custom_date' ? "bg-white shadow-sm border border-gray-200/50" : "hover:bg-gray-200/50")}>
