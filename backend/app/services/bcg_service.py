@@ -76,14 +76,16 @@ async def calculate_bcg_matrix(
             {
                 "$project": {
                     "nombre_producto": 1,
-                    "monto_total_bs": 1
+                    "monto_total_bs": 1,
+                    "cantidad": 1
                 }
             },
             {
                 "$group": {
                     "_id": "$nombre_producto",
                     "nombre": {"$first": "$nombre_producto"},
-                    "ingresos": {"$sum": "$monto_total_bs"}
+                    "ingresos": {"$sum": "$monto_total_bs"},
+                    "cantidad": {"$sum": "$cantidad"}
                 }
             }
         ]
@@ -108,7 +110,8 @@ async def calculate_bcg_matrix(
             {
                 "$project": {
                     "items.descripcion": 1,
-                    "items.subtotal": 1
+                    "items.subtotal": 1,
+                    "items.cantidad": 1
                 }
             },
             {"$unwind": "$items"},
@@ -116,7 +119,8 @@ async def calculate_bcg_matrix(
                 "$group": {
                     "_id": "$items.descripcion",
                     "nombre": {"$first": "$items.descripcion"},
-                    "ingresos": {"$sum": {"$toDouble": "$items.subtotal"}}
+                    "ingresos": {"$sum": {"$toDouble": "$items.subtotal"}},
+                    "cantidad": {"$sum": {"$toDouble": "$items.cantidad"}}
                 }
             }
         ]
@@ -152,7 +156,9 @@ async def calculate_bcg_matrix(
         productos_dict[pid] = {
             "nombre": doc.get("nombre") or pid,
             "prev": float(doc.get("ingresos") or 0.0),
-            "curr": 0.0
+            "curr": 0.0,
+            "prev_qty": float(doc.get("cantidad") or 0.0),
+            "curr_qty": 0.0
         }
 
     max_revenue = 0.0
@@ -161,18 +167,22 @@ async def calculate_bcg_matrix(
         if not pid:
             continue
         ingresos_curr = float(doc.get("ingresos") or 0.0)
+        cantidad_curr = float(doc.get("cantidad") or 0.0)
 
         if ingresos_curr > max_revenue:
             max_revenue = ingresos_curr
 
         if pid in productos_dict:
             productos_dict[pid]["curr"] += ingresos_curr
+            productos_dict[pid]["curr_qty"] += cantidad_curr
             productos_dict[pid]["nombre"] = doc.get("nombre") or pid
         else:
             productos_dict[pid] = {
                 "nombre": doc.get("nombre") or pid,
                 "prev": 0.0,
-                "curr": ingresos_curr
+                "curr": ingresos_curr,
+                "prev_qty": 0.0,
+                "curr_qty": cantidad_curr
             }
 
     print(f"[BCG] Total productos únicos: {len(productos_dict)} | Max revenue: {max_revenue}")
@@ -253,6 +263,8 @@ async def calculate_bcg_matrix(
             nombre=data["nombre"],
             ingresos_actuales=curr,
             ingresos_anteriores=prev,
+            cantidad_vendida=data["curr_qty"],
+            cantidad_anterior=data["prev_qty"],
             crecimiento=crecimiento,
             cuota_relativa=cuota_relativa,
             cuadrante=cuadrante,

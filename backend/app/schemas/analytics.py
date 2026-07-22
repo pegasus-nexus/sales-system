@@ -51,6 +51,8 @@ class BCGProduct(BaseModel):
     nombre: str
     ingresos_actuales: float = 0.0
     ingresos_anteriores: float = 0.0
+    cantidad_vendida: float = 0.0
+    cantidad_anterior: float = 0.0
     crecimiento: float = Field(0.0, description="Porcentaje de crecimiento en decimal (-0.5 a 1.0+)")
     cuota_relativa: float = Field(0.0, description="Cuota respecto al producto líder (0.0 a 1.0)")
     cuadrante: str = Field(..., description="'ESTRELLA', 'VACA', 'INTERROGANTE', 'PERRO'")

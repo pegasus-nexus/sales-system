@@ -12,35 +12,35 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 /* ─── Configuración de cuadrantes ────────────────────────── */
 const QUADRANTS_CONFIG = [
     {
-        key: 'estrellas', label: '⭐ Estrellas',
-        desc: 'Alta cuota · Alto crecimiento',
+        key: 'estrellas', label: '⭐ Alto Valor',
+        desc: 'Alto volumen · Altas ventas',
         bg: 'bg-emerald-50/50', border: 'border-emerald-200/50', hdr: 'text-emerald-800',
         icon: <Star fill="currentColor" size={16}/>, iconBg: 'bg-emerald-100 text-emerald-600',
-        empty: 'Sin estrellas este período.',
+        empty: 'Sin productos de alto valor.',
         card: { border: 'border-emerald-200', text: 'text-emerald-700', pill: 'bg-emerald-400', pillText: 'text-emerald-600' }
     },
     {
-        key: 'interrogantes', label: '❓ Interrogantes',
-        desc: 'Baja cuota · Alto crecimiento',
+        key: 'interrogantes', label: '❓ Gen. de Volumen',
+        desc: 'Alto volumen · Bajas ventas',
         bg: 'bg-purple-50/50', border: 'border-purple-200/50', hdr: 'text-purple-800',
         icon: <HelpCircle size={16}/>, iconBg: 'bg-purple-100 text-purple-600',
-        empty: 'Sin interrogantes este período.',
+        empty: 'Sin generadores de volumen.',
         card: { border: 'border-purple-200', text: 'text-purple-700', pill: 'bg-purple-400', pillText: 'text-purple-600' }
     },
     {
-        key: 'vacas', label: '🐄 Vacas',
-        desc: 'Alta cuota · Bajo crecimiento',
+        key: 'vacas', label: '🐄 Premium/Nicho',
+        desc: 'Bajo volumen · Altas ventas',
         bg: 'bg-blue-50/50', border: 'border-blue-200/50', hdr: 'text-blue-800',
         icon: <Package size={16}/>, iconBg: 'bg-blue-100 text-blue-600',
-        empty: 'Sin vacas este período.',
+        empty: 'Sin productos premium/nicho.',
         card: { border: 'border-blue-200', text: 'text-blue-700', pill: 'bg-blue-400', pillText: 'text-blue-600' }
     },
     {
-        key: 'perros', label: '🐕 Perros',
-        desc: 'Baja cuota · Bajo crecimiento',
+        key: 'perros', label: '🐕 A Revisar',
+        desc: 'Bajo volumen · Bajas ventas',
         bg: 'bg-gray-100/50', border: 'border-gray-200/80', hdr: 'text-gray-700',
         icon: <ArrowDownCircle size={16}/>, iconBg: 'bg-gray-200 text-gray-600',
-        empty: 'Sin elementos en perro.',
+        empty: 'Sin elementos a revisar.',
         card: { border: 'border-gray-200', text: 'text-gray-600', pill: 'bg-gray-400', pillText: 'text-red-500' }
     },
 ];
@@ -60,6 +60,8 @@ export interface BcgItem {
     variacion: number;
     cuota: number;
     shareTotal: number;
+    cantidad: number;
+    cantidadAnterior: number;
     cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO';
     totalItemsCount?: number;
 }
@@ -144,15 +146,17 @@ export default function BcgMatrix() {
 
     /* Lógica Estricta de Matriz BCG (Productos o Categorías) */
     const bcgData = useMemo(() => {
-        const salesDict: Record<string, { actual: number, anterior: number }> = {};
+        const salesDict: Record<string, { actual: number, anterior: number, cantidad: number, cantidadAnterior: number }> = {};
         rawProducts.forEach((p: any) => {
             if (!p.nombre) return;
             const norm = p.nombre.toLowerCase().trim();
             if (!salesDict[norm]) {
-                salesDict[norm] = { actual: 0, anterior: 0 };
+                salesDict[norm] = { actual: 0, anterior: 0, cantidad: 0, cantidadAnterior: 0 };
             }
             salesDict[norm].actual += (p.ingresos_actuales || 0);
             salesDict[norm].anterior += (p.ingresos_anteriores || 0);
+            salesDict[norm].cantidad += (p.cantidad_vendida || 0);
+            salesDict[norm].cantidadAnterior += (p.cantidad_anterior || 0);
         });
 
         const baseCatalogo = (catalogo && catalogo.length > 0) 
@@ -169,6 +173,8 @@ export default function BcgMatrix() {
             
             const actual = venta ? venta.actual : 0;
             const anterior = venta ? venta.anterior : 0;
+            const cantidad = venta ? venta.cantidad : 0;
+            const cantidadAnterior = venta ? venta.cantidadAnterior : 0;
             
             let variacion = 0;
             if (anterior > 0) {
@@ -182,22 +188,26 @@ export default function BcgMatrix() {
                 categoria_nombre: (prodCat.categoria || prodCat.categoria_nombre || prodCat.name || 'otros').toLowerCase().trim(),
                 actual,
                 anterior,
+                cantidad,
+                cantidadAnterior,
                 variacion
             };
         });
 
         // Agrupación opcional por Categoría
-        let universoAnalisis: { nombre: string, categoria_nombre: string, actual: number, anterior: number, variacion: number, totalItemsCount?: number }[] = [];
+        let universoAnalisis: { nombre: string, categoria_nombre: string, actual: number, anterior: number, variacion: number, cantidad: number, cantidadAnterior: number, totalItemsCount?: number }[] = [];
 
         if (groupBy === 'category') {
-            const catMap: Record<string, { actual: number, anterior: number, count: number }> = {};
+            const catMap: Record<string, { actual: number, anterior: number, cantidad: number, cantidadAnterior: number, count: number }> = {};
             productosMapeados.forEach(p => {
                 const cat = p.categoria_nombre || 'otros';
                 if (!catMap[cat]) {
-                    catMap[cat] = { actual: 0, anterior: 0, count: 0 };
+                    catMap[cat] = { actual: 0, anterior: 0, cantidad: 0, cantidadAnterior: 0, count: 0 };
                 }
                 catMap[cat].actual += p.actual;
                 catMap[cat].anterior += p.anterior;
+                catMap[cat].cantidad += p.cantidad;
+                catMap[cat].cantidadAnterior += p.cantidadAnterior;
                 catMap[cat].count += 1;
             });
 
@@ -214,6 +224,8 @@ export default function BcgMatrix() {
                     categoria_nombre: catName,
                     actual: stats.actual,
                     anterior: stats.anterior,
+                    cantidad: stats.cantidad,
+                    cantidadAnterior: stats.cantidadAnterior,
                     variacion,
                     totalItemsCount: stats.count
                 };
@@ -248,6 +260,11 @@ export default function BcgMatrix() {
         // Totales globales para cuota y % sobre total
         const granTotalVentas = filtered.reduce((acc, p) => acc + p.actual, 0);
         const maxRevenue = filtered.length > 0 ? Math.max(...filtered.map((p: any) => p.actual), 0) : 0;
+        const maxVolume = filtered.length > 0 ? Math.max(...filtered.map((p: any) => p.cantidad), 0) : 0;
+
+        // Calcular promedios para el punto de corte (cruceta central)
+        const avgRevenue = filtered.length > 0 ? granTotalVentas / filtered.length : 0;
+        const avgVolume = filtered.length > 0 ? filtered.reduce((acc, p) => acc + p.cantidad, 0) / filtered.length : 0;
 
         const estrellas: BcgItem[] = [];
         const vacas: BcgItem[] = [];
@@ -256,27 +273,27 @@ export default function BcgMatrix() {
         const itemsList: BcgItem[] = [];
 
         filtered.forEach((item: any) => {
-            const curr = item.actual;
-            const prev = item.anterior;
+            const currSales = item.actual;
+            const currVolume = item.cantidad;
 
-            const cuota = maxRevenue > 0 ? (curr / maxRevenue) * 100 : 0.0;
-            const shareTotal = granTotalVentas > 0 ? (curr / granTotalVentas) * 100 : 0.0;
+            const cuota = maxRevenue > 0 ? (currSales / maxRevenue) * 100 : 0.0;
+            const shareTotal = granTotalVentas > 0 ? (currSales / granTotalVentas) * 100 : 0.0;
 
-            const es_alto_crecimiento = item.variacion >= 5.0; // UMBRAL Y: 5%
-            const es_alta_cuota = cuota >= 50.0;             // UMBRAL X: 50% cuota relativa
+            const es_alto_volumen = currVolume >= avgVolume; // UMBRAL Y
+            const es_altas_ventas = currSales >= avgRevenue; // UMBRAL X
 
             let cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO' = 'PERRO';
 
-            if (curr === 0 && prev === 0) {
+            if (currSales === 0 && currVolume === 0) {
                 cuadrante = "PERRO";
-            } else if (es_alto_crecimiento && es_alta_cuota) {
-                cuadrante = "ESTRELLA";
-            } else if (!es_alto_crecimiento && es_alta_cuota) {
-                cuadrante = "VACA";
-            } else if (es_alto_crecimiento && !es_alta_cuota) {
-                cuadrante = "INTERROGANTE";
+            } else if (es_alto_volumen && es_altas_ventas) {
+                cuadrante = "ESTRELLA"; // Alto Valor
+            } else if (!es_alto_volumen && es_altas_ventas) {
+                cuadrante = "VACA"; // Premium / Nicho
+            } else if (es_alto_volumen && !es_altas_ventas) {
+                cuadrante = "INTERROGANTE"; // Generadores de Volumen
             } else {
-                cuadrante = "PERRO";
+                cuadrante = "PERRO"; // Productos a Revisar
             }
 
             const itemObj: BcgItem = {
@@ -299,7 +316,7 @@ export default function BcgMatrix() {
         interrogantes.sort((a, b) => b.variacion - a.variacion);
         perros.sort((a, b) => b.actual - a.actual);
 
-        return { estrellas, vacas, interrogantes, perros, totalCount: filtered.length, itemsList, granTotalVentas, maxRevenue };
+        return { estrellas, vacas, interrogantes, perros, totalCount: filtered.length, itemsList, granTotalVentas, maxRevenue, maxVolume };
     }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
 
     return (
@@ -313,9 +330,9 @@ export default function BcgMatrix() {
                         <Target size={20}/>
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 leading-none">Matriz BCG Evolucionada (X, Y)</h2>
+                        <h2 className="text-xl font-bold text-gray-900 leading-none">Mapa de Cartera de Productos</h2>
                         <p className="text-xs text-gray-500 mt-1">
-                            {groupBy === 'product' ? 'Análisis interactivo por Productos' : 'Análisis agrupado por Categorías'} • Eje Y: Crecimiento (%) | Eje X: Participación (%)
+                            {groupBy === 'product' ? 'Análisis interactivo por Productos' : 'Análisis agrupado por Categorías'} • Eje Y: Volumen (Cantidad) | Eje X: Ventas (Bs)
                         </p>
                     </div>
                 </div>
@@ -460,36 +477,36 @@ export default function BcgMatrix() {
                         {/* Ejes & Fondo de Cuadrantes */}
                         <div className="relative w-full h-[520px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
                             
-                            {/* Cuadrante Top-Left: INTERROGANTES */}
+                            {/* Cuadrante Top-Left: INTERROGANTES -> GENERADORES DE VOLUMEN */}
                             <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-purple-950/20 border-r border-b border-purple-500/20 p-4 flex flex-col justify-start items-start pointer-events-none">
                                 <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
-                                    <HelpCircle size={14}/> ❓ Interrogantes ({bcgData.interrogantes.length})
+                                    <HelpCircle size={14}/> Generadores de Volumen ({bcgData.interrogantes.length})
                                 </div>
-                                <span className="text-[10px] text-purple-300/60 mt-1">Baja cuota · Alto crecimiento (&ge;5%)</span>
+                                <span className="text-[10px] text-purple-300/60 mt-1">Alto volumen de unidades, bajas ventas Bs.</span>
                             </div>
 
-                            {/* Cuadrante Top-Right: ESTRELLAS */}
+                            {/* Cuadrante Top-Right: ESTRELLAS -> ALTO VALOR */}
                             <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-emerald-950/20 border-b border-emerald-500/20 p-4 flex flex-col justify-start items-end pointer-events-none">
                                 <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                                    <Star fill="currentColor" size={14}/> ⭐ Estrellas ({bcgData.estrellas.length})
+                                    <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
                                 </div>
-                                <span className="text-[10px] text-emerald-300/60 mt-1">Alta cuota (&ge;50%) · Alto crecimiento (&ge;5%)</span>
+                                <span className="text-[10px] text-emerald-300/60 mt-1">Alto volumen de unidades, altas ventas Bs.</span>
                             </div>
 
-                            {/* Cuadrante Bottom-Left: PERROS */}
+                            {/* Cuadrante Bottom-Left: PERROS -> PRODUCTOS A REVISAR */}
                             <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-slate-900/40 border-r border-slate-700/30 p-4 flex flex-col justify-end items-start pointer-events-none">
                                 <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
-                                    <ArrowDownCircle size={14}/> 🐕 Perros ({bcgData.perros.length})
+                                    <ArrowDownCircle size={14}/> Productos a Revisar ({bcgData.perros.length})
                                 </div>
-                                <span className="text-[10px] text-slate-400/60 mt-1">Baja cuota · Bajo crecimiento (&lt;5%)</span>
+                                <span className="text-[10px] text-slate-400/60 mt-1">Bajo volumen de unidades, bajas ventas Bs.</span>
                             </div>
 
-                            {/* Cuadrante Bottom-Right: VACAS */}
+                            {/* Cuadrante Bottom-Right: VACAS -> PREMIUM / NICHO */}
                             <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-blue-950/20 p-4 flex flex-col justify-end items-end pointer-events-none">
                                 <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
-                                    <Package size={14}/> 🐄 Vacas ({bcgData.vacas.length})
+                                    <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
                                 </div>
-                                <span className="text-[10px] text-blue-300/60 mt-1">Alta cuota (&ge;50%) · Bajo crecimiento (&lt;5%)</span>
+                                <span className="text-[10px] text-blue-300/60 mt-1">Bajo volumen de unidades, altas ventas Bs.</span>
                             </div>
 
                             {/* Eje X y Eje Y Líneas Centrales Guía */}
@@ -499,17 +516,15 @@ export default function BcgMatrix() {
                             {/* Puntos / Burbujas dibujadas en SVG */}
                             <svg className="w-full h-full absolute inset-0 overflow-visible">
                                 {bcgData.itemsList.map((item, idx) => {
-                                    // Mapeo X: cuota relativa 0% a 100% -> 5% a 95% del canvas width
-                                    const posX = 5 + (Math.min(Math.max(item.cuota, 0), 100) / 100) * 90;
+                                    // Mapeo X: Ventas (Bs) -> 5% a 95% del canvas width
+                                    const maxRev = Math.max(bcgData.maxRevenue, 1);
+                                    const posX = 5 + (Math.max(item.actual, 0) / maxRev) * 90;
                                     
-                                    // Mapeo Y: crecimiento -50% a +150% -> 95% a 5% del canvas height (invertido)
-                                    const minG = -20;
-                                    const maxG = 100;
-                                    const clampedG = Math.min(Math.max(item.variacion, minG), maxG);
-                                    const posY = 95 - ((clampedG - minG) / (maxG - minG)) * 90;
+                                    // Mapeo Y: Volumen (Cantidad) -> 95% a 5% del canvas height (invertido para que +Y sea Arriba)
+                                    const maxVol = Math.max(bcgData.maxVolume, 1);
+                                    const posY = 95 - (Math.max(item.cantidad, 0) / maxVol) * 90;
 
                                     // Tamaño de la burbuja proporcional a las ventas Bs. (radio 6px a 24px)
-                                    const maxRev = bcgData.maxRevenue || 1;
                                     const radius = 6 + (Math.sqrt(Math.max(item.actual, 0) / maxRev) * 18);
 
                                     const isHovered = hoveredPoint?.nombre === item.nombre;
@@ -558,10 +573,10 @@ export default function BcgMatrix() {
 
                             {/* Leyendas de los Ejes */}
                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
-                                &larr; Cuota Relativa / Participación en Ventas (Eje X) &rarr;
+                                &larr; Ventas Generadas (Bs) (Eje X) &rarr;
                             </div>
                             <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-[11px] font-bold text-gray-400 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 origin-center whitespace-nowrap">
-                                &larr; Crecimiento Histórico % (Eje Y) &rarr;
+                                &larr; Volumen / Cantidad Vendida (Eje Y) &rarr;
                             </div>
 
                         </div>
@@ -586,8 +601,12 @@ export default function BcgMatrix() {
 
                                 <div className="flex items-center gap-6 text-xs">
                                     <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas Actuales</span>
+                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas (Bs)</span>
                                         <span className="font-black text-white text-sm">Bs. {hoveredPoint.actual.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Volumen</span>
+                                        <span className="font-black text-white text-sm">{hoveredPoint.cantidad.toLocaleString('en-US')} u.</span>
                                     </div>
                                     <div>
                                         <span className="text-gray-400 text-[10px] uppercase font-bold block">Crecimiento MoM</span>
@@ -596,11 +615,7 @@ export default function BcgMatrix() {
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Cuota frente al Líder</span>
-                                        <span className="font-black text-indigo-300 text-sm">{hoveredPoint.cuota.toFixed(1)}%</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">% del Total Ventas</span>
+                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Part. Ventas</span>
                                         <span className="font-black text-emerald-300 text-sm">{hoveredPoint.shareTotal.toFixed(1)}%</span>
                                     </div>
                                 </div>
@@ -659,11 +674,12 @@ export default function BcgMatrix() {
                                                             
                                                             <div className="mt-1">
                                                                 <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
-                                                                    <span>Peso frente al líder:</span>
-                                                                    <span className="font-bold text-indigo-600">{prod.cuota.toFixed(1)}%</span>
+                                                                    <span>Volumen vendido:</span>
+                                                                    <span className="font-bold text-indigo-600">{prod.cantidad.toLocaleString('en-US')} unidades</span>
                                                                 </div>
-                                                                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                                                                    <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(prod.cuota, 100)}%` }}></div>
+                                                                <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
+                                                                    <span>Participación de ventas:</span>
+                                                                    <span className="font-bold text-indigo-600">{prod.shareTotal.toFixed(1)}%</span>
                                                                 </div>
                                                             </div>
                                                         </div>
