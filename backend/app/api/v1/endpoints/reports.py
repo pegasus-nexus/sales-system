@@ -1227,8 +1227,9 @@ async def get_sales_matrix(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
     match_filter = {
-        "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
-        "sale_date": {"$gte": start_dt, "$lte": end_dt}
+        "tenant_id": tenant_id,
+        "created_at": {"$gte": start_dt, "$lte": end_dt},
+        "anulada": False
     }
     
     if target_sucursal and target_sucursal != "all":
@@ -1236,33 +1237,16 @@ async def get_sales_matrix(
 
     pipeline = [
         {"$match": match_filter},
-        {
-            "$lookup": {
-                "from": "sales",
-                "let": {"sid": "$sale_id"},
-                "pipeline": [
-                    {
-                        "$match": {
-                            "$expr": {
-                                "$eq": [{"$toString": "$_id"}, "$$sid"]
-                            },
-                            "anulada": False
-                        }
-                    }
-                ],
-                "as": "sale_parent"
-            }
-        },
-        {"$match": {"sale_parent": {"$ne": []}}},
+        {"$unwind": {"path": "$items", "preserveNullAndEmptyArrays": False}},
         {
             "$project": {
-                "producto_id": 1,
-                "descripcion": 1,
-                "cantidad": 1,
+                "producto_id": "$items.producto_id",
+                "descripcion": "$items.descripcion",
+                "cantidad": "$items.cantidad",
                 "date_str": {
                     "$dateToString": {
                         "format": "%Y-%m-%d", 
-                        "date": "$sale_date", 
+                        "date": "$created_at", 
                         "timezone": "-04:00"
                     }
                 }
@@ -1280,7 +1264,8 @@ async def get_sales_matrix(
         }
     ]
 
-    cursor = SaleItem.get_pymongo_collection().aggregate(pipeline)
+    from app.domain.models.sale import Sale
+    cursor = Sale.get_pymongo_collection().aggregate(pipeline)
     raw_results = await cursor.to_list(length=None)
     
     # We need to construct the matrix payload
