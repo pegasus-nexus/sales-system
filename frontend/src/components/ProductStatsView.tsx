@@ -151,7 +151,7 @@ export default function ProductStatsView() {
                                 setIsDropdownOpen(true);
                             }}
                             onFocus={() => setIsDropdownOpen(true)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 rounded-xl outline-none transition-all text-sm font-medium"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 rounded-xl outline-none transition-all text-sm font-medium text-gray-900 placeholder-gray-400"
                         />
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                         {isSearching && <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-indigo-500 animate-spin" size={16} />}
@@ -186,7 +186,7 @@ export default function ProductStatsView() {
                             type="date" 
                             value={startDate}
                             onChange={e => setStartDate(e.target.value)}
-                            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:border-indigo-500 outline-none"
+                            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:border-indigo-500 outline-none text-gray-900"
                         />
                     </div>
                     <div>
@@ -195,7 +195,7 @@ export default function ProductStatsView() {
                             type="date" 
                             value={endDate}
                             onChange={e => setEndDate(e.target.value)}
-                            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:border-indigo-500 outline-none"
+                            className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:border-indigo-500 outline-none text-gray-900"
                         />
                     </div>
                 </div>
