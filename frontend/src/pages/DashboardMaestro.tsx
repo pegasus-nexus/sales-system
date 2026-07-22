@@ -22,50 +22,19 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 
 
-const getDynamicPeriodText = (timeRange: string, customStart: string, customEnd: string, selectedMonth: string, selectedYear: string, selectedDay?: string) => {
-    const today = new Date();
-    
+const getDynamicPeriodText = (customStart: string, customEnd: string) => {
     const formatDate = (date: Date) => date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const formatLongDate = (date: Date) => date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    if (timeRange === 'today') {
-        return `HOY ${formatLongDate(today)}`;
-    } else if (timeRange === 'yesterday') {
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        return `AYER ${formatLongDate(yesterday)}`;
-    } else if (timeRange === '7days') {
-        const past = new Date(today);
-        past.setDate(today.getDate() - 6);
-        return `7 DÍAS del ${formatDate(past)} al ${formatDate(today)}`;
-    } else if (timeRange === '30days') {
-        const past = new Date(today);
-        past.setDate(today.getDate() - 29);
-        return `30 DÍAS del ${formatDate(past)} al ${formatDate(today)}`;
-    } else if (timeRange === 'this_month') {
-        return `ESTE MES`;
-    } else if (timeRange === 'custom_month') {
-        const [y, m] = selectedMonth.split('-');
-        const date = new Date(parseInt(y), parseInt(m) - 1, 1);
-        return `MES ${date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}`;
-    } else if (timeRange === 'custom_year') {
-        return `AÑO ${selectedYear}`;
-    } else if (timeRange === 'custom_date') {
-        if (customStart) {
-            const s = new Date(`${customStart}T00:00:00`);
-            if (customEnd && customEnd !== customStart) {
-                const e = new Date(`${customEnd}T00:00:00`);
-                return `del ${formatDate(s)} al ${formatDate(e)}`;
-            }
-            return `el ${formatDate(s)}`;
+    if (customStart) {
+        const s = new Date(`${customStart}T00:00:00`);
+        if (customEnd && customEnd !== customStart) {
+            const e = new Date(`${customEnd}T00:00:00`);
+            return `del ${formatDate(s)} al ${formatDate(e)}`;
         }
-    } else if (timeRange === 'custom_day') {
-        if (selectedDay) {
-            const d = new Date(`${selectedDay}T00:00:00`);
-            return `el ${formatDate(d)}`;
-        }
+        return `el ${formatDate(s)}`;
     }
-    return "";
+    
+    return 'RANGO DE FECHAS';
 };
 
 export default function DashboardMaestro() {
@@ -253,7 +222,7 @@ export default function DashboardMaestro() {
             {/* Sub-header text indicating period and branch for the data below */}
             <div className="flex justify-start mb-2 mt-0">
                 <span className="text-gray-500 font-black text-[11px] bg-white px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-widest shadow-sm">
-                    Mostrando: {getDynamicPeriodText(timeRange, customStartDate, customEndDate, selectedMonth, selectedYear, selectedDay)}
+                    Mostrando: {getDynamicPeriodText(customStartDate, customEndDate)}
                     {selectedSucursal !== 'all' && ` • ${sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}`}
                 </span>
             </div>
