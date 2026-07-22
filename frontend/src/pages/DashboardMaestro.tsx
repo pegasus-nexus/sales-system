@@ -84,83 +84,25 @@ export default function DashboardMaestro() {
 
     // NUEVOS ESTADOS DE TIEMPO
     const [timeRange, setTimeRange] = useState('custom_date');
-    const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
-    const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
-    const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
     const [customStartDate, setCustomStartDate] = useState(() => new Date().toISOString().slice(0, 10));
     const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
     
     const [dates, setDates] = useState({ start: '2024-01-01T00:00:00.000Z', end: '2026-12-31T23:59:59.000Z' });
 
     useEffect(() => {
-        if (timeRange === 'custom_month') {
-            const [y, m] = selectedMonth.split('-');
-            const start = new Date(parseInt(y), parseInt(m) - 1, 1);
-            const end = new Date(parseInt(y), parseInt(m), 0);
-            end.setHours(23, 59, 59, 999);
-            setDates({ start: start.toISOString(), end: end.toISOString() });
-        } else if (timeRange === 'custom_year') {
-            const y = parseInt(selectedYear);
-            const start = new Date(y, 0, 1);
-            const end = new Date(y, 11, 31);
-            end.setHours(23, 59, 59, 999);
-            setDates({ start: start.toISOString(), end: end.toISOString() });
-        } else if (timeRange === 'custom_date') {
+        if (timeRange === 'custom_date') {
             if (customStartDate) {
                 const start = new Date(`${customStartDate}T00:00:00`);
                 const endLimit = customEndDate ? customEndDate : customStartDate;
                 const end = new Date(`${endLimit}T23:59:59`);
                 setDates({ start: start.toISOString(), end: end.toISOString() });
             }
-        } else if (timeRange === 'custom_day') {
-            if (selectedDay) {
-                const start = new Date(`${selectedDay}T00:00:00`);
-                const end = new Date(`${selectedDay}T23:59:59`);
-                setDates({ start: start.toISOString(), end: end.toISOString() });
-            }
-        } else {
-            let startYear = '2024';
-            const sObj = sucursales.find(s => s.id === selectedSucursal);
-            if (sObj) {
-                const sName = sObj.nombre.toLowerCase();
-                if (sName.includes('calacoto') || sName.includes('recoleta')) {
-                    startYear = '2025';
-                }
-            }
-            setDates({ start: `${startYear}-01-01T00:00:00.000Z`, end: '2026-12-31T23:59:59.000Z' });
         }
-    }, [timeRange, selectedMonth, selectedYear, selectedDay, customStartDate, customEndDate, selectedSucursal, sucursales]);
+    }, [timeRange, customStartDate, customEndDate, selectedSucursal, sucursales]);
 
     useEffect(() => {
         getSucursales(false).then(setSucursales).catch(console.error);
     }, []);
-
-    const getAvailableYears = () => {
-        if (selectedSucursal === 'all') {
-            return ['2026', '2025', '2024'];
-        }
-        const sObj = sucursales.find(s => s.id === selectedSucursal);
-        if (!sObj) return ['2026', '2025', '2024'];
-        
-        const sName = sObj.nombre.toLowerCase();
-        if (sName.includes('calacoto') || sName.includes('recoleta')) {
-            return ['2026', '2025'];
-        }
-        return ['2026', '2025', '2024'];
-    };
-    
-    const availableYears = getAvailableYears();
-
-    useEffect(() => {
-        const sObj = sucursales.find(s => s.id === selectedSucursal);
-        if (sObj) {
-            const sName = sObj.nombre.toLowerCase();
-            const isNewBranch = sName.includes('calacoto') || sName.includes('recoleta');
-            if (isNewBranch && (selectedYear === '2024' || selectedYear === '2023')) {
-                setSelectedYear('2025');
-            }
-        }
-    }, [selectedSucursal, sucursales, selectedYear]);
 
     useEffect(() => {
         let isMounted = true;
