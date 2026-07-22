@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -126,12 +126,19 @@ export default function Layout({ children }: LayoutProps) {
                 items: [
                     { icon: BarChart3, label: 'Plataforma Analítica BI', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: TrendingUp, label: 'Evolución Mensual (MoM)', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: TrendingUp, label: 'Visión General', path: '/reportes?tab=general', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Store, label: 'Rendimiento Sucursales', path: '/reportes?tab=sucursales', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: FileText, label: 'Reporte de Jornada', path: '/reportes?tab=daily', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: DollarSign, label: 'Finanzas y Márgenes', path: '/reportes?tab=finanzas', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Scale, label: 'Auditoría', path: '/reportes?tab=conciliacion', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: Wallet, label: 'Reporte de Gastos', path: '/reportes?tab=gastos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Clock, label: 'Ventas por Hora', path: '/reportes?tab=hourly', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: Wallet, label: 'Ventas por Caja', path: '/reportes?tab=caja_ventas', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Package, label: 'Inventario Valorado', path: '/reportes?tab=inventario_valorado', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Users, label: 'Desempeño Staff', path: '/reportes?tab=staff', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: BarChart3, label: 'Matriz de Ventas', path: '/reportes?tab=matrix', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: TrendingUp, label: 'Tendencias', path: '/reportes?tab=tendencias', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: BarChart3, label: 'Estadísticas de Producto', path: '/reportes?tab=product_stats', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Store, label: 'Matriz BCG', path: '/reportes?tab=matriz_bcg', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: Ban, label: 'Anulaciones', path: '/reportes?tab=anulaciones', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Users, label: 'Compras por Cliente', path: '/reportes?tab=compras_cliente', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },

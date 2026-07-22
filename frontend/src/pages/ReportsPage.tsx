@@ -39,7 +39,7 @@ export default function ReportsPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
-            {activeTab === 'evolucion_mensual' ? (
+            {(activeTab === 'evolucion_mensual' || activeTab === 'general' || activeTab === 'sucursales') ? (
                 <MonthlyEvolutionView />
             ) : activeTab === 'matriz_bcg' ? (
                 <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
