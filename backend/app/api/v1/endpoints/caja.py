@@ -121,11 +121,57 @@ async def get_sesiones(
                 Sale.created_at <= cerrada_naive
             ))
 
-        sales = await Sale.find(*sales_query).to_list()
-        total_qr      = sum(float(p.monto) for sale in sales for p in (sale.pagos or []) if str(p.metodo).upper() == "QR") + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
-        total_tarjeta = sum(float(p.monto) for sale in sales for p in (sale.pagos or []) if str(p.metodo).upper() == "TARJETA") + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
-        total_ventas  = sum(float(p.monto) for sale in sales for p in (sale.pagos or []))
-        total_descuentos = sum(float(sale.get_total_descuento()) for sale in sales)
+        sales_filter = Sale.find(*sales_query).get_filter_query()
+        pipeline = [
+            {"$match": sales_filter},
+            {"$project": {
+                "pagos": {"$ifNull": ["$pagos", []]},
+                "items": {"$ifNull": ["$items", []]},
+                "descuento": 1
+            }},
+            # Extract totals in MongoDB
+            {"$facet": {
+                "ventas": [
+                    {"$unwind": {"path": "$pagos", "preserveNullAndEmptyArrays": True}},
+                    {"$group": {
+                        "_id": None,
+                        "total_qr": {"$sum": {"$cond": [{"$eq": [{"$toUpper": "$pagos.metodo"}, "QR"]}, {"$toDouble": "$pagos.monto"}, 0]}},
+                        "total_tarjeta": {"$sum": {"$cond": [{"$eq": [{"$toUpper": "$pagos.metodo"}, "TARJETA"]}, {"$toDouble": "$pagos.monto"}, 0]}},
+                        "total_ventas": {"$sum": {"$toDouble": "$pagos.monto"}}
+                    }}
+                ],
+                "descuentos": [
+                    # Discount logic requires summing over items, then adding global discount
+                    {"$project": {
+                        "global_discount": {
+                            "$cond": [
+                                {"$eq": [{"$type": "$descuento"}, "missing"]}, 0,
+                                {"$cond": [
+                                    {"$eq": ["$descuento.tipo", "MONTO"]}, {"$toDouble": "$descuento.valor"},
+                                    {"$multiply": [{"$sum": "$items.subtotal"}, {"$divide": [{"$toDouble": "$descuento.valor"}, 100]}]}
+                                ]}
+                            ]
+                        },
+                        "items_discount": {"$sum": "$items.descuento_unitario"}
+                    }},
+                    {"$group": {
+                        "_id": None,
+                        "total_descuentos": {"$sum": {"$add": ["$global_discount", "$items_discount"]}}
+                    }}
+                ]
+            }}
+        ]
+        
+        agg_result = await Sale.aggregate(pipeline).to_list()
+        sales_agg = agg_result[0] if agg_result else {"ventas": [], "descuentos": []}
+        
+        ventas_data = sales_agg["ventas"][0] if sales_agg.get("ventas") else {"total_qr": 0, "total_tarjeta": 0, "total_ventas": 0}
+        desc_data = sales_agg["descuentos"][0] if sales_agg.get("descuentos") else {"total_descuentos": 0}
+        
+        total_qr = ventas_data.get("total_qr", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
+        total_tarjeta = ventas_data.get("total_tarjeta", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
+        total_ventas = ventas_data.get("total_ventas", 0)
+        total_descuentos = desc_data.get("total_descuentos", 0)
 
         result.append({
             "id":              str(s.id),

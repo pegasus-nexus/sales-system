@@ -220,7 +220,7 @@ async def get_rentabilidad_real(
     inv_docs = await db.inventario.find(
         {"producto_id": {"$in": prod_ids}},
         {"producto_id": 1, "sucursal_id": 1, "cantidad": 1}
-    ).to_list(50000)
+    ).to_list(5000)
 
     stock_map: Dict[str, Dict[str, int]] = {}
     for inv in inv_docs:

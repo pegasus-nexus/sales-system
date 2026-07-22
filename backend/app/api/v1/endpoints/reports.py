@@ -1864,7 +1864,14 @@ async def get_monthly_evolution(
     if sucursal_id and sucursal_id != "all":
         filters.append(Sale.sucursal_id == sucursal_id)
 
-    sales = await Sale.find(*filters).sort(Sale.created_at).to_list()
+    from pydantic import BaseModel
+    class SaleLightProjection(BaseModel):
+        created_at: datetime
+        sucursal_id: Optional[str] = None
+        items: list = []
+        pagos: list = []
+
+    sales = await Sale.find(*filters).project(SaleLightProjection).sort(Sale.created_at).to_list()
 
     # 4. Agrupar por mes (%Y-%m)
     monthly_data: Dict[str, Dict[str, Any]] = {}
