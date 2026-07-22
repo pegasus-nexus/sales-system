@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import HourlyMultiyearChart from '../components/HourlyMultiyearChart';
 import SpecialDatesChart from '../components/SpecialDatesChart';
 import RegionalAndProductMix from '../components/RegionalAndProductMix';
@@ -22,16 +24,14 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 
 
-const getDynamicPeriodText = (customStart: string, customEnd: string) => {
+const getDynamicPeriodText = (customStart: Date | null, customEnd: Date | null) => {
     const formatDate = (date: Date) => date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     if (customStart) {
-        const s = new Date(`${customStart}T00:00:00`);
-        if (customEnd && customEnd !== customStart) {
-            const e = new Date(`${customEnd}T00:00:00`);
-            return `del ${formatDate(s)} al ${formatDate(e)}`;
+        if (customEnd && customEnd.getTime() !== customStart.getTime()) {
+            return `del ${formatDate(customStart)} al ${formatDate(customEnd)}`;
         }
-        return `el ${formatDate(s)}`;
+        return `el ${formatDate(customStart)}`;
     }
     
     return 'RANGO DE FECHAS';
@@ -51,38 +51,38 @@ export default function DashboardMaestro() {
     const [showTicketMedioDetails, setShowTicketMedioDetails] = useState(false);
     const [showTicketClienteDetails, setShowTicketClienteDetails] = useState(false);
 
-    const [customStartDate, setCustomStartDate] = useState(() => new Date().toISOString().slice(0, 10));
-    const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
+    const [startDate, endDate] = dateRange;
+    const [activeQuickBtn, setActiveQuickBtn] = useState<'today' | 'yesterday' | '30days' | null>('today');
     
     const [dates, setDates] = useState({ start: '2024-01-01T00:00:00.000Z', end: '2026-12-31T23:59:59.000Z' });
 
     const handleApplyDates = () => {
-        if (customStartDate) {
-            const start = new Date(`${customStartDate}T00:00:00`);
-            const endLimit = customEndDate ? customEndDate : customStartDate;
-            const end = new Date(`${endLimit}T23:59:59`);
-            setDates({ start: start.toISOString(), end: end.toISOString() });
+        if (startDate) {
+            const s = new Date(startDate);
+            s.setHours(0, 0, 0, 0);
+            
+            const e = endDate ? new Date(endDate) : new Date(startDate);
+            e.setHours(23, 59, 59, 999);
+
+            setDates({ start: s.toISOString(), end: e.toISOString() });
         }
     };
 
     const setQuickDate = (type: 'today' | 'yesterday' | '30days') => {
         const today = new Date();
         if (type === 'today') {
-            const todayStr = today.toISOString().slice(0, 10);
-            setCustomStartDate(todayStr);
-            setCustomEndDate(todayStr);
+            setDateRange([today, today]);
         } else if (type === 'yesterday') {
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().slice(0, 10);
-            setCustomStartDate(yesterdayStr);
-            setCustomEndDate(yesterdayStr);
+            setDateRange([yesterday, yesterday]);
         } else if (type === '30days') {
             const past = new Date(today);
             past.setDate(today.getDate() - 29);
-            setCustomStartDate(past.toISOString().slice(0, 10));
-            setCustomEndDate(today.toISOString().slice(0, 10));
+            setDateRange([past, today]);
         }
+        setActiveQuickBtn(type);
     };
 
     // Aplicar las fechas iniciales
@@ -197,44 +197,44 @@ export default function DashboardMaestro() {
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full border-t border-gray-100 pt-5">
 
                     {/* Segmented Control Rango (Sin Fondo) */}
-                    <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto custom-scrollbar">
+                    <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto custom-scrollbar relative">
 
                         {/* Botones rápidos */}
                         <button 
                             onClick={() => setQuickDate('today')} 
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                            className={cn("px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all", activeQuickBtn === 'today' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
                         >
                             Hoy
                         </button>
                         <button 
                             onClick={() => setQuickDate('yesterday')} 
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                            className={cn("px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all", activeQuickBtn === 'yesterday' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
                         >
                             Ayer
                         </button>
                         <button 
                             onClick={() => setQuickDate('30days')} 
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all"
+                            className={cn("px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all", activeQuickBtn === '30days' ? "bg-white text-indigo-700 shadow-sm border border-gray-200/50" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50")}
                         >
                             30 Días
                         </button>
 
                         <div className="w-px bg-gray-300 mx-1 my-1 h-6"></div>
 
-                        {/* Rango de Fechas Personalizado */}
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg transition-all bg-white shadow-sm border border-gray-200/50">
-                            <input 
-                                type="date" 
-                                value={customStartDate} 
-                                onChange={(e) => setCustomStartDate(e.target.value)} 
-                                className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px] text-indigo-700"
-                            />
-                            <span className="text-gray-400 font-bold">-</span>
-                            <input 
-                                type="date" 
-                                value={customEndDate} 
-                                onChange={(e) => setCustomEndDate(e.target.value)} 
-                                className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[115px] text-indigo-700"
+                        {/* Rango de Fechas Personalizado (react-datepicker) */}
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg transition-all bg-white shadow-sm border border-gray-200/50 z-50">
+                            <DatePicker
+                                selectsRange={true}
+                                startDate={startDate || undefined}
+                                endDate={endDate || undefined}
+                                onChange={(update) => {
+                                    setDateRange(update);
+                                    setActiveQuickBtn(null);
+                                }}
+                                dateFormat="MM/dd/yyyy"
+                                className="bg-transparent text-sm outline-none font-bold cursor-pointer transition-colors w-[190px] text-center text-indigo-700"
+                                placeholderText="Seleccionar fecha(s)"
+                                isClearable={false}
                             />
                         </div>
 
@@ -270,7 +270,7 @@ export default function DashboardMaestro() {
             {/* Sub-header text indicating period and branch for the data below */}
             <div className="flex justify-start mb-2 mt-0">
                 <span className="text-gray-500 font-black text-[11px] bg-white px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-widest shadow-sm">
-                    Mostrando: {getDynamicPeriodText(customStartDate, customEndDate)}
+                    Mostrando: {getDynamicPeriodText(startDate, endDate)}
                     {selectedSucursal !== 'all' && ` • ${sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}`}
                 </span>
             </div>
