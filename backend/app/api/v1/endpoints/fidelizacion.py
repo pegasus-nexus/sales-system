@@ -97,12 +97,19 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
     # price_map[product_id] = {"cochabamba": price, "la_paz": price}
     price_map = {p_id: {} for p_id in p_ids}
     
+    # Precompute product base prices
+    prod_base_prices = {str(p.id): float(p.precio_venta) for p in products}
+    
     for i in invs:
-        if i.precio_sucursal is not None:
+        # Determine the price to use: branch specific or product default
+        precio = float(i.precio_sucursal) if i.precio_sucursal is not None else prod_base_prices.get(str(i.producto_id), 0.0)
+        
+        # Only include if price is > 0 and stock is > 0
+        if precio > 0 and i.cantidad > 0:
             if str(i.sucursal_id) == SUCURSAL_CBA:
-                price_map[str(i.producto_id)]["cochabamba"] = float(i.precio_sucursal.amount)
+                price_map[str(i.producto_id)]["cochabamba"] = precio
             elif str(i.sucursal_id) == SUCURSAL_LPZ:
-                price_map[str(i.producto_id)]["la_paz"] = float(i.precio_sucursal.amount)
+                price_map[str(i.producto_id)]["la_paz"] = precio
                 
     prod_list = []
     for p in products:
