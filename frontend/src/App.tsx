@@ -67,11 +67,16 @@ function ErrorEventBridge() {
  * Se ejecuta una sola vez por sesión, persistido en el store.
  */
 function FeaturesFetcher() {
-  const { isAuthenticated, setFeatures, features, setTenantSettings, setPlanExpiresAt } = useAuthStore();
+  const { isAuthenticated, setFeatures, features, setTenantSettings, setPlanExpiresAt, user } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated() || !user) return;
     
+    // Evitar llamadas a /tenants/me si es SUPERADMIN SaaS sin tenant
+    if (!user.tenant_id && user.role === 'SUPERADMIN') {
+        return;
+    }
+
     if (features.length === 0) {
       getMyFeatures()
         .then(res => setFeatures(res.features, res.plan_name, res.rubro, res.modulos_activos))
