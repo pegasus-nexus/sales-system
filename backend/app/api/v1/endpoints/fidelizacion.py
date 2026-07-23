@@ -84,13 +84,15 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
     from beanie.operators import In
     
     # 2. Obtener productos que pertenezcan a las categorías visibles
-    cat_ids = [c.id for c in categories]
-    products = await Product.find(
+    cat_ids = {str(c.id) for c in categories}
+    all_products = await Product.find(
         Product.tenant_id == tenant_id,
         Product.is_active == True,
-        Product.show_on_web != False,
-        In(Product.categoria_id, cat_ids)
+        Product.show_on_web != False
     ).to_list()
+    
+    # Filter in python to avoid MongoDB ObjectId vs str mismatch
+    products = [p for p in all_products if str(p.categoria_id) in cat_ids]
     p_ids = [str(p.id) for p in products]
     
     # 3. Obtener precios (Inventario)
