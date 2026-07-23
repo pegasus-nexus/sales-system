@@ -81,11 +81,15 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
     
     cat_list = [{"id": str(c.id), "name": c.name} for c in categories]
     
-    # 2. Obtener productos
+    from beanie.operators import In
+    
+    # 2. Obtener productos que pertenezcan a las categorías visibles
+    cat_ids = [c.id for c in categories]
     products = await Product.find(
         Product.tenant_id == tenant_id,
         Product.is_active == True,
-        Product.show_on_web != False
+        Product.show_on_web != False,
+        In(Product.categoria_id, cat_ids)
     ).to_list()
     p_ids = [str(p.id) for p in products]
     
