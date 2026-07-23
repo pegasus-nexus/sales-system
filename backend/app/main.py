@@ -86,6 +86,12 @@ if not origins or settings.ENVIRONMENT != "production":
             origins.append(local_origin)
 
 # Permitir siempre la landing page de FEXCO
+
+if "https://chocolatestaboada.pro" not in origins:
+    origins.append("https://chocolatestaboada.pro")
+if "https://www.chocolatestaboada.pro" not in origins:
+    origins.append("https://www.chocolatestaboada.pro")
+
 if "https://taboada-fexco.vercel.app" not in origins:
     origins.append("https://taboada-fexco.vercel.app")
 # Permitir localhost para pruebas de la landing
