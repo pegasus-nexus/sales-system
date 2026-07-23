@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getBcgMatrix, getProducts, getCategories } from '../api/api';
 import {
     Target, Star, Package, HelpCircle, ArrowDownCircle,
-    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid, CircleDollarSign
+    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid, CircleDollarSign, CalendarDays
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -63,7 +63,6 @@ export interface BcgItem {
     history: any[];
     tendencia_str?: string;
     totalItemsCount?: number;
-    isTop10?: boolean;
 }
 
 export default function BcgMatrix() {
@@ -82,8 +81,9 @@ export default function BcgMatrix() {
     const [viewMode, setViewMode] = useState<'chart' | 'cards'>('chart');
     const [hoveredPoint, setHoveredPoint] = useState<BcgItem | null>(null);
     
-    // Novedad: Tamaño de burbuja
+    // Configuración UI Visual
     const [bubbleSizeMetric, setBubbleSizeMetric] = useState<'sales' | 'margin'>('sales');
+    const [monthsToShow, setMonthsToShow] = useState<1 | 2 | 3>(1); // 1=Solo actual, 2=Actual+1mes, 3=Actual+2meses
 
     const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -97,9 +97,7 @@ export default function BcgMatrix() {
     useEffect(() => {
         let s = new Date(), e = new Date();
         s.setHours(0,0,0,0); e.setHours(23,59,59,999);
-        if (mode === 'week') {
-            s.setDate(e.getDate() - 6);
-        } else if (mode === 'month') {
+        if (mode === 'month') {
             const [y,m] = selectedMonth.split('-');
             s = new Date(+y, +m-1, 1);
             e = new Date(+y, +m, 0); e.setHours(23,59,59,999);
@@ -124,14 +122,6 @@ export default function BcgMatrix() {
                 ...(rawBcg?.interrogantes || []),
                 ...(rawBcg?.perros || [])
             ];
-            
-            // Marcar Top 10 para dibujarlos fijos en pantalla
-            const sortedBySales = [...allProducts].sort((a,b) => b.ingresos_actuales - a.ingresos_actuales);
-            const top10Ids = new Set(sortedBySales.slice(0, 10).map(p => p.producto_id || p.nombre));
-            
-            allProducts.forEach(p => {
-                p.isTop10 = top10Ids.has(p.producto_id || p.nombre);
-            });
             
             setRawProducts(allProducts);
         }
@@ -162,7 +152,11 @@ export default function BcgMatrix() {
                     catMap[cat] = {
                         producto_id: cat, nombre: cat.charAt(0).toUpperCase() + cat.slice(1), categoria_nombre: cat,
                         ingresos_actuales: 0, ingresos_anteriores: 0, cantidad_vendida: 0, cantidad_anterior: 0,
-                        crecimiento: 0, cuota_relativa: 0, cuadrante: 'PERRO', margen_ganancia: 0, history: [], count: 0
+                        crecimiento: 0, cuota_relativa: 0, cuadrante: 'PERRO', margen_ganancia: 0, count: 0,
+                        history: [
+                            {ingresos: 0, cantidad: 0, margen_ganancia: 0},
+                            {ingresos: 0, cantidad: 0, margen_ganancia: 0}
+                        ]
                     };
                 }
                 catMap[cat].ingresos_actuales += p.ingresos_actuales;
@@ -170,6 +164,19 @@ export default function BcgMatrix() {
                 catMap[cat].cantidad_vendida += p.cantidad_vendida;
                 catMap[cat].cantidad_anterior += p.cantidad_anterior;
                 catMap[cat].margen_ganancia += p.margen_ganancia;
+                
+                if (p.history && p.history.length > 0) {
+                    if (p.history[0]) {
+                        catMap[cat].history[0].ingresos += (p.history[0].ingresos || 0);
+                        catMap[cat].history[0].cantidad += (p.history[0].cantidad || 0);
+                        catMap[cat].history[0].margen_ganancia += (p.history[0].margen_ganancia || 0);
+                    }
+                    if (p.history[1]) {
+                        catMap[cat].history[1].ingresos += (p.history[1].ingresos || 0);
+                        catMap[cat].history[1].cantidad += (p.history[1].cantidad || 0);
+                        catMap[cat].history[1].margen_ganancia += (p.history[1].margen_ganancia || 0);
+                    }
+                }
                 catMap[cat].count += 1;
             });
 
@@ -239,7 +246,7 @@ export default function BcgMatrix() {
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 leading-none">Cartera de Productos</h2>
                         <p className="text-xs text-gray-500 mt-1">
-                            Análisis temporal de crecimiento y rentabilidad de tu portafolio.
+                            Análisis temporal de rentabilidad y evolución histórica.
                         </p>
                     </div>
                 </div>
@@ -261,10 +268,16 @@ export default function BcgMatrix() {
                     <button onClick={() => setViewMode('cards')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'cards' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><LayoutGrid size={14} /> Cuadrantes Clásicos</button>
                 </div>
 
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+                    <button onClick={() => setMonthsToShow(1)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 1 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 1 Mes</button>
+                    <button onClick={() => setMonthsToShow(2)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 2 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 2 Meses</button>
+                    <button onClick={() => setMonthsToShow(3)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 3 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 3 Meses</button>
+                </div>
+
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap ml-auto">
                     <div className="relative">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
-                        <input ref={searchRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={groupBy === 'product' ? "Buscar producto..." : "Buscar categoría..."} className="w-48 pl-9 pr-7 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 text-xs transition-all shadow-sm"/>
+                        <input ref={searchRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={groupBy === 'product' ? "Buscar producto..." : "Buscar categoría..."} className="w-48 pl-9 pr-7 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all shadow-sm"/>
                         {search && <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 font-black text-xs">✕</button>}
                     </div>
                     {groupBy === 'product' && (
@@ -289,7 +302,7 @@ export default function BcgMatrix() {
                 {isLoading ? (
                     <div className="flex flex-col justify-center items-center py-20 text-center animate-pulse">
                         <Target size={40} className="text-indigo-400 mb-3 animate-spin"/>
-                        <p className="font-bold text-gray-600 text-sm">Procesando Cartera Evolutiva...</p>
+                        <p className="font-bold text-gray-600 text-sm">Procesando Matriz...</p>
                     </div>
                 ) : isError ? (
                     <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100">
@@ -325,7 +338,7 @@ export default function BcgMatrix() {
                             <svg className="w-full h-full absolute inset-0 overflow-visible">
                                 <defs>
                                     <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                                        <polygon points="0 0, 6 3, 0 6" fill="#6366f1" opacity="0.5"/>
+                                        <polygon points="0 0, 6 3, 0 6" fill="#fff" opacity="0.3"/>
                                     </marker>
                                 </defs>
                                 {bcgData.itemsList.map((item, idx) => {
@@ -339,38 +352,58 @@ export default function BcgMatrix() {
                                     const radius = 6 + (Math.sqrt(Math.max(bubbleValue, 0) / maxValForSize) * 20);
 
                                     const isHovered = hoveredPoint?.nombre === item.nombre;
-                                    const showHistory = isHovered || (item.isTop10 && !hoveredPoint);
-
+                                    
                                     let colorCircle = "#94a3b8"; 
                                     if (item.cuadrante === 'ESTRELLA') colorCircle = "#10b981";
                                     else if (item.cuadrante === 'VACA') colorCircle = "#3b82f6";
                                     else if (item.cuadrante === 'INTERROGANTE') colorCircle = "#a855f7";
 
+                                    // Precompute valid historical points
+                                    const pts: any[] = [];
+                                    if (monthsToShow >= 1) {
+                                        pts.push({ x: posX, y: posY, r: radius, color: colorCircle, alpha: isHovered ? 0.9 : 0.65, val: item.ingresos_actuales });
+                                    }
+                                    if (monthsToShow >= 2 && item.history && item.history[0] && (item.history[0].ingresos > 0 || item.history[0].cantidad > 0)) {
+                                        const hx = 5 + getLogPos(item.history[0].ingresos, bcgData.maxRevenue) * 90;
+                                        const hy = 95 - getLogPos(item.history[0].cantidad, bcgData.maxVolume) * 90;
+                                        const hval = bubbleSizeMetric === 'sales' ? item.history[0].ingresos : item.history[0].margen_ganancia;
+                                        const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
+                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.3, val: item.history[0].ingresos });
+                                    }
+                                    if (monthsToShow >= 3 && item.history && item.history[1] && (item.history[1].ingresos > 0 || item.history[1].cantidad > 0)) {
+                                        const hx = 5 + getLogPos(item.history[1].ingresos, bcgData.maxRevenue) * 90;
+                                        const hy = 95 - getLogPos(item.history[1].cantidad, bcgData.maxVolume) * 90;
+                                        const hval = bubbleSizeMetric === 'sales' ? item.history[1].ingresos : item.history[1].margen_ganancia;
+                                        const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
+                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.15, val: item.history[1].ingresos });
+                                    }
+
                                     return (
                                         <g key={item.nombre + idx} className="cursor-pointer transition-all duration-300" onMouseEnter={() => setHoveredPoint(item)} onMouseLeave={() => setHoveredPoint(null)}>
-                                            {showHistory && item.history && item.history.length > 0 && (
-                                                <g className="history-trajectory pointer-events-none animate-in fade-in duration-300">
-                                                    {item.history.map((histPt, hIdx) => {
-                                                        const hPosX = 5 + getLogPos(histPt.ingresos || 0, bcgData.maxRevenue) * 90;
-                                                        // Estimamos cantidad basada en ingresos para el Y axis historico (ya que no viene cantidad_vendida en el array history, asumimos proporcion)
-                                                        const avgP = item.cantidad_vendida > 0 ? (item.ingresos_actuales / item.cantidad_vendida) : 1;
-                                                        const hQty = avgP > 0 ? (histPt.ingresos || 0) / avgP : 0;
-                                                        const hPosY = 95 - getLogPos(hQty, bcgData.maxVolume) * 90;
-                                                        
-                                                        const nextX = hIdx === 0 ? posX : 5 + getLogPos(item.history[hIdx-1].ingresos || 0, bcgData.maxRevenue) * 90;
-                                                        const nextY = hIdx === 0 ? posY : 95 - getLogPos((item.history[hIdx-1].ingresos || 0) / avgP, bcgData.maxVolume) * 90;
+                                            {/* Lineas Conectoras (Dibujar de lo más antiguo a lo más nuevo) */}
+                                            {pts.map((_, i) => {
+                                                if (i === pts.length - 1) return null; // Ultimo punto (mas antiguo) no tiene linea anterior
+                                                const ptFrom = pts[i + 1]; // El punto más antiguo
+                                                const ptTo = pts[i];       // El punto más nuevo
+                                                return (
+                                                    <line key={`line-${i}`} x1={`${ptFrom.x}%`} y1={`${ptFrom.y}%`} x2={`${ptTo.x}%`} y2={`${ptTo.y}%`} stroke="#fff" strokeWidth={isHovered ? "2" : "1"} opacity={isHovered ? "0.6" : "0.2"} markerEnd="url(#arrowhead)"/>
+                                                );
+                                            })}
 
-                                                        return (
-                                                            <g key={hIdx}>
-                                                                <line x1={`${hPosX}%`} y1={`${hPosY}%`} x2={`${nextX}%`} y2={`${nextY}%`} stroke="#6366f1" strokeWidth={isHovered ? "2" : "1"} opacity="0.4" markerEnd="url(#arrowhead)"/>
-                                                                <circle cx={`${hPosX}%`} cy={`${hPosY}%`} r={radius * 0.5} fill="#4f46e5" opacity="0.3"/>
-                                                            </g>
-                                                        );
-                                                    })}
-                                                </g>
+                                            {/* Burbujas Historicas */}
+                                            {pts.map((pt, i) => {
+                                                if (i === 0) return null; // La burbuja actual se dibuja aparte para quedar por encima
+                                                return (
+                                                    <circle key={`hist-${i}`} cx={`${pt.x}%`} cy={`${pt.y}%`} r={pt.r} fill={pt.color} fillOpacity={isHovered ? pt.alpha * 1.5 : pt.alpha} />
+                                                );
+                                            })}
+
+                                            {/* Burbuja Actual */}
+                                            {pts.length > 0 && (
+                                                <circle cx={`${pts[0].x}%`} cy={`${pts[0].y}%`} r={pts[0].r} fill={pts[0].color} fillOpacity={pts[0].alpha} stroke={isHovered ? "#ffffff" : pts[0].color} strokeWidth={isHovered ? 3 : 1.5} className="transition-all duration-200 z-10 relative"/>
                                             )}
-
-                                            <circle cx={`${posX}%`} cy={`${posY}%`} r={radius} fill={colorCircle} fillOpacity={isHovered ? 0.9 : 0.65} stroke={isHovered ? "#ffffff" : colorCircle} strokeWidth={isHovered ? 3 : 1.5} className="transition-all duration-200"/>
+                                            
+                                            {/* Etiqueta solo si hace Hover o es muy grande */}
                                             {isHovered && <text x={`${posX}%`} y={`calc(${posY}% - ${radius + 8}px)`} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" className="pointer-events-none drop-shadow-md">{item.nombre}</text>}
                                         </g>
                                     );
@@ -385,7 +418,7 @@ export default function BcgMatrix() {
                             </div>
                         </div>
 
-                        {hoveredPoint ? (
+                        {hoveredPoint && (
                             <div className="mt-4 p-4 bg-slate-800/90 rounded-2xl border border-indigo-500/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in fade-in duration-200">
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -397,13 +430,8 @@ export default function BcgMatrix() {
                                 <div className="flex items-center gap-6 text-xs flex-wrap">
                                     <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas (Bs)</span><span className="font-black text-white text-sm">Bs. {hoveredPoint.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
                                     <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Margen de Ganancia</span><span className="font-black text-emerald-400 text-sm">Bs. {hoveredPoint.margen_ganancia.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
-                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Crecimiento (MoM)</span><span className={`font-black text-sm ${hoveredPoint.crecimiento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{hoveredPoint.crecimiento >= 0 ? '+' : ''}{(hoveredPoint.crecimiento * 100).toFixed(1)}%</span></div>
                                     <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Volumen</span><span className="font-black text-white text-sm">{hoveredPoint.cantidad_vendida.toLocaleString('en-US')} u.</span></div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="mt-4 p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-center text-xs text-slate-400">
-                                💡 Coloca el cursor sobre cualquier burbuja para inspeccionar los datos y ver su historia/evolución temporal.
                             </div>
                         )}
                     </div>

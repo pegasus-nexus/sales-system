@@ -246,8 +246,8 @@ async def calculate_bcg_matrix(
         margen_p2 = data[2]["ingresos"] - data[2]["costo"]
 
         history = [
-            {"period": "-1", "cuota_relativa": cuota_p1, "crecimiento": grw_p1, "margen_ganancia": margen_p1, "ingresos": data[1]["ingresos"]},
-            {"period": "-2", "cuota_relativa": cuota_p2, "crecimiento": grw_p2, "margen_ganancia": margen_p2, "ingresos": data[2]["ingresos"]}
+            {"period": "-1", "cuota_relativa": cuota_p1, "crecimiento": grw_p1, "margen_ganancia": margen_p1, "ingresos": data[1]["ingresos"], "cantidad": data[1]["cantidad"]},
+            {"period": "-2", "cuota_relativa": cuota_p2, "crecimiento": grw_p2, "margen_ganancia": margen_p2, "ingresos": data[2]["ingresos"], "cantidad": data[2]["cantidad"]}
         ]
 
         bcg_product = BCGProduct(
