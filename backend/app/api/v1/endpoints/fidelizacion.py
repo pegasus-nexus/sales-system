@@ -59,3 +59,67 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
         "telefono": nuevo_cliente.telefono,
         "is_new": True
     }
+
+from app.domain.models.product import Product
+from app.domain.models.category import Category
+from app.domain.models.inventario import Inventario
+
+@router.get("/catalog")
+async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+    """
+    Retorna el catálogo público:
+    - Categorías activas
+    - Productos con sus precios extraídos de Inventario
+      (Cochabamba = Heroinas, La Paz = Calacoto)
+    """
+    # 1. Obtener categorías
+    categories = await Category.find(
+        Category.tenant_id == tenant_id,
+        Category.is_active == True
+    ).to_list()
+    
+    cat_list = [{"id": str(c.id), "name": c.name} for c in categories]
+    
+    # 2. Obtener productos
+    products = await Product.find(Product.tenant_id == tenant_id).to_list()
+    p_ids = [str(p.id) for p in products]
+    
+    # 3. Obtener precios (Inventario)
+    from beanie.operators import In
+    invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
+    
+    # Mapeo de sucursales clave
+    # Heroinas (Cochabamba) = 69cd80098f3f6866d4cfbb64
+    # Calacoto (La Paz) = 69ce6b7e8a00124dac6ecc99
+    SUCURSAL_CBA = "69cd80098f3f6866d4cfbb64"
+    SUCURSAL_LPZ = "69ce6b7e8a00124dac6ecc99"
+    
+    # price_map[product_id] = {"cochabamba": price, "la_paz": price}
+    price_map = {p_id: {} for p_id in p_ids}
+    
+    for i in invs:
+        if i.precio_sucursal is not None:
+            if str(i.sucursal_id) == SUCURSAL_CBA:
+                price_map[str(i.producto_id)]["cochabamba"] = float(i.precio_sucursal.amount)
+            elif str(i.sucursal_id) == SUCURSAL_LPZ:
+                price_map[str(i.producto_id)]["la_paz"] = float(i.precio_sucursal.amount)
+                
+    prod_list = []
+    for p in products:
+        precios = price_map.get(str(p.id), {})
+        # Solo enviar productos que tienen precio en al menos una ciudad
+        if precios:
+            prod_list.append({
+                "id": str(p.id),
+                "categoria_id": str(p.categoria_id) if p.categoria_id else None,
+                "codigo_corto": p.codigo_corto,
+                "nombre": p.descripcion,
+                "imagen": p.image_url,
+                "precios": precios
+            })
+            
+    return {
+        "status": "success",
+        "categorias": cat_list,
+        "productos": prod_list
+    }
