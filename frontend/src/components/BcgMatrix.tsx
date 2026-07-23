@@ -46,15 +46,11 @@ export interface BcgItem {
     nombre: string;
     categoria_nombre?: string;
     ingresos_actuales: number;
-    ingresos_anteriores: number;
     cantidad_vendida: number;
-    cantidad_anterior: number;
-    crecimiento: number;
-    cuota_relativa: number;
-    cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO';
     margen_ganancia: number;
-    history: any[];
-    tendencia_str?: string;
+    cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO';
+    participacion_ventas?: number;
+    participacion_margen?: number;
     totalItemsCount?: number;
 }
 
@@ -92,7 +88,6 @@ export default function BcgMatrix() {
         }
         setIsLoading(true); setIsError(false);
         try { 
-            // Sort selected months chronologically
             const sortedMonths = [...selectedMonths].sort((a, b) => a.localeCompare(b));
             
             const results = await Promise.all(sortedMonths.map(async (m) => {
@@ -111,54 +106,42 @@ export default function BcgMatrix() {
                 };
             }));
 
-            const latestResult = results[results.length - 1];
-            // older results ordered from most recent to oldest (history[0] is prev month)
-            const olderResults = results.slice(0, results.length - 1).reverse();
-
             const productMap = new Map<string, BcgItem>();
-            latestResult.products.forEach(p => {
-                const id = p.producto_id || p.nombre;
-                productMap.set(id, { ...p, history: [] });
-            });
+            let totalVentas = 0;
+            let totalMargen = 0;
 
-            // Add products that were sold in past months but not in current month
-            olderResults.forEach((oldRes) => {
-                oldRes.products.forEach(p => {
+            // Agregamos todos los meses en una sola burbuja unificada (SUMA)
+            results.forEach(res => {
+                res.products.forEach(p => {
                     const id = p.producto_id || p.nombre;
                     if (!productMap.has(id)) {
                         productMap.set(id, {
                             producto_id: p.producto_id,
                             nombre: p.nombre,
                             ingresos_actuales: 0,
-                            ingresos_anteriores: 0,
                             cantidad_vendida: 0,
-                            cantidad_anterior: 0,
-                            crecimiento: 0,
-                            cuota_relativa: 0,
-                            cuadrante: 'PERRO',
                             margen_ganancia: 0,
-                            history: []
+                            cuadrante: p.cuadrante, // Guardamos el cuadrante del primer mes que lo encuentre (o se re-calcula luego)
                         });
                     }
+                    const item = productMap.get(id)!;
+                    item.ingresos_actuales += (p.ingresos_actuales || 0);
+                    item.cantidad_vendida += (p.cantidad_vendida || 0);
+                    item.margen_ganancia += (p.margen_ganancia || 0);
+                    
+                    totalVentas += (p.ingresos_actuales || 0);
+                    totalMargen += (p.margen_ganancia || 0);
                 });
             });
 
-            productMap.forEach((item, id) => {
-                olderResults.forEach((oldRes) => {
-                    const oldP = oldRes.products.find(p => (p.producto_id || p.nombre) === id);
-                    if (oldP) {
-                        item.history.push({
-                            ingresos: oldP.ingresos_actuales,
-                            cantidad: oldP.cantidad_vendida,
-                            margen_ganancia: oldP.margen_ganancia
-                        });
-                    } else {
-                        item.history.push({ ingresos: 0, cantidad: 0, margen_ganancia: 0 });
-                    }
-                });
+            // Calculamos la participación %
+            const allProducts = Array.from(productMap.values()).map(p => {
+                p.participacion_ventas = totalVentas > 0 ? (p.ingresos_actuales / totalVentas) : 0;
+                p.participacion_margen = totalMargen > 0 ? (p.margen_ganancia / totalMargen) : 0;
+                return p;
             });
             
-            setRawProducts(Array.from(productMap.values()));
+            setRawProducts(allProducts);
         }
         catch (e) {
             console.error(e);
@@ -186,34 +169,19 @@ export default function BcgMatrix() {
                 if (!catMap[cat]) {
                     catMap[cat] = {
                         producto_id: cat, nombre: cat.charAt(0).toUpperCase() + cat.slice(1), categoria_nombre: cat,
-                        ingresos_actuales: 0, ingresos_anteriores: 0, cantidad_vendida: 0, cantidad_anterior: 0,
-                        crecimiento: 0, cuota_relativa: 0, cuadrante: 'PERRO', margen_ganancia: 0, count: 0,
-                        history: Array(selectedMonths.length - 1).fill(null).map(() => ({ingresos: 0, cantidad: 0, margen_ganancia: 0}))
+                        ingresos_actuales: 0, cantidad_vendida: 0, cuadrante: 'PERRO', margen_ganancia: 0, count: 0,
+                        participacion_ventas: 0, participacion_margen: 0
                     };
                 }
                 catMap[cat].ingresos_actuales += p.ingresos_actuales;
-                catMap[cat].ingresos_anteriores += p.ingresos_anteriores;
                 catMap[cat].cantidad_vendida += p.cantidad_vendida;
-                catMap[cat].cantidad_anterior += p.cantidad_anterior;
                 catMap[cat].margen_ganancia += p.margen_ganancia;
-                
-                if (p.history && p.history.length > 0) {
-                    p.history.forEach((hPt, idx) => {
-                        if (catMap[cat].history[idx]) {
-                            catMap[cat].history[idx].ingresos += (hPt.ingresos || 0);
-                            catMap[cat].history[idx].cantidad += (hPt.cantidad || 0);
-                            catMap[cat].history[idx].margen_ganancia += (hPt.margen_ganancia || 0);
-                        }
-                    });
-                }
+                catMap[cat].participacion_ventas! += (p.participacion_ventas || 0);
+                catMap[cat].participacion_margen! += (p.participacion_margen || 0);
                 catMap[cat].count += 1;
             });
 
             universoAnalisis = Object.values(catMap).map(c => {
-                let crec = 0;
-                if (c.ingresos_anteriores > 0) crec = (c.ingresos_actuales - c.ingresos_anteriores) / c.ingresos_anteriores;
-                else if (c.ingresos_actuales > 0) crec = 1.0;
-                c.crecimiento = crec;
                 c.totalItemsCount = c.count;
                 return c;
             });
@@ -242,8 +210,6 @@ export default function BcgMatrix() {
         const avgVolume = filtered.length > 0 ? filtered.reduce((a, b) => a + b.cantidad_vendida, 0) / filtered.length : 0;
 
         filtered.forEach(item => {
-            item.cuota_relativa = item.ingresos_actuales / maxRevenue;
-            
             const es_alto_volumen = item.cantidad_vendida >= avgVolume;
             const es_altas_ventas = item.ingresos_actuales >= avgRevenue;
 
@@ -260,7 +226,7 @@ export default function BcgMatrix() {
         const perros = filtered.filter(f => f.cuadrante === 'PERRO').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
 
         return { estrellas, vacas, interrogantes, perros, itemsList: filtered, maxRevenue, maxVolume, avgRevenue, avgVolume };
-    }, [rawProducts, selectedCategory, search, catalogo, groupBy, selectedMonths.length]);
+    }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
 
     const getLogPos = (val: number, maxVal: number) => {
         if (maxVal <= 0) return 0;
@@ -275,7 +241,7 @@ export default function BcgMatrix() {
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 leading-none">Cartera de Productos</h2>
                         <p className="text-xs text-gray-500 mt-1">
-                            Análisis temporal de rentabilidad y evolución histórica libre.
+                            Análisis de rentabilidad y participación unificada de los meses seleccionados.
                         </p>
                     </div>
                 </div>
@@ -311,12 +277,13 @@ export default function BcgMatrix() {
                 </div>
                 
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                    <button onClick={() => setBubbleSizeMetric('sales')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'sales' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Tamaño: Ventas (Bs)</button>
-                    <button onClick={() => setBubbleSizeMetric('margin')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'margin' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CircleDollarSign size={14} /> Tamaño: Ganancia</button>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-2 mr-1">Tamaño de Burbujas:</span>
+                    <button onClick={() => setBubbleSizeMetric('sales')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all", bubbleSizeMetric === 'sales' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Participación en Ventas</button>
+                    <button onClick={() => setBubbleSizeMetric('margin')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all", bubbleSizeMetric === 'margin' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CircleDollarSign size={14} /> Participación en Margen</button>
                 </div>
 
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                    <button onClick={() => setViewMode('chart')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'chart' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Matriz Evolutiva</button>
+                    <button onClick={() => setViewMode('chart')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'chart' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Gráfico</button>
                     <button onClick={() => setViewMode('cards')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'cards' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><LayoutGrid size={14} /> Cuadrantes</button>
                 </div>
 
@@ -349,7 +316,7 @@ export default function BcgMatrix() {
                 {isLoading ? (
                     <div className="flex flex-col justify-center items-center py-20 text-center animate-pulse">
                         <Target size={40} className="text-indigo-400 mb-3 animate-spin"/>
-                        <p className="font-bold text-gray-600 text-sm">Cargando datos de {selectedMonths.length} meses...</p>
+                        <p className="font-bold text-gray-600 text-sm">Integrando datos de {selectedMonths.length} meses...</p>
                     </div>
                 ) : isError ? (
                     <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100">
@@ -357,135 +324,121 @@ export default function BcgMatrix() {
                         <h3 className="font-bold">Error cargando Matriz</h3>
                     </div>
                 ) : viewMode === 'chart' ? (
-                    <div className="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 rounded-3xl p-4 md:p-6 shadow-2xl border border-gray-800 text-white overflow-hidden flex flex-col gap-4">
-                        
-                        <div className="flex flex-wrap gap-2 justify-center mb-2">
-                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30"><HelpCircle size={14}/> Gen. Volumen ({bcgData.interrogantes.length})</div>
-                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30"><Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})</div>
-                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50"><ArrowDownCircle size={14}/> A Revisar ({bcgData.perros.length})</div>
-                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30"><Package size={14}/> Premium/Nicho ({bcgData.vacas.length})</div>
-                        </div>
+                    <div className="flex flex-col xl:flex-row gap-4">
+                        <div className="flex-1 relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 rounded-3xl p-4 md:p-6 shadow-2xl border border-gray-800 text-white overflow-hidden flex flex-col gap-4">
+                            
+                            <div className="flex flex-wrap gap-2 justify-center mb-2">
+                                <div className="flex items-center gap-2 text-purple-400 font-black text-xs uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30"><HelpCircle size={14}/> Gen. Volumen ({bcgData.interrogantes.length})</div>
+                                <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30"><Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})</div>
+                                <div className="flex items-center gap-2 text-slate-400 font-black text-xs uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50"><ArrowDownCircle size={14}/> A Revisar ({bcgData.perros.length})</div>
+                                <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30"><Package size={14}/> Premium/Nicho ({bcgData.vacas.length})</div>
+                            </div>
 
-                        <div className="relative w-full h-[550px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
-                            {(() => {
-                                const crossX = 5 + getLogPos(bcgData.avgRevenue, bcgData.maxRevenue) * 90;
-                                const crossY = 95 - getLogPos(bcgData.avgVolume, bcgData.maxVolume) * 90;
-                                return (
-                                    <>
-                                        <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }} />
-                                        <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }} />
-                                        <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
-                                        <div className="absolute bottom-0 right-0 bg-blue-950/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
-                                        <div className="absolute left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ top: `${crossY}%` }}/>
-                                        <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ left: `${crossX}%` }}/>
-                                    </>
-                                );
-                            })()}
-
-                            <svg className="w-full h-full absolute inset-0 overflow-visible">
-                                <defs>
-                                    <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                                        <polygon points="0 0, 6 3, 0 6" fill="#fff" opacity="0.4"/>
-                                    </marker>
-                                </defs>
-                                {bcgData.itemsList.map((item, idx) => {
-                                    const posX = 5 + getLogPos(item.ingresos_actuales, bcgData.maxRevenue) * 90;
-                                    const posY = 95 - getLogPos(item.cantidad_vendida, bcgData.maxVolume) * 90;
-
-                                    const maxBubbleSizeSource = bubbleSizeMetric === 'sales' ? bcgData.maxRevenue : Math.max(...bcgData.itemsList.map(i => i.margen_ganancia), 1);
-                                    const bubbleValue = bubbleSizeMetric === 'sales' ? item.ingresos_actuales : item.margen_ganancia;
-                                    
-                                    const maxValForSize = Math.max(maxBubbleSizeSource, 1);
-                                    const radius = 6 + (Math.sqrt(Math.max(bubbleValue, 0) / maxValForSize) * 20);
-
-                                    const isHovered = hoveredPoint?.nombre === item.nombre;
-                                    
-                                    let colorCircle = "#94a3b8"; 
-                                    if (item.cuadrante === 'ESTRELLA') colorCircle = "#10b981";
-                                    else if (item.cuadrante === 'VACA') colorCircle = "#3b82f6";
-                                    else if (item.cuadrante === 'INTERROGANTE') colorCircle = "#a855f7";
-
-                                    // Precompute valid historical points
-                                    const pts: any[] = [];
-                                    
-                                    // Add current bubble
-                                    if (item.ingresos_actuales > 0 || item.cantidad_vendida > 0 || item.history.length === 0) {
-                                        pts.push({ x: posX, y: posY, r: radius, color: colorCircle, alpha: isHovered ? 0.9 : 0.65, val: item.ingresos_actuales });
-                                    }
-
-                                    if (item.history && item.history.length > 0) {
-                                        item.history.forEach((hPt, hIdx) => {
-                                            if (hPt.ingresos > 0 || hPt.cantidad > 0) {
-                                                const hx = 5 + getLogPos(hPt.ingresos, bcgData.maxRevenue) * 90;
-                                                const hy = 95 - getLogPos(hPt.cantidad, bcgData.maxVolume) * 90;
-                                                const hval = bubbleSizeMetric === 'sales' ? hPt.ingresos : hPt.margen_ganancia;
-                                                const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
-                                                
-                                                // Decreasing opacity for older points
-                                                const alphaBase = Math.max(0.6 - ((hIdx + 1) * 0.2), 0.15);
-                                                pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: alphaBase, val: hPt.ingresos });
-                                            }
-                                        });
-                                    }
-
-                                    // Sort pts to draw lines correctly if needed? No, pts is ordered from newest to oldest.
-
+                            <div className="relative w-full h-[550px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
+                                {(() => {
+                                    const crossX = 5 + getLogPos(bcgData.avgRevenue, bcgData.maxRevenue) * 90;
+                                    const crossY = 95 - getLogPos(bcgData.avgVolume, bcgData.maxVolume) * 90;
                                     return (
-                                        <g key={item.nombre + idx} className="cursor-pointer transition-all duration-300" onMouseEnter={() => setHoveredPoint(item)} onMouseLeave={() => setHoveredPoint(null)}>
-                                            {/* Lineas Conectoras (Dibujar de lo más antiguo a lo más nuevo) */}
-                                            {pts.map((_, i) => {
-                                                if (i === pts.length - 1) return null; // Ultimo punto (mas antiguo) no tiene linea anterior
-                                                const ptFrom = pts[i + 1]; // El punto más antiguo
-                                                const ptTo = pts[i];       // El punto más nuevo
-                                                return (
-                                                    <line key={`line-${i}`} x1={`${ptFrom.x}%`} y1={`${ptFrom.y}%`} x2={`${ptTo.x}%`} y2={`${ptTo.y}%`} stroke="#fff" strokeWidth={isHovered ? "2" : "1"} opacity={isHovered ? "0.6" : "0.3"} markerEnd="url(#arrowhead)"/>
-                                                );
-                                            })}
-
-                                            {/* Burbujas Historicas */}
-                                            {pts.map((pt, i) => {
-                                                if (i === 0 && pts.length > 1) return null; // La burbuja actual se dibuja aparte para quedar por encima (si hay más de 1 punto)
-                                                return (
-                                                    <circle key={`hist-${i}`} cx={`${pt.x}%`} cy={`${pt.y}%`} r={pt.r} fill={pt.color} fillOpacity={isHovered ? pt.alpha * 1.5 : pt.alpha} />
-                                                );
-                                            })}
-
-                                            {/* Burbuja Actual */}
-                                            {pts.length > 0 && (
-                                                <circle cx={`${pts[0].x}%`} cy={`${pts[0].y}%`} r={pts[0].r} fill={pts[0].color} fillOpacity={pts[0].alpha} stroke={isHovered ? "#ffffff" : pts[0].color} strokeWidth={isHovered ? 3 : 1.5} className="transition-all duration-200 z-10 relative"/>
-                                            )}
-                                            
-                                            {/* Etiqueta solo si hace Hover o es muy grande */}
-                                            {isHovered && <text x={`${posX}%`} y={`calc(${posY}% - ${radius + 8}px)`} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" className="pointer-events-none drop-shadow-md">{item.nombre}</text>}
-                                        </g>
+                                        <>
+                                            <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }} />
+                                            <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }} />
+                                            <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
+                                            <div className="absolute bottom-0 right-0 bg-blue-950/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
+                                            <div className="absolute left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ top: `${crossY}%` }}/>
+                                            <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ left: `${crossX}%` }}/>
+                                        </>
                                     );
-                                })}
-                            </svg>
+                                })()}
 
-                            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pointer-events-none">
-                                &larr; Ventas Generadas (Bs) (Eje X) &rarr;
-                            </div>
-                            <div className="absolute left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-gray-500 uppercase tracking-widest origin-center whitespace-nowrap pointer-events-none">
-                                &larr; Volumen / Cantidad Vendida (Eje Y) &rarr;
+                                <svg className="w-full h-full absolute inset-0 overflow-visible">
+                                    {bcgData.itemsList.map((item, idx) => {
+                                        const posX = 5 + getLogPos(item.ingresos_actuales, bcgData.maxRevenue) * 90;
+                                        const posY = 95 - getLogPos(item.cantidad_vendida, bcgData.maxVolume) * 90;
+
+                                        // Size based on selected metric (now representing participation)
+                                        const maxBubbleSizeSource = bubbleSizeMetric === 'sales' ? bcgData.maxRevenue : Math.max(...bcgData.itemsList.map(i => i.margen_ganancia), 1);
+                                        const bubbleValue = bubbleSizeMetric === 'sales' ? item.ingresos_actuales : item.margen_ganancia;
+                                        
+                                        const maxValForSize = Math.max(maxBubbleSizeSource, 1);
+                                        const radius = 6 + (Math.sqrt(Math.max(bubbleValue, 0) / maxValForSize) * 20);
+
+                                        const isHovered = hoveredPoint?.nombre === item.nombre;
+                                        
+                                        let colorCircle = "#94a3b8"; 
+                                        if (item.cuadrante === 'ESTRELLA') colorCircle = "#10b981";
+                                        else if (item.cuadrante === 'VACA') colorCircle = "#3b82f6";
+                                        else if (item.cuadrante === 'INTERROGANTE') colorCircle = "#a855f7";
+
+                                        if (item.ingresos_actuales === 0 && item.cantidad_vendida === 0) return null;
+
+                                        return (
+                                            <g key={item.nombre + idx} className="cursor-pointer transition-all duration-300" onMouseEnter={() => setHoveredPoint(item)} onMouseLeave={() => setHoveredPoint(null)}>
+                                                <circle cx={`${posX}%`} cy={`${posY}%`} r={radius} fill={colorCircle} fillOpacity={isHovered ? 1 : 0.75} stroke={isHovered ? "#ffffff" : colorCircle} strokeWidth={isHovered ? 3 : 1.5} className="transition-all duration-200 z-10 relative"/>
+                                                {isHovered && <text x={`${posX}%`} y={`calc(${posY}% - ${radius + 8}px)`} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" className="pointer-events-none drop-shadow-md">{item.nombre}</text>}
+                                            </g>
+                                        );
+                                    })}
+                                </svg>
+
+                                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pointer-events-none">
+                                    &larr; Ventas Generadas (Bs) (Eje X) &rarr;
+                                </div>
+                                <div className="absolute left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-gray-500 uppercase tracking-widest origin-center whitespace-nowrap pointer-events-none">
+                                    &larr; Volumen / Cantidad Vendida (Eje Y) &rarr;
+                                </div>
                             </div>
                         </div>
 
-                        {hoveredPoint && (
-                            <div className="mt-4 p-4 bg-slate-800/90 rounded-2xl border border-indigo-500/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in fade-in duration-200">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-black text-base text-white">{hoveredPoint.nombre}</span>
-                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">{hoveredPoint.categoria_nombre}</span>
-                                        <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{hoveredPoint.cuadrante}</span>
+                        {/* Panel lateral de detalles (A LA DERECHA) */}
+                        <div className="w-full xl:w-72 shrink-0 flex flex-col">
+                            {hoveredPoint ? (
+                                <div className="p-5 bg-slate-800 rounded-3xl border border-indigo-500/40 flex flex-col gap-5 animate-in fade-in slide-in-from-right-4 duration-200 shadow-xl h-full">
+                                    <div>
+                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">{hoveredPoint.categoria_nombre}</span>
+                                            <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{hoveredPoint.cuadrante}</span>
+                                        </div>
+                                        <h3 className="font-black text-xl text-white leading-tight">{hoveredPoint.nombre}</h3>
+                                        <p className="text-xs text-indigo-200 mt-1">Datos consolidados de {selectedMonths.length} mes(es)</p>
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-4">
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <span className="text-gray-400 text-[10px] uppercase font-bold block mb-1">Total Ventas (Bs)</span>
+                                            <div className="flex items-end gap-2">
+                                                <span className="font-black text-white text-lg leading-none">Bs. {hoveredPoint.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                            </div>
+                                            <div className="mt-2 pt-2 border-t border-slate-700/50">
+                                                <span className="text-indigo-400 text-[10px] uppercase font-bold block">Participación en Ventas:</span>
+                                                <span className="font-bold text-white text-sm">{((hoveredPoint.participacion_ventas || 0) * 100).toFixed(2)}% del total</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <span className="text-gray-400 text-[10px] uppercase font-bold block mb-1">Total Margen de Ganancia</span>
+                                            <div className="flex items-end gap-2">
+                                                <span className="font-black text-emerald-400 text-lg leading-none">Bs. {hoveredPoint.margen_ganancia.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                            </div>
+                                            <div className="mt-2 pt-2 border-t border-slate-700/50">
+                                                <span className="text-emerald-500 text-[10px] uppercase font-bold block">Participación en Ganancia:</span>
+                                                <span className="font-bold text-white text-sm">{((hoveredPoint.participacion_margen || 0) * 100).toFixed(2)}% del total</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                            <span className="text-gray-400 text-[10px] uppercase font-bold block mb-1">Volumen Vendido</span>
+                                            <span className="font-black text-white text-lg">{hoveredPoint.cantidad_vendida.toLocaleString('en-US')} u.</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6 text-xs flex-wrap">
-                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas (Bs)</span><span className="font-black text-white text-sm">Bs. {hoveredPoint.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
-                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Margen de Ganancia</span><span className="font-black text-emerald-400 text-sm">Bs. {hoveredPoint.margen_ganancia.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
-                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Volumen</span><span className="font-black text-white text-sm">{hoveredPoint.cantidad_vendida.toLocaleString('en-US')} u.</span></div>
+                            ) : (
+                                <div className="p-6 bg-slate-100 rounded-3xl border border-slate-200 text-center text-sm text-slate-500 h-full flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+                                    <Target size={40} className="text-slate-300 mb-4" />
+                                    <p className="font-bold text-slate-600 mb-1">Panel de Detalles</p>
+                                    <p>Posa el cursor sobre una burbuja en la gráfica para visualizar su participación de mercado exacta.</p>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-gray-200 border border-gray-200 rounded-xl bg-white overflow-hidden mt-4 shadow-sm">
@@ -504,12 +457,11 @@ export default function BcgMatrix() {
                                         {items.length === 0 ? <p className={cn('text-xs text-center py-10 font-medium opacity-50', cat.hdr)}>{cat.empty}</p> : (
                                             <div className="p-2 flex flex-col gap-2.5 bg-gray-50/50">
                                                 {items.map((prod: BcgItem) => {
-                                                    const varPct = prod.crecimiento * 100;
                                                     return (
                                                         <div key={prod.nombre || Math.random()} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2">
                                                             <div className="flex justify-between items-start"><span className="text-[11px] font-bold text-gray-800 uppercase leading-tight line-clamp-2">{prod.nombre}</span><span className="text-[9px] font-semibold text-gray-400 uppercase bg-gray-100 px-1.5 py-0.5 rounded">{prod.categoria_nombre}</span></div>
-                                                            <div className="flex justify-between items-center"><span className="text-xs font-black text-gray-900">Ventas: Bs. {prod.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 ${varPct > 0 ? 'bg-emerald-100 text-emerald-700' : varPct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>{varPct > 0 ? '↑' : varPct < 0 ? '↓' : ''} {varPct > 0 ? '+' : ''}{varPct.toFixed(1)}%</span></div>
-                                                            <div className="mt-1"><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Ganancia (Margen):</span><span className="font-bold text-emerald-600">Bs. {prod.margen_ganancia.toLocaleString('en-US')}</span></div><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Volumen vendido:</span><span className="font-bold text-indigo-600">{prod.cantidad_vendida.toLocaleString('en-US')} unidades</span></div></div>
+                                                            <div className="flex justify-between items-center"><span className="text-xs font-black text-gray-900">Ventas: Bs. {prod.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span><span className="px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 bg-emerald-100 text-emerald-700">Pt: {((prod.participacion_ventas||0)*100).toFixed(1)}%</span></div>
+                                                            <div className="mt-1"><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Ganancia (Margen):</span><span className="font-bold text-emerald-600">Bs. {prod.margen_ganancia.toLocaleString('en-US')}</span></div><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Volumen vendido:</span><span className="font-bold text-indigo-600">{prod.cantidad_vendida.toLocaleString('en-US')} u.</span></div></div>
                                                         </div>
                                                     );
                                                 })}
