@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTenants, getAdminDashboardMetrics } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { Building, AlertCircle, TrendingUp, Moon, Sun, DollarSign, Activity } from 'lucide-react';
+import { Building, AlertCircle, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import type { Tenant } from '../api/types';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, PieChart, Pie, Cell } from 'recharts';
 
