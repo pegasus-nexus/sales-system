@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { getBcgMatrix, getProducts, getCategories } from '../api/api';
+import { getBcgMatrix, getProducts, getCategories, getSucursales } from '../api/api';
 import {
     Target, Star, Package, HelpCircle, ArrowDownCircle,
-    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid, CircleDollarSign, CalendarDays
+    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid, CircleDollarSign, Plus, X
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -41,13 +41,6 @@ const QUADRANTS_CONFIG = [
     },
 ];
 
-const SUCS = [
-    { value: '', label: 'Todas las Sucursales' },
-    { value: 'Heroinas', label: 'Heroínas' },
-    { value: 'Cala Cala', label: 'Cala Cala' },
-    { value: 'America', label: 'América' },
-];
-
 export interface BcgItem {
     producto_id: string;
     nombre: string;
@@ -66,12 +59,10 @@ export interface BcgItem {
 }
 
 export default function BcgMatrix() {
-    const [mode, setMode] = useState<'today' | 'week' | 'month' | 'year'>('month');
-    const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
-    const [selectedYear]   = useState(() => String(new Date().getFullYear()));
+    const [selectedMonths, setSelectedMonths] = useState<string[]>([new Date().toISOString().slice(0, 7)]);
+    const [newMonthInput, setNewMonthInput] = useState(() => new Date().toISOString().slice(0, 7));
     const [sucursal, setSucursal] = useState('');
     const [search,   setSearch]   = useState('');
-    const [dates, setDates] = useState({ start: '', end: '', startPrev: '', endPrev: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [isError,   setIsError]   = useState(false);
     const [rawProducts, setRawProducts] = useState<BcgItem[]>([]);
@@ -81,56 +72,100 @@ export default function BcgMatrix() {
     const [viewMode, setViewMode] = useState<'chart' | 'cards'>('chart');
     const [hoveredPoint, setHoveredPoint] = useState<BcgItem | null>(null);
     
-    // Configuración UI Visual
     const [bubbleSizeMetric, setBubbleSizeMetric] = useState<'sales' | 'margin'>('sales');
-    const [monthsToShow, setMonthsToShow] = useState<1 | 2 | 3>(1); // 1=Solo actual, 2=Actual+1mes, 3=Actual+2meses
 
     const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [catalogo, setCatalogo] = useState<any[]>([]);
+    const [sucursalesOptions, setSucursalesOptions] = useState<any[]>([]);
 
     useEffect(() => {
         getCategories().then(cats => setCategories(cats)).catch(console.error);
         getProducts(1, 2000).then(res => setCatalogo(res.items || [])).catch(console.error);
+        getSucursales().then(res => setSucursalesOptions(res)).catch(console.error);
     }, []);
 
-    useEffect(() => {
-        let s = new Date(), e = new Date();
-        s.setHours(0,0,0,0); e.setHours(23,59,59,999);
-        if (mode === 'month') {
-            const [y,m] = selectedMonth.split('-');
-            s = new Date(+y, +m-1, 1);
-            e = new Date(+y, +m, 0); e.setHours(23,59,59,999);
-        } else if (mode === 'year') {
-            s = new Date(+selectedYear, 0, 1);
-            e = new Date(+selectedYear, 11, 31); e.setHours(23,59,59,999);
-        }
-        const dias = Math.max(Math.round((e.getTime()-s.getTime())/86400000), 1);
-        const sp = new Date(s); sp.setDate(s.getDate()-dias);
-        const ep = new Date(e); ep.setDate(e.getDate()-dias);
-        setDates({ start:s.toISOString(), end:e.toISOString(), startPrev:sp.toISOString(), endPrev:ep.toISOString() });
-    }, [mode, selectedMonth, selectedYear]);
-
     const fetchData = useCallback(async () => {
-        if (!dates.start || !dates.end) return;
+        if (selectedMonths.length === 0) {
+            setRawProducts([]);
+            return;
+        }
         setIsLoading(true); setIsError(false);
         try { 
-            const rawBcg: any = await getBcgMatrix(dates.start, dates.end, sucursal || undefined); 
-            const allProducts = [
-                ...(rawBcg?.estrellas || []),
-                ...(rawBcg?.vacas || []),
-                ...(rawBcg?.interrogantes || []),
-                ...(rawBcg?.perros || [])
-            ];
+            // Sort selected months chronologically
+            const sortedMonths = [...selectedMonths].sort((a, b) => a.localeCompare(b));
             
-            setRawProducts(allProducts);
+            const results = await Promise.all(sortedMonths.map(async (m) => {
+                const [y, mm] = m.split('-');
+                const s = new Date(+y, +mm-1, 1);
+                const e = new Date(+y, +mm, 0); e.setHours(23,59,59,999);
+                const raw: any = await getBcgMatrix(s.toISOString(), e.toISOString(), sucursal || undefined);
+                return {
+                    month: m,
+                    products: [
+                        ...(raw?.estrellas || []),
+                        ...(raw?.vacas || []),
+                        ...(raw?.interrogantes || []),
+                        ...(raw?.perros || [])
+                    ]
+                };
+            }));
+
+            const latestResult = results[results.length - 1];
+            // older results ordered from most recent to oldest (history[0] is prev month)
+            const olderResults = results.slice(0, results.length - 1).reverse();
+
+            const productMap = new Map<string, BcgItem>();
+            latestResult.products.forEach(p => {
+                const id = p.producto_id || p.nombre;
+                productMap.set(id, { ...p, history: [] });
+            });
+
+            // Add products that were sold in past months but not in current month
+            olderResults.forEach((oldRes) => {
+                oldRes.products.forEach(p => {
+                    const id = p.producto_id || p.nombre;
+                    if (!productMap.has(id)) {
+                        productMap.set(id, {
+                            producto_id: p.producto_id,
+                            nombre: p.nombre,
+                            ingresos_actuales: 0,
+                            ingresos_anteriores: 0,
+                            cantidad_vendida: 0,
+                            cantidad_anterior: 0,
+                            crecimiento: 0,
+                            cuota_relativa: 0,
+                            cuadrante: 'PERRO',
+                            margen_ganancia: 0,
+                            history: []
+                        });
+                    }
+                });
+            });
+
+            productMap.forEach((item, id) => {
+                olderResults.forEach((oldRes) => {
+                    const oldP = oldRes.products.find(p => (p.producto_id || p.nombre) === id);
+                    if (oldP) {
+                        item.history.push({
+                            ingresos: oldP.ingresos_actuales,
+                            cantidad: oldP.cantidad_vendida,
+                            margen_ganancia: oldP.margen_ganancia
+                        });
+                    } else {
+                        item.history.push({ ingresos: 0, cantidad: 0, margen_ganancia: 0 });
+                    }
+                });
+            });
+            
+            setRawProducts(Array.from(productMap.values()));
         }
         catch (e) {
             console.error(e);
             setIsError(true);
         }
         finally { setIsLoading(false); }
-    }, [dates.start, dates.end, sucursal]);
+    }, [selectedMonths, sucursal]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -153,10 +188,7 @@ export default function BcgMatrix() {
                         producto_id: cat, nombre: cat.charAt(0).toUpperCase() + cat.slice(1), categoria_nombre: cat,
                         ingresos_actuales: 0, ingresos_anteriores: 0, cantidad_vendida: 0, cantidad_anterior: 0,
                         crecimiento: 0, cuota_relativa: 0, cuadrante: 'PERRO', margen_ganancia: 0, count: 0,
-                        history: [
-                            {ingresos: 0, cantidad: 0, margen_ganancia: 0},
-                            {ingresos: 0, cantidad: 0, margen_ganancia: 0}
-                        ]
+                        history: Array(selectedMonths.length - 1).fill(null).map(() => ({ingresos: 0, cantidad: 0, margen_ganancia: 0}))
                     };
                 }
                 catMap[cat].ingresos_actuales += p.ingresos_actuales;
@@ -166,16 +198,13 @@ export default function BcgMatrix() {
                 catMap[cat].margen_ganancia += p.margen_ganancia;
                 
                 if (p.history && p.history.length > 0) {
-                    if (p.history[0]) {
-                        catMap[cat].history[0].ingresos += (p.history[0].ingresos || 0);
-                        catMap[cat].history[0].cantidad += (p.history[0].cantidad || 0);
-                        catMap[cat].history[0].margen_ganancia += (p.history[0].margen_ganancia || 0);
-                    }
-                    if (p.history[1]) {
-                        catMap[cat].history[1].ingresos += (p.history[1].ingresos || 0);
-                        catMap[cat].history[1].cantidad += (p.history[1].cantidad || 0);
-                        catMap[cat].history[1].margen_ganancia += (p.history[1].margen_ganancia || 0);
-                    }
+                    p.history.forEach((hPt, idx) => {
+                        if (catMap[cat].history[idx]) {
+                            catMap[cat].history[idx].ingresos += (hPt.ingresos || 0);
+                            catMap[cat].history[idx].cantidad += (hPt.cantidad || 0);
+                            catMap[cat].history[idx].margen_ganancia += (hPt.margen_ganancia || 0);
+                        }
+                    });
                 }
                 catMap[cat].count += 1;
             });
@@ -231,7 +260,7 @@ export default function BcgMatrix() {
         const perros = filtered.filter(f => f.cuadrante === 'PERRO').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
 
         return { estrellas, vacas, interrogantes, perros, itemsList: filtered, maxRevenue, maxVolume, avgRevenue, avgVolume };
-    }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
+    }, [rawProducts, selectedCategory, search, catalogo, groupBy, selectedMonths.length]);
 
     const getLogPos = (val: number, maxVal: number) => {
         if (maxVal <= 0) return 0;
@@ -246,22 +275,36 @@ export default function BcgMatrix() {
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 leading-none">Cartera de Productos</h2>
                         <p className="text-xs text-gray-500 mt-1">
-                            Análisis temporal de rentabilidad y evolución histórica.
+                            Análisis temporal de rentabilidad y evolución histórica libre.
                         </p>
                     </div>
                 </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 p-2.5 rounded-2xl border border-gray-100">
-                <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-gray-200 shadow-sm px-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Mes Analizado:</span>
-                    <input type="month" value={selectedMonth} onChange={e => {
-                        if (e.target.value) {
-                            setMode('month');
-                            setSelectedMonth(e.target.value);
+                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm px-3 flex-wrap">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-1">Meses:</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                        {selectedMonths.map(m => (
+                            <span key={m} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md border border-indigo-100 shadow-sm">
+                                {m}
+                                {selectedMonths.length > 1 && (
+                                    <button onClick={() => setSelectedMonths(prev => prev.filter(x => x !== m))} className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors ml-1"><X size={10}/></button>
+                                )}
+                            </span>
+                        ))}
+                    </div>
+                    <div className="w-px h-5 bg-gray-200 mx-1"></div>
+                    <input type="month" value={newMonthInput} onChange={e => setNewMonthInput(e.target.value)} className="text-[10px] font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-gray-100" />
+                    <button onClick={() => {
+                        if (newMonthInput && !selectedMonths.includes(newMonthInput)) {
+                            setSelectedMonths(prev => [...prev, newMonthInput]);
                         }
-                    }} className="text-xs font-bold text-gray-800 bg-gray-100 border-none rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-gray-200" />
+                    }} className="p-1 bg-gray-800 text-white rounded-md hover:bg-black transition-colors shadow-sm disabled:opacity-50" disabled={!newMonthInput || selectedMonths.includes(newMonthInput)}>
+                        <Plus size={12}/>
+                    </button>
                 </div>
+                
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button onClick={() => setGroupBy('product')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'product' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Package size={14} /> Productos</button>
                     <button onClick={() => setGroupBy('category')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'category' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Layers size={14} /> Categorías</button>
@@ -269,18 +312,12 @@ export default function BcgMatrix() {
                 
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button onClick={() => setBubbleSizeMetric('sales')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'sales' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Tamaño: Ventas (Bs)</button>
-                    <button onClick={() => setBubbleSizeMetric('margin')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'margin' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CircleDollarSign size={14} /> Tamaño: Ganancia (Margen)</button>
+                    <button onClick={() => setBubbleSizeMetric('margin')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'margin' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CircleDollarSign size={14} /> Tamaño: Ganancia</button>
                 </div>
 
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button onClick={() => setViewMode('chart')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'chart' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Matriz Evolutiva</button>
-                    <button onClick={() => setViewMode('cards')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'cards' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><LayoutGrid size={14} /> Cuadrantes Clásicos</button>
-                </div>
-
-                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                    <button onClick={() => setMonthsToShow(1)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 1 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 1 Mes</button>
-                    <button onClick={() => setMonthsToShow(2)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 2 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 2 Meses</button>
-                    <button onClick={() => setMonthsToShow(3)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", monthsToShow === 3 ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CalendarDays size={14} /> 3 Meses</button>
+                    <button onClick={() => setViewMode('cards')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'cards' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><LayoutGrid size={14} /> Cuadrantes</button>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap ml-auto">
@@ -301,7 +338,8 @@ export default function BcgMatrix() {
                     <div className="relative min-w-[140px]">
                         <Store size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"/>
                         <select value={sucursal} onChange={e => setSucursal(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none cursor-pointer shadow-sm">
-                            {SUCS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            <option value="">Todas las Sucursales</option>
+                            {sucursalesOptions.map(s => <option key={s._id} value={s.nombre}>{s.nombre}</option>)}
                         </select>
                     </div>
                 </div>
@@ -311,7 +349,7 @@ export default function BcgMatrix() {
                 {isLoading ? (
                     <div className="flex flex-col justify-center items-center py-20 text-center animate-pulse">
                         <Target size={40} className="text-indigo-400 mb-3 animate-spin"/>
-                        <p className="font-bold text-gray-600 text-sm">Procesando Matriz...</p>
+                        <p className="font-bold text-gray-600 text-sm">Cargando datos de {selectedMonths.length} meses...</p>
                     </div>
                 ) : isError ? (
                     <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100">
@@ -347,7 +385,7 @@ export default function BcgMatrix() {
                             <svg className="w-full h-full absolute inset-0 overflow-visible">
                                 <defs>
                                     <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                                        <polygon points="0 0, 6 3, 0 6" fill="#fff" opacity="0.3"/>
+                                        <polygon points="0 0, 6 3, 0 6" fill="#fff" opacity="0.4"/>
                                     </marker>
                                 </defs>
                                 {bcgData.itemsList.map((item, idx) => {
@@ -369,23 +407,28 @@ export default function BcgMatrix() {
 
                                     // Precompute valid historical points
                                     const pts: any[] = [];
-                                    if (monthsToShow >= 1) {
+                                    
+                                    // Add current bubble
+                                    if (item.ingresos_actuales > 0 || item.cantidad_vendida > 0 || item.history.length === 0) {
                                         pts.push({ x: posX, y: posY, r: radius, color: colorCircle, alpha: isHovered ? 0.9 : 0.65, val: item.ingresos_actuales });
                                     }
-                                    if (monthsToShow >= 2 && item.history && item.history[0] && (item.history[0].ingresos > 0 || item.history[0].cantidad > 0)) {
-                                        const hx = 5 + getLogPos(item.history[0].ingresos, bcgData.maxRevenue) * 90;
-                                        const hy = 95 - getLogPos(item.history[0].cantidad, bcgData.maxVolume) * 90;
-                                        const hval = bubbleSizeMetric === 'sales' ? item.history[0].ingresos : item.history[0].margen_ganancia;
-                                        const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
-                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.6, val: item.history[0].ingresos });
+
+                                    if (item.history && item.history.length > 0) {
+                                        item.history.forEach((hPt, hIdx) => {
+                                            if (hPt.ingresos > 0 || hPt.cantidad > 0) {
+                                                const hx = 5 + getLogPos(hPt.ingresos, bcgData.maxRevenue) * 90;
+                                                const hy = 95 - getLogPos(hPt.cantidad, bcgData.maxVolume) * 90;
+                                                const hval = bubbleSizeMetric === 'sales' ? hPt.ingresos : hPt.margen_ganancia;
+                                                const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
+                                                
+                                                // Decreasing opacity for older points
+                                                const alphaBase = Math.max(0.6 - ((hIdx + 1) * 0.2), 0.15);
+                                                pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: alphaBase, val: hPt.ingresos });
+                                            }
+                                        });
                                     }
-                                    if (monthsToShow >= 3 && item.history && item.history[1] && (item.history[1].ingresos > 0 || item.history[1].cantidad > 0)) {
-                                        const hx = 5 + getLogPos(item.history[1].ingresos, bcgData.maxRevenue) * 90;
-                                        const hy = 95 - getLogPos(item.history[1].cantidad, bcgData.maxVolume) * 90;
-                                        const hval = bubbleSizeMetric === 'sales' ? item.history[1].ingresos : item.history[1].margen_ganancia;
-                                        const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
-                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.4, val: item.history[1].ingresos });
-                                    }
+
+                                    // Sort pts to draw lines correctly if needed? No, pts is ordered from newest to oldest.
 
                                     return (
                                         <g key={item.nombre + idx} className="cursor-pointer transition-all duration-300" onMouseEnter={() => setHoveredPoint(item)} onMouseLeave={() => setHoveredPoint(null)}>
@@ -395,13 +438,13 @@ export default function BcgMatrix() {
                                                 const ptFrom = pts[i + 1]; // El punto más antiguo
                                                 const ptTo = pts[i];       // El punto más nuevo
                                                 return (
-                                                    <line key={`line-${i}`} x1={`${ptFrom.x}%`} y1={`${ptFrom.y}%`} x2={`${ptTo.x}%`} y2={`${ptTo.y}%`} stroke="#fff" strokeWidth={isHovered ? "2" : "1"} opacity={isHovered ? "0.6" : "0.2"} markerEnd="url(#arrowhead)"/>
+                                                    <line key={`line-${i}`} x1={`${ptFrom.x}%`} y1={`${ptFrom.y}%`} x2={`${ptTo.x}%`} y2={`${ptTo.y}%`} stroke="#fff" strokeWidth={isHovered ? "2" : "1"} opacity={isHovered ? "0.6" : "0.3"} markerEnd="url(#arrowhead)"/>
                                                 );
                                             })}
 
                                             {/* Burbujas Historicas */}
                                             {pts.map((pt, i) => {
-                                                if (i === 0) return null; // La burbuja actual se dibuja aparte para quedar por encima
+                                                if (i === 0 && pts.length > 1) return null; // La burbuja actual se dibuja aparte para quedar por encima (si hay más de 1 punto)
                                                 return (
                                                     <circle key={`hist-${i}`} cx={`${pt.x}%`} cy={`${pt.y}%`} r={pt.r} fill={pt.color} fillOpacity={isHovered ? pt.alpha * 1.5 : pt.alpha} />
                                                 );
