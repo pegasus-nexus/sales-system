@@ -358,6 +358,19 @@ export const updateProduct = (id: string, data: ProductCreate) =>
 export const deactivateProduct = (id: string) =>
     client<{ message: string }>(`/products/${id}`, { method: 'DELETE' });
 
+export const getAdminDashboardMetrics = async () => {
+    const response = await client<any>('/tenants/admin/dashboard');
+    return response;
+};
+
+// ==========================================
+// Audit Logs
+// ==========================================
+export const getGlobalAuditLogs = async () => {
+    const response = await client<any[]>('/audit/global');
+    return response;
+};
+
 export const exportProductTemplate = async () => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
     const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 

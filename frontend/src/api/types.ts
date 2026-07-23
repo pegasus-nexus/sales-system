@@ -39,6 +39,7 @@ export interface Tenant {
     plan_expires_at?: string;
     settings?: TenantSettings;
     configuracion?: Record<string, unknown>;
+    modulos_activos?: string[];
     created_at: string;
 }
 
@@ -54,6 +55,7 @@ export interface TenantUpdate {
     plan?: string;
     is_active?: boolean;
     plan_expires_at?: string;
+    modulos_activos?: string[];
 }
 
 export interface Sucursal {

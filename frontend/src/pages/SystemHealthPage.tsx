@@ -1,24 +1,25 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ShieldAlert, Activity, Cpu, Wifi, CheckCircle2, AlertTriangle, AlertCircle, RefreshCcw } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-
-const mockLogs = [
-    { id: 1, time: 'Hace 2 min', type: 'error', tenant: 'Supermercado A', message: 'Error 500 en GET /api/v1/sales' },
-    { id: 2, time: 'Hace 5 min', type: 'info', tenant: 'La Bella Pizza', message: 'Cierre de caja exitoso (Bs. 5,420.50)' },
-    { id: 3, time: 'Hace 12 min', type: 'warning', tenant: 'Ferretería El Tornillo', message: 'Rate limit excedido (429 Too Many Requests)' },
-    { id: 4, time: 'Hace 28 min', type: 'info', tenant: 'Farmacia Salud', message: 'Nuevo usuario registrado (Cajero_02)' },
-    { id: 5, time: 'Hace 1 hora', type: 'info', tenant: 'Sistema Matriz', message: 'Backup automático completado (1.2 GB)' },
-];
+import { getGlobalAuditLogs } from '../api/api';
 
 export default function SystemHealthPage() {
     const { user } = useAuthStore();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    const { data: logs, isLoading, refetch } = useQuery({
+        queryKey: ['global-audit-logs'],
+        queryFn: getGlobalAuditLogs,
+    });
+
     if (user?.role !== 'SUPERADMIN') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
 
     const handleRefresh = () => {
         setIsRefreshing(true);
-        setTimeout(() => setIsRefreshing(false), 1000);
+        refetch().finally(() => {
+            setTimeout(() => setIsRefreshing(false), 500);
+        });
     };
 
     return (
@@ -83,22 +84,27 @@ export default function SystemHealthPage() {
                     <h3 className="text-xl font-black text-gray-900">Actividad Global Reciente</h3>
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="divide-y divide-gray-100">
-                            {mockLogs.map(log => (
-                                <div key={log.id} className="p-5 hover:bg-gray-50 transition-colors flex items-start gap-4">
+                            {isLoading ? (
+                                <div className="p-8 text-center text-gray-500 font-bold animate-pulse">Cargando logs...</div>
+                            ) : logs?.map((log: any) => (
+                                <div key={log._id} className="p-5 hover:bg-gray-50 transition-colors flex items-start gap-4">
                                     <div className="mt-1">
-                                        {log.type === 'error' && <AlertCircle className="text-red-500" size={20} />}
-                                        {log.type === 'warning' && <AlertTriangle className="text-amber-500" size={20} />}
-                                        {log.type === 'info' && <CheckCircle2 className="text-blue-500" size={20} />}
+                                        {log.action === 'DELETE' ? <AlertCircle className="text-red-500" size={20} /> :
+                                         log.action === 'UPDATE' ? <AlertTriangle className="text-amber-500" size={20} /> :
+                                         <CheckCircle2 className="text-blue-500" size={20} />}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="font-bold text-gray-900">{log.tenant}</p>
-                                            <span className="text-xs font-medium text-gray-400">{log.time}</span>
+                                            <p className="font-bold text-gray-900">{log.tenant_name}</p>
+                                            <span className="text-xs font-medium text-gray-400">{new Date(log.created_at).toLocaleString()}</span>
                                         </div>
-                                        <p className="text-sm text-gray-600 font-medium">{log.message}</p>
+                                        <p className="text-sm text-gray-600 font-medium">[{log.entity}] {log.action} por {log.username}</p>
                                     </div>
                                 </div>
                             ))}
+                            {logs?.length === 0 && (
+                                <div className="p-8 text-center text-gray-500 font-bold">No hay actividad reciente.</div>
+                            )}
                         </div>
                     </div>
                 </div>

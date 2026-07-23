@@ -61,6 +61,7 @@ class TenantUpdate(BaseModel):
     plan: str | None = None
     is_active: bool | None = None
     plan_expires_at: datetime | None = None
+    modulos_activos: List[str] | None = None
 
 class AdminCredentialsUpdate(BaseModel):
     username: str | None = None
@@ -219,6 +220,77 @@ async def get_tenant_stats(current_user: User = Depends(get_current_active_user)
         "active_employees": active_employees,
     }
 
+@router.get("/tenants/admin/dashboard")
+async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_active_user)):
+    """Returns key metrics for the Superadmin SaaS Dashboard."""
+    if current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # 1. Calculate MRR
+    tenants = await Tenant.find_all().to_list()
+    mrr = 0.0
+    
+    # Fetch all plans to map code -> precio_mensual
+    plans = await Plan.find_all().to_list()
+    plan_prices = {p.code: float(p.precio_mensual.to_decimal()) for p in plans}
+    
+    for t in tenants:
+        if t.is_active:
+            # Add plan price to MRR
+            mrr += plan_prices.get(t.plan, 0.0)
+            
+    # 2. Storage Estimation
+    # Instead of running dbStats (which doesn't separate by tenant),
+    # we estimate: Base (5MB) + Products (1KB each) + Sales (2KB each)
+    storage_by_tenant = []
+    
+    # Just estimate for active tenants, and sort by highest storage
+    for t in tenants:
+        if not t.is_active: continue
+        
+        # We can't do parallel queries easily in a loop without asyncio.gather, but for a small amount of tenants it's fine.
+        # To make it fast, we will just use a heuristic based on active tenants.
+        active_products = await Product.find(Product.tenant_id == str(t.id)).count()
+        sales_count = await Sale.find(Sale.tenant_id == str(t.id)).count()
+        
+        # Estimate in MB
+        base_mb = 5.0
+        products_mb = active_products * 0.001
+        sales_mb = sales_count * 0.002
+        
+        total_mb = base_mb + products_mb + sales_mb
+        # Convert to GB for pie chart, format to 2 decimal places
+        total_gb = round(total_mb / 1024, 4)
+        
+        if total_gb > 0.0001:
+            storage_by_tenant.append({
+                "name": t.name,
+                "value": total_gb
+            })
+            
+    # Sort and take top 5, group rest into 'Otros'
+    storage_by_tenant.sort(key=lambda x: x["value"], reverse=True)
+    if len(storage_by_tenant) > 5:
+        top_5 = storage_by_tenant[:5]
+        otros_gb = sum(x["value"] for x in storage_by_tenant[5:])
+        if otros_gb > 0:
+            top_5.append({"name": "Otros", "value": round(otros_gb, 4)})
+        storage_by_tenant = top_5
+        
+    # Get actual real DB storage size via dbStats
+    try:
+        db = Tenant.get_motor_collection().database
+        stats = await db.command("dbStats")
+        total_db_gb = round(stats.get("dataSize", 0) / (1024**3), 4)
+    except Exception:
+        total_db_gb = 0.0
+        
+    return {
+        "mrr": mrr,
+        "storageByTenant": storage_by_tenant,
+        "totalDbGb": total_db_gb
+    }
+
 @router.put("/tenants/{tenant_id}", response_model=Tenant)
 async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: User = Depends(get_current_active_user)):
     if current_user.role != UserRole.SUPERADMIN:
@@ -244,6 +316,8 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
         tenant.is_active = tenant_in.is_active
     if tenant_in.plan_expires_at is not None:
         tenant.plan_expires_at = tenant_in.plan_expires_at
+    if tenant_in.modulos_activos is not None:
+        tenant.modulos_activos = tenant_in.modulos_activos
 
     await tenant.save()
     return tenant

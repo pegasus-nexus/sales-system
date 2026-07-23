@@ -43,3 +43,27 @@ async def get_audit_logs(
 
     logs = await AuditLog.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     return [serialize_mongo_types(log.model_dump()) for log in logs]
+
+@router.get("/global", response_model=List[dict])
+async def get_global_audit_logs(
+    current_user: User = Depends(require_roles(UserRole.SUPERADMIN)),
+    limit: int = 50
+):
+    """Returns a global activity feed across all tenants for the System Health dashboard."""
+    logs = await AuditLog.find({}).sort("-created_at").limit(limit).to_list()
+    
+    # We need to map tenant_id to tenant name
+    from app.domain.models.tenant import Tenant
+    tenants = await Tenant.find_all().to_list()
+    tenant_map = {str(t.id): t.name for t in tenants}
+    # Add string match too for slugs
+    for t in tenants:
+        tenant_map[t.name] = t.name
+        
+    result = []
+    for log in logs:
+        dump = log.model_dump()
+        dump["tenant_name"] = tenant_map.get(log.tenant_id, "Sistema Matriz")
+        result.append(serialize_mongo_types(dump))
+        
+    return result

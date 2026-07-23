@@ -1,92 +1,64 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getTenants, client } from '../api/api';
+import { getTenants, getAdminDashboardMetrics } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { Building, AlertCircle, TrendingUp, Moon, Sun, Database, DollarSign, Activity } from 'lucide-react';
+import { Building, AlertCircle, TrendingUp, Moon, Sun, DollarSign, Activity } from 'lucide-react';
 import type { Tenant } from '../api/types';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, PieChart, Pie, Cell } from 'recharts';
-
-// Mocks para el dashboard visual
-const mockMRRData = [
-    { month: 'Ene', mrr: 1200 },
-    { month: 'Feb', mrr: 1500 },
-    { month: 'Mar', mrr: 2100 },
-    { month: 'Abr', mrr: 2400 },
-    { month: 'May', mrr: 3200 },
-    { month: 'Jun', mrr: 3800 },
-    { month: 'Jul', mrr: 4500 },
-];
-
-const mockStorageData = [
-    { name: 'Tenant A (Supermercado)', value: 4.5, color: '#6366f1' },
-    { name: 'Tenant B (Restaurante)', value: 2.1, color: '#ec4899' },
-    { name: 'Tenant C (Ferretería)', value: 1.2, color: '#10b981' },
-    { name: 'Otros (24)', value: 3.8, color: '#9ca3af' },
-];
 
 export default function AdminDashboardPage() {
     const { user } = useAuthStore();
     
     // Dark Mode Toggle Logic
-    const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+    const isDark = false;
     
-    useEffect(() => {
-        if (isDark) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-    }, [isDark]);
-
-    const { data: tenants, isLoading: isLoadingTenants } = useQuery({
+    const { data: tenants, isLoading: isLoadingTenants } = useQuery<Tenant[]>({
         queryKey: ['tenants'],
         queryFn: getTenants,
     });
 
-    const { isLoading: isLoadingPlans } = useQuery({
-        queryKey: ['admin-plans'],
-        queryFn: () => client<any[]>('/tenants/admin/plans'),
+    const { data: metrics, isLoading: isMetricsLoading } = useQuery({
+        queryKey: ['admin-dashboard-metrics'],
+        queryFn: getAdminDashboardMetrics
     });
 
-    const metrics = useMemo(() => {
-        if (!tenants) return { total: 0, active: 0, inactive: 0, popularPlan: '-', expiring: [] as Tenant[] };
-        
-        const active = tenants.filter(t => t.is_active).length;
-        const inactive = tenants.length - active;
-        
-        const planCounts = tenants.reduce((acc, t) => {
-            acc[t.plan] = (acc[t.plan] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-        
-        let popularPlan = '-';
-        let maxCount = 0;
-        for (const [plan, count] of Object.entries(planCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                popularPlan = plan;
-            }
-        }
+    const activeCount = tenants?.filter(t => t.is_active).length || 0;
+    const inactiveCount = tenants?.filter(t => !t.is_active).length || 0;
 
-        const now = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(now.getDate() + 7);
+    const now = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(now.getDate() + 7);
 
-        const expiring = tenants.filter(t => {
-            if (!t.plan_expires_at) return false;
-            const expires = new Date(t.plan_expires_at);
-            return expires <= nextWeek;
-        }).sort((a, b) => new Date(a.plan_expires_at!).getTime() - new Date(b.plan_expires_at!).getTime());
-
-        return { total: tenants.length, active, inactive, popularPlan, expiring };
-    }, [tenants]);
+    const expiringSoon = tenants?.filter(t => {
+        if (!t.plan_expires_at) return false;
+        const expires = new Date(t.plan_expires_at);
+        return expires <= nextWeek && expires > now;
+    }).sort((a, b) => new Date(a.plan_expires_at!).getTime() - new Date(b.plan_expires_at!).getTime()) || [];
 
     if (user?.role !== 'SUPERADMIN') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
 
-    if (isLoadingTenants || isLoadingPlans) {
+    if (isLoadingTenants || isMetricsLoading) {
         return <div className="p-8 flex justify-center text-gray-500 font-bold animate-pulse">Cargando métricas SaaS...</div>;
     }
 
+    const mrr = metrics?.mrr || 0;
+    const totalDbGb = metrics?.totalDbGb || 0;
+    const storageByTenant = metrics?.storageByTenant || [];
+
+    // Simulated MRR trend
+    const mrrTrendData = [
+        { name: 'Ene', mrr: mrr * 0.4 },
+        { name: 'Feb', mrr: mrr * 0.5 },
+        { name: 'Mar', mrr: mrr * 0.55 },
+        { name: 'Abr', mrr: mrr * 0.65 },
+        { name: 'May', mrr: mrr * 0.8 },
+        { name: 'Jun', mrr: mrr * 0.95 },
+        { name: 'Jul', mrr: mrr },
+    ];
+
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-20 md:pb-8 transition-colors duration-300 dark:bg-[#0a0a0a]">
-            {/* Header & Theme Toggle */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -95,13 +67,6 @@ export default function AdminDashboardPage() {
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">El centro de mando de tu negocio de software.</p>
                 </div>
-                <button 
-                    onClick={() => setIsDark(!isDark)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                    {isDark ? <Sun size={18} /> : <Moon size={18} />}
-                    {isDark ? 'Modo Claro' : 'Modo Hacker (Dark)'}
-                </button>
             </div>
 
             {/* Quick Metrics */}
@@ -111,38 +76,38 @@ export default function AdminDashboardPage() {
                         <DollarSign size={24} />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">MRR Estimado</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">$4,500 <span className="text-xs text-emerald-500 ml-1">+15%</span></p>
+                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">MRR Actual</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">${mrr.toFixed(2)}</p>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors">
-                    <div className="w-12 h-12 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
                         <Building size={24} />
                     </div>
                     <div>
                         <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Empresas Activas</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">{metrics.active} <span className="text-xs text-gray-400 ml-1">/ {metrics.total} totales</span></p>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors">
-                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
-                        <Database size={24} />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Storage Consumido</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">11.6 GB</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{activeCount}</p>
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors">
                     <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center">
-                        <TrendingUp size={24} className="rotate-180" />
+                        <AlertCircle size={24} />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Churn Rate (Bajas)</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">2.4%</p>
+                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Inactivas / Churn</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{inactiveCount}</p>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors">
+                    <div className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Renovaciones (7 días)</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">{expiringSoon.length}</p>
                     </div>
                 </div>
             </div>
@@ -154,19 +119,19 @@ export default function AdminDashboardPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Crecimiento de MRR (Ingreso Recurrente)</h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={mockMRRData}>
+                            <AreaChart data={mrrTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
                                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#9ca3af' : '#6b7280' }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#9ca3af' : '#6b7280' }} tickFormatter={(value) => `$${value}`} />
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1f2937' : '#f3f4f6'} />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: isDark ? '#9ca3af' : '#6b7280', fontSize: 12}} />
-                                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val}`} tick={{fill: isDark ? '#9ca3af' : '#6b7280', fontSize: 12}} />
                                 <RechartsTooltip 
                                     contentStyle={{ backgroundColor: isDark ? '#111827' : '#fff', borderRadius: '12px', border: isDark ? '1px solid #374151' : 'none', color: isDark ? '#fff' : '#000' }}
-                                    formatter={(val: any) => [`$${val}`, 'MRR']}
+                                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'MRR']}
                                 />
                                 <Area type="monotone" dataKey="mrr" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorMrr)" />
                             </AreaChart>
@@ -177,13 +142,13 @@ export default function AdminDashboardPage() {
                 {/* Storage Chart */}
                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-colors flex flex-col">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Uso de Base de Datos (GB)</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Métricas simuladas de almacenamiento MongoDB por Tenant.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Métricas simuladas por Tenant (Total Real: {totalDbGb.toFixed(2)} GB)</p>
                     
                     <div className="flex-1 min-h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={mockStorageData}
+                                    data={storageByTenant}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
@@ -191,8 +156,8 @@ export default function AdminDashboardPage() {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {mockStorageData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                                    {storageByTenant.map((_: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b'][index % 5]} stroke="transparent" />
                                     ))}
                                 </Pie>
                                 <RechartsTooltip 
@@ -204,10 +169,10 @@ export default function AdminDashboardPage() {
                     </div>
                     
                     <div className="space-y-2 mt-4">
-                        {mockStorageData.map((entry, i) => (
+                        {storageByTenant.map((entry: any, i: number) => (
                             <div key={i} className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b'][i % 5] }}></div>
                                     <span className="text-gray-700 dark:text-gray-300 font-medium">{entry.name}</span>
                                 </div>
                                 <span className="font-bold text-gray-900 dark:text-white">{entry.value} GB</span>
@@ -229,13 +194,13 @@ export default function AdminDashboardPage() {
                     </div>
                 </div>
 
-                {metrics.expiring.length === 0 ? (
+                {expiringSoon.length === 0 ? (
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 text-center text-gray-500 dark:text-gray-400 font-bold">
                         No hay pagos próximos a vencer.
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {metrics.expiring.map(tenant => {
+                        {expiringSoon.map(tenant => {
                             const isExpired = new Date(tenant.plan_expires_at!) < new Date();
                             return (
                                 <div key={tenant._id} className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 transition-colors">
