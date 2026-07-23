@@ -125,12 +125,12 @@ export default function BcgMatrix() {
                         });
                     }
                     const item = productMap.get(id)!;
-                    item.ingresos_actuales += (p.ingresos_actuales || 0);
-                    item.cantidad_vendida += (p.cantidad_vendida || 0);
-                    item.margen_ganancia += (p.margen_ganancia || 0);
+                    item.ingresos_actuales += (p.ingresos || 0);
+                    item.cantidad_vendida += (p.cantidad || 0);
+                    item.margen_ganancia += (p.margen || 0);
                     
-                    totalVentas += (p.ingresos_actuales || 0);
-                    totalMargen += (p.margen_ganancia || 0);
+                    totalVentas += (p.ingresos || 0);
+                    totalMargen += (p.margen || 0);
                 });
             });
 
