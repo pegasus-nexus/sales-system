@@ -57,6 +57,8 @@ class BCGProduct(BaseModel):
     cuota_relativa: float = Field(0.0, description="Cuota respecto al producto líder (0.0 a 1.0)")
     cuadrante: str = Field(..., description="'ESTRELLA', 'VACA', 'INTERROGANTE', 'PERRO'")
     estrategia_sugerida: Optional[str] = Field(None, description="Directriz de negocio (ej. Inversión, Liquidación, etc.)")
+    margen_ganancia: float = Field(0.0, description="Margen de ganancia total del periodo (Ingresos - Costo)")
+    history: List[Dict[str, Any]] = Field(default_factory=list, description="Historial de cuota, crecimiento y margen en periodos anteriores")
     tendencia_str: Optional[str] = None
     badge: Optional[str] = None
     nota: Optional[str] = None

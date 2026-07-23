@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getBcgMatrix, getProducts, getCategories } from '../api/api';
 import {
     Target, Star, Package, HelpCircle, ArrowDownCircle,
-    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid
+    AlertTriangle, Search, Store, Filter, Layers, BarChart2, LayoutGrid, CircleDollarSign
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -17,7 +17,6 @@ const QUADRANTS_CONFIG = [
         bg: 'bg-emerald-50/50', border: 'border-emerald-200/50', hdr: 'text-emerald-800',
         icon: <Star fill="currentColor" size={16}/>, iconBg: 'bg-emerald-100 text-emerald-600',
         empty: 'Sin productos de alto valor.',
-        card: { border: 'border-emerald-200', text: 'text-emerald-700', pill: 'bg-emerald-400', pillText: 'text-emerald-600' }
     },
     {
         key: 'interrogantes', label: '❓ Gen. de Volumen',
@@ -25,7 +24,6 @@ const QUADRANTS_CONFIG = [
         bg: 'bg-purple-50/50', border: 'border-purple-200/50', hdr: 'text-purple-800',
         icon: <HelpCircle size={16}/>, iconBg: 'bg-purple-100 text-purple-600',
         empty: 'Sin generadores de volumen.',
-        card: { border: 'border-purple-200', text: 'text-purple-700', pill: 'bg-purple-400', pillText: 'text-purple-600' }
     },
     {
         key: 'vacas', label: '🐄 Premium/Nicho',
@@ -33,7 +31,6 @@ const QUADRANTS_CONFIG = [
         bg: 'bg-blue-50/50', border: 'border-blue-200/50', hdr: 'text-blue-800',
         icon: <Package size={16}/>, iconBg: 'bg-blue-100 text-blue-600',
         empty: 'Sin productos premium/nicho.',
-        card: { border: 'border-blue-200', text: 'text-blue-700', pill: 'bg-blue-400', pillText: 'text-blue-600' }
     },
     {
         key: 'perros', label: '🐕 A Revisar',
@@ -41,7 +38,6 @@ const QUADRANTS_CONFIG = [
         bg: 'bg-gray-100/50', border: 'border-gray-200/80', hdr: 'text-gray-700',
         icon: <ArrowDownCircle size={16}/>, iconBg: 'bg-gray-200 text-gray-600',
         empty: 'Sin elementos a revisar.',
-        card: { border: 'border-gray-200', text: 'text-gray-600', pill: 'bg-gray-400', pillText: 'text-red-500' }
     },
 ];
 
@@ -52,26 +48,22 @@ const SUCS = [
     { value: 'America', label: 'América' },
 ];
 
-// Helper para escala logarítmica (distribuye mejor los valores atípicos)
-const getLogPos = (val: number, maxVal: number) => {
-    if (maxVal <= 0) return 0;
-    const logVal = Math.log10(Math.max(val, 0) + 1);
-    const logMax = Math.log10(maxVal + 1);
-    return logVal / logMax;
-};
-
 export interface BcgItem {
+    producto_id: string;
     nombre: string;
-    categoria_nombre: string;
-    actual: number;
-    anterior: number;
-    variacion: number;
-    cuota: number;
-    shareTotal: number;
-    cantidad: number;
-    cantidadAnterior: number;
+    categoria_nombre?: string;
+    ingresos_actuales: number;
+    ingresos_anteriores: number;
+    cantidad_vendida: number;
+    cantidad_anterior: number;
+    crecimiento: number;
+    cuota_relativa: number;
     cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO';
+    margen_ganancia: number;
+    history: any[];
+    tendencia_str?: string;
     totalItemsCount?: number;
+    isTop10?: boolean;
 }
 
 export default function BcgMatrix() {
@@ -83,28 +75,25 @@ export default function BcgMatrix() {
     const [dates, setDates] = useState({ start: '', end: '', startPrev: '', endPrev: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [isError,   setIsError]   = useState(false);
-    const [rawProducts, setRawProducts] = useState<any[]>([]);
+    const [rawProducts, setRawProducts] = useState<BcgItem[]>([]);
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // Grouping & View options: 'product' vs 'category', and 'chart' vs 'cards'
     const [groupBy, setGroupBy] = useState<'product' | 'category'>('product');
     const [viewMode, setViewMode] = useState<'chart' | 'cards'>('chart');
     const [hoveredPoint, setHoveredPoint] = useState<BcgItem | null>(null);
+    
+    // Novedad: Tamaño de burbuja
+    const [bubbleSizeMetric, setBubbleSizeMetric] = useState<'sales' | 'margin'>('sales');
 
-    // Catalog states for Advanced Filters
     const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [catalogo, setCatalogo] = useState<any[]>([]);
 
-    // Cargar Catálogo
     useEffect(() => {
         getCategories().then(cats => setCategories(cats)).catch(console.error);
-        getProducts(1, 2000).then(res => {
-            setCatalogo(res.items || []);
-        }).catch(console.error);
+        getProducts(1, 2000).then(res => setCatalogo(res.items || [])).catch(console.error);
     }, []);
 
-    /* Calcular fechas */
     useEffect(() => {
         let s = new Date(), e = new Date();
         s.setHours(0,0,0,0); e.setHours(23,59,59,999);
@@ -124,13 +113,11 @@ export default function BcgMatrix() {
         setDates({ start:s.toISOString(), end:e.toISOString(), startPrev:sp.toISOString(), endPrev:ep.toISOString() });
     }, [mode, selectedMonth, selectedYear]);
 
-    /* Fetch de Datos Crudos de la Matriz */
     const fetchData = useCallback(async () => {
         if (!dates.start || !dates.end) return;
         setIsLoading(true); setIsError(false);
         try { 
             const rawBcg: any = await getBcgMatrix(dates.start, dates.end, sucursal || undefined); 
-            
             const allProducts = [
                 ...(rawBcg?.estrellas || []),
                 ...(rawBcg?.vacas || []),
@@ -138,10 +125,18 @@ export default function BcgMatrix() {
                 ...(rawBcg?.perros || [])
             ];
             
+            // Marcar Top 10 para dibujarlos fijos en pantalla
+            const sortedBySales = [...allProducts].sort((a,b) => b.ingresos_actuales - a.ingresos_actuales);
+            const top10Ids = new Set(sortedBySales.slice(0, 10).map(p => p.producto_id || p.nombre));
+            
+            allProducts.forEach(p => {
+                p.isTop10 = top10Ids.has(p.producto_id || p.nombre);
+            });
+            
             setRawProducts(allProducts);
         }
         catch (e) {
-            console.error("Error fetching BCG Matrix:", e);
+            console.error(e);
             setIsError(true);
         }
         finally { setIsLoading(false); }
@@ -149,534 +144,292 @@ export default function BcgMatrix() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const fmt = (iso: string) =>
-        iso ? new Date(iso).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
-
-    /* Lógica Estricta de Matriz BCG (Productos o Categorías) */
     const bcgData = useMemo(() => {
-        const salesDict: Record<string, { actual: number, anterior: number, cantidad: number, cantidadAnterior: number }> = {};
-        rawProducts.forEach((p: any) => {
-            if (!p.nombre) return;
-            const norm = p.nombre.toLowerCase().trim();
-            if (!salesDict[norm]) {
-                salesDict[norm] = { actual: 0, anterior: 0, cantidad: 0, cantidadAnterior: 0 };
-            }
-            salesDict[norm].actual += (p.ingresos_actuales || 0);
-            salesDict[norm].anterior += (p.ingresos_anteriores || 0);
-            salesDict[norm].cantidad += (p.cantidad_vendida || 0);
-            salesDict[norm].cantidadAnterior += (p.cantidad_anterior || 0);
-        });
+        let universoAnalisis: BcgItem[] = [];
 
-        const baseCatalogo = (catalogo && catalogo.length > 0) 
-            ? catalogo 
-            : Array.from(new Map(rawProducts.map((item: any) => [
-                (item.nombre || '').toLowerCase().trim(), 
-                { nombre: item.nombre, categoria_nombre: item.categoria || item.categoria_nombre || 'otros' }
-              ])).values());
+        if (groupBy === 'category' && catalogo.length > 0) {
+            const catMap: Record<string, BcgItem & {count: number}> = {};
+            const prodToCat: Record<string, string> = {};
+            catalogo.forEach(c => {
+                prodToCat[(c.descripcion || c.nombre || '').toLowerCase().trim()] = (c.categoria || c.categoria_nombre || 'otros').toLowerCase().trim();
+            });
 
-        const productosMapeados = baseCatalogo.map((prodCat: any) => {
-            const nombreCat = prodCat.descripcion || prodCat.nombre || 'Sin nombre';
-            const norm = nombreCat.toLowerCase().trim();
-            const venta = salesDict[norm];
-            
-            const actual = venta ? venta.actual : 0;
-            const anterior = venta ? venta.anterior : 0;
-            const cantidad = venta ? venta.cantidad : 0;
-            const cantidadAnterior = venta ? venta.cantidadAnterior : 0;
-            
-            let variacion = 0;
-            if (anterior > 0) {
-                variacion = ((actual - anterior) / anterior) * 100;
-            } else if (actual > 0 && anterior === 0) {
-                variacion = 100;
-            }
-
-            return {
-                nombre: nombreCat,
-                categoria_nombre: (prodCat.categoria || prodCat.categoria_nombre || prodCat.name || 'otros').toLowerCase().trim(),
-                actual,
-                anterior,
-                cantidad,
-                cantidadAnterior,
-                variacion
-            };
-        });
-
-        // Agrupación opcional por Categoría
-        let universoAnalisis: { nombre: string, categoria_nombre: string, actual: number, anterior: number, variacion: number, cantidad: number, cantidadAnterior: number, totalItemsCount?: number }[] = [];
-
-        if (groupBy === 'category') {
-            const catMap: Record<string, { actual: number, anterior: number, cantidad: number, cantidadAnterior: number, count: number }> = {};
-            productosMapeados.forEach(p => {
-                const cat = p.categoria_nombre || 'otros';
+            rawProducts.forEach(p => {
+                const normName = p.nombre.toLowerCase().trim();
+                const cat = prodToCat[normName] || 'otros';
+                
                 if (!catMap[cat]) {
-                    catMap[cat] = { actual: 0, anterior: 0, cantidad: 0, cantidadAnterior: 0, count: 0 };
+                    catMap[cat] = {
+                        producto_id: cat, nombre: cat.charAt(0).toUpperCase() + cat.slice(1), categoria_nombre: cat,
+                        ingresos_actuales: 0, ingresos_anteriores: 0, cantidad_vendida: 0, cantidad_anterior: 0,
+                        crecimiento: 0, cuota_relativa: 0, cuadrante: 'PERRO', margen_ganancia: 0, history: [], count: 0
+                    };
                 }
-                catMap[cat].actual += p.actual;
-                catMap[cat].anterior += p.anterior;
-                catMap[cat].cantidad += p.cantidad;
-                catMap[cat].cantidadAnterior += p.cantidadAnterior;
+                catMap[cat].ingresos_actuales += p.ingresos_actuales;
+                catMap[cat].ingresos_anteriores += p.ingresos_anteriores;
+                catMap[cat].cantidad_vendida += p.cantidad_vendida;
+                catMap[cat].cantidad_anterior += p.cantidad_anterior;
+                catMap[cat].margen_ganancia += p.margen_ganancia;
                 catMap[cat].count += 1;
             });
 
-            universoAnalisis = Object.entries(catMap).map(([catName, stats]) => {
-                let variacion = 0;
-                if (stats.anterior > 0) {
-                    variacion = ((stats.actual - stats.anterior) / stats.anterior) * 100;
-                } else if (stats.actual > 0 && stats.anterior === 0) {
-                    variacion = 100;
-                }
-                const formattedName = catName.charAt(0).toUpperCase() + catName.slice(1);
-                return {
-                    nombre: formattedName,
-                    categoria_nombre: catName,
-                    actual: stats.actual,
-                    anterior: stats.anterior,
-                    cantidad: stats.cantidad,
-                    cantidadAnterior: stats.cantidadAnterior,
-                    variacion,
-                    totalItemsCount: stats.count
-                };
+            universoAnalisis = Object.values(catMap).map(c => {
+                let crec = 0;
+                if (c.ingresos_anteriores > 0) crec = (c.ingresos_actuales - c.ingresos_anteriores) / c.ingresos_anteriores;
+                else if (c.ingresos_actuales > 0) crec = 1.0;
+                c.crecimiento = crec;
+                c.totalItemsCount = c.count;
+                return c;
             });
         } else {
-            universoAnalisis = productosMapeados;
+            universoAnalisis = rawProducts.map(p => {
+                const pCatMatch = catalogo.find(c => (c.descripcion || c.nombre || '').toLowerCase().trim() === p.nombre.toLowerCase().trim());
+                p.categoria_nombre = pCatMatch ? (pCatMatch.categoria || pCatMatch.categoria_nombre || 'otros').toLowerCase().trim() : 'otros';
+                return p;
+            });
         }
 
-        // Filtrado por búsqueda y categoría seleccionada
-        const filtered = universoAnalisis.filter((p: any) => {
-            if (groupBy === 'product') {
-                const catSeleccionada = selectedCategory || 'all';
-                const catReal = String(p.categoria_nombre || 'otros').toLowerCase().trim();
-                const filtroNormalizado = String(catSeleccionada).toLowerCase().trim();
-
-                const matchCat = filtroNormalizado === 'all' || 
-                                 filtroNormalizado === 'todas las categorías' || 
-                                 filtroNormalizado === '' || 
-                                 catReal === filtroNormalizado || 
-                                 catReal.includes(filtroNormalizado) || 
-                                 filtroNormalizado.includes(catReal);
-                
-                if (!matchCat) return false;
+        const filtered = universoAnalisis.filter(p => {
+            if (groupBy === 'product' && selectedCategory && selectedCategory !== 'all') {
+                if (p.categoria_nombre !== selectedCategory) return false;
             }
-
             if (search.trim().length >= 2) {
                 if (!p.nombre.toLowerCase().includes(search.trim().toLowerCase())) return false;
             }
             return true;
         });
 
-        // Totales globales para cuota y % sobre total
-        const granTotalVentas = filtered.reduce((acc, p) => acc + p.actual, 0);
-        const maxRevenue = filtered.length > 0 ? Math.max(...filtered.map((p: any) => p.actual), 0) : 0;
-        const maxVolume = filtered.length > 0 ? Math.max(...filtered.map((p: any) => p.cantidad), 0) : 0;
+        const maxRevenue = filtered.length > 0 ? Math.max(...filtered.map(p => p.ingresos_actuales), 1) : 1;
+        const maxVolume = filtered.length > 0 ? Math.max(...filtered.map(p => p.cantidad_vendida), 1) : 1;
+        
+        const avgRevenue = filtered.length > 0 ? filtered.reduce((a, b) => a + b.ingresos_actuales, 0) / filtered.length : 0;
+        const avgVolume = filtered.length > 0 ? filtered.reduce((a, b) => a + b.cantidad_vendida, 0) / filtered.length : 0;
 
-        // Calcular promedios para el punto de corte (cruceta central)
-        const avgRevenue = filtered.length > 0 ? granTotalVentas / filtered.length : 0;
-        const avgVolume = filtered.length > 0 ? filtered.reduce((acc, p) => acc + p.cantidad, 0) / filtered.length : 0;
+        filtered.forEach(item => {
+            item.cuota_relativa = item.ingresos_actuales / maxRevenue;
+            
+            const es_alto_volumen = item.cantidad_vendida >= avgVolume;
+            const es_altas_ventas = item.ingresos_actuales >= avgRevenue;
 
-        const estrellas: BcgItem[] = [];
-        const vacas: BcgItem[] = [];
-        const interrogantes: BcgItem[] = [];
-        const perros: BcgItem[] = [];
-        const itemsList: BcgItem[] = [];
-
-        filtered.forEach((item: any) => {
-            const currSales = item.actual;
-            const currVolume = item.cantidad;
-
-            const cuota = maxRevenue > 0 ? (currSales / maxRevenue) * 100 : 0.0;
-            const shareTotal = granTotalVentas > 0 ? (currSales / granTotalVentas) * 100 : 0.0;
-
-            const es_alto_volumen = currVolume >= avgVolume; // UMBRAL Y
-            const es_altas_ventas = currSales >= avgRevenue; // UMBRAL X
-
-            let cuadrante: 'ESTRELLA' | 'VACA' | 'INTERROGANTE' | 'PERRO' = 'PERRO';
-
-            if (currSales === 0 && currVolume === 0) {
-                cuadrante = "PERRO";
-            } else if (es_alto_volumen && es_altas_ventas) {
-                cuadrante = "ESTRELLA"; // Alto Valor
-            } else if (!es_alto_volumen && es_altas_ventas) {
-                cuadrante = "VACA"; // Premium / Nicho
-            } else if (es_alto_volumen && !es_altas_ventas) {
-                cuadrante = "INTERROGANTE"; // Generadores de Volumen
-            } else {
-                cuadrante = "PERRO"; // Productos a Revisar
-            }
-
-            const itemObj: BcgItem = {
-                ...item,
-                cuota,
-                shareTotal,
-                cuadrante
-            };
-
-            itemsList.push(itemObj);
-
-            if (cuadrante === 'ESTRELLA') estrellas.push(itemObj);
-            else if (cuadrante === 'VACA') vacas.push(itemObj);
-            else if (cuadrante === 'INTERROGANTE') interrogantes.push(itemObj);
-            else perros.push(itemObj);
+            if (item.ingresos_actuales === 0 && item.cantidad_vendida === 0) item.cuadrante = "PERRO";
+            else if (es_alto_volumen && es_altas_ventas) item.cuadrante = "ESTRELLA";
+            else if (!es_alto_volumen && es_altas_ventas) item.cuadrante = "VACA";
+            else if (es_alto_volumen && !es_altas_ventas) item.cuadrante = "INTERROGANTE";
+            else item.cuadrante = "PERRO";
         });
 
-        estrellas.sort((a, b) => b.cuota - a.cuota);
-        vacas.sort((a, b) => b.cuota - a.cuota);
-        interrogantes.sort((a, b) => b.variacion - a.variacion);
-        perros.sort((a, b) => b.actual - a.actual);
+        const estrellas = filtered.filter(f => f.cuadrante === 'ESTRELLA').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
+        const vacas = filtered.filter(f => f.cuadrante === 'VACA').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
+        const interrogantes = filtered.filter(f => f.cuadrante === 'INTERROGANTE').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
+        const perros = filtered.filter(f => f.cuadrante === 'PERRO').sort((a,b)=>b.ingresos_actuales - a.ingresos_actuales);
 
-        return { estrellas, vacas, interrogantes, perros, totalCount: filtered.length, itemsList, granTotalVentas, maxRevenue, maxVolume, avgRevenue, avgVolume };
+        return { estrellas, vacas, interrogantes, perros, itemsList: filtered, maxRevenue, maxVolume, avgRevenue, avgVolume };
     }, [rawProducts, selectedCategory, search, catalogo, groupBy]);
 
+    const getLogPos = (val: number, maxVal: number) => {
+        if (maxVal <= 0) return 0;
+        return Math.log10(Math.max(val, 0) + 1) / Math.log10(maxVal + 1);
+    };
+
     return (
-        <div className="bg-[#f0f4f8] rounded-2xl shadow-sm border border-slate-200 p-5 overflow-hidden flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
-
-            {/* ── Header ──────────────────────────────────────────── */}
+        <div className="bg-[#f0f4f8] rounded-2xl shadow-sm border border-slate-200 p-5 overflow-hidden flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full">
-
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <Target size={20}/>
-                    </div>
+                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0"><Target size={20}/></div>
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 leading-none">Mapa de Cartera de Productos</h2>
+                        <h2 className="text-xl font-bold text-gray-900 leading-none">Cartera de Productos</h2>
                         <p className="text-xs text-gray-500 mt-1">
-                            {groupBy === 'product' ? 'Análisis interactivo por Productos' : 'Análisis agrupado por Categorías'} • Eje Y: Volumen (Cantidad) | Eje X: Ventas (Bs)
+                            Análisis temporal de crecimiento y rentabilidad de tu portafolio.
                         </p>
                     </div>
                 </div>
-
-                <div className="text-right flex flex-col sm:flex-row gap-3 text-[11px] bg-gray-50 border border-gray-100 p-2 rounded-xl">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"/>
-                        <div className="text-left">
-                            <span className="text-gray-400 font-bold uppercase tracking-wider mr-1 text-[9px]">Período analizado:</span>
-                            <span className="font-semibold text-gray-700">{fmt(dates.start)} → {fmt(dates.end)}</span>
-                        </div>
-                    </div>
-                    <div className="hidden sm:block w-px h-4 bg-gray-200"></div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"/>
-                        <div className="text-left">
-                            <span className="text-gray-400 font-bold uppercase tracking-wider mr-1 text-[9px]">Comparado con:</span>
-                            <span className="font-semibold text-gray-700">{fmt(dates.startPrev)} → {fmt(dates.endPrev)}</span>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            <hr className="border-gray-100" />
-
-            {/* ── Fila de Controles & Agrupación ─────────────────────────── */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 p-2.5 rounded-2xl border border-gray-100">
-
-                {/* Switcher de Agrupación (Productos vs Categorías) */}
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                    <button
-                        onClick={() => setGroupBy('product')}
-                        className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                            groupBy === 'product'
-                                ? "bg-indigo-600 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
-                        )}
-                    >
-                        <Package size={14} /> Productos
-                    </button>
-                    <button
-                        onClick={() => setGroupBy('category')}
-                        className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                            groupBy === 'category'
-                                ? "bg-indigo-600 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
-                        )}
-                    >
-                        <Layers size={14} /> Categorías
-                    </button>
+                    <button onClick={() => setGroupBy('product')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'product' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Package size={14} /> Productos</button>
+                    <button onClick={() => setGroupBy('category')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'category' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Layers size={14} /> Categorías</button>
+                </div>
+                
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+                    <button onClick={() => setBubbleSizeMetric('sales')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'sales' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Tamaño: Ventas (Bs)</button>
+                    <button onClick={() => setBubbleSizeMetric('margin')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", bubbleSizeMetric === 'margin' ? "bg-emerald-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><CircleDollarSign size={14} /> Tamaño: Ganancia (Margen)</button>
                 </div>
 
-                {/* Switcher de Modos de Vista (Matriz 2D vs Cuadrantes) */}
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                    <button
-                        onClick={() => setViewMode('chart')}
-                        className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                            viewMode === 'chart'
-                                ? "bg-gray-900 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
-                        )}
-                    >
-                        <BarChart2 size={14} /> Gráfica (X, Y)
-                    </button>
-                    <button
-                        onClick={() => setViewMode('cards')}
-                        className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                            viewMode === 'cards'
-                                ? "bg-gray-900 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
-                        )}
-                    >
-                        <LayoutGrid size={14} /> Cuadrantes
-                    </button>
+                    <button onClick={() => setViewMode('chart')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'chart' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><BarChart2 size={14} /> Matriz Evolutiva</button>
+                    <button onClick={() => setViewMode('cards')} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", viewMode === 'cards' ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><LayoutGrid size={14} /> Cuadrantes Clásicos</button>
                 </div>
 
-                {/* Buscador & Filtros */}
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap ml-auto">
                     <div className="relative">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
-                        <input
-                            ref={searchRef}
-                            type="text"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={groupBy === 'product' ? "Buscar producto..." : "Buscar categoría..."}
-                            className="w-48 pl-9 pr-7 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 text-xs transition-all shadow-sm"
-                        />
-                        {search && (
-                            <button onClick={() => setSearch('')}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 font-black text-xs">✕</button>
-                        )}
+                        <input ref={searchRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={groupBy === 'product' ? "Buscar producto..." : "Buscar categoría..."} className="w-48 pl-9 pr-7 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 text-xs transition-all shadow-sm"/>
+                        {search && <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 font-black text-xs">✕</button>}
                     </div>
-
                     {groupBy === 'product' && (
                         <div className="relative min-w-[140px]">
                             <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
-                            <select
-                                value={selectedCategory}
-                                onChange={e => setSelectedCategory(e.target.value.toLowerCase().trim())}
-                                className="w-full pl-8 pr-3 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm">
+                            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none cursor-pointer shadow-sm">
                                 <option value="all">Todas las Categorías</option>
                                 {categories.map(c => <option key={c._id} value={c.name.toLowerCase().trim()}>{c.name}</option>)}
                             </select>
                         </div>
                     )}
-
                     <div className="relative min-w-[140px]">
                         <Store size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"/>
-                        <select
-                            value={sucursal}
-                            onChange={e => setSucursal(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer shadow-sm">
+                        <select value={sucursal} onChange={e => setSucursal(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none cursor-pointer shadow-sm">
                             {SUCS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                         </select>
                     </div>
                 </div>
-
             </div>
 
-            {/* ── Cuerpo Principal ─────────────────────────────────────────── */}
             <div className="mt-1">
                 {isLoading ? (
                     <div className="flex flex-col justify-center items-center py-20 text-center animate-pulse">
                         <Target size={40} className="text-indigo-400 mb-3 animate-spin"/>
-                        <p className="font-bold text-gray-600 text-sm">Construyendo Matriz BCG (X, Y)...</p>
+                        <p className="font-bold text-gray-600 text-sm">Procesando Cartera Evolutiva...</p>
                     </div>
                 ) : isError ? (
                     <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100">
                         <AlertTriangle size={32} className="mx-auto mb-2"/>
-                        <h3 className="font-bold">Error cargando Matriz BCG</h3>
+                        <h3 className="font-bold">Error cargando Matriz</h3>
                     </div>
                 ) : viewMode === 'chart' ? (
-                    /* ── VISTA DE GRÁFICA SCATTER 2D (X, Y) ───────────────── */
                     <div className="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-950 rounded-3xl p-4 md:p-6 shadow-2xl border border-gray-800 text-white overflow-hidden flex flex-col gap-4">
                         
-                        {/* LEYENDA EXTERIOR (Para que las burbujas no tapen el texto) */}
                         <div className="flex flex-wrap gap-2 justify-center mb-2">
-                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs tracking-wider uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30">
-                                <HelpCircle size={14}/> Gen. de Volumen ({bcgData.interrogantes.length})
-                            </div>
-                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs tracking-wider uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                                <Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})
-                            </div>
-                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs tracking-wider uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50">
-                                <ArrowDownCircle size={14}/> A Revisar ({bcgData.perros.length})
-                            </div>
-                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs tracking-wider uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30">
-                                <Package size={14}/> Premium / Nicho ({bcgData.vacas.length})
-                            </div>
+                            <div className="flex items-center gap-2 text-purple-400 font-black text-xs uppercase bg-purple-900/40 px-3 py-1.5 rounded-xl border border-purple-500/30"><HelpCircle size={14}/> Gen. Volumen ({bcgData.interrogantes.length})</div>
+                            <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase bg-emerald-900/40 px-3 py-1.5 rounded-xl border border-emerald-500/30"><Star fill="currentColor" size={14}/> Alto Valor ({bcgData.estrellas.length})</div>
+                            <div className="flex items-center gap-2 text-slate-400 font-black text-xs uppercase bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/50"><ArrowDownCircle size={14}/> A Revisar ({bcgData.perros.length})</div>
+                            <div className="flex items-center gap-2 text-blue-400 font-black text-xs uppercase bg-blue-900/40 px-3 py-1.5 rounded-xl border border-blue-500/30"><Package size={14}/> Premium/Nicho ({bcgData.vacas.length})</div>
                         </div>
 
-                        {/* Ejes & Fondo de Cuadrantes */}
-                        <div className="relative w-full h-[520px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
-                            
-                            {/* Cálculo de ejes dinámicos visuales (usando log scale para alinear matemática y gráfico) */}
+                        <div className="relative w-full h-[550px] bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden select-none">
                             {(() => {
                                 const crossX = 5 + getLogPos(bcgData.avgRevenue, bcgData.maxRevenue) * 90;
                                 const crossY = 95 - getLogPos(bcgData.avgVolume, bcgData.maxVolume) * 90;
                                 return (
                                     <>
-                                        {/* Cuadrante Top-Left: INTERROGANTES -> GENERADORES DE VOLUMEN */}
                                         <div className="absolute top-0 left-0 bg-purple-950/20 border-r border-b border-purple-500/20 pointer-events-none" style={{ width: `${crossX}%`, height: `${crossY}%` }} />
-
-                                        {/* Cuadrante Top-Right: ESTRELLAS -> ALTO VALOR */}
                                         <div className="absolute top-0 right-0 bg-emerald-950/20 border-b border-emerald-500/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, height: `${crossY}%` }} />
-
-                                        {/* Cuadrante Bottom-Left: PERROS -> PRODUCTOS A REVISAR */}
                                         <div className="absolute bottom-0 left-0 bg-slate-900/40 border-r border-slate-700/30 pointer-events-none" style={{ width: `${crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
-
-                                        {/* Cuadrante Bottom-Right: VACAS -> PREMIUM / NICHO */}
                                         <div className="absolute bottom-0 right-0 bg-blue-950/20 pointer-events-none" style={{ left: `${crossX}%`, width: `${100-crossX}%`, top: `${crossY}%`, height: `${100-crossY}%` }} />
-
-                                        {/* Eje X y Eje Y Líneas Centrales Guía */}
                                         <div className="absolute left-0 right-0 border-t-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ top: `${crossY}%` }}/>
                                         <div className="absolute top-0 bottom-0 border-l-2 border-dashed border-indigo-500/40 pointer-events-none" style={{ left: `${crossX}%` }}/>
                                     </>
                                 );
                             })()}
 
-                            {/* Puntos / Burbujas dibujadas en SVG */}
                             <svg className="w-full h-full absolute inset-0 overflow-visible">
+                                <defs>
+                                    <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                        <polygon points="0 0, 6 3, 0 6" fill="#6366f1" opacity="0.5"/>
+                                    </marker>
+                                </defs>
                                 {bcgData.itemsList.map((item, idx) => {
-                                    // Mapeo Logarítmico para suavizar outliers
-                                    const posX = 5 + getLogPos(item.actual, bcgData.maxRevenue) * 90;
-                                    const posY = 95 - getLogPos(item.cantidad, bcgData.maxVolume) * 90;
+                                    const posX = 5 + getLogPos(item.ingresos_actuales, bcgData.maxRevenue) * 90;
+                                    const posY = 95 - getLogPos(item.cantidad_vendida, bcgData.maxVolume) * 90;
 
-                                    // Tamaño de la burbuja proporcional a las ventas Bs. (radio 6px a 24px)
-                                    const maxRev = Math.max(bcgData.maxRevenue, 1);
-                                    const radius = 6 + (Math.sqrt(Math.max(item.actual, 0) / maxRev) * 18);
+                                    const maxBubbleSizeSource = bubbleSizeMetric === 'sales' ? bcgData.maxRevenue : Math.max(...bcgData.itemsList.map(i => i.margen_ganancia), 1);
+                                    const bubbleValue = bubbleSizeMetric === 'sales' ? item.ingresos_actuales : item.margen_ganancia;
+                                    
+                                    const maxValForSize = Math.max(maxBubbleSizeSource, 1);
+                                    const radius = 6 + (Math.sqrt(Math.max(bubbleValue, 0) / maxValForSize) * 20);
 
                                     const isHovered = hoveredPoint?.nombre === item.nombre;
+                                    const showHistory = isHovered || (item.isTop10 && !hoveredPoint);
 
-                                    let colorCircle = "#94a3b8"; // Perro
+                                    let colorCircle = "#94a3b8"; 
                                     if (item.cuadrante === 'ESTRELLA') colorCircle = "#10b981";
                                     else if (item.cuadrante === 'VACA') colorCircle = "#3b82f6";
                                     else if (item.cuadrante === 'INTERROGANTE') colorCircle = "#a855f7";
 
                                     return (
-                                        <g 
-                                            key={item.nombre + idx} 
-                                            className="cursor-pointer transition-all duration-300"
-                                            onMouseEnter={() => setHoveredPoint(item)}
-                                            onMouseLeave={() => setHoveredPoint(null)}
-                                        >
-                                            <circle
-                                                cx={`${posX}%`}
-                                                cy={`${posY}%`}
-                                                r={radius}
-                                                fill={colorCircle}
-                                                fillOpacity={isHovered ? 0.9 : 0.65}
-                                                stroke={isHovered ? "#ffffff" : colorCircle}
-                                                strokeWidth={isHovered ? 3 : 1.5}
-                                                className="transition-all duration-200"
-                                            />
+                                        <g key={item.nombre + idx} className="cursor-pointer transition-all duration-300" onMouseEnter={() => setHoveredPoint(item)} onMouseLeave={() => setHoveredPoint(null)}>
+                                            {showHistory && item.history && item.history.length > 0 && (
+                                                <g className="history-trajectory pointer-events-none animate-in fade-in duration-300">
+                                                    {item.history.map((histPt, hIdx) => {
+                                                        const hPosX = 5 + getLogPos(histPt.ingresos || 0, bcgData.maxRevenue) * 90;
+                                                        // Estimamos cantidad basada en ingresos para el Y axis historico (ya que no viene cantidad_vendida en el array history, asumimos proporcion)
+                                                        const avgP = item.cantidad_vendida > 0 ? (item.ingresos_actuales / item.cantidad_vendida) : 1;
+                                                        const hQty = avgP > 0 ? (histPt.ingresos || 0) / avgP : 0;
+                                                        const hPosY = 95 - getLogPos(hQty, bcgData.maxVolume) * 90;
+                                                        
+                                                        const nextX = hIdx === 0 ? posX : 5 + getLogPos(item.history[hIdx-1].ingresos || 0, bcgData.maxRevenue) * 90;
+                                                        const nextY = hIdx === 0 ? posY : 95 - getLogPos((item.history[hIdx-1].ingresos || 0) / avgP, bcgData.maxVolume) * 90;
+
+                                                        return (
+                                                            <g key={hIdx}>
+                                                                <line x1={`${hPosX}%`} y1={`${hPosY}%`} x2={`${nextX}%`} y2={`${nextY}%`} stroke="#6366f1" strokeWidth={isHovered ? "2" : "1"} opacity="0.4" markerEnd="url(#arrowhead)"/>
+                                                                <circle cx={`${hPosX}%`} cy={`${hPosY}%`} r={radius * 0.5} fill="#4f46e5" opacity="0.3"/>
+                                                            </g>
+                                                        );
+                                                    })}
+                                                </g>
+                                            )}
+
+                                            <circle cx={`${posX}%`} cy={`${posY}%`} r={radius} fill={colorCircle} fillOpacity={isHovered ? 0.9 : 0.65} stroke={isHovered ? "#ffffff" : colorCircle} strokeWidth={isHovered ? 3 : 1.5} className="transition-all duration-200"/>
+                                            {isHovered && <text x={`${posX}%`} y={`calc(${posY}% - ${radius + 8}px)`} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" className="pointer-events-none drop-shadow-md">{item.nombre}</text>}
                                         </g>
                                     );
                                 })}
                             </svg>
 
-                            {/* Leyendas de los Ejes (Ahora más sutiles y al borde absoluto) */}
                             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 uppercase tracking-widest pointer-events-none">
                                 &larr; Ventas Generadas (Bs) (Eje X) &rarr;
                             </div>
                             <div className="absolute left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-gray-500 uppercase tracking-widest origin-center whitespace-nowrap pointer-events-none">
                                 &larr; Volumen / Cantidad Vendida (Eje Y) &rarr;
                             </div>
-
                         </div>
 
-                        {/* Card Hover Tooltip Info */}
                         {hoveredPoint ? (
                             <div className="mt-4 p-4 bg-slate-800/90 rounded-2xl border border-indigo-500/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in fade-in duration-200">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="font-black text-base text-white">{hoveredPoint.nombre}</span>
-                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                            {hoveredPoint.categoria_nombre}
-                                        </span>
-                                        <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                            {hoveredPoint.cuadrante}
-                                        </span>
+                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">{hoveredPoint.categoria_nombre}</span>
+                                        <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{hoveredPoint.cuadrante}</span>
                                     </div>
-                                    {hoveredPoint.totalItemsCount && (
-                                        <p className="text-xs text-gray-400 mt-0.5">{hoveredPoint.totalItemsCount} productos agrupados en esta categoría</p>
-                                    )}
                                 </div>
-
-                                <div className="flex items-center gap-6 text-xs">
-                                    <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas (Bs)</span>
-                                        <span className="font-black text-white text-sm">Bs. {hoveredPoint.actual.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Volumen</span>
-                                        <span className="font-black text-white text-sm">{hoveredPoint.cantidad.toLocaleString('en-US')} u.</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Crecimiento MoM</span>
-                                        <span className={`font-black text-sm ${hoveredPoint.variacion >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                            {hoveredPoint.variacion >= 0 ? '+' : ''}{hoveredPoint.variacion.toFixed(1)}%
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400 text-[10px] uppercase font-bold block">Part. Ventas</span>
-                                        <span className="font-black text-emerald-300 text-sm">{hoveredPoint.shareTotal.toFixed(1)}%</span>
-                                    </div>
+                                <div className="flex items-center gap-6 text-xs flex-wrap">
+                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Ventas (Bs)</span><span className="font-black text-white text-sm">Bs. {hoveredPoint.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
+                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Margen de Ganancia</span><span className="font-black text-emerald-400 text-sm">Bs. {hoveredPoint.margen_ganancia.toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div>
+                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Crecimiento (MoM)</span><span className={`font-black text-sm ${hoveredPoint.crecimiento >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{hoveredPoint.crecimiento >= 0 ? '+' : ''}{(hoveredPoint.crecimiento * 100).toFixed(1)}%</span></div>
+                                    <div><span className="text-gray-400 text-[10px] uppercase font-bold block">Volumen</span><span className="font-black text-white text-sm">{hoveredPoint.cantidad_vendida.toLocaleString('en-US')} u.</span></div>
                                 </div>
                             </div>
                         ) : (
                             <div className="mt-4 p-3 bg-slate-950/40 rounded-xl border border-slate-800 text-center text-xs text-slate-400">
-                                💡 Coloca el cursor sobre cualquier burbuja para inspeccionar los datos detallados de ventas y tasa de crecimiento.
+                                💡 Coloca el cursor sobre cualquier burbuja para inspeccionar los datos y ver su historia/evolución temporal.
                             </div>
                         )}
-
                     </div>
                 ) : (
-                    /* ── VISTA DE CUADRANTES (4 COLUMNAS DE TARJETAS) ────── */
                     <div className="grid grid-cols-1 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-gray-200 border border-gray-200 rounded-xl bg-white overflow-hidden mt-4 shadow-sm">
                         {QUADRANTS_CONFIG.map(cat => {
                             const items = bcgData[cat.key as keyof typeof bcgData] as BcgItem[] ?? [];
-
                             return (
                                 <div key={cat.key} className="flex flex-col">
                                     <div className={cn('p-4 shrink-0 flex items-start justify-between gap-2 border-b border-gray-100', cat.bg)}>
                                         <div className="flex gap-2.5">
                                             <div className={cn('p-2 rounded-xl shrink-0 shadow-sm border border-white/40', cat.iconBg)}>{cat.icon}</div>
-                                            <div>
-                                                <h3 className={cn('font-black uppercase text-xs tracking-wide', cat.hdr)}>{cat.label}</h3>
-                                                <p className="text-[9px] text-gray-500 font-semibold mt-0.5">{cat.desc}</p>
-                                            </div>
+                                            <div><h3 className={cn('font-black uppercase text-xs tracking-wide', cat.hdr)}>{cat.label}</h3><p className="text-[9px] text-gray-500 font-semibold mt-0.5">{cat.desc}</p></div>
                                         </div>
-                                        <div className={cn('text-[9px] font-black px-2 py-0.5 rounded-lg shrink-0 border border-white/50 shadow-sm', cat.iconBg)}>
-                                            {items.length}
-                                        </div>
+                                        <div className={cn('text-[9px] font-black px-2 py-0.5 rounded-lg shrink-0 border border-white/50 shadow-sm', cat.iconBg)}>{items.length}</div>
                                     </div>
-                                    
                                     <div className="flex-1 max-h-[500px] overflow-y-auto custom-scrollbar bg-white">
-                                        {items.length === 0 ? (
-                                            <p className={cn('text-xs text-center py-10 font-medium opacity-50', cat.hdr)}>{cat.empty}</p>
-                                        ) : (
+                                        {items.length === 0 ? <p className={cn('text-xs text-center py-10 font-medium opacity-50', cat.hdr)}>{cat.empty}</p> : (
                                             <div className="p-2 flex flex-col gap-2.5 bg-gray-50/50">
                                                 {items.map((prod: BcgItem) => {
-                                                    const diferenciaBs = prod.actual - prod.anterior;
-                                                    const diffSign = diferenciaBs > 0 ? '+' : '';
+                                                    const varPct = prod.crecimiento * 100;
                                                     return (
                                                         <div key={prod.nombre || Math.random()} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2">
-                                                            <div className="flex justify-between items-start">
-                                                                <span className="text-[11px] font-bold text-gray-800 uppercase leading-tight line-clamp-2" title={prod.nombre}>{prod.nombre}</span>
-                                                                <span className="text-[9px] font-semibold text-gray-400 uppercase bg-gray-100 px-1.5 py-0.5 rounded">{prod.categoria_nombre}</span>
-                                                            </div>
-                                                            
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="text-xs font-black text-gray-900">Ventas: Bs. {prod.actual.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 ${prod.variacion > 0 ? 'bg-emerald-100 text-emerald-700' : prod.variacion < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                                                                    {prod.variacion > 0 ? '↑' : prod.variacion < 0 ? '↓' : ''} {prod.variacion > 0 ? '+' : ''}{prod.variacion.toFixed(1)}% ({diffSign}Bs. {diferenciaBs.toLocaleString('en-US', {minimumFractionDigits: 2})})
-                                                                </span>
-                                                            </div>
-                                                            
-                                                            <span className="text-[10px] text-gray-500">Período anterior: Bs. {prod.anterior.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                                            
-                                                            <div className="mt-1">
-                                                                <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
-                                                                    <span>Volumen vendido:</span>
-                                                                    <span className="font-bold text-indigo-600">{prod.cantidad.toLocaleString('en-US')} unidades</span>
-                                                                </div>
-                                                                <div className="flex justify-between text-[10px] text-gray-500 mb-0.5">
-                                                                    <span>Participación de ventas:</span>
-                                                                    <span className="font-bold text-indigo-600">{prod.shareTotal.toFixed(1)}%</span>
-                                                                </div>
-                                                            </div>
+                                                            <div className="flex justify-between items-start"><span className="text-[11px] font-bold text-gray-800 uppercase leading-tight line-clamp-2">{prod.nombre}</span><span className="text-[9px] font-semibold text-gray-400 uppercase bg-gray-100 px-1.5 py-0.5 rounded">{prod.categoria_nombre}</span></div>
+                                                            <div className="flex justify-between items-center"><span className="text-xs font-black text-gray-900">Ventas: Bs. {prod.ingresos_actuales.toLocaleString('en-US', {minimumFractionDigits: 2})}</span><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 ${varPct > 0 ? 'bg-emerald-100 text-emerald-700' : varPct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>{varPct > 0 ? '↑' : varPct < 0 ? '↓' : ''} {varPct > 0 ? '+' : ''}{varPct.toFixed(1)}%</span></div>
+                                                            <div className="mt-1"><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Ganancia (Margen):</span><span className="font-bold text-emerald-600">Bs. {prod.margen_ganancia.toLocaleString('en-US')}</span></div><div className="flex justify-between text-[10px] text-gray-500 mb-0.5"><span>Volumen vendido:</span><span className="font-bold text-indigo-600">{prod.cantidad_vendida.toLocaleString('en-US')} unidades</span></div></div>
                                                         </div>
                                                     );
                                                 })}
