@@ -367,7 +367,7 @@ export const getAdminDashboardMetrics = async () => {
 // Audit Logs
 // ==========================================
 export const getGlobalAuditLogs = async () => {
-    const response = await client<any[]>('/audit/global');
+    const response = await client<any[]>('/audit-logs/global');
     return response;
 };
 

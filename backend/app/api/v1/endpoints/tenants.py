@@ -232,7 +232,7 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
     
     # Fetch all plans to map code -> precio_mensual
     plans = await Plan.find_all().to_list()
-    plan_prices = {p.code: float(p.precio_mensual.to_decimal()) for p in plans}
+    plan_prices = {p.code: float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
     
     for t in tenants:
         if t.is_active:
