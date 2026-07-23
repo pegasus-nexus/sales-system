@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search,
-    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield, ShieldAlert,
+    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
