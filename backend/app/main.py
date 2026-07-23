@@ -95,6 +95,7 @@ if "http://localhost:4321" not in origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*|http://localhost:.*", # Permitir cualquier origen HTTPS o localhost para evitar bloqueos CORS 400 Bad Request
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
