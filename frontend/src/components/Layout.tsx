@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search,
-    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield,
+    Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers, Shield, ShieldAlert,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -99,11 +99,10 @@ export default function Layout({ children }: LayoutProps) {
                     icon: Building,
                     items: [
                         { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: Building, label: 'Empresas', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: Layers, label: 'Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: BarChart3, label: 'Plataforma Analítica', path: '/inteligencia', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: TrendingUp, label: 'Evolución Mensual', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: Shield, label: 'Auditoría', path: '/auditoria', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Building, label: 'Empresas y Módulos', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Layers, label: 'Facturación y Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: ShieldAlert, label: 'Salud del Sistema', path: '/admin/health', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Shield, label: 'Auditoría SaaS', path: '/admin/audit', feature: null, roles: ['SUPERADMIN'] },
                     ]
                 }
             ];

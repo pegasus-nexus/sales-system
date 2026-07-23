@@ -51,6 +51,7 @@ export default function TenantsAdminPage() {
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+    const [modulesTenant, setModulesTenant] = useState<Tenant | null>(null);
     const [adminCreds, setAdminCreds] = useState({ username: '', password: '' });
     const [confirmPassword, setConfirmPassword] = useState('');
     const [credentials, setCredentials] = useState<{ username: string; password: string; name: string } | null>(null);
@@ -388,17 +389,24 @@ export default function TenantsAdminPage() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <button 
+                                        onClick={() => setModulesTenant(tenant)} 
+                                        title="Control de Módulos (Feature Toggles)"
+                                        className="w-12 h-12 flex items-center justify-center text-indigo-500 hover:text-white hover:bg-indigo-500 hover:shadow-md rounded-2xl transition-all border border-indigo-100"
+                                    >
+                                        <Settings size={20} />
+                                    </button>
+                                    <button 
                                         onClick={() => impersonateMutation.mutate(tenant._id)} 
                                         disabled={impersonateMutation.isPending}
-                                        title="Entrar como Cliente"
+                                        title="Magic Login (Impersonation)"
                                         className="w-12 h-12 flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-500 hover:shadow-md rounded-2xl transition-all border border-blue-100 disabled:opacity-50"
                                     >
                                         <LogIn size={20} />
                                     </button>
-                                    <button onClick={() => handleEditClick(tenant)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
+                                    <button onClick={() => handleEditClick(tenant)} title="Editar Empresa" className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
                                         <Edit2 size={20} />
                                     </button>
-                                    <button onClick={() => handleDelete(tenant)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all">
+                                    <button onClick={() => handleDelete(tenant)} title={tenant.is_active ? "Suspender (Kill Switch)" : "Eliminar"} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100">
                                         <Trash2 size={20} />
                                     </button>
                                 </div>
@@ -424,6 +432,67 @@ export default function TenantsAdminPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal: Feature Toggles (Mock) */}
+            {modulesTenant && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Control de Módulos</h2>
+                                <p className="text-gray-500 font-medium mt-1">Configurando accesos para: <span className="text-indigo-600 font-bold">{modulesTenant.name}</span></p>
+                            </div>
+                            <button onClick={() => setModulesTenant(null)} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-2xl text-gray-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+                            {/* Módulos de Restaurante */}
+                            <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">Mesas y Comandas</h4>
+                                    <p className="text-xs text-gray-500">Módulo exclusivo para restaurantes y atención en sala.</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" defaultChecked={modulesTenant.plan === 'PRO' || modulesTenant.plan === 'ILIMITADO'} />
+                                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+
+                            {/* Módulos Mayoristas */}
+                            <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">Inventario B2B y Pedidos</h4>
+                                    <p className="text-xs text-gray-500">Portal para mayoristas y ventas corporativas.</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" defaultChecked={modulesTenant.plan === 'ENTERPRISE' || modulesTenant.plan === 'ILIMITADO'} />
+                                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+
+                            {/* Créditos */}
+                            <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">Cuentas por Cobrar (Créditos)</h4>
+                                    <p className="text-xs text-gray-500">Permite dar crédito a clientes y gestionar deudas.</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" defaultChecked={true} />
+                                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <button onClick={() => setModulesTenant(null)} className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition-colors">
+                                Guardar Configuración (Mock)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
 

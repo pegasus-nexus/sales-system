@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
+const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
 const TenantDashboard = lazy(() => import('./pages/TenantDashboard'));
 const SucursalesPage = lazy(() => import('./pages/SucursalesPage'));
@@ -222,6 +223,11 @@ function App() {
                       <Route path="/admin/planes" element={
                         <ProtectedRoute allowedRoles={['SUPERADMIN']}>
                           <PlanesAdminPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/health" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                          <SystemHealthPage />
                         </ProtectedRoute>
                       } />
                       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
