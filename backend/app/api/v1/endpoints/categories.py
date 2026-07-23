@@ -38,8 +38,13 @@ async def create_category(category_in: CategoryCreate, current_user: User = Depe
     await category.create()
     return category
 
+class CategoryUpdate(BaseModel):
+    name: str = None
+    description: str = None
+    show_on_web: bool = None
+
 @router.patch("/categories/{category_id}", response_model=Category)
-async def update_category(category_id: str, category_in: CategoryCreate, current_user: User = Depends(get_current_active_user)):
+async def update_category(category_id: str, category_in: CategoryUpdate, current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -47,8 +52,13 @@ async def update_category(category_id: str, category_in: CategoryCreate, current
     if not category or category.tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=404, detail="Category not found")
         
-    category.name = category_in.name
-    category.description = category_in.description
+    if category_in.name is not None:
+        category.name = category_in.name
+    if category_in.description is not None:
+        category.description = category_in.description
+    if category_in.show_on_web is not None:
+        category.show_on_web = category_in.show_on_web
+        
     await category.save()
     return category
 

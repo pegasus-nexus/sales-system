@@ -18,6 +18,7 @@ const PedidosPage = lazy(() => import('./pages/PedidosPage'));
 const POSPage = lazy(() => import('./pages/POSPage'));
 const CajaPage = lazy(() => import('./pages/CajaPage'));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
+const CatalogoWebPage = lazy(() => import('./pages/CatalogoWebPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const DescuentosPage = lazy(() => import('./pages/DescuentosPage'));
 const DashboardSucursal = lazy(() => import('./pages/DashboardSucursal'));
@@ -384,6 +385,13 @@ function App() {
                       <Route path="/categories" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
                           <CategoriesPage />
+                        </ProtectedRoute>
+                      } />
+                      
+                      {/* Catalogo Web */}
+                      <Route path="/catalogo-web" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="INVENTARIO">
+                          <CatalogoWebPage />
                         </ProtectedRoute>
                       } />
 

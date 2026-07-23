@@ -9,6 +9,7 @@ class Category(Document, SoftDeleteMixin):
     tenant_id: str
     name: str
     description: Optional[str] = None
+    show_on_web: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

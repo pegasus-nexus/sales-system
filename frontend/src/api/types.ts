@@ -122,6 +122,7 @@ export interface Product {
     is_active?: boolean;
     precios_sucursales?: Record<string, number>; // sucursal_id -> branch specific price
     meal_plan_template_id?: string;
+    show_on_web?: boolean;
 }
 
 export interface ProductCreate {
@@ -135,6 +136,7 @@ export interface ProductCreate {
     image_url?: string;
     precios_sucursales?: Record<string, number>;
     meal_plan_template_id?: string;
+    show_on_web?: boolean;
 }
 
 export type ProductUpdate = Partial<ProductCreate>;
@@ -255,11 +257,13 @@ export interface Category {
     tenant_id: string;
     name: string;
     description?: string;
+    show_on_web?: boolean;
 }
 
 export interface CategoryCreate {
     name: string;
     description?: string;
+    show_on_web?: boolean;
 }
 
 export interface Descuento {
