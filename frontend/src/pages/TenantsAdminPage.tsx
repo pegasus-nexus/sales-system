@@ -116,26 +116,13 @@ export default function TenantsAdminPage() {
     });
 
     const deleteTenantMutation = useMutation({
-        mutationFn: (id: string) => deleteTenant(id),
+        mutationFn: deleteTenant,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tenants'] });
-            toast.success("Empresa eliminada exitosamente");
-        }
-    });
-
-    const seedPlansMutation = useMutation({
-        mutationFn: () => client<any>('/tenants/admin/seed-plans', { method: 'POST' }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-plans'] });
-            toast.success('Planes sembrados y actualizados');
-        }
-    });
-
-    const assignIlimitadoMutation = useMutation({
-        mutationFn: () => client<any>('/tenants/admin/assign-ilimitado', { method: 'POST' }),
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['tenants'] });
-            toast.success(`Plan ILIMITADO asignado a "${res.tenant}"`);
+            toast.success('Empresa eliminada correctamente');
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.detail || 'Error al eliminar la empresa');
         }
     });
 
@@ -334,33 +321,6 @@ export default function TenantsAdminPage() {
                 ))}
             </div>
 
-            {/* Configuración Rápida / Seeders */}
-            <div className="bg-gray-900 rounded-[32px] p-8 border border-gray-800 shadow-inner overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                    <Settings size={120} className="text-white animate-spin-slow" />
-                </div>
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center">
-                            <Zap size={20} className="text-black" />
-                        </div>
-                        <div>
-                            <h3 className="text-white font-black text-xl">Configuración del Sistema</h3>
-                            <p className="text-gray-400 text-sm">Ejecuta tareas de mantenimiento y auditoría global.</p>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap gap-4">
-                        <button onClick={() => seedPlansMutation.mutate()} disabled={seedPlansMutation.isPending} className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/10 text-white rounded-2xl font-bold text-sm transition-all disabled:opacity-50">
-                            {seedPlansMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={18} className="text-blue-400" />}
-                            Actualizar Catálogo de Planes
-                        </button>
-                        <button onClick={() => assignIlimitadoMutation.mutate()} disabled={assignIlimitadoMutation.isPending} className="flex items-center gap-2 px-6 py-3 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 text-amber-400 rounded-2xl font-bold text-sm transition-all disabled:opacity-50">
-                            {assignIlimitadoMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Star size={18} />}
-                            Forzar Plan Ilimitado a Tenant Matriz
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             {/* Lista Principal */}
             <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-100">
