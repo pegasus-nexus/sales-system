@@ -98,11 +98,8 @@ export default function Layout({ children }: LayoutProps) {
                     title: 'Administración SaaS',
                     icon: Building,
                     items: [
-                        { icon: LayoutDashboard, label: 'Panel SaaS', path: '/admin/dashboard', feature: null, roles: ['SUPERADMIN'] },
                         { icon: Building, label: 'Empresas y Módulos', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
                         { icon: Layers, label: 'Facturación y Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: ShieldAlert, label: 'Salud del Sistema', path: '/admin/health', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: Shield, label: 'Auditoría SaaS', path: '/admin/audit', feature: null, roles: ['SUPERADMIN'] },
                     ]
                 }
             ];
