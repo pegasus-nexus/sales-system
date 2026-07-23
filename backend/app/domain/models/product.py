@@ -43,6 +43,7 @@ class Product(Document, SoftDeleteMixin):
     tipo_item: TipoItem = Field(default=TipoItem.FISICO)         # Nuevo campo multi-vertical
     meal_plan_template_id: Optional[str] = None  # Si está seteado, vender este producto activa un plan de comida B2C
     show_on_web: bool = True
+    is_destacado: bool = False
     # optional enrichment (resolved at query time, not stored)
     categoria_nombre: Optional[str] = None
     image_url: Optional[str] = None

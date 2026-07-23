@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star } from 'lucide-react';
 import type { Category, Product, ProductUpdate } from '../api/types';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ export default function CatalogoWebPage() {
     
     const [pendingCatChanges, setPendingCatChanges] = useState<Record<string, boolean>>({});
     const [pendingProdChanges, setPendingProdChanges] = useState<Record<string, boolean>>({});
+    const [pendingDestacadoChanges, setPendingDestacadoChanges] = useState<Record<string, boolean>>({});
 
     const { data: categories, isLoading: isLoadingCat } = useQuery({
         queryKey: ['categories'],
@@ -34,8 +35,8 @@ export default function CatalogoWebPage() {
     });
 
     const updateProductMutation = useMutation({
-        mutationFn: (data: { id: string, show_on_web: boolean }) => 
-            client<Product>(`/products/${data.id}`, { method: 'PUT', body: { show_on_web: data.show_on_web } as ProductUpdate })
+        mutationFn: (data: { id: string, show_on_web?: boolean, is_destacado?: boolean }) => 
+            client<Product>(`/products/${data.id}`, { method: 'PUT', body: { ...data } as unknown as ProductUpdate })
     });
 
     const filteredCategories = useMemo(() => {
@@ -57,6 +58,13 @@ export default function CatalogoWebPage() {
         }));
     };
 
+    const handleToggleDestacado = (prodId: string, currentVal: boolean) => {
+        setPendingDestacadoChanges(prev => ({
+            ...prev,
+            [prodId]: prev[prodId] !== undefined ? !prev[prodId] : !currentVal
+        }));
+    };
+
     const toggleExpand = (catId: string) => {
         setExpandedCats(prev => ({ ...prev, [catId]: !prev[catId] }));
     };
@@ -65,8 +73,17 @@ export default function CatalogoWebPage() {
         const catPromises = Object.entries(pendingCatChanges).map(([id, val]) => 
             updateCategoryMutation.mutateAsync({ id, show_on_web: val })
         );
-        const prodPromises = Object.entries(pendingProdChanges).map(([id, val]) => 
-            updateProductMutation.mutateAsync({ id, show_on_web: val })
+
+        const productUpdates: Record<string, { show_on_web?: boolean, is_destacado?: boolean }> = {};
+        Object.entries(pendingProdChanges).forEach(([id, val]) => {
+            productUpdates[id] = { ...productUpdates[id], show_on_web: val };
+        });
+        Object.entries(pendingDestacadoChanges).forEach(([id, val]) => {
+            productUpdates[id] = { ...productUpdates[id], is_destacado: val };
+        });
+
+        const prodPromises = Object.entries(productUpdates).map(([id, data]) => 
+            updateProductMutation.mutateAsync({ id, ...data })
         );
 
         try {
@@ -74,6 +91,7 @@ export default function CatalogoWebPage() {
             toast.success('Cambios guardados correctamente');
             setPendingCatChanges({});
             setPendingProdChanges({});
+            setPendingDestacadoChanges({});
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             queryClient.invalidateQueries({ queryKey: ['products', 'web-catalog'] });
         } catch (error) {
@@ -81,7 +99,7 @@ export default function CatalogoWebPage() {
         }
     };
 
-    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingProdChanges).length > 0;
+    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingProdChanges).length > 0 || Object.keys(pendingDestacadoChanges).length > 0;
     const isSaving = updateCategoryMutation.isPending || updateProductMutation.isPending;
 
     if (isLoadingCat || isLoadingProd) {
@@ -169,6 +187,9 @@ export default function CatalogoWebPage() {
                                             const isProdVisibleOriginal = product.show_on_web !== false;
                                             const isProdVisible = pendingProdChanges[product._id] !== undefined ? pendingProdChanges[product._id] : isProdVisibleOriginal;
 
+                                            const isDestacadoOriginal = product.is_destacado === true;
+                                            const isDestacado = pendingDestacadoChanges[product._id] !== undefined ? pendingDestacadoChanges[product._id] : isDestacadoOriginal;
+
                                             const precioCba = product.precios_sucursales?.[SUCURSAL_CBA];
                                             const precioLpz = product.precios_sucursales?.[SUCURSAL_LPZ];
 
@@ -194,14 +215,24 @@ export default function CatalogoWebPage() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button 
-                                                        disabled={!isCatVisible}
-                                                        onClick={() => handleToggleProd(product._id, isProdVisibleOriginal)}
-                                                        title={!isCatVisible ? "Categoría entera está oculta" : "Alternar visibilidad"}
-                                                        className={`shrink-0 ml-4 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : isProdVisible ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
-                                                    >
-                                                        {isProdVisible ? <Eye size={20} /> : <EyeOff size={20} />}
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            disabled={!isCatVisible}
+                                                            onClick={() => handleToggleDestacado(product._id, isDestacadoOriginal)}
+                                                            title={!isCatVisible ? "Categoría entera está oculta" : "Destacar producto"}
+                                                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : isDestacado ? 'bg-amber-100 text-amber-500 hover:bg-amber-200 shadow-inner' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                                        >
+                                                            <Star size={20} fill={isDestacado && isCatVisible ? "currentColor" : "none"} />
+                                                        </button>
+                                                        <button 
+                                                            disabled={!isCatVisible}
+                                                            onClick={() => handleToggleProd(product._id, isProdVisibleOriginal)}
+                                                            title={!isCatVisible ? "Categoría entera está oculta" : "Alternar visibilidad"}
+                                                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : isProdVisible ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
+                                                        >
+                                                            {isProdVisible ? <Eye size={20} /> : <EyeOff size={20} />}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             );
                                         })}

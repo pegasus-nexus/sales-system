@@ -123,6 +123,7 @@ export interface Product {
     precios_sucursales?: Record<string, number>; // sucursal_id -> branch specific price
     meal_plan_template_id?: string;
     show_on_web?: boolean;
+    is_destacado?: boolean;
 }
 
 export interface ProductCreate {
@@ -137,6 +138,7 @@ export interface ProductCreate {
     precios_sucursales?: Record<string, number>;
     meal_plan_template_id?: string;
     show_on_web?: boolean;
+    is_destacado?: boolean;
 }
 
 export type ProductUpdate = Partial<ProductCreate>;

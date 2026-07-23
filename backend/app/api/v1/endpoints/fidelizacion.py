@@ -131,7 +131,8 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
                 "codigo_corto": p.codigo_corto,
                 "nombre": p.descripcion,
                 "imagen": p.image_url,
-                "precios": precios
+                "precios": precios,
+                "is_destacado": getattr(p, "is_destacado", False)
             })
             
     return {

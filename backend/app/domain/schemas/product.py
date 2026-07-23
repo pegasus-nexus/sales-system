@@ -27,6 +27,7 @@ class ProductCreate(BaseModel):
     meal_plan_template_id: Optional[str] = None
     tipo_item: Optional[TipoItem] = TipoItem.FISICO
     show_on_web: Optional[bool] = True
+    is_destacado: Optional[bool] = False
 
 
 class ProductUpdate(BaseModel):
@@ -43,3 +44,4 @@ class ProductUpdate(BaseModel):
     meal_plan_template_id: Optional[str] = None
     tipo_item: Optional[TipoItem] = None
     show_on_web: Optional[bool] = None
+    is_destacado: Optional[bool] = None
