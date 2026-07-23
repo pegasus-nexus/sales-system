@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
 import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save } from 'lucide-react';
