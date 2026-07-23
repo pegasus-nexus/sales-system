@@ -66,8 +66,8 @@ export interface BcgItem {
 }
 
 export default function BcgMatrix() {
-    const [mode] = useState<'today' | 'week' | 'month' | 'year'>('month');
-    const [selectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
+    const [mode, setMode] = useState<'today' | 'week' | 'month' | 'year'>('month');
+    const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
     const [selectedYear]   = useState(() => String(new Date().getFullYear()));
     const [sucursal, setSucursal] = useState('');
     const [search,   setSearch]   = useState('');
@@ -253,6 +253,15 @@ export default function BcgMatrix() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 p-2.5 rounded-2xl border border-gray-100">
+                <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-gray-200 shadow-sm px-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Mes Analizado:</span>
+                    <input type="month" value={selectedMonth} onChange={e => {
+                        if (e.target.value) {
+                            setMode('month');
+                            setSelectedMonth(e.target.value);
+                        }
+                    }} className="text-xs font-bold text-gray-800 bg-gray-100 border-none rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-gray-200" />
+                </div>
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
                     <button onClick={() => setGroupBy('product')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'product' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Package size={14} /> Productos</button>
                     <button onClick={() => setGroupBy('category')} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all", groupBy === 'category' ? "bg-indigo-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100")}><Layers size={14} /> Categorías</button>
@@ -368,14 +377,14 @@ export default function BcgMatrix() {
                                         const hy = 95 - getLogPos(item.history[0].cantidad, bcgData.maxVolume) * 90;
                                         const hval = bubbleSizeMetric === 'sales' ? item.history[0].ingresos : item.history[0].margen_ganancia;
                                         const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
-                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.3, val: item.history[0].ingresos });
+                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.6, val: item.history[0].ingresos });
                                     }
                                     if (monthsToShow >= 3 && item.history && item.history[1] && (item.history[1].ingresos > 0 || item.history[1].cantidad > 0)) {
                                         const hx = 5 + getLogPos(item.history[1].ingresos, bcgData.maxRevenue) * 90;
                                         const hy = 95 - getLogPos(item.history[1].cantidad, bcgData.maxVolume) * 90;
                                         const hval = bubbleSizeMetric === 'sales' ? item.history[1].ingresos : item.history[1].margen_ganancia;
                                         const hr = 6 + (Math.sqrt(Math.max(hval, 0) / maxValForSize) * 20);
-                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.15, val: item.history[1].ingresos });
+                                        pts.push({ x: hx, y: hy, r: hr, color: colorCircle, alpha: 0.4, val: item.history[1].ingresos });
                                     }
 
                                     return (
