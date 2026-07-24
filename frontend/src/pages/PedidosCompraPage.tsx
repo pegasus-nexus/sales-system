@@ -234,13 +234,13 @@ export default function PedidosCompraPage() {
                                             value={proveedorId}
                                             onChange={(e) => {
                                                 setProveedorId(e.target.value);
-                                                const prov = proveedores.find((p: any) => p._id === e.target.value);
+                                                const prov = proveedores.find((p: any) => (p._id || p.id) === e.target.value);
                                                 if (prov) setProveedorNombre(prov.nombre);
                                             }}
                                         >
                                             <option value="">Seleccione un proveedor...</option>
                                             {proveedores.map((p: any) => (
-                                                <option key={p._id} value={p._id}>{p.nombre}</option>
+                                                <option key={p._id || p.id} value={p._id || p.id}>{p.nombre}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -255,14 +255,14 @@ export default function PedidosCompraPage() {
                                                 className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                                 value={selectedProduct?._id || ''}
                                                 onChange={(e) => {
-                                                    const prod = products.find((p: any) => p._id === e.target.value);
+                                                    const prod = products.find((p: any) => (p._id || p.id) === e.target.value);
                                                     setSelectedProduct(prod || null);
                                                     setCostoEstimado(prod ? prod.costo_producto : 0);
                                                 }}
                                             >
                                                 <option value="">Buscar producto...</option>
                                                 {products.map((p: any) => (
-                                                    <option key={p._id} value={p._id}>{p.descripcion} ({p.codigo_corto})</option>
+                                                    <option key={p._id || p.id} value={p._id || p.id}>{p.descripcion} ({p.codigo_corto})</option>
                                                 ))}
                                             </select>
                                         </div>

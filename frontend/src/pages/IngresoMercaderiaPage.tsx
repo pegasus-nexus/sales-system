@@ -213,7 +213,7 @@ export default function IngresoMercaderiaPage() {
                                 >
                                     <option value="">Ingreso Directo (Sin pedido)</option>
                                     {pendingOrders.map((o: any) => (
-                                        <option key={o._id} value={o._id}>{o.numero_pedido} - {o.proveedor_nombre}</option>
+                                        <option key={o._id || o.id} value={o._id || o.id}>{o.numero_pedido} - {o.proveedor_nombre}</option>
                                     ))}
                                 </select>
                             </div>
@@ -226,13 +226,13 @@ export default function IngresoMercaderiaPage() {
                                     disabled={!!purchaseOrderId}
                                     onChange={(e) => {
                                         setProveedorId(e.target.value);
-                                        const prov = proveedores.find((p: any) => p._id === e.target.value);
+                                        const prov = proveedores.find((p: any) => (p._id || p.id) === e.target.value);
                                         if (prov) setProveedorNombre(prov.nombre);
                                     }}
                                 >
                                     <option value="">Seleccione proveedor...</option>
                                     {proveedores.map((p: any) => (
-                                        <option key={p._id} value={p._id}>{p.nombre}</option>
+                                        <option key={p._id || p.id} value={p._id || p.id}>{p.nombre}</option>
                                     ))}
                                 </select>
                             </div>
