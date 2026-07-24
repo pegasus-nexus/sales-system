@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield, Copy, Check } from 'lucide-react';
+import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield, Copy, Check, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getSaasStaff, createSaasStaff, deleteSaasStaff } from '../api/api';
+import { getSaasStaff, createSaasStaff, updateSaasStaff, deleteSaasStaff } from '../api/api';
 import { useConfirm } from '../components/ConfirmModal';
 import { useErrorModal } from '../components/ErrorModal';
 
@@ -12,6 +12,7 @@ export default function SaasCollaboratorsPage() {
     const { showError } = useErrorModal();
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingStaff, setEditingStaff] = useState<{ id: string; full_name: string; email: string; password?: string } | null>(null);
     const [createdCredentials, setCreatedCredentials] = useState<{ username: string; email: string; password: string; full_name: string } | null>(null);
     const [formData, setFormData] = useState({
         username: '',
@@ -41,6 +42,18 @@ export default function SaasCollaboratorsPage() {
         },
         onError: (error: any) => {
             showError(error.message || 'Error al crear colaborador');
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => updateSaasStaff(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['saas-staff'] });
+            toast.success('Colaborador actualizado exitosamente');
+            setEditingStaff(null);
+        },
+        onError: (error: any) => {
+            showError(error.message || 'Error al actualizar colaborador');
         }
     });
 
@@ -116,7 +129,14 @@ export default function SaasCollaboratorsPage() {
                                     <td className="p-5 font-medium text-gray-900">{s.full_name}</td>
                                     <td className="p-5 text-gray-500">{s.username}</td>
                                     <td className="p-5 text-gray-500">{s.email}</td>
-                                    <td className="p-5 text-right">
+                                    <td className="p-5 text-right flex items-center justify-end gap-1">
+                                        <button
+                                            onClick={() => setEditingStaff({ id: s._id, full_name: s.full_name, email: s.email, password: '' })}
+                                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            title="Editar colaborador"
+                                        >
+                                            <Edit2 className="w-5 h-5" />
+                                        </button>
                                         <button
                                             onClick={() => handleDelete(s._id, s.full_name)}
                                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -294,6 +314,98 @@ export default function SaasCollaboratorsPage() {
                                     Entendido / Cerrar
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de Edición */}
+            {editingStaff && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                    <Edit2 className="w-6 h-6 text-black" />
+                                    Editar Colaborador
+                                </h2>
+                                <button
+                                    onClick={() => setEditingStaff(null)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const payload: any = {
+                                    full_name: editingStaff.full_name,
+                                    email: editingStaff.email,
+                                };
+                                if (editingStaff.password) {
+                                    payload.password = editingStaff.password;
+                                }
+                                updateMutation.mutate({ id: editingStaff.id, data: payload });
+                            }} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nombre Completo</label>
+                                    <div className="relative">
+                                        <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            required
+                                            value={editingStaff.full_name}
+                                            onChange={(e) => setEditingStaff(prev => prev ? ({ ...prev, full_name: e.target.value }) : null)}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Correo Electrónico</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="email"
+                                            required
+                                            value={editingStaff.email}
+                                            onChange={(e) => setEditingStaff(prev => prev ? ({ ...prev, email: e.target.value }) : null)}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nueva Contraseña (Opcional)</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            value={editingStaff.password || ''}
+                                            onChange={(e) => setEditingStaff(prev => prev ? ({ ...prev, password: e.target.value }) : null)}
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            placeholder="Dejar en blanco para mantener la actual"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingStaff(null)}
+                                        className="flex-1 px-4 py-3 text-gray-700 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={updateMutation.isPending}
+                                        className="flex-1 bg-black text-white px-4 py-3 font-bold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center"
+                                    >
+                                        {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

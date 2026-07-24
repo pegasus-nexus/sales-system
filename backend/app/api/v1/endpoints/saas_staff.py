@@ -92,6 +92,28 @@ async def create_saas_staff(
     await new_staff.insert()
     return format_saas_staff(new_staff)
 
+class SaasStaffUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return v
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[@$!%*?&#]", v):
+            raise ValueError("Password must contain at least one special character (@$!%*?&#)")
+        return v
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_saas_staff(
     user_id: str,
@@ -109,3 +131,30 @@ async def delete_saas_staff(
         raise HTTPException(status_code=404, detail="SaaS Staff user not found")
 
     await staff.delete()
+
+@router.put("/{user_id}", response_model=SaasStaffResponse)
+async def update_saas_staff(
+    user_id: str,
+    staff_in: SaasStaffUpdate,
+    current_user: User = Depends(require_roles([UserRole.SUPERADMIN]))
+):
+    """
+    Update a SUPERADMIN_STAFF user's full_name, email, or password.
+    """
+    from bson import ObjectId
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(status_code=400, detail="Invalid User ID")
+
+    staff = await User.get(ObjectId(user_id))
+    if not staff or staff.role != UserRole.SUPERADMIN_STAFF:
+        raise HTTPException(status_code=404, detail="SaaS Staff user not found")
+
+    if staff_in.full_name is not None:
+        staff.full_name = staff_in.full_name
+    if staff_in.email is not None:
+        staff.email = staff_in.email
+    if staff_in.password:
+        staff.hashed_password = get_password_hash(staff_in.password)
+
+    await staff.save()
+    return format_saas_staff(staff)
