@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield } from 'lucide-react';
+import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSaasStaff, createSaasStaff, deleteSaasStaff } from '../api/api';
 import { useConfirm } from '../components/ConfirmModal';
@@ -12,6 +12,7 @@ export default function SaasCollaboratorsPage() {
     const { showError } = useErrorModal();
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [createdCredentials, setCreatedCredentials] = useState<{ username: string; email: string; password: string; full_name: string } | null>(null);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -29,6 +30,12 @@ export default function SaasCollaboratorsPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['saas-staff'] });
             toast.success('Colaborador creado exitosamente');
+            setCreatedCredentials({
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+                full_name: formData.full_name
+            });
             setIsCreateModalOpen(false);
             setFormData({ username: '', email: '', full_name: '', password: '' });
         },
@@ -230,6 +237,62 @@ export default function SaasCollaboratorsPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            {/* Modal de Credenciales (Por única vez) */}
+            {createdCredentials && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+                                <Check className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
+                                ¡Colaborador Creado!
+                            </h2>
+                            <p className="text-sm text-gray-500 text-center mb-6">
+                                Copia estas credenciales de acceso ahora. Esta es la **única vez** que se mostrará la contraseña.
+                            </p>
+
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3 mb-6 font-mono text-sm">
+                                <div>
+                                    <span className="text-gray-400 block text-xs font-sans font-semibold uppercase">Nombre</span>
+                                    <span className="text-gray-900 font-bold">{createdCredentials.full_name}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-400 block text-xs font-sans font-semibold uppercase">Usuario</span>
+                                    <span className="text-gray-900 font-bold">{createdCredentials.username}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-400 block text-xs font-sans font-semibold uppercase">Email</span>
+                                    <span className="text-gray-900 font-bold">{createdCredentials.email}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-400 block text-xs font-sans font-semibold uppercase">Contraseña</span>
+                                    <span className="text-emerald-600 font-bold">{createdCredentials.password}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => {
+                                        const text = `Credenciales de Acceso SaaS:\nNombre: ${createdCredentials.full_name}\nUsuario: ${createdCredentials.username}\nEmail: ${createdCredentials.email}\nContraseña: ${createdCredentials.password}\nLink: ${window.location.origin}/login`;
+                                        navigator.clipboard.writeText(text);
+                                        toast.success('Credenciales copiadas al portapapeles');
+                                    }}
+                                    className="w-full bg-black text-white py-3.5 px-4 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/10"
+                                >
+                                    <Copy className="w-5 h-5" />
+                                    Copiar Credenciales
+                                </button>
+                                <button
+                                    onClick={() => setCreatedCredentials(null)}
+                                    className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-xl font-bold hover:bg-gray-200 transition-colors text-center"
+                                >
+                                    Entendido / Cerrar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

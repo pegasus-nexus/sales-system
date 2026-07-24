@@ -43,6 +43,17 @@ class SaasStaffResponse(BaseModel):
     class Config:
         populate_by_name = True
 
+def format_saas_staff(user: User) -> dict:
+    return {
+        "_id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "is_active": True,
+        "created_at": user.created_at
+    }
+
 @router.get("/", response_model=List[SaasStaffResponse])
 async def list_saas_staff(
     current_user: User = Depends(require_roles([UserRole.SUPERADMIN]))
@@ -51,7 +62,7 @@ async def list_saas_staff(
     List all SUPERADMIN_STAFF users. Only the primary SUPERADMIN can access this.
     """
     staff = await User.find(User.role == UserRole.SUPERADMIN_STAFF).to_list()
-    return staff
+    return [format_saas_staff(u) for u in staff]
 
 @router.post("/", response_model=SaasStaffResponse, status_code=status.HTTP_201_CREATED)
 async def create_saas_staff(
@@ -79,7 +90,7 @@ async def create_saas_staff(
         sucursal_id=None
     )
     await new_staff.insert()
-    return new_staff
+    return format_saas_staff(new_staff)
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_saas_staff(
