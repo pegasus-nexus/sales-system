@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield, Copy, Check, Edit2 } from 'lucide-react';
+import { Users, Plus, Trash2, Mail, Lock, User as UserIcon, Shield, Copy, Check, Edit2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSaasStaff, createSaasStaff, updateSaasStaff, deleteSaasStaff } from '../api/api';
 import { useConfirm } from '../components/ConfirmModal';
@@ -12,6 +12,8 @@ export default function SaasCollaboratorsPage() {
     const { showError } = useErrorModal();
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [showCreatePassword, setShowCreatePassword] = useState(false);
+    const [showEditPassword, setShowEditPassword] = useState(false);
     const [editingStaff, setEditingStaff] = useState<{ id: string; full_name: string; email: string; password?: string } | null>(null);
     const [createdCredentials, setCreatedCredentials] = useState<{ username: string; email: string; password: string; full_name: string } | null>(null);
     const [formData, setFormData] = useState({
@@ -230,13 +232,21 @@ export default function SaasCollaboratorsPage() {
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input
-                                            type="password"
+                                            type={showCreatePassword ? 'text' : 'password'}
                                             required
                                             value={formData.password}
                                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-12 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="Min. 8 caracteres, números y símbolos"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCreatePassword(prev => !prev)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showCreatePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -380,12 +390,20 @@ export default function SaasCollaboratorsPage() {
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input
-                                            type="password"
+                                            type={showEditPassword ? 'text' : 'password'}
                                             value={editingStaff.password || ''}
                                             onChange={(e) => setEditingStaff(prev => prev ? ({ ...prev, password: e.target.value }) : null)}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-12 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="Dejar en blanco para mantener la actual"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEditPassword(prev => !prev)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 

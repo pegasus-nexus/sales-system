@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -81,6 +81,9 @@ export default function Layout({ children }: LayoutProps) {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [showCurrentPw, setShowCurrentPw] = useState(false);
+    const [showNewPw, setShowNewPw] = useState(false);
+    const [showConfirmPw, setShowConfirmPw] = useState(false);
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     const handleChangePasswordSubmit = async (e: React.FormEvent) => {
@@ -647,13 +650,21 @@ export default function Layout({ children }: LayoutProps) {
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
-                                            type="password"
+                                            type={showCurrentPw ? 'text' : 'password'}
                                             required
                                             value={currentPassword}
                                             onChange={(e) => setCurrentPassword(e.target.value)}
-                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
                                             placeholder="Ingresa tu contraseña actual"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCurrentPw(prev => !prev)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -662,13 +673,21 @@ export default function Layout({ children }: LayoutProps) {
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
-                                            type="password"
+                                            type={showNewPw ? 'text' : 'password'}
                                             required
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
                                             placeholder="Mín. 8 caracteres, números y símbolos"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPw(prev => !prev)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -677,13 +696,21 @@ export default function Layout({ children }: LayoutProps) {
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
-                                            type="password"
+                                            type={showConfirmPw ? 'text' : 'password'}
                                             required
                                             value={confirmNewPassword}
                                             onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
                                             placeholder="Repite la nueva contraseña"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPw(prev => !prev)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
                                     </div>
                                 </div>
 

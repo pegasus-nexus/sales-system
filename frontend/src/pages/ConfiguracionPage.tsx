@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
 import type { TenantSettings } from '../api/types';
-import { Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle } from 'lucide-react';
+import { Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ConfiguracionPage() {
     const qc = useQueryClient();
     const [activeTab, setActiveTab] = useState<'branding' | 'pos'>('branding');
+    const [showApiToken, setShowApiToken] = useState(false);
 
     const { data: tenant, isLoading } = useQuery({
         queryKey: ['myTenant'],
@@ -314,13 +315,23 @@ export default function ConfiguracionPage() {
 
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">API Token</label>
-                                    <input 
-                                        type="password" 
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                        placeholder="••••••••••••••••"
-                                        value={settings.whatsapp?.api_token}
-                                        onChange={e => setSettings(s => ({ ...s, whatsapp: { ...s.whatsapp!, api_token: e.target.value } }))}
-                                    />
+                                    <div className="relative">
+                                        <input 
+                                            type={showApiToken ? "text" : "password"} 
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-5 pr-12 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
+                                            placeholder="••••••••••••••••"
+                                            value={settings.whatsapp?.api_token}
+                                            onChange={e => setSettings(s => ({ ...s, whatsapp: { ...s.whatsapp!, api_token: e.target.value } }))}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowApiToken(prev => !prev)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showApiToken ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="md:col-span-2">
