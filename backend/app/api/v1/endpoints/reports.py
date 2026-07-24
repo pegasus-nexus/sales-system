@@ -1266,7 +1266,7 @@ async def get_sales_matrix(
 
     from app.domain.models.sale import Sale
     cursor = Sale.get_pymongo_collection().aggregate(pipeline)
-    raw_results = await cursor.to_list(length=None)
+    raw_results = await cursor.to_list(length=10000)  # Límite seguro para matrix diaria
     
     # We need to construct the matrix payload
     # { "products": { "prod_id": { "descripcion": "xxx", "days": { "YYYY-MM-DD": cant } } } }
@@ -1323,7 +1323,7 @@ async def get_inventory_reconciliation(
         }
     ]
     cursor_logs = InventoryLog.get_pymongo_collection().aggregate(logs_pipeline)
-    raw_logs = await cursor_logs.to_list(length=None)
+    raw_logs = await cursor_logs.to_list(length=100)  # Tipos de movimiento son pocos
     
     ingresos_costo = Decimal("0.0")
     salidas_mermas_costo = Decimal("0.0")
@@ -1475,7 +1475,7 @@ async def get_expenses_report(
         query["categoria_id"] = categoria_id
 
     # Get movements
-    movimientos = await CajaMovimiento.find(query).sort("-fecha").to_list()
+    movimientos = await CajaMovimiento.find(query).sort("-fecha").limit(500).to_list()
     
     # Get categories to map IDs to names
     categories = await CajaGastoCategoria.find(CajaGastoCategoria.tenant_id == tenant_id).to_list()

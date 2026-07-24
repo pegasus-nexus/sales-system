@@ -23,7 +23,7 @@ async def predict_demand(tenant_id: str, sucursal_id: Optional[str] = None, pred
         {"$project": {"created_at": 1, "total": 1}}
     ]
     cursor = db["sales"].aggregate(pipeline)
-    sales_data = await cursor.to_list(length=None)
+    sales_data = await cursor.to_list(length=5000)
 
     if not sales_data or len(sales_data) < 5:
         return DemandPredictionResponse(

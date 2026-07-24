@@ -415,7 +415,7 @@ export default function CatalogRentability() {
                 {/* 1. Cabecera y Títulos */}
                 <div>
                     <h1 className="text-3xl font-black bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">Catálogo y Rentabilidad</h1>
-                    <p className="text-sm font-medium text-gray-500 mt-1">Análisis de Rentabilidad, Matriz BCG y evolución de costos por producto.</p>
+                    <p className="text-sm font-medium text-gray-500 mt-1">Análisis de Rentabilidad, Cartera de Productos y evolución de costos por producto.</p>
                 </div>
 
                 {/* 2. Filtros de Fecha (Segmented Control / Pills) */}

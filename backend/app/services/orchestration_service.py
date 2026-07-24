@@ -28,7 +28,7 @@ async def get_dashboard_orchestration(tenant_id: str, days: int = 30) -> Orchest
         }},
         {"$project": {"total": 1, "created_at": 1, "sucursal_id": 1, "cliente_id": 1, "items.subtotal": 1, "items.descripcion": 1}}
     ]
-    recent_sales = await db["sales"].aggregate(recent_pipeline).to_list(length=None)
+    recent_sales = await db["sales"].aggregate(recent_pipeline).to_list(length=5000)
 
     # Get Previous Period Sales (for growth metrics)
     prev_pipeline = [
@@ -39,7 +39,7 @@ async def get_dashboard_orchestration(tenant_id: str, days: int = 30) -> Orchest
         }},
         {"$project": {"total": 1, "created_at": 1, "sucursal_id": 1, "cliente_id": 1}}
     ]
-    prev_sales = await db["sales"].aggregate(prev_pipeline).to_list(length=None)
+    prev_sales = await db["sales"].aggregate(prev_pipeline).to_list(length=5000)
 
     # 2. Extract Data directly using Pandas for robust statistics
     for s in recent_sales:

@@ -11,6 +11,7 @@ Routes:
   GET    /caja/categorias-gasto        — list expense categories
   POST   /caja/categorias-gasto        — create an expense category
 """
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Optional
 from bson import ObjectId
@@ -83,9 +84,19 @@ async def get_sesiones(
     
     sesiones = await find_query.skip(skip).limit(actual_limit).to_list()
 
+    # ── OPTIMIZACIÓN: Pre-fetch TODOS los movimientos de las sesiones en UNA sola query ──
+    sesion_ids = [str(s.id) for s in sesiones]
+    all_movs = await CajaMovimiento.find(
+        CajaMovimiento.sesion_id.is_in(sesion_ids)
+    ).to_list() if sesion_ids else []
+
+    movs_by_session: dict[str, list] = defaultdict(list)
+    for m in all_movs:
+        movs_by_session[m.sesion_id].append(m)
+
     result = []
     for s in sesiones:
-        movs = await CajaMovimiento.find(CajaMovimiento.sesion_id == str(s.id)).to_list()
+        movs = movs_by_session.get(str(s.id), [])
         ef   = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.VENTA_EFECTIVO)
         ef_ing = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_EFECTIVO)
         cc   = sum((float(m.monto) if m.tipo == "EGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.CAMBIO)
@@ -158,15 +169,19 @@ async def get_sesiones(
                         "_id": None,
                         "total_descuentos": {"$sum": {"$add": ["$global_discount", "$items_discount"]}}
                     }}
+                ],
+                "count": [
+                    {"$count": "n"}
                 ]
             }}
         ]
         
         agg_result = await Sale.aggregate(pipeline).to_list()
-        sales_agg = agg_result[0] if agg_result else {"ventas": [], "descuentos": []}
+        sales_agg = agg_result[0] if agg_result else {"ventas": [], "descuentos": [], "count": []}
         
         ventas_data = sales_agg["ventas"][0] if sales_agg.get("ventas") else {"total_qr": 0, "total_tarjeta": 0, "total_ventas": 0}
         desc_data = sales_agg["descuentos"][0] if sales_agg.get("descuentos") else {"total_descuentos": 0}
+        count_data = sales_agg["count"][0] if sales_agg.get("count") else {"n": 0}
         
         total_qr = ventas_data.get("total_qr", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
         total_tarjeta = ventas_data.get("total_tarjeta", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
@@ -190,11 +205,12 @@ async def get_sesiones(
             "total_tarjeta":   round(total_tarjeta, 2),
             "total_ventas":    round(total_ventas, 2),
             "total_descuentos": round(total_descuentos, 2),
-            "num_transacciones": await Sale.find(*sales_query).count(),
+            "num_transacciones": count_data.get("n", 0),
             "monto_cierre_fisico": float(s.monto_cierre_fisico) if s.monto_cierre_fisico is not None else None,
             "diferencia":      round(float(s.monto_cierre_fisico) - saldo, 2) if s.monto_cierre_fisico is not None else None,
             "notas_cierre":    s.notas_cierre,
         })
+
 
     return {
         "items": result,

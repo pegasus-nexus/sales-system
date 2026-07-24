@@ -161,7 +161,7 @@ export default function AnaliticaAvanzada() {
                 console.error(e);
                 if(ok){
                     setErr(true);
-                    toast.error("Error de conexión al cargar la Matriz BCG. El servidor podría estar inactivo.");
+                    toast.error("Error de conexión al cargar la Cartera de Productos. El servidor podría estar inactivo.");
                 }
             }
             finally{if(ok)setLoading(false);}
@@ -310,7 +310,7 @@ export default function AnaliticaAvanzada() {
                                     Detalle de SKUs en Declive (Monitoreo de Inventario)
                                 </h3>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Lista de productos clasificados en la Matriz BCG como <strong>Perro</strong> (baja participación y bajo crecimiento).
+                                    Lista de productos clasificados en la Cartera de Productos como <strong>Perro</strong> (baja participación y bajo crecimiento).
                                 </p>
                             </div>
                             <button 
@@ -502,7 +502,7 @@ export default function AnaliticaAvanzada() {
             <section>
                 <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-6 bg-violet-500 rounded-full"/>
-                    <h2 className="text-lg font-black text-gray-800">Matriz BCG Predictiva a 30 Días</h2>
+                    <h2 className="text-lg font-black text-gray-800">Cartera de Productos Predictiva a 30 Días</h2>
                     <span className="text-xs text-gray-400 font-medium ml-1">
                         — Simulación generada a partir del modelo algorítmico
                     </span>

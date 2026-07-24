@@ -60,13 +60,13 @@ async def get_sales_percentiles(
             mongo_filter,
             {"_id": 0, "fecha_transaccion": 1, "monto_total_bs": 1}
         )
-        datos = await cursor.to_list(length=None)
+        datos = await cursor.to_list(length=10000)
 
         # Inyectar ventas POS (caja en vivo)
         # 1) Mapeo de sucursales si hay filtro
         import re
         sucursales_cursor = db.sucursales.find({}, {"_id": 1, "nombre": 1})
-        sucursales_list = await sucursales_cursor.to_list(length=None)
+        sucursales_list = await sucursales_cursor.to_list(length=50)
         suc_id_to_name = {}
         for s in sucursales_list:
             nombre = str(s.get("nombre", ""))
@@ -109,7 +109,7 @@ async def get_sales_percentiles(
             pos_filter, 
             {"_id": 0, "created_at": 1, "total": 1, "sucursal_id": 1, "items": 1}
         ).batch_size(1000)
-        pos_sales = await pos_cursor.to_list(length=None)
+        pos_sales = await pos_cursor.to_list(length=10000)
         
         for sale in pos_sales:
             sid = str(sale.get("sucursal_id", ""))

@@ -135,7 +135,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: BarChart3, label: 'Matriz de Ventas', path: '/reportes?tab=matrix', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: TrendingUp, label: 'Tendencias', path: '/reportes?tab=tendencias', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: BarChart3, label: 'Estadísticas de Producto', path: '/reportes?tab=product_stats', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
-                    { icon: Store, label: 'Matriz BCG', path: '/reportes?tab=matriz_bcg', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Store, label: 'Cartera de Productos', path: '/reportes?tab=matriz_bcg', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: Ban, label: 'Anulaciones', path: '/reportes?tab=anulaciones', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: Users, label: 'Compras por Cliente', path: '/reportes?tab=compras_cliente', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                 ]

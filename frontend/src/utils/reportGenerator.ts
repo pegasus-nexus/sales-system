@@ -58,7 +58,7 @@ export async function generateExecutivePDF(kpis: any, matrizBcg: any, orchestrat
     if (matrizBcg) {
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
-        doc.text("2. Rentabilidad del Catálogo (Matriz BCG)", 40, currentY);
+        doc.text("2. Rentabilidad del Catálogo (Cartera de Productos)", 40, currentY);
         currentY += 20;
 
         doc.setFontSize(10);
