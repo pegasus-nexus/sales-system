@@ -128,3 +128,44 @@ async def impersonate_user(user_id: str, current_user: User = Depends(get_curren
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": target_user.role}
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        description="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+    )
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r"[@$!%*?&#]", v):
+            raise ValueError("Password must contain at least one special character (@$!%*?&#)")
+        return v
+
+
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Allow any active logged-in user to change their own password.
+    """
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta"
+        )
+    
+    current_user.hashed_password = get_password_hash(data.new_password)
+    await current_user.save()
+    return {"message": "Contraseña actualizada exitosamente"}

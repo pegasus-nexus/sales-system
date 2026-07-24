@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -11,7 +11,8 @@ import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getMe, pingUser } from '../api/api';
+import { getMe, pingUser, changePassword } from '../api/api';
+import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 
 function cn(...inputs: ClassValue[]) {
@@ -75,6 +76,33 @@ export default function Layout({ children }: LayoutProps) {
         }, 45000);
         return () => clearInterval(interval);
     }, []);
+
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+    const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmNewPassword) {
+            toast.error('Las contraseñas nuevas no coinciden');
+            return;
+        }
+        setIsChangingPassword(true);
+        try {
+            await changePassword({ current_password: currentPassword, new_password: newPassword });
+            toast.success('Contraseña actualizada exitosamente');
+            setIsChangePasswordOpen(false);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+        } catch (err: any) {
+            toast.error(err.message || 'Error al cambiar contraseña');
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.clear();
@@ -432,9 +460,14 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                                {user?.username} ({role})
-                            </span>
+                            <button
+                                onClick={() => setIsChangePasswordOpen(true)}
+                                className="text-xs font-bold text-gray-700 hover:text-black bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl transition-all border border-gray-200 flex items-center gap-2 shadow-2xs"
+                                title="Cambiar mi contraseña"
+                            >
+                                <KeyRound size={14} className="text-indigo-600" />
+                                <span>{user?.username} ({role})</span>
+                            </button>
                             {role !== 'CAJERO' && (
                                 <button
                                     onClick={() => setMobileMenuOpen(true)}
@@ -587,6 +620,82 @@ export default function Layout({ children }: LayoutProps) {
                                     Salir
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* ── Change Password Modal ── */}
+            <AnimatePresence>
+                {isChangePasswordOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden flex flex-col p-6 text-gray-900">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <KeyRound className="w-5 h-5 text-indigo-600" />
+                                    Cambiar mi Contraseña
+                                </h3>
+                                <button onClick={() => setIsChangePasswordOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mb-4">Actualiza la contraseña de tu cuenta actual ({user?.username}).</p>
+
+                            <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Contraseña Actual</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            required
+                                            value={currentPassword}
+                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            placeholder="Ingresa tu contraseña actual"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Nueva Contraseña</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            required
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            placeholder="Mín. 8 caracteres, números y símbolos"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            required
+                                            value={confirmNewPassword}
+                                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                                            placeholder="Repite la nueva contraseña"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" disabled={isChangingPassword} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-black hover:bg-gray-800 transition-colors text-sm disabled:opacity-50">
+                                        {isChangingPassword ? 'Guardando...' : 'Cambiar Contraseña'}
+                                    </button>
+                                </div>
+                            </form>
                         </motion.div>
                     </motion.div>
                 )}

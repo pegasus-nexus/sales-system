@@ -1008,3 +1008,4 @@ export const getSaasStaff = () => client<any[]>('/saas-staff/');
 export const createSaasStaff = (data: any) => client<any>('/saas-staff/', { method: 'POST', body: data });
 export const updateSaasStaff = (id: string, data: any) => client<any>(`/saas-staff/${id}`, { method: 'PUT', body: data });
 export const deleteSaasStaff = (id: string) => client<{ message: string }>(`/saas-staff/${id}`, { method: 'DELETE' });
+export const changePassword = (data: { current_password: string; new_password: string }) => client<{ message: string }>('/auth/change-password', { method: 'POST', body: data });
