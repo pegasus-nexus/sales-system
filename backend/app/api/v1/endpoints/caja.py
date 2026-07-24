@@ -87,7 +87,7 @@ async def get_sesiones(
     # ── OPTIMIZACIÓN: Pre-fetch TODOS los movimientos de las sesiones en UNA sola query ──
     sesion_ids = [str(s.id) for s in sesiones]
     all_movs = await CajaMovimiento.find(
-        CajaMovimiento.sesion_id.is_in(sesion_ids)
+        {"sesion_id": {"$in": sesion_ids}}
     ).to_list() if sesion_ids else []
 
     movs_by_session: dict[str, list] = defaultdict(list)
