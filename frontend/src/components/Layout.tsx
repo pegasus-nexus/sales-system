@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -98,8 +98,10 @@ export default function Layout({ children }: LayoutProps) {
                     title: 'Administración SaaS',
                     icon: Building,
                     items: [
+                        { icon: Activity, label: 'Dashboard SaaS', path: '/admin/dashboard', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
                         { icon: Building, label: 'Empresas y Módulos', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
                         { icon: Layers, label: 'Facturación y Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
+                        { icon: HeartPulse, label: 'Salud del Sistema', path: '/admin/health', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
                         ...(role === 'SUPERADMIN' ? [{ icon: Users, label: 'Equipo SaaS', path: '/admin/colaboradores', feature: null, roles: ['SUPERADMIN'] }] : [])
                     ]
                 }

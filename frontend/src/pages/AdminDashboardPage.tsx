@@ -34,7 +34,7 @@ export default function AdminDashboardPage() {
  return expires <= nextWeek && expires > now;
  }).sort((a, b) => new Date(a.plan_expires_at!).getTime() - new Date(b.plan_expires_at!).getTime()) || [];
 
- if (user?.role !== 'SUPERADMIN') return <div className="p-5 text-center text-red-500">Acceso Restringido</div>;
+ if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') return <div className="p-5 text-center text-red-500">Acceso Restringido</div>;
 
  if (isLoadingTenants || isMetricsLoading) {
  return <div className="p-5 flex justify-center text-gray-500 font-bold animate-pulse">Cargando métricas SaaS...</div>;

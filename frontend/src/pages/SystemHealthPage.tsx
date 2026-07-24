@@ -13,7 +13,7 @@ export default function SystemHealthPage() {
         queryFn: getGlobalAuditLogs,
     });
 
-    if (user?.role !== 'SUPERADMIN') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
+    if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
 
     const handleRefresh = () => {
         setIsRefreshing(true);

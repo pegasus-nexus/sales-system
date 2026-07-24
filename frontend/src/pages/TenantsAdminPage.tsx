@@ -249,7 +249,7 @@ export default function TenantsAdminPage() {
         }
     };
 
-    if (user?.role !== 'SUPERADMIN') return <div className="p-5 text-center text-red-500">Acceso Restringido</div>;
+    if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') return <div className="p-5 text-center text-red-500">Acceso Restringido</div>;
 
 
 

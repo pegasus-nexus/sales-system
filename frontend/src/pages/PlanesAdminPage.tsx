@@ -32,7 +32,7 @@ export default function PlanesAdminPage() {
         ];
     }, [dbPlans]);
 
-    if (user?.role !== 'SUPERADMIN') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
+    if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-20 md:pb-8">
