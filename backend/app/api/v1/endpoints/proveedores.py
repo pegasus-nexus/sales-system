@@ -181,3 +181,36 @@ async def migrate_proveedores(current_user: User = Depends(get_current_active_us
             creados += 1
             
     return {"success": True, "proveedores_creados": creados, "proveedores_encontrados": len(nombres_proveedores)}
+
+@router.post("/admin/migrate-product-suppliers-to-list", response_model=dict)
+async def migrate_product_suppliers_to_list(current_user: User = Depends(get_current_active_user)):
+    if current_user.role not in ["SUPERADMIN", "SUPERADMIN_STAFF", "ADMIN_MATRIZ", "ADMIN"]:
+        raise HTTPException(status_code=403, detail="No autorizado para migraciones")
+        
+    from app.domain.models.product import Product
+    tenant_id = current_user.tenant_id or "default"
+    
+    products = await Product.find({"tenant_id": tenant_id}).to_list()
+    modificados = 0
+    
+    for p in products:
+        needs_save = False
+        
+        # Iniciar lista si es nula
+        if getattr(p, "proveedores", None) is None:
+            p.proveedores = []
+            needs_save = True
+            
+        # Si existe el string antiguo, moverlo a la lista si no está ya
+        viejo_proveedor = getattr(p, "proveedor", None)
+        if viejo_proveedor and isinstance(viejo_proveedor, str) and viejo_proveedor.strip():
+            nombre = viejo_proveedor.strip()
+            if nombre not in p.proveedores:
+                p.proveedores.append(nombre)
+                needs_save = True
+                
+        if needs_save:
+            await p.save()
+            modificados += 1
+            
+    return {"success": True, "productos_actualizados": modificados, "total_revisados": len(products)}

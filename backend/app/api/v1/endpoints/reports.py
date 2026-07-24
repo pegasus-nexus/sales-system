@@ -464,7 +464,8 @@ async def get_financial_report(
         if proveedor:
             prov_conditions = [
                 {"proveedor_nombre": proveedor},
-                {"proveedor": proveedor}
+                {"proveedor": proveedor},
+                {"proveedores": proveedor}
             ]
             if "$or" in prod_query:
                 prod_query["$and"] = [{"$or": prod_query.pop("$or")}, {"$or": prov_conditions}]

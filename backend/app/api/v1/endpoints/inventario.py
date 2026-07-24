@@ -676,7 +676,7 @@ async def export_inventory_template(
             "CODIGO CORTO":  p.codigo_corto or "",
             "DESCRIPCION":   p.descripcion,
             "CATEGORIA":     cat_name_map.get(p.categoria_id, p.categoria_id),  # name, not raw ID
-            "PROVEEDOR":     getattr(p, "proveedor", "") or "",
+            "PROVEEDOR":     ", ".join(getattr(p, "proveedores", []) or []),
             f"INVENTARIO FISICO {suc_name}": ""  # User fills this in
         })
 

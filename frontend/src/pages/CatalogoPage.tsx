@@ -587,7 +587,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
         costo_producto: product?.costo_producto || 0,
         codigo_corto: product?.codigo_corto || '',
         codigo_largo: product?.codigo_largo || '',
-        proveedor: product?.proveedor || '',
+        proveedores: product?.proveedores || [],
         image_url: product?.image_url || '',
         precios_sucursales: product?.precios_sucursales || {},
         meal_plan_template_id: product?.meal_plan_template_id || '',
@@ -738,17 +738,28 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     {!isBranchAdmin && (
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedor (Opcional)</label>
-                            <select
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value={formData.proveedor || ''}
-                                onChange={e => setFormData({ ...formData, proveedor: e.target.value })}
-                            >
-                                <option value="">Seleccione un proveedor...</option>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
+                            <div className="w-full bg-gray-50 border border-gray-200 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-xl px-4 py-2 max-h-40 overflow-y-auto transition-all">
+                                {proveedores.length === 0 && <span className="text-sm text-gray-400">No hay proveedores registrados...</span>}
                                 {proveedores.map((p: any) => (
-                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
+                                    <label key={p.id || p._id} className="flex items-center space-x-3 py-1.5 cursor-pointer hover:bg-gray-100/50 px-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                            checked={(formData.proveedores || []).includes(p.nombre)}
+                                            onChange={(e) => {
+                                                const current = formData.proveedores || [];
+                                                if (e.target.checked) {
+                                                    setFormData({ ...formData, proveedores: [...current, p.nombre] });
+                                                } else {
+                                                    setFormData({ ...formData, proveedores: current.filter(n => n !== p.nombre) });
+                                                }
+                                            }}
+                                        />
+                                        <span className="text-sm text-gray-700 font-medium">{p.nombre}</span>
+                                    </label>
                                 ))}
-                            </select>
+                            </div>
                         </div>
                     )}
 

@@ -35,9 +35,8 @@ class Product(Document, SoftDeleteMixin):
     codigo_largo: Optional[str] = None          # barcode
     codigo_corto: Optional[str] = None          # short SKU, unique per tenant
     descripcion: str                             # product name
-    proveedor: Optional[str] = None              # product supplier
+    proveedores: Optional[List[str]] = Field(default_factory=list) # product suppliers
     categoria_id: str                            # required FK → categories
-    proveedor: Optional[str] = None              # supplier/provider
     costo_producto: DecimalMoney = DecimalMoney("0.0")                  # production/purchase cost
     precio_venta: DecimalMoney = DecimalMoney("0.0")                    # retail price (deprecated for MATRIZ, mapped from sucursal)
     tipo_item: TipoItem = Field(default=TipoItem.FISICO)         # Nuevo campo multi-vertical
