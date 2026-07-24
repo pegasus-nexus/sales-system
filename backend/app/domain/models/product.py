@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from beanie import Document
 from pydantic import Field
 from datetime import datetime
