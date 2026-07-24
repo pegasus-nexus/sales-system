@@ -186,11 +186,6 @@ export const getSalesByBranch = (start_date?: string, end_date?: string, time_ra
     return client<unknown>(`/analytics/sales-by-branch?${params.toString()}`);
 };
 
-export const getBcgMatrix = (start_date: string, end_date: string, sucursal_id?: string) => {
-    const params = new URLSearchParams({ start_date, end_date });
-    if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    return client<unknown>(`/analytics/bcg?${params.toString()}`);
-};
 
 
 export const preguntarIA = (pregunta: string) => {

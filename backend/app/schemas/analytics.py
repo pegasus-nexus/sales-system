@@ -45,29 +45,18 @@ class DashboardResponse(BaseModel):
     distribucion_horaria: List[HourlyComparisson] = []
 
 
-# ── Modelos de Matriz BCG ───────────────────────────────────────────────
-class BCGProduct(BaseModel):
+# ── Modelos de Portfolio (Dynamic Bubble Chart) ────────────────────────
+class PortfolioProduct(BaseModel):
     producto_id: str
     nombre: str
-    ingresos_actuales: float = 0.0
-    ingresos_anteriores: float = 0.0
-    cantidad_vendida: float = 0.0
-    cantidad_anterior: float = 0.0
-    crecimiento: float = Field(0.0, description="Porcentaje de crecimiento en decimal (-0.5 a 1.0+)")
-    cuota_relativa: float = Field(0.0, description="Cuota respecto al producto líder (0.0 a 1.0)")
-    cuadrante: str = Field(..., description="'ESTRELLA', 'VACA', 'INTERROGANTE', 'PERRO'")
-    estrategia_sugerida: Optional[str] = Field(None, description="Directriz de negocio (ej. Inversión, Liquidación, etc.)")
-    margen_ganancia: float = Field(0.0, description="Margen de ganancia total del periodo (Ingresos - Costo)")
-    history: List[Dict[str, Any]] = Field(default_factory=list, description="Historial de cuota, crecimiento y margen en periodos anteriores")
-    tendencia_str: Optional[str] = None
-    badge: Optional[str] = None
-    nota: Optional[str] = None
+    categoria: str = "Uncategorized"
+    ventas: float = 0.0
+    cantidad: float = 0.0
+    margen: float = 0.0
 
-class BCGMatrixResponse(BaseModel):
-    estrellas: List[BCGProduct] = []
-    vacas: List[BCGProduct] = []
-    interrogantes: List[BCGProduct] = []
-    perros: List[BCGProduct] = []
+class PortfolioResponse(BaseModel):
+    period: str
+    products: List[PortfolioProduct]
 
 # ── Modelos End-to-End Orchestration / ML ─────────────────────────────
 

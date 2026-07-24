@@ -2,9 +2,10 @@ from datetime import datetime, date
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query
 from app.auth import get_current_active_user
-from app.schemas.analytics import DashboardResponse, BCGMatrixResponse, OrchestrationResponse, DemandPredictionResponse
+from app.schemas.analytics import DashboardResponse, OrchestrationResponse, DemandPredictionResponse, PortfolioResponse
 from app.services.analytics_service import get_dashboard_metrics, get_top_products_metrics, get_sales_by_branch_metrics, _dashboard_cache
-from app.services.bcg_service import calculate_bcg_matrix
+from app.services.portfolio_service import get_portfolio_data
+
 from app.services.ml_service import predict_demand
 from app.services.orchestration_service import get_dashboard_orchestration
 from app.services.hourly_multiyear_service import get_hourly_multiyear
@@ -12,6 +13,23 @@ from app.services.percentile_service import get_sales_percentiles
 from app.services.rentabilidad_service import get_rentabilidad_real
 
 router = APIRouter()
+
+@router.get("/portfolio", response_model=PortfolioResponse)
+async def get_portfolio(
+    start_date: datetime = Query(..., description="Fecha inicial"),
+    end_date: datetime = Query(..., description="Fecha final"),
+    sucursal_id: Optional[str] = Query(None, description="Id de la sucursal"),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Entrega los datos base (ventas, cantidad, margen) para el gráfico de burbujas (Portfolio).
+    """
+    return await get_portfolio_data(
+        tenant_id=current_user.tenant_id,
+        start_date=start_date,
+        end_date=end_date,
+        sucursal_id=sucursal_id
+    )
 
 @router.get("/dashboard")
 async def get_dashboard(
@@ -39,23 +57,7 @@ async def get_dashboard(
         clima_evento=clima_evento
     )
 
-@router.get("/bcg", response_model=BCGMatrixResponse)
-async def get_bcg_matrix(
-    start_date: datetime = Query(..., description="Fecha inicial"),
-    end_date: datetime = Query(..., description="Fecha final"),
-    sucursal_id: Optional[str] = Query(None, description="Id de la sucursal"),
-    current_user = Depends(get_current_active_user)
-):
-    """
-    Ruta Mágica BCG: Compara dinámicamente el periodo dado con
-    su periodo equivalente anterior para determinar Crecimiento y Cuota.
-    """
-    return await calculate_bcg_matrix(
-        tenant_id=current_user.tenant_id,
-        start_date=start_date,
-        end_date=end_date,
-        sucursal_id=sucursal_id
-    )
+
 
 @router.get("/orchestration", response_model=OrchestrationResponse)
 async def get_orchestration(
