@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProveedores, createProveedor, updateProveedor, deleteProveedor } from '../api/api';
+import { client } from '../api/client';
 import type { Proveedor } from '../api/types';
 import { 
     Truck, Search, Plus, Edit3, Trash2, Mail, Phone, 
@@ -81,6 +82,17 @@ export default function ProveedoresPage() {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.detail || 'Error al eliminar proveedor');
+        }
+    });
+
+    const migrateMut = useMutation({
+        mutationFn: () => client<{success: boolean; proveedores_creados: number; proveedores_encontrados: number}>('/admin/migrate', { method: 'POST' }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['proveedores'] });
+            toast.success(`Migración exitosa: ${data.proveedores_creados} nuevos proveedores registrados.`);
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || 'Error en la migración de proveedores');
         }
     });
 
@@ -165,12 +177,22 @@ export default function ProveedoresPage() {
                     <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Directorio de Proveedores</h1>
                     <p className="text-gray-500 mt-1">Administra los datos de contacto y categorías de tus proveedores de insumos</p>
                 </div>
-                <button
-                    onClick={() => openModal()}
-                    className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all active:scale-95 shrink-0"
-                >
-                    <Plus size={18} /> Nuevo Proveedor
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => migrateMut.mutate()}
+                        disabled={migrateMut.isPending}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-100 text-indigo-700 rounded-full font-bold shadow-sm hover:bg-indigo-200 transition-all active:scale-95 shrink-0"
+                    >
+                        {migrateMut.isPending ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
+                        Migrar desde Productos
+                    </button>
+                    <button
+                        onClick={() => openModal()}
+                        className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all active:scale-95 shrink-0"
+                    >
+                        <Plus size={18} /> Nuevo Proveedor
+                    </button>
+                </div>
             </div>
 
             {/* Quick Metrics Cards */}

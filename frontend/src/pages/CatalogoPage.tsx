@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit2, Loader2, Package, Image as ImageIcon, Check, X, Tag, Upload, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
-import { getProducts, getCategories, createProduct, updateProduct, deactivateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage, getMealPlanTemplates } from '../api/api';
+import { getProducts, getCategories, createProduct, updateProduct, deactivateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage, getMealPlanTemplates, getProveedores } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
@@ -46,6 +46,11 @@ export default function CatalogoPage() {
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
         queryFn: getCategories
+    });
+    
+    const { data: proveedores = [] } = useQuery({
+        queryKey: ['proveedores'],
+        queryFn: () => getProveedores()
     });
     
     const categoryMap = useMemo(() => {
@@ -733,13 +738,16 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin 
                     {!isBranchAdmin && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedor (Opcional)</label>
-                            <input
-                                type="text"
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400"
+                            <select
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
                                 value={formData.proveedor || ''}
                                 onChange={e => setFormData({ ...formData, proveedor: e.target.value })}
-                                placeholder="Nombre del proveedor"
-                            />
+                            >
+                                <option value="">Seleccione un proveedor...</option>
+                                {proveedores.map((p: any) => (
+                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
+                                ))}
+                            </select>
                         </div>
                     )}
 
