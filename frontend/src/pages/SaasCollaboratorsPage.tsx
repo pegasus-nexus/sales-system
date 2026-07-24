@@ -169,7 +169,7 @@ export default function SaasCollaboratorsPage() {
                                             required
                                             value={formData.full_name}
                                             onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border-transparent focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="Ej. Juan Pérez"
                                         />
                                     </div>
@@ -184,7 +184,7 @@ export default function SaasCollaboratorsPage() {
                                             required
                                             value={formData.username}
                                             onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border-transparent focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="Ej. juanperez"
                                         />
                                     </div>
@@ -199,7 +199,7 @@ export default function SaasCollaboratorsPage() {
                                             required
                                             value={formData.email}
                                             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border-transparent focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="juan@ejemplo.com"
                                         />
                                     </div>
@@ -214,7 +214,7 @@ export default function SaasCollaboratorsPage() {
                                             required
                                             value={formData.password}
                                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border-transparent focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 focus:bg-white rounded-xl focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none font-medium"
                                             placeholder="Min. 8 caracteres, números y símbolos"
                                         />
                                     </div>
