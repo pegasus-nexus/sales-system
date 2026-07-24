@@ -52,8 +52,8 @@ export default function SaasCollaboratorsPage() {
         if (await confirm({
             title: 'Eliminar Colaborador',
             message: `¿Estás seguro de que deseas eliminar al colaborador "${name}"? Perderá acceso inmediato al panel de administración SaaS.`,
-            confirmText: 'Sí, Eliminar',
-            cancelText: 'Cancelar',
+            confirmLabel: 'Sí, Eliminar',
+            cancelLabel: 'Cancelar',
             type: 'danger'
         })) {
             deleteMutation.mutate(id);
