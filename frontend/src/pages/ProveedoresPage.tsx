@@ -96,6 +96,17 @@ export default function ProveedoresPage() {
         }
     });
 
+    const migrateListMut = useMutation({
+        mutationFn: () => client<{success: boolean; productos_actualizados: number; total_revisados: number}>('/admin/migrate-product-suppliers-to-list', { method: 'POST' }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['productos'] });
+            toast.success(`Paso 2 exitoso: ${data.productos_actualizados} productos actualizados.`);
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.detail || 'Error en la actualización de productos');
+        }
+    });
+
     const openModal = (prov?: Proveedor) => {
         if (prov) {
             setEditingProveedor(prov);
@@ -177,14 +188,22 @@ export default function ProveedoresPage() {
                     <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Directorio de Proveedores</h1>
                     <p className="text-gray-500 mt-1">Administra los datos de contacto y categorías de tus proveedores de insumos</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap justify-end">
+                    <button
+                        onClick={() => migrateListMut.mutate()}
+                        disabled={migrateListMut.isPending}
+                        className="flex items-center gap-2 px-6 py-3 bg-amber-100 text-amber-700 rounded-full font-bold shadow-sm hover:bg-amber-200 transition-all active:scale-95 shrink-0"
+                    >
+                        {migrateListMut.isPending ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
+                        Actualizar Productos (Paso 2)
+                    </button>
                     <button
                         onClick={() => migrateMut.mutate()}
                         disabled={migrateMut.isPending}
                         className="flex items-center gap-2 px-6 py-3 bg-indigo-100 text-indigo-700 rounded-full font-bold shadow-sm hover:bg-indigo-200 transition-all active:scale-95 shrink-0"
                     >
                         {migrateMut.isPending ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
-                        Migrar desde Productos
+                        Migrar Proveedores (Paso 1)
                     </button>
                     <button
                         onClick={() => openModal()}

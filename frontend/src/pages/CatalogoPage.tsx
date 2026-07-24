@@ -739,27 +739,39 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                     {!isBranchAdmin && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
-                            <div className="w-full bg-gray-50 border border-gray-200 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 rounded-xl px-4 py-2 max-h-40 overflow-y-auto transition-all">
-                                {proveedores.length === 0 && <span className="text-sm text-gray-400">No hay proveedores registrados...</span>}
-                                {proveedores.map((p: any) => (
-                                    <label key={p.id || p._id} className="flex items-center space-x-3 py-1.5 cursor-pointer hover:bg-gray-100/50 px-2 rounded-lg transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                                            checked={(formData.proveedores || []).includes(p.nombre)}
-                                            onChange={(e) => {
-                                                const current = formData.proveedores || [];
-                                                if (e.target.checked) {
-                                                    setFormData({ ...formData, proveedores: [...current, p.nombre] });
-                                                } else {
-                                                    setFormData({ ...formData, proveedores: current.filter(n => n !== p.nombre) });
-                                                }
-                                            }}
-                                        />
-                                        <span className="text-sm text-gray-700 font-medium">{p.nombre}</span>
-                                    </label>
+                            <select
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                value=""
+                                onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    const current = formData.proveedores || [];
+                                    if (!current.includes(e.target.value)) {
+                                        setFormData({ ...formData, proveedores: [...current, e.target.value] });
+                                    }
+                                }}
+                            >
+                                <option value="">Añadir proveedor...</option>
+                                {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
+                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
                                 ))}
-                            </div>
+                            </select>
+                            
+                            {(formData.proveedores || []).length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                    {(formData.proveedores || []).map((provName) => (
+                                        <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
+                                            {provName}
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
+                                                className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
