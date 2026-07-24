@@ -261,7 +261,7 @@ export default function PedidosCompraPage() {
                                                 }}
                                             >
                                                 <option value="">Buscar producto...</option>
-                                                {products.map((p: any) => (
+                                                {(proveedorNombre ? products.filter((p: any) => p.proveedor === proveedorNombre) : products).map((p: any) => (
                                                     <option key={p._id || p.id} value={p._id || p.id}>{p.descripcion} ({p.codigo_corto})</option>
                                                 ))}
                                             </select>
