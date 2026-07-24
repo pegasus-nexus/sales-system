@@ -68,8 +68,10 @@ export interface BcgItem {
 
 export default function BcgMatrix() {
     const [selectedMonths, setSelectedMonths] = useState<string[]>([new Date().toISOString().slice(0, 7)]);
+    const [pendingMonths, setPendingMonths] = useState<string[]>([new Date().toISOString().slice(0, 7)]);
     const [newMonthInput, setNewMonthInput] = useState(() => new Date().toISOString().slice(0, 7));
     const [sucursal, setSucursal] = useState('');
+    const [pendingSucursal, setPendingSucursal] = useState('');
     const [search,   setSearch]   = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isError,   setIsError]   = useState(false);
@@ -324,11 +326,11 @@ export default function BcgMatrix() {
                 <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm px-3 flex-wrap">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-1">Meses:</span>
                     <div className="flex items-center gap-1 flex-wrap">
-                        {selectedMonths.map(m => (
+                        {pendingMonths.map(m => (
                             <span key={m} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md border border-indigo-100 shadow-sm">
                                 {m}
-                                {selectedMonths.length > 1 && (
-                                    <button onClick={() => setSelectedMonths(prev => prev.filter(x => x !== m))} className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors ml-1"><X size={10}/></button>
+                                {pendingMonths.length > 1 && (
+                                    <button onClick={() => setPendingMonths(prev => prev.filter(x => x !== m))} className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors ml-1"><X size={10}/></button>
                                 )}
                             </span>
                         ))}
@@ -336,10 +338,10 @@ export default function BcgMatrix() {
                     <div className="w-px h-5 bg-gray-200 mx-1"></div>
                     <input type="month" value={newMonthInput} onChange={e => setNewMonthInput(e.target.value)} className="text-[10px] font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-gray-100" />
                     <button onClick={() => {
-                        if (newMonthInput && !selectedMonths.includes(newMonthInput)) {
-                            setSelectedMonths(prev => [...prev, newMonthInput]);
+                        if (newMonthInput && !pendingMonths.includes(newMonthInput)) {
+                            setPendingMonths(prev => [...prev, newMonthInput]);
                         }
-                    }} className="p-1 bg-gray-800 text-white rounded-md hover:bg-black transition-colors shadow-sm disabled:opacity-50" disabled={!newMonthInput || selectedMonths.includes(newMonthInput)}>
+                    }} className="p-1 bg-gray-800 text-white rounded-md hover:bg-black transition-colors shadow-sm disabled:opacity-50" disabled={!newMonthInput || pendingMonths.includes(newMonthInput)}>
                         <Plus size={12}/>
                     </button>
                 </div>
@@ -361,6 +363,13 @@ export default function BcgMatrix() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap ml-auto">
+                    <button onClick={() => {
+                        setSelectedMonths(pendingMonths);
+                        setSucursal(pendingSucursal);
+                    }} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-md transition-all mr-2 whitespace-nowrap">
+                        Aplicar Filtros
+                    </button>
+                    <div className="w-px h-6 bg-gray-200 mr-1"></div>
                     <div className="relative">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
                         <input ref={searchRef} type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={groupBy === 'product' ? "Buscar producto..." : "Buscar categoría..."} className="w-48 pl-9 pr-7 py-1.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all shadow-sm"/>
@@ -377,7 +386,7 @@ export default function BcgMatrix() {
                     )}
                     <div className="relative min-w-[140px]">
                         <Store size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"/>
-                        <select value={sucursal} onChange={e => setSucursal(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none cursor-pointer shadow-sm">
+                        <select value={pendingSucursal} onChange={e => setPendingSucursal(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-gray-800 bg-white border border-gray-200 rounded-xl focus:outline-none cursor-pointer shadow-sm">
                             <option value="">Todas las Sucursales</option>
                             {sucursalesOptions.map(s => <option key={s._id} value={s.nombre}>{s.nombre}</option>)}
                         </select>
