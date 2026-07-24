@@ -240,6 +240,7 @@ export default function SaasCollaboratorsPage() {
                         </div>
                     </div>
                 </div>
+            )}
             {/* Modal de Credenciales (Por única vez) */}
             {createdCredentials && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
