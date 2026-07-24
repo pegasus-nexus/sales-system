@@ -33,9 +33,10 @@ async def calculate_bcg_matrix(
     retail_ids = []
     async for s in cursor_sucursales:
         nl = str(s.get("nombre", "")).lower()
+        tl = str(s.get("tipo", "")).lower()
         if any(bad in nl for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista", "supermercados"]):
             continue
-        if any(good in nl for good in ["hero", "calacoto", "recoleta"]):
+        if any(good in nl for good in ["hero", "calacoto", "recoleta"]) or "fisica" in tl or "física" in tl or "retail" in tl:
             retail_ids.append(str(s["_id"]))
             try:
                 from bson import ObjectId
