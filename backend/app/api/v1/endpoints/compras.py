@@ -14,7 +14,7 @@ def get_compra_service():
 @router.post("/orders", response_model=PurchaseOrder, status_code=status.HTTP_201_CREATED)
 async def create_purchase_order(
     order_in: PurchaseOrderCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -52,7 +52,7 @@ async def create_purchase_order(
 @router.get("/orders/{sucursal_id}", response_model=List[PurchaseOrder])
 async def list_purchase_orders(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -65,7 +65,7 @@ async def list_purchase_orders(
 async def get_purchase_order(
     sucursal_id: str,
     order_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -82,7 +82,7 @@ async def update_purchase_order_status(
     sucursal_id: str,
     order_id: str,
     status_in: PurchaseOrderUpdateStatus,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -97,7 +97,7 @@ async def update_purchase_order_status(
 @router.post("/receptions", response_model=PurchaseReception, status_code=status.HTTP_201_CREATED)
 async def create_purchase_reception(
     reception_in: PurchaseReceptionCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -144,7 +144,7 @@ async def create_purchase_reception(
 @router.get("/receptions/{sucursal_id}", response_model=List[PurchaseReception])
 async def list_purchase_receptions(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.MANAGER, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
