@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from app.api.dependencies import get_current_user, require_roles
+from app.infrastructure.auth import get_current_active_user as get_current_user, require_roles
 from app.domain.models.user import User, UserRole
 from app.application.services.compra_service import CompraService
 from app.domain.models.compra import PurchaseOrder, PurchaseOrderItem, PurchaseReception, PurchaseReceptionItem
