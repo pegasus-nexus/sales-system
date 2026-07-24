@@ -39,11 +39,7 @@ async def get_portfolio_data(
             "fecha_transaccion": {"$gte": start, "$lte": end},
         }
         if tenant_id:
-            match["$or"] = [
-                {"tenant_id": tenant_id},
-                {"tenant_id": None},
-                {"tenant_id": {"$exists": False}}
-            ]
+            match["tenant_id"] = tenant_id
         if sucursal_id:
             s_lower = sucursal_id.lower()
             if 'hero' in s_lower:
