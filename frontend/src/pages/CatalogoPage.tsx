@@ -378,6 +378,7 @@ export default function CatalogoPage() {
                     categories={categories}
                     sucursales={sucursales}
                     isBranchAdmin={isBranchAdmin}
+                    proveedores={proveedores}
                 />
             )}
             
@@ -569,7 +570,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
     );
 }
 
-function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[], isBranchAdmin?: boolean }) {
+function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin, proveedores = [] }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[], isBranchAdmin?: boolean, proveedores?: any[] }) {
     const isEditing = !!product;
     const queryClient = useQueryClient();
     const [isUploading, setIsUploading] = useState(false);
