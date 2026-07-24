@@ -83,7 +83,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 @router.post("/impersonate/{tenant_id}")
 async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):
     """[SUPERADMIN] Logs in as the ADMIN of the target tenant without password."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
     admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN_MATRIZ})
@@ -107,14 +107,14 @@ async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_cu
 @router.post("/impersonate/user/{user_id}")
 async def impersonate_user(user_id: str, current_user: User = Depends(get_current_active_user)):
     """[ADMIN_MATRIZ] Logs in as a specific user within the same tenant."""
-    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized to impersonate users")
         
     target_user = await User.get(PydanticObjectId(user_id))
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    if current_user.role != UserRole.SUPERADMIN and target_user.tenant_id != current_user.tenant_id:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF] and target_user.tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Cannot impersonate user from another tenant")
         
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

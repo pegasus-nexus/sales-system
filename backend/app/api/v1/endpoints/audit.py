@@ -23,7 +23,7 @@ def serialize_mongo_types(obj):
 
 @router.get("/", response_model=List[dict])
 async def get_audit_logs(
-    current_user: User = Depends(require_roles(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ)),
+    current_user: User = Depends(require_roles(UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF, UserRole.ADMIN, UserRole.ADMIN_MATRIZ)),
     limit: int = 100,
     skip: int = 0,
     action: Optional[str] = None,
@@ -31,7 +31,7 @@ async def get_audit_logs(
     username: Optional[str] = None
 ):
     query = {}
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         query["tenant_id"] = current_user.tenant_id or "default"
 
     if action:
@@ -46,7 +46,7 @@ async def get_audit_logs(
 
 @router.get("/global", response_model=List[dict])
 async def get_global_audit_logs(
-    current_user: User = Depends(require_roles(UserRole.SUPERADMIN)),
+    current_user: User = Depends(require_roles(UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF)),
     limit: int = 50
 ):
     """Returns a global activity feed across all tenants for the System Health dashboard."""

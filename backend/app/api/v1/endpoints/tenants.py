@@ -135,14 +135,14 @@ async def get_my_features(current_user: User = Depends(get_current_active_user))
 
 @router.get("/tenants", response_model=List[Tenant])
 async def get_tenants(current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     return await Tenant.find_all().to_list()
 
 
 @router.post("/tenants", response_model=Tenant)
 async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Check if tenant exists
@@ -223,7 +223,7 @@ async def get_tenant_stats(current_user: User = Depends(get_current_active_user)
 @router.get("/tenants/admin/dashboard")
 async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_active_user)):
     """Returns key metrics for the Superadmin SaaS Dashboard."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # 1. Calculate MRR
@@ -293,7 +293,7 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
 
 @router.put("/tenants/{tenant_id}", response_model=Tenant)
 async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from beanie import PydanticObjectId
@@ -324,7 +324,7 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
 
 @router.get("/tenants/{tenant_id}/admin")
 async def get_tenant_admin(tenant_id: str, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     admin_user = await User.find_one({
         "tenant_id": tenant_id,
@@ -336,7 +336,7 @@ async def get_tenant_admin(tenant_id: str, current_user: User = Depends(get_curr
 
 @router.put("/tenants/{tenant_id}/admin-credentials")
 async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     tenant = await Tenant.get(tenant_id)
@@ -386,7 +386,7 @@ async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate
 
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
@@ -627,7 +627,7 @@ async def assign_ilimitado_to_matriz(current_user: User = Depends(get_current_ac
 @router.get("/tenants/admin/plans")
 async def list_plans(current_user: User = Depends(get_current_active_user)):
     """[SUPERADMIN] Lista todos los planes con sus features y limites."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     plans = await Plan.find_all().to_list()
     return [{
@@ -644,7 +644,7 @@ async def list_plans(current_user: User = Depends(get_current_active_user)):
 @router.post("/tenants/admin/plans")
 async def create_plan(plan_data: PlanCreate, current_user: User = Depends(get_current_active_user)):
     """[SUPERADMIN] Crea un plan nuevo atómico."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from decimal import Decimal
@@ -665,7 +665,7 @@ async def create_plan(plan_data: PlanCreate, current_user: User = Depends(get_cu
 @router.put("/tenants/admin/plans/{plan_id}")
 async def update_plan(plan_id: str, plan_data: PlanUpdate, current_user: User = Depends(get_current_active_user)):
     """[SUPERADMIN] Edita un plan existente."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from beanie import PydanticObjectId
@@ -693,7 +693,7 @@ async def update_plan(plan_id: str, plan_data: PlanUpdate, current_user: User = 
 @router.delete("/tenants/admin/plans/{plan_id}")
 async def delete_plan(plan_id: str, current_user: User = Depends(get_current_active_user)):
     """[SUPERADMIN] Elimina un plan si no está en uso."""
-    if current_user.role != UserRole.SUPERADMIN:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     from beanie import PydanticObjectId
