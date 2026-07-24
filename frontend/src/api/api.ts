@@ -1009,3 +1009,12 @@ export const createSaasStaff = (data: any) => client<any>('/saas-staff/', { meth
 export const updateSaasStaff = (id: string, data: any) => client<any>(`/saas-staff/${id}`, { method: 'PUT', body: data });
 export const deleteSaasStaff = (id: string) => client<{ message: string }>(`/saas-staff/${id}`, { method: 'DELETE' });
 export const changePassword = (data: { current_password: string; new_password: string }) => client<{ message: string }>('/auth/change-password', { method: 'POST', body: data });
+
+// ─── COMPRAS (Purchase Orders & Receptions) ─────────────────────────────────
+export const createPurchaseOrder = (data: any) => client<any>('/compras/orders', { method: 'POST', body: data });
+export const getPurchaseOrders = (sucursalId: string) => client<any[]>(`/compras/orders/${sucursalId}`);
+export const getPurchaseOrder = (sucursalId: string, orderId: string) => client<any>(`/compras/orders/detail/${sucursalId}/${orderId}`);
+export const updatePurchaseOrderStatus = (sucursalId: string, orderId: string, status: string) => client<any>(`/compras/orders/${sucursalId}/${orderId}/status`, { method: 'PUT', body: { estado: status } });
+
+export const createPurchaseReception = (data: any) => client<any>('/compras/receptions', { method: 'POST', body: data });
+export const getPurchaseReceptions = (sucursalId: string) => client<any[]>(`/compras/receptions/${sucursalId}`);

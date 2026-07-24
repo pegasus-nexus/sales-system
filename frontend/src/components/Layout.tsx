@@ -196,6 +196,8 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: Tag, label: 'Categorías', path: '/categories', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Truck, label: 'Traslados', path: '/traslados', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: Package, label: 'Pedidos Compra', path: '/compras/pedidos', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
+                    { icon: Truck, label: 'Ingreso Mercadería', path: '/compras/recepciones', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
                     { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                 ]

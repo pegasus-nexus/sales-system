@@ -38,6 +38,8 @@ const ReclamosFabrica = lazy(() => import('./pages/b2b/ReclamosFabrica'));
 const ComunidadPage = lazy(() => import('./pages/ComunidadPage'));
 const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'));
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
+const PedidosCompraPage = lazy(() => import('./pages/PedidosCompraPage'));
+const IngresoMercaderiaPage = lazy(() => import('./pages/IngresoMercaderiaPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
@@ -285,6 +287,18 @@ function App() {
                       <Route path="/traslados" element={
                         <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES} requiredFeature="INVENTARIO">
                           <InventarioTrasladosPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Compras e Ingresos */}
+                      <Route path="/compras/pedidos" element={
+                        <ProtectedRoute allowedRoles={STAFF_NO_CAJERO} requiredFeature="INVENTARIO">
+                          <PedidosCompraPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/compras/recepciones" element={
+                        <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
+                          <IngresoMercaderiaPage />
                         </ProtectedRoute>
                       } />
 
