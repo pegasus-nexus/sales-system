@@ -39,7 +39,7 @@ async def get_portfolio_data(
             "fecha_transaccion": {"$gte": start, "$lte": end},
         }
         if tenant_id:
-            match["tenant_id"] = tenant_id
+            match["tenant_id"] = str(tenant_id)
         if sucursal_id:
             s_lower = sucursal_id.lower()
             if 'hero' in s_lower:
@@ -76,7 +76,7 @@ async def get_portfolio_data(
         match_pos: Dict[str, Any] = {
             "anulada": {"$ne": True},
             "created_at": {"$gte": start, "$lte": end},
-            "tenant_id": tenant_id
+            "tenant_id": str(tenant_id)
         }
         if sucursal_id:
             s_lower = sucursal_id.lower()

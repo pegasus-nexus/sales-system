@@ -5,8 +5,13 @@ async def run():
     client = AsyncIOMotorClient("mongodb+srv://admin_prod:VigKJWIIMV6CXKsH@sales-system.hh277gd.mongodb.net/sales_system_prod?retryWrites=true&w=majority")
     db = client["sales_system_prod"]
     
-    doc = await db["ventas_historicas_crudas"].find_one({"tenant_id": {"$exists": True, "$ne": None}})
-    print(f"Sample doc with tenant_id: {doc}")
+    try:
+        sample = await db["sales"].find_one({"tenant_id": {"$exists": True}})
+        if sample:
+            t = sample.get("tenant_id")
+            print(f"Sample sales tenant_id: {t} (Type: {type(t)})")
+    except Exception as e:
+        print(f"Error: {e}")
     
     count_str = await db["ventas_historicas_crudas"].count_documents({"tenant_id": "69cd7f0a8f3f6866d4cfbb62"})
     print(f"Docs with string tenant_id: {count_str}")
