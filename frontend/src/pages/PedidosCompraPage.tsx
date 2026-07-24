@@ -230,7 +230,7 @@ export default function PedidosCompraPage() {
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Proveedor</label>
                                         <select
-                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                             value={proveedorId}
                                             onChange={(e) => {
                                                 setProveedorId(e.target.value);
@@ -252,7 +252,7 @@ export default function PedidosCompraPage() {
                                     <div className="flex flex-col md:flex-row gap-4">
                                         <div className="flex-1">
                                             <select
-                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                                 value={selectedProduct?._id || ''}
                                                 onChange={(e) => {
                                                     const prod = products.find((p: any) => p._id === e.target.value);
@@ -273,7 +273,7 @@ export default function PedidosCompraPage() {
                                                 placeholder="Cant."
                                                 value={cantidadPedida}
                                                 onChange={(e) => setCantidadPedida(Number(e.target.value))}
-                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-center"
+                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-center text-gray-900"
                                             />
                                         </div>
                                         <div className="w-40 relative">
@@ -284,7 +284,7 @@ export default function PedidosCompraPage() {
                                                 step="0.1"
                                                 value={costoEstimado}
                                                 onChange={(e) => setCostoEstimado(Number(e.target.value))}
-                                                className="w-full pl-12 pr-4 p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                                className="w-full pl-12 pr-4 p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                             />
                                         </div>
                                         <button

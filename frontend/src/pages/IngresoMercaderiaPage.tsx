@@ -207,7 +207,7 @@ export default function IngresoMercaderiaPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Cargar desde Pedido</label>
                                 <select 
-                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                     value={purchaseOrderId}
                                     onChange={(e) => handleSelectOrder(e.target.value)}
                                 >
@@ -221,7 +221,7 @@ export default function IngresoMercaderiaPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Proveedor</label>
                                 <select 
-                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                     value={proveedorId}
                                     disabled={!!purchaseOrderId}
                                     onChange={(e) => {
@@ -245,7 +245,7 @@ export default function IngresoMercaderiaPage() {
                                     value={numeroDocumento}
                                     onChange={(e) => setNumeroDocumento(e.target.value)}
                                     placeholder="Ej. FAC-00123"
-                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium"
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                 />
                             </div>
                         </div>
