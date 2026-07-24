@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { Settings2, Info } from 'lucide-react';
+import { Settings2, Info, Loader2 } from 'lucide-react';
 import { client } from '../api/api';
 
 // --- Tipos ---
@@ -304,13 +304,22 @@ export default function DynamicBubbleChart({ startDates, endDates, sucursalId }:
             </div>
 
             {/* Grafico Recharts */}
-            <div className="w-full h-[600px] relative bg-white border border-gray-100 rounded-3xl shadow-sm p-4 pt-10">
+            <div className="w-full relative bg-white border border-gray-100 rounded-[2rem] shadow-sm p-4 pt-10" style={{ height: '600px' }}>
                 {isLoading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-3xl">
-                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-[2rem]">
+                        <div className="flex flex-col items-center gap-3">
+                            <Loader2 className="animate-spin text-blue-500" size={32} />
+                            <p className="text-sm font-medium text-gray-500 animate-pulse">Procesando miles de registros...</p>
+                        </div>
                     </div>
                 )}
                 
+                {dataByPeriod.length > 0 && processedData.length === 0 && !isLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <p className="text-gray-400 font-medium">No se encontraron datos para este periodo.</p>
+                    </div>
+                )}
+
                 {/* SVG Definitions para las flechas */}
                 <svg width="0" height="0">
                   <defs>
