@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrderStatus, getProveedores, getProducts } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
-    ShoppingCart, Plus, PackageOpen, X, Check, XCircle, Search, 
-    ArrowRight, Loader2, DollarSign, Calendar
+    ShoppingCart, Plus, PackageOpen, X, XCircle, 
+    Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -36,10 +36,11 @@ export default function PedidosCompraPage() {
         queryFn: () => getProveedores()
     });
 
-    const { data: products = [] } = useQuery({
+    const { data: productsData } = useQuery({
         queryKey: ['products'],
-        queryFn: () => getProducts()
+        queryFn: () => getProducts(1, 1000)
     });
+    const products = productsData?.items || [];
 
     const createMut = useMutation({
         mutationFn: createPurchaseOrder,

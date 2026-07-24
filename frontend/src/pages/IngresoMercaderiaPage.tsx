@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPurchaseOrders, getProveedores, getProducts, createPurchaseReception } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
-    Barcode, PackageCheck, AlertTriangle, Plus, Trash2, 
-    Search, CheckCircle2, ChevronRight, X, Loader2
+    Barcode, PackageCheck, AlertTriangle, Trash2, 
+    CheckCircle2, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,10 +30,11 @@ export default function IngresoMercaderiaPage() {
         queryFn: () => getProveedores()
     });
 
-    const { data: products = [] } = useQuery({
+    const { data: productsData } = useQuery({
         queryKey: ['products'],
-        queryFn: () => getProducts()
+        queryFn: () => getProducts(1, 1000)
     });
+    const products = productsData?.items || [];
 
     const { data: orders = [] } = useQuery({
         queryKey: ['purchase_orders', sucursalId],
