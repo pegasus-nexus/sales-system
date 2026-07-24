@@ -1,10 +1,13 @@
+import re
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, Field, field_validator
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import (
     create_access_token,
     verify_password,
+    get_password_hash,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_current_active_user
 )
