@@ -9,6 +9,7 @@ const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const SaasCollaboratorsPage = lazy(() => import('./pages/SaasCollaboratorsPage'));
 const TenantDashboard = lazy(() => import('./pages/TenantDashboard'));
 const SucursalesPage = lazy(() => import('./pages/SucursalesPage'));
 const CatalogoPage = lazy(() => import('./pages/CatalogoPage'));
@@ -75,7 +76,7 @@ function FeaturesFetcher() {
     if (!isAuthenticated() || !user) return;
     
     // Evitar llamadas a /tenants/me si es SUPERADMIN SaaS sin tenant
-    if (!user.tenant_id && user.role === 'SUPERADMIN') {
+    if (!user.tenant_id && (user.role === 'SUPERADMIN' || user.role === 'SUPERADMIN_STAFF')) {
         return;
     }
 
@@ -108,7 +109,7 @@ function FeaturesFetcher() {
 
 function SoftLockBlocker() {
     const { isAuthenticated, planExpiresAt, role, logout } = useAuthStore();
-    if (!isAuthenticated() || role === 'SUPERADMIN' || !planExpiresAt) return null;
+    if (!isAuthenticated() || role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF' || !planExpiresAt) return null;
 
     // Check if expired
     const today = new Date();
@@ -147,7 +148,7 @@ const ProtectedRoute = ({
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
-    if (role === 'SUPERADMIN') return <Navigate to="/admin" replace />;
+    if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
     if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/inteligencia" replace />;
     if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
     if (['SUPERVISOR', 'VENDEDOR'].includes(role)) return <Navigate to="/inventario" replace />;
@@ -170,7 +171,7 @@ const ProtectedRoute = ({
 // ─── Role Dispatcher ─────────────────────────────────────────────────────────
 const DashboardDispatch = () => {
   const { role } = useAuthStore();
-  if (role === 'SUPERADMIN') return <Navigate to="/admin" replace />;
+  if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
   if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/inteligencia" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
   if (['SUPERVISOR', 'VENDEDOR'].includes(role ?? '')) return <Navigate to="/inventario" replace />;
@@ -178,11 +179,11 @@ const DashboardDispatch = () => {
   return <Navigate to="/pos" replace />;
 };
 
-const MATRIZ_ROLES = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'];
-const BRANCH_ROLES = ['ADMIN_SUCURSAL', 'ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'];
+const MATRIZ_ROLES = ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'SUPERADMIN_STAFF'];
+const BRANCH_ROLES = ['ADMIN_SUCURSAL', 'ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'SUPERADMIN_STAFF'];
 const MOBILE_MANAGEMENT_ROLES = [...BRANCH_ROLES, 'SUPERVISOR', 'VENDEDOR', 'CAJERO'];
-const ALL_STAFF = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'CAJERO', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERVISOR', 'VENDEDOR'];
-const STAFF_NO_CAJERO = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERVISOR', 'VENDEDOR'];
+const ALL_STAFF = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'CAJERO', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERADMIN_STAFF', 'SUPERVISOR', 'VENDEDOR'];
+const STAFF_NO_CAJERO = ['ADMIN_MATRIZ', 'ADMIN_SUCURSAL', 'ADMIN', 'USER', 'SUPERADMIN', 'SUPERADMIN_STAFF', 'SUPERVISOR', 'VENDEDOR'];
 
 
 function App() {
@@ -212,23 +213,28 @@ function App() {
 
                       {/* SuperAdmin */}
                       <Route path="/admin/dashboard" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                           <AdminDashboardPage />
                         </ProtectedRoute>
                       } />
                       <Route path="/admin/empresas" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                           <TenantsAdminPage />
                         </ProtectedRoute>
                       } />
                       <Route path="/admin/planes" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                           <PlanesAdminPage />
                         </ProtectedRoute>
                       } />
                       <Route path="/admin/health" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                           <SystemHealthPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/colaboradores" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
+                          <SaasCollaboratorsPage />
                         </ProtectedRoute>
                       } />
                       <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

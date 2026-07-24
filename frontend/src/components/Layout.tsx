@@ -91,15 +91,16 @@ export default function Layout({ children }: LayoutProps) {
     };
 
     const getNavGroups = (): NavGroup[] => {
-        if (role === 'SUPERADMIN') {
+        if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') {
             return [
                 {
                     groupKey: 'saas',
                     title: 'Administración SaaS',
                     icon: Building,
                     items: [
-                        { icon: Building, label: 'Empresas y Módulos', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN'] },
-                        { icon: Layers, label: 'Facturación y Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN'] },
+                        { icon: Building, label: 'Empresas y Módulos', path: '/admin/empresas', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
+                        { icon: Layers, label: 'Facturación y Planes', path: '/admin/planes', feature: null, roles: ['SUPERADMIN', 'SUPERADMIN_STAFF'] },
+                        ...(role === 'SUPERADMIN' ? [{ icon: Users, label: 'Equipo SaaS', path: '/admin/colaboradores', feature: null, roles: ['SUPERADMIN'] }] : [])
                     ]
                 }
             ];

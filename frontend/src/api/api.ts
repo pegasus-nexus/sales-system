@@ -1002,3 +1002,8 @@ export const updateProveedor = (id: string, data: Partial<Proveedor>) =>
 
 export const deleteProveedor = (id: string) => 
     client<{ message: string }>(`/proveedores/${id}`, { method: 'DELETE' });
+
+// ─── SAAS STAFF (SuperAdmin Collaborators) ──────────────────────────────────
+export const getSaasStaff = () => client<any[]>('/saas-staff/');
+export const createSaasStaff = (data: any) => client<any>('/saas-staff/', { method: 'POST', body: data });
+export const deleteSaasStaff = (id: string) => client<{ message: string }>(`/saas-staff/${id}`, { method: 'DELETE' });

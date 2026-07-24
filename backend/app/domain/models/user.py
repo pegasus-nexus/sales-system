@@ -11,6 +11,7 @@ from pymongo import IndexModel
 
 class UserRole(str, Enum):
     SUPERADMIN = "SUPERADMIN"       # SaaS Owner
+    SUPERADMIN_STAFF = "SUPERADMIN_STAFF" # SaaS Collaborator
     ADMIN_MATRIZ = "ADMIN_MATRIZ"   # Tenant Matrix Admin (owns the business)
     ADMIN_SUCURSAL = "ADMIN_SUCURSAL"  # Branch Admin
     CAJERO = "CAJERO"               # POS Cashier
