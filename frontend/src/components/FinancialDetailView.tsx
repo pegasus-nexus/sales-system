@@ -327,7 +327,7 @@ export default function FinancialDetailView() {
                                 <TrendingUp size={16} className="text-indigo-500" /> Evolución de Márgenes
                             </h3>
                             <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                                     <AreaChart data={report}>
                                         <defs>
                                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -354,7 +354,7 @@ export default function FinancialDetailView() {
                         <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex flex-col items-center">
                             <h3 className="text-sm font-black text-gray-900 mb-6 text-center w-full">Distribución del Dinero</h3>
                             <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
                                     <PieChart>
                                         <Pie
                                             data={[

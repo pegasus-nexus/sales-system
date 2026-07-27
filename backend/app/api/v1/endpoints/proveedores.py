@@ -54,7 +54,7 @@ class ProveedorResponse(BaseModel):
 @router.get("/proveedores", response_model=List[ProveedorResponse])
 async def listar_proveedores(
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=5000),
     q: Optional[str] = Query(None, description="Buscar por nombre, NIT o teléfono"),
     current_user: User = Depends(get_current_active_user)
 ):
