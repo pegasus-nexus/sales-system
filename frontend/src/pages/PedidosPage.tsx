@@ -99,7 +99,7 @@ export default function PedidosPage() {
                 producto_id: p._id || p.id,
                 producto_nombre: p.descripcion || p.name,
                 cantidad: '∞',
-                precio: p.costo_producto ?? p.costo_unitario ?? 0
+                precio: Number(p.precio_venta) || Number(p.costo_producto) || Number(p.precio) || 0
             }));
         } else {
             list = (invData?.items || [])
@@ -108,7 +108,7 @@ export default function PedidosPage() {
                     producto_id: inv.producto_id,
                     producto_nombre: inv.producto_nombre || inv.descripcion || 'Producto',
                     cantidad: inv.cantidad,
-                    precio: inv.precio_sucursal ?? inv.precio_venta ?? 0
+                    precio: Number(inv.precio_sucursal) || Number(inv.precio) || Number(inv.precio_venta) || Number(inv.costo_producto) || 0
                 }));
         }
         return list.sort((a: any, b: any) => a.producto_nombre.localeCompare(b.producto_nombre));

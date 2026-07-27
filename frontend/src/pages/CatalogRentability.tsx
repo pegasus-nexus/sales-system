@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { getAnalyticsDashboard, getRentabilidadReal, getProducts } from '../api/api';
+import { getAnalyticsDashboard, getRentabilidadReal, getProducts, getProveedores } from '../api/api';
 import { 
     Calendar, 
     Search,
@@ -49,12 +49,18 @@ export default function CatalogRentability() {
     const [rendSucursal, setRendSucursal] = useState('');
 
     const [catalogo, setCatalogo] = useState<any[]>([]);
+    const [proveedoresBD, setProveedoresBD] = useState<any[]>([]);
 
     useEffect(() => {
         getProducts(1, 2000).then(res => {
             setCatalogo(res.items || []);
         }).catch(err => {
             console.error("Error cargando catalogo en CatalogRentability:", err);
+        });
+        getProveedores(1, 1000).then(res => {
+            setProveedoresBD(res || []);
+        }).catch(err => {
+            console.error("Error cargando proveedores en CatalogRentability:", err);
         });
     }, []);
     
@@ -375,17 +381,30 @@ export default function CatalogRentability() {
 
     const proveedoresDisponibles = useMemo(() => {
         const set = new Set<string>();
+        if (Array.isArray(proveedoresBD)) {
+            proveedoresBD.forEach((p: any) => {
+                if (p.nombre) set.add(p.nombre);
+            });
+        }
         catalogo.forEach((p: any) => {
             if (p.proveedor) set.add(p.proveedor);
+            if (Array.isArray(p.proveedores)) {
+                p.proveedores.forEach((pr: string) => {
+                    if (pr) set.add(pr);
+                });
+            }
         });
         return Array.from(set).sort();
-    }, [catalogo]);
+    }, [proveedoresBD, catalogo]);
 
     const filteredRentData = useMemo(() => {
         return processedRentData.filter((p: any) => {
             const matchesSearch = p.nombreLimpio.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesCat = !selectedCategoria || p.categoria === selectedCategoria;
-            const matchesProv = !selectedProveedor || p.proveedor === selectedProveedor;
+            const matchesProv = !selectedProveedor || 
+                p.proveedor === selectedProveedor ||
+                (Array.isArray(p.proveedores) && p.proveedores.includes(selectedProveedor)) ||
+                (String(p.proveedor || '').includes(selectedProveedor));
             return matchesSearch && matchesCat && matchesProv;
         });
     }, [processedRentData, searchTerm, selectedCategoria, selectedProveedor]);

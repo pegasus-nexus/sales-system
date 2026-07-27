@@ -64,6 +64,11 @@ export default function FinancialDetailView() {
         queryFn: () => getProducts(1, 2000)
     });
 
+    const { data: proveedoresData } = useQuery({
+        queryKey: ['proveedores'],
+        queryFn: () => getProveedores(1, 1000)
+    });
+
     const categoryList = useMemo(() => {
         const set = new Set<string>();
         categories?.forEach((c: any) => {
@@ -79,12 +84,22 @@ export default function FinancialDetailView() {
 
     const proveedoresList = useMemo(() => {
         const set = new Set<string>();
+        if (Array.isArray(proveedoresData)) {
+            proveedoresData.forEach((p: any) => {
+                if (p.nombre) set.add(p.nombre);
+            });
+        }
         productsData?.items?.forEach((p: any) => {
             const prov = p.proveedor_nombre || (typeof p.proveedor === 'string' ? p.proveedor : p.proveedor?.nombre);
             if (prov) set.add(prov);
+            if (Array.isArray(p.proveedores)) {
+                p.proveedores.forEach((pr: string) => {
+                    if (pr) set.add(pr);
+                });
+            }
         });
         return Array.from(set).sort();
-    }, [productsData]);
+    }, [proveedoresData, productsData]);
 
     const { data: reportData, isLoading, isError } = useQuery({
         queryKey: ['financial-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category, appliedFilters.proveedor],
