@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFinancialReport, getSucursales, getCategories, getProducts } from '../api/api';
+import { getFinancialReport, getSucursales, getCategories, getProducts, getProveedores } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
     FileDown, FileSpreadsheet, Tag, Truck, Filter, AlertCircle
