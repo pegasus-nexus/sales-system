@@ -390,7 +390,7 @@ function App() {
 
                       {/* Descuentos */}
                       <Route path="/descuentos" element={
-                        <ProtectedRoute allowedRoles={BRANCH_ROLES} requiredFeature="DESCUENTOS_AVANZADOS">
+                        <ProtectedRoute allowedRoles={BRANCH_ROLES}>
                           <DescuentosPage />
                         </ProtectedRoute>
                       } />
