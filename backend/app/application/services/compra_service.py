@@ -11,6 +11,22 @@ from app.domain.models.base import DecimalMoney
 from app.infrastructure.db import get_client
 from app.infrastructure.repositories.compra import PurchaseOrderRepository, PurchaseReceptionRepository
 
+def _to_decimal(val) -> Decimal:
+    if val is None:
+        return Decimal("0.0")
+    if isinstance(val, Decimal):
+        return val
+    if hasattr(val, "to_decimal"):
+        try:
+            return val.to_decimal()
+        except Exception:
+            pass
+    try:
+        return Decimal(str(val))
+    except Exception:
+        return Decimal("0.0")
+
+
 class CompraService:
     def __init__(self):
         self.purchase_orders = PurchaseOrderRepository()
@@ -18,14 +34,6 @@ class CompraService:
 
     @staticmethod
     def _recalculate_price(old_price: Decimal, old_cost: Decimal, new_cost: Decimal) -> Decimal:
-        """
-        Recalcula el precio de venta manteniendo la proporción de ganancia original (margen).
-        Formula: (precio_anterior * nuevo_costo) / costo_anterior
-        Luego aplica redondeo retail:
-        - Si decimal <= 0.50 -> se redondea a .50
-        - Si decimal > 0.50 -> se redondea al siguiente entero (.00)
-        - Si no hay decimal -> se mantiene
-        """
         if old_cost <= Decimal("0"):
             return old_price
         
@@ -125,22 +133,34 @@ class CompraService:
                         await inventario.insert(session=session)
                     
                     # --- Obtener Producto para Kárdex y Actualización de Precios ---
-                    producto = await Product.find_one(
-                        Product.id == ObjectId(item.producto_id),
-                        Product.tenant_id == reception.tenant_id,
-                        session=session
-                    )
+                    producto = None
+                    try:
+                        from beanie import PydanticObjectId
+                        producto = await Product.find_one(
+                            Product.id == PydanticObjectId(item.producto_id),
+                            Product.tenant_id == reception.tenant_id,
+                            session=session
+                        )
+                    except Exception:
+                        pass
+                    
+                    if not producto:
+                        producto = await Product.find_one(
+                            Product.codigo_corto == item.producto_id,
+                            Product.tenant_id == reception.tenant_id,
+                            session=session
+                        )
                     
                     if producto:
-                        old_cost = producto.costo_producto.to_decimal()
-                        new_cost = item.costo_unitario_real.to_decimal()
+                        old_cost = _to_decimal(producto.costo_producto)
+                        new_cost = _to_decimal(item.costo_unitario_real)
                         
                         # Para el precio de venta en este momento, usaremos el precio de la sucursal o el base.
                         precio_venta_momento = Decimal("0")
                         if producto.precios_sucursales and reception.sucursal_id in producto.precios_sucursales:
-                            precio_venta_momento = producto.precios_sucursales[reception.sucursal_id].to_decimal()
+                            precio_venta_momento = _to_decimal(producto.precios_sucursales[reception.sucursal_id])
                         else:
-                            precio_venta_momento = producto.precio_venta.to_decimal()
+                            precio_venta_momento = _to_decimal(producto.precio_venta)
 
                         log = InventoryLog(
                             tenant_id=reception.tenant_id,
@@ -170,9 +190,9 @@ class CompraService:
                                 
                             old_price = Decimal("0")
                             if reception.sucursal_id in producto.precios_sucursales:
-                                old_price = producto.precios_sucursales[reception.sucursal_id].to_decimal()
+                                old_price = _to_decimal(producto.precios_sucursales[reception.sucursal_id])
                             else:
-                                old_price = producto.precio_venta.to_decimal()
+                                old_price = _to_decimal(producto.precio_venta)
                                 
                             # Recalcular aplicando redondeo
                             new_price = self._recalculate_price(old_price, old_cost, new_cost)

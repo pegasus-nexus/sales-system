@@ -137,9 +137,12 @@ async def create_purchase_reception(
             usuario_id=str(current_user.id),
             usuario_nombre=current_user.full_name
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        # En producción se debe usar log.error
-        raise HTTPException(status_code=500, detail=f"Error confirmando ingreso: {str(e)}")
+        import logging
+        logging.getLogger("ComprasAPI").error(f"Error confirmando ingreso de mercadería: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Error confirmando ingreso de mercadería: {str(e)}")
 
 @router.get("/receptions/{sucursal_id}", response_model=List[PurchaseReception])
 async def list_purchase_receptions(
