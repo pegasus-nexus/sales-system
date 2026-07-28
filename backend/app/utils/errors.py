@@ -15,8 +15,8 @@ logger = logging.getLogger("ErrorUtils")
 
 T = TypeVar("T")
 
-_MAX_RETRIES = 3          # intentos totales (1 original + 2 reintentos)
-_RETRY_DELAY = 0.3        # segundos entre reintentos
+_MAX_RETRIES = 5          # intentos totales (1 original + 4 reintentos)
+_RETRY_DELAY = 0.2        # segundos base entre reintentos
 
 
 async def retry_on_write_conflict(fn: Callable[[], Awaitable[T]]) -> T:
@@ -27,8 +27,8 @@ async def retry_on_write_conflict(fn: Callable[[], Awaitable[T]]) -> T:
     Uso:
         result = await retry_on_write_conflict(lambda: SalesService._run_transaction(...))
 
-    - Hasta 3 intentos totales con pausa progresiva.
-    - Si todos fallan, relanza la excepción original.
+    - Hasta 5 intentos totales con backoff exponencial.
+    - Captura y traduce errores a HTTPException sin causar 500 no manejados.
     - Los HTTPException de negocio (400, 403, 404) nunca se reintentan.
     """
     last_exc: Exception = RuntimeError("No intentos ejecutados")
@@ -41,13 +41,15 @@ async def retry_on_write_conflict(fn: Callable[[], Awaitable[T]]) -> T:
             if is_transient_error(exc):
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
+                    delay = _RETRY_DELAY * (2 ** (attempt - 1))
                     logger.warning(
                         f"WriteConflict (intento {attempt}/{_MAX_RETRIES}). "
-                        f"Reintentando en {_RETRY_DELAY * attempt:.1f}s..."
+                        f"Reintentando en {delay:.2f}s..."
                     )
-                    await asyncio.sleep(_RETRY_DELAY * attempt)
+                    await asyncio.sleep(delay)
                     continue
-            raise  # No es transitorio: propagar inmediatamente
+                raise handle_service_error(last_exc, "concurrencia de inventario")
+            raise handle_service_error(exc, "operación de base de datos")
     raise handle_service_error(last_exc, "reintento agotado")
 
 
@@ -69,7 +71,11 @@ _TRANSIENT_KEYWORDS = [
 def is_transient_error(exc: Exception) -> bool:
     """Devuelve True si el error es temporal (reintentar puede resolverlo)."""
     msg = str(exc).lower()
-    return any(kw.lower() in msg for kw in _TRANSIENT_KEYWORDS)
+    if any(kw.lower() in msg for kw in _TRANSIENT_KEYWORDS):
+        return True
+    if hasattr(exc, "has_error_label") and getattr(exc, "has_error_label")("TransientTransactionError"):
+        return True
+    return False
 
 
 def handle_service_error(exc: Exception, context: str = "") -> HTTPException:
