@@ -8,7 +8,7 @@ Moving them here allows:
   - Cleaner, shorter endpoint files
 """
 
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from app.domain.models.product import TipoItem
 
@@ -19,9 +19,9 @@ class ProductCreate(BaseModel):
     precio_venta: float
     costo_producto: float = 0.0
     proveedor: Optional[str] = None
+    proveedores: Optional[List[str]] = None
     codigo_largo: Optional[str] = None
     codigo_corto: Optional[str] = None
-    proveedor: Optional[str] = None
     image_url: Optional[str] = None
     precios_sucursales: Optional[dict[str, float]] = None
     meal_plan_template_id: Optional[str] = None
@@ -36,6 +36,7 @@ class ProductUpdate(BaseModel):
     precio_venta: Optional[float] = None
     costo_producto: Optional[float] = None
     proveedor: Optional[str] = None
+    proveedores: Optional[List[str]] = None
     codigo_largo: Optional[str] = None
     codigo_corto: Optional[str] = None
     image_url: Optional[str] = None
