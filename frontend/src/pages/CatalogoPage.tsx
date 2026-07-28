@@ -657,7 +657,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
                     <h3 className="text-lg font-bold text-gray-900">
-                        {isBranchAdmin ? 'Gestionar Foto del Producto' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
+                        {isBranchAdmin ? 'Editar Producto (Foto y Proveedores)' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
                     </h3>
                     <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                         <X size={20} />
@@ -667,7 +667,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
                     {isBranchAdmin && (
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-                            🔒 Como Administrador de Sucursal solo puedes actualizar o eliminar la fotografía del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
+                            🔒 Como Administrador de Sucursal puedes actualizar la fotografía y gestionar los proveedores asignados del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
                         </div>
                     )}
 
@@ -736,44 +736,42 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                         </div>
                     )}
 
-                    {!isBranchAdmin && (
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
-                            <select
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value=""
-                                onChange={(e) => {
-                                    if (!e.target.value) return;
-                                    const current = formData.proveedores || [];
-                                    if (!current.includes(e.target.value)) {
-                                        setFormData({ ...formData, proveedores: [...current, e.target.value] });
-                                    }
-                                }}
-                            >
-                                <option value="">Añadir proveedor...</option>
-                                {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
-                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
+                        <select
+                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                            value=""
+                            onChange={(e) => {
+                                if (!e.target.value) return;
+                                const current = formData.proveedores || [];
+                                if (!current.includes(e.target.value)) {
+                                    setFormData({ ...formData, proveedores: [...current, e.target.value] });
+                                }
+                            }}
+                        >
+                            <option value="">Añadir proveedor...</option>
+                            {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
+                                <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
+                            ))}
+                        </select>
+                        
+                        {(formData.proveedores || []).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {(formData.proveedores || []).map((provName) => (
+                                    <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
+                                        {provName}
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
+                                            className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </span>
                                 ))}
-                            </select>
-                            
-                            {(formData.proveedores || []).length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {(formData.proveedores || []).map((provName) => (
-                                        <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
-                                            {provName}
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
-                                                className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
 
                     {!isBranchAdmin && (
                         <div>

@@ -80,8 +80,12 @@ class ProductService:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         if current_user.role == UserRole.ADMIN_SUCURSAL:
-            # ADMIN_SUCURSAL is strictly restricted to updating product image_url
-            data = ProductUpdate(image_url=data.image_url)
+            # ADMIN_SUCURSAL is restricted to updating product image_url and proveedores
+            data = ProductUpdate(
+                image_url=data.image_url,
+                proveedores=data.proveedores,
+                proveedor=data.proveedor
+            )
 
         product = await Product.get(product_id)
         if not product:
