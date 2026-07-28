@@ -112,6 +112,7 @@ export interface Product {
     codigo_sistema?: string;
     codigo_largo?: string;
     codigo_corto?: string;
+    proveedor?: string;
     proveedores?: string[];
     descripcion: string;          // product name
     categoria_id: string;
@@ -133,6 +134,7 @@ export interface ProductCreate {
     costo_producto?: number;
     codigo_largo?: string;
     codigo_corto?: string;
+    proveedor?: string;
     proveedores?: string[];
     image_url?: string;
     precios_sucursales?: Record<string, number>;
