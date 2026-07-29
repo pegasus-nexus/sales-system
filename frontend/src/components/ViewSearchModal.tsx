@@ -18,54 +18,21 @@ interface ViewItem {
     roles?: string[];
 }
 
-export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function ViewSearchModal({ isOpen, onClose, items = [] }: { isOpen: boolean; onClose: () => void; items?: ViewItem[] }) {
     const navigate = useNavigate();
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const ALL_VIEWS: ViewItem[] = [
-        // Ventas & Operaciones
-        { id: 'pos', title: 'Punto de Venta (POS)', category: 'Ventas & Caja', path: '/pos', icon: ShoppingBag, keywords: ['pos', 'vender', 'caja pos', 'cajero', 'punto de venta', 'ticket'] },
-        { id: 'ventas', title: 'Historial de Ventas', category: 'Ventas & Caja', path: '/ventas', icon: RotateCcw, keywords: ['ventas', 'historial', 'tickets', 'facturas', 'facturador', 'anulaciones'] },
-        { id: 'caja', title: 'Caja & Arqueo', category: 'Ventas & Caja', path: '/caja', icon: Wallet, keywords: ['caja', 'arqueo', 'abrir caja', 'cerrar caja', 'gastos', 'movimientos', 'efectivo'] },
-        { id: 'creditos', title: 'Créditos & Cobranzas', category: 'Ventas & Caja', path: '/creditos', icon: Banknote, keywords: ['creditos', 'deuda', 'cobro', 'cuotas', 'pagos', 'cobranza'] },
-
-        // Inventario & Productos
-        { id: 'pedidos', title: 'Pedidos Internos (B2B)', category: 'Inventario & Logística', path: '/pedidos', icon: ClipboardList, keywords: ['pedidos', 'pedidos internos', 'solicitud stock', 'b2b', 'reposicion', 'despacho'] },
-        { id: 'inventario', title: 'Inventario & Stock', category: 'Inventario & Logística', path: '/inventario', icon: Warehouse, keywords: ['inventario', 'stock', 'almacen', 'existencias', 'ajuste'] },
-        { id: 'catalogo', title: 'Catálogo de Productos', category: 'Inventario & Logística', path: '/catalogo', icon: Package, keywords: ['catalogo', 'productos', 'precios', 'items', 'costos'] },
-        { id: 'traslados', title: 'Traslados de Inventario', category: 'Inventario & Logística', path: '/traslados', icon: Truck, keywords: ['traslados', 'mover stock', 'envio entre sucursales'] },
-        { id: 'categories', title: 'Categorías de Productos', category: 'Inventario & Logística', path: '/categories', icon: Tag, keywords: ['categorias', 'familias', 'grupos de productos'] },
-        { id: 'descuentos', title: 'Promociones & Descuentos', category: 'Inventario & Logística', path: '/descuentos', icon: Percent, keywords: ['descuentos', 'promociones', 'ofertas'] },
-
-        // Reportes & BI
-        { id: 'inteligencia', title: 'Plataforma Analítica (BI)', category: 'Reportes & Inteligencia', path: '/inteligencia', icon: BarChart3, keywords: ['bi', 'analitica', 'inteligencia', 'dashboards', 'kpi', 'bcg'] },
-        { id: 'reportes_fin', title: 'Reportes Financieros', category: 'Reportes & Inteligencia', path: '/reportes?tab=financiero', icon: TrendingUp, keywords: ['reportes', 'finanzas', 'ganancias', 'margen', 'utilidad'] },
-        { id: 'reportes_diario', title: 'Reporte Diario', category: 'Reportes & Inteligencia', path: '/reportes?tab=diario', icon: TrendingUp, keywords: ['reporte diario', 'cierre del dia', 'resumen hoy'] },
-
-        // Gestión & Contactos
-        { id: 'sucursales', title: 'Gestión de Sucursales', category: 'Gestión & Contactos', path: '/sucursales', icon: Store, keywords: ['sucursales', 'locales', 'tiendas', 'matriz'] },
-        { id: 'usuarios', title: 'Usuarios & Personal', category: 'Gestión & Contactos', path: '/usuarios', icon: Users, keywords: ['usuarios', 'personal', 'empleados', 'cajeros', 'roles'] },
-        { id: 'clientes', title: 'Clientes', category: 'Gestión & Contactos', path: '/clientes', icon: Users, keywords: ['clientes', 'compradores', 'nit', 'razon social'] },
-        { id: 'proveedores', title: 'Proveedores', category: 'Gestión & Contactos', path: '/proveedores', icon: Briefcase, keywords: ['proveedores', 'compras', 'marcas'] },
-        { id: 'qr_control', title: 'Control QR & Pagos Digitales', category: 'Gestión & Contactos', path: '/qr-control', icon: QrCode, keywords: ['qr', 'banco', 'confirmacion qr', 'transferencias'] },
-
-        // Sistema
-        { id: 'comunidad', title: 'Comunidad', category: 'Sistema & Ajustes', path: '/comunidad', icon: Users, keywords: ['comunidad', 'red'] },
-        { id: 'configuracion', title: 'Configuración del Sistema', category: 'Sistema & Ajustes', path: '/configuracion', icon: Settings, keywords: ['configuracion', 'empresa', 'logo', 'ticket layout'] },
-        { id: 'auditoria', title: 'Auditoría & Historial de Cambios', category: 'Sistema & Ajustes', path: '/auditoria', icon: Shield, keywords: ['auditoria', 'logs', 'seguridad', 'cambios'] },
-    ];
-
     const filteredViews = useMemo(() => {
-        if (!query.trim()) return ALL_VIEWS.slice(0, 8);
+        if (!query.trim()) return items.slice(0, 8);
         const q = query.toLowerCase().trim();
-        return ALL_VIEWS.filter(item => 
+        return items.filter(item => 
             item.title.toLowerCase().includes(q) ||
             item.category.toLowerCase().includes(q) ||
             item.keywords.some(k => k.toLowerCase().includes(q))
         );
-    }, [query]);
+    }, [query, items]);
 
     useEffect(() => {
         setSelectedIndex(0);

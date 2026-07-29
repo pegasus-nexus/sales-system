@@ -242,6 +242,15 @@ export default function Layout({ children }: LayoutProps) {
     const allFlatNavItems = navGroups.flatMap(g => g.items);
     const mobileBottomItems = allFlatNavItems.slice(0, 4);
 
+    const searchItems = navGroups.flatMap(g => g.items.map(item => ({
+        id: item.path,
+        title: item.label,
+        category: g.title,
+        path: item.path,
+        icon: item.icon,
+        keywords: [item.label.toLowerCase(), g.title.toLowerCase(), item.path.replace('/', '')]
+    })));
+
     // Desplegar automáticamente el grupo que contenga la ruta activa
     React.useEffect(() => {
         navGroups.forEach(g => {
@@ -485,7 +494,11 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
 
                     {/* View Search Modal */}
-                    <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
+                    <ViewSearchModal 
+                        isOpen={searchModalOpen} 
+                        onClose={() => setSearchModalOpen(false)} 
+                        items={searchItems}
+                    />
 
 
                     {/* Scrollable Content */}
