@@ -35,15 +35,17 @@ export default function PlanesAdminPage() {
     if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') return <div className="p-8 text-center text-red-500">Acceso Restringido</div>;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-20 md:pb-8">
-            <div className="mb-4">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">Gestión de Planes SaaS</h1>
-                <p className="text-gray-500 font-medium mt-1">Crea, edita y configura los planes que ofrecerás a tus clientes.</p>
+        <div className="max-w-7xl mx-auto p-4 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="std-title-page">Gestión de Planes SaaS</h1>
+                    <p className="std-description">Crea, edita y configura los planes que ofrecerás a tus clientes.</p>
+                </div>
             </div>
             
             {isLoading ? (
-                <div className="flex justify-center py-20">
-                    <p className="font-bold text-gray-400 animate-pulse">Cargando planes...</p>
+                <div className="flex justify-center py-12">
+                    <p className="text-xs text-gray-400 font-medium animate-pulse">Cargando planes...</p>
                 </div>
             ) : (
                 <PlanBuilder existingPlans={plansList} />
