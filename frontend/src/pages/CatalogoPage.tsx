@@ -170,77 +170,37 @@ export default function CatalogoPage() {
                 )}
             </div>
 
-            {/* Filters */}
-            {/* Filtros Modernos */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                <div className="relative w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center">
+                <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Buscar productos por nombre, código o EAN..."
+                        placeholder="Buscar productos..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-10 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-50 rounded-xl outline-none transition-all text-sm text-gray-900 shadow-inner"
+                        className="std-input pl-10 pr-10"
                     />
                     {searchTerm && (
                         <button 
                             onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100"
-                            title="Limpiar búsqueda"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
                         >
                             <X size={16} />
                         </button>
                     )}
                 </div>
 
-                {/* Relieve Category Pills */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-4">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Categorías</h3>
-                        <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                            <input
-                                type="text"
-                                placeholder="Buscar categoría..."
-                                value={categorySearch}
-                                onChange={(e) => setCategorySearch(e.target.value)}
-                                className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 rounded-lg outline-none transition-all text-xs text-gray-900"
-                            />
-                            {categorySearch && (
-                                <button 
-                                    onClick={() => setCategorySearch('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    <X size={12} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                        <button
-                            onClick={() => setSelectedCategory('ALL')}
-                            className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                selectedCategory === 'ALL' 
-                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                            }`}
-                        >
-                            Todas
-                        </button>
-                        {filteredCategories.map((cat: any) => (
-                            <button
-                                key={cat._id}
-                                onClick={() => setSelectedCategory(cat._id!)}
-                                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                    selectedCategory === cat._id 
-                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
-                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                                }`}
-                            >
-                                {cat.name}
-                            </button>
+                <div className="w-full sm:w-64 shrink-0">
+                    <select
+                        className="std-input appearance-none cursor-pointer"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                        <option value="ALL">Todas las categorías</option>
+                        {categories.map((cat: any) => (
+                            <option key={cat._id} value={cat._id!}>{cat.name}</option>
                         ))}
-                    </div>
+                    </select>
                 </div>
             </div>
 
