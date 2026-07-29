@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    Search, Wallet, ShoppingBag, RotateCcw,
-    Tag, Store, Package, ClipboardList, Warehouse, Users,
-    Percent, QrCode, BarChart3, Banknote, Truck, Settings, Shield,
-    Briefcase, TrendingUp, X, Sparkles, ArrowRight
-} from 'lucide-react';
+import { Search, X, Sparkles, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ViewItem {
