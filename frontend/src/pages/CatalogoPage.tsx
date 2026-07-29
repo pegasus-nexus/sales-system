@@ -247,19 +247,19 @@ export default function CatalogoPage() {
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                    <table className="std-table">
                         <thead className="bg-gray-50 text-gray-500 uppercase font-semibold text-xs tracking-wider border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4">Producto</th>
-                                <th className="px-6 py-4">Categoría</th>
+                                    <th className="std-table-th">Producto</th>
+                                    <th className="std-table-th">Categoría</th>
                                 {user?.sucursal_id ? (
-                                    <th className="px-6 py-4 text-right">Precio Final (Bs)</th>
+                                        <th className="std-table-th text-right">Precio Final (Bs)</th>
                                 ) : (
-                                    <th className="px-6 py-4 text-right">Precios (Bs)</th>
+                                        <th className="std-table-th text-right">Precios (Bs)</th>
                                 )}
-                                {isMatrizAdmin && <th className="px-6 py-4 text-right">Costo (Bs)</th>}
-                                <th className="px-6 py-4 text-center">Estado</th>
-                                {isEditor && <th className="px-6 py-4 text-right">Acciones</th>}
+                                    {isMatrizAdmin && <th className="std-table-th text-right">Costo (Bs)</th>}
+                                    <th className="std-table-th text-center">Estado</th>
+                                    {isEditor && <th className="std-table-th text-right">Acciones</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -281,7 +281,7 @@ export default function CatalogoPage() {
                             ) : (
                                 products.map((p) => (
                                     <tr key={p._id} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-6 py-4">
+                                        <td className="std-table-td">
                                             <div className="flex items-center gap-3">
                                                 {p.image_url ? (
                                                     <img src={p.image_url} alt={p.descripcion} className="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm bg-white" />
@@ -299,7 +299,7 @@ export default function CatalogoPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="std-table-td">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium border border-gray-200">
                                                 <Tag size={12} className="text-gray-400" />
                                                 {p.categoria_nombre && !p.categoria_nombre.match(/^[0-9a-fA-F]{24}$/)
@@ -309,7 +309,7 @@ export default function CatalogoPage() {
                                                         : 'General')}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-semibold text-gray-900">
+                                        <td className="std-table-td text-right font-semibold text-gray-900">
                                             {user?.sucursal_id ? (
                                                 (p.precio_venta || 0).toFixed(2)
                                             ) : (
@@ -317,17 +317,17 @@ export default function CatalogoPage() {
                                             )}
                                         </td>
                                         {isMatrizAdmin && (
-                                            <td className="px-6 py-4 text-right text-gray-500">
+                                            <td className="std-table-td text-right text-gray-500">
                                                 {(p.costo_producto || 0).toFixed(2)}
                                             </td>
                                         )}
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="std-table-td text-center">
                                             <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${p.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                                 {p.is_active !== false ? 'Activo' : 'Inactivo'}
                                             </span>
                                         </td>
                                         {isEditor && (
-                                            <td className="px-6 py-4 text-right flex justify-end gap-1">
+                                            <td className="std-table-td text-right flex justify-end gap-1">
                                                 {isBranchAdmin ? (
                                                     <button onClick={() => handleOpenEdit(p)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-colors" title="Gestionar foto del producto">
                                                         <ImageIcon size={16} />
@@ -672,12 +672,12 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                     )}
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Descripción / Nombre</label>
+                        <label className="std-label">Descripción / Nombre</label>
                         <input
                             required
                             type="text"
                             disabled={isBranchAdmin}
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            className="std-input placeholder-gray-400"
                             value={formData.descripcion}
                             onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
                             placeholder="Ej. Coca Cola 2L"
@@ -685,11 +685,11 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Categoría</label>
+                        <label className="std-label">Categoría</label>
                         <select
                             required
                             disabled={isBranchAdmin}
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            className="std-input"
                             value={formData.categoria_id}
                             onChange={e => setFormData({ ...formData, categoria_id: e.target.value })}
                         >
@@ -700,22 +700,22 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">SKU (Código Corto)</label>
+                            <label className="std-label">SKU (Código Corto)</label>
                             <input
                                 type="text"
                                 disabled={isBranchAdmin}
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 uppercase font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="std-input placeholder-gray-400 uppercase font-mono"
                                 value={formData.codigo_corto}
                                 onChange={e => setFormData({ ...formData, codigo_corto: e.target.value })}
                                 placeholder="Ej: C-COLA-2L"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">EAN (Código Largo)</label>
+                            <label className="std-label">EAN (Código Largo)</label>
                             <input
                                 type="text"
                                 disabled={isBranchAdmin}
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="std-input placeholder-gray-400 font-mono"
                                 value={formData.codigo_largo}
                                 onChange={e => setFormData({ ...formData, codigo_largo: e.target.value })}
                                 placeholder="Ej: 777123456789"
@@ -725,10 +725,10 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     {!isBranchAdmin && (
                         <div className="pb-4 border-b border-gray-100">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Costo Base (Bs) (Opcional)</label>
+                            <label className="std-label">Costo Base (Bs) (Opcional)</label>
                             <input
                                 type="number" step="0.01" min="0" required
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                className="std-input"
                                 value={formData.costo_producto === 0 ? '' : formData.costo_producto}
                                 onChange={e => setFormData({ ...formData, costo_producto: parseFloat(e.target.value) || 0 })}
                                 placeholder="Costo de adquisición"
@@ -737,7 +737,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                     )}
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
+                        <label className="std-label">Proveedores (Opcional)</label>
                         <select
                             className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
                             value=""
@@ -775,9 +775,9 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     {!isBranchAdmin && (
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Vincular a Plan de Comidas (Opcional)</label>
+                            <label className="std-label">Vincular a Plan de Comidas (Opcional)</label>
                             <select
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                className="std-input"
                                 value={formData.meal_plan_template_id || ''}
                                 onChange={e => setFormData({ ...formData, meal_plan_template_id: e.target.value || '' })}
                             >
@@ -791,7 +791,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     <div className="flex gap-4 items-end">
                         <div className="flex-1">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fotografía del Producto (Opcional)</label>
+                            <label className="std-label">Fotografía del Producto (Opcional)</label>
                             <label className={`flex items-center justify-center w-full h-12 px-4 transition bg-white border-2 border-gray-200 border-dashed rounded-xl appearance-none cursor-pointer hover:border-indigo-400 focus:outline-none ${isUploading ? 'opacity-50' : ''}`}>
                                 <span className="flex items-center space-x-2 text-gray-600">
                                     {isUploading ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <Upload className="w-5 h-5 text-gray-400" />}
@@ -824,7 +824,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Bs.</span>
                                             <input
                                                 type="number" step="0.01" min="0" required
-                                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg pl-9 pr-3 py-1.5 outline-none transition-all text-sm text-gray-900"
+                                                className="std-input pl-9"
                                                 value={formData.precios_sucursales?.[suc._id] ?? ''}
                                                 onChange={e => handlePriceChange(suc._id, e.target.value)}
                                                 placeholder="0.00"
