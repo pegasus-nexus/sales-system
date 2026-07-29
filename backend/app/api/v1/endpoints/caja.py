@@ -183,10 +183,15 @@ async def get_sesiones(
         desc_data = sales_agg["descuentos"][0] if sales_agg.get("descuentos") else {"total_descuentos": 0}
         count_data = sales_agg["count"][0] if sales_agg.get("count") else {"n": 0}
         
-        total_qr = ventas_data.get("total_qr", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
-        total_tarjeta = ventas_data.get("total_tarjeta", 0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
-        total_ventas = ventas_data.get("total_ventas", 0)
-        total_descuentos = desc_data.get("total_descuentos", 0)
+        raw_qr = ventas_data.get("total_qr", 0)
+        raw_tarjeta = ventas_data.get("total_tarjeta", 0)
+        raw_ventas = ventas_data.get("total_ventas", 0)
+        raw_descuentos = desc_data.get("total_descuentos", 0)
+
+        total_qr = (float(str(raw_qr)) if raw_qr is not None else 0.0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
+        total_tarjeta = (float(str(raw_tarjeta)) if raw_tarjeta is not None else 0.0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
+        total_ventas = float(str(raw_ventas)) if raw_ventas is not None else 0.0
+        total_descuentos = float(str(raw_descuentos)) if raw_descuentos is not None else 0.0
 
         result.append({
             "id":              str(s.id),
