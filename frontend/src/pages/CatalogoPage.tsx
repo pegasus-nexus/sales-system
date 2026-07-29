@@ -15,7 +15,7 @@ export default function CatalogoPage() {
     const { user } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-    const [categorySearch, setCategorySearch] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
 
@@ -63,10 +63,7 @@ export default function CatalogoPage() {
         return map;
     }, [categories]);
 
-    const filteredCategories = useMemo(() => {
-        if (!categorySearch) return categories;
-        return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
-    }, [categories, categorySearch]);
+
     const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
     const isBranchAdmin = user?.role === 'ADMIN_SUCURSAL';
     const isEditor = isMatrizAdmin || isBranchAdmin;
