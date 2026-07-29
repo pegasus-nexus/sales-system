@@ -296,84 +296,120 @@ export default function TenantsAdminPage() {
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-lg font-black text-gray-900 tracking-tight">Panel SaaS</h1>
-                    <p className="text-gray-500 font-medium">Control global de empresas y facturación</p>
+                    <h1 className="std-title-page">Panel SaaS</h1>
+                    <p className="std-description">Control global de empresas y facturación</p>
                 </div>
-                <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-8 py-4 bg-black text-white rounded-2xl font-bold shadow-xl shadow-black/15 hover:bg-gray-800 hover:-translate-y-0.5 transition-all active:scale-95">
-                    <Plus size={20} /> Nueva Empresa
+                <button onClick={() => setIsModalOpen(true)} className="std-btn-primary">
+                    <Plus size={18} /> Nueva Empresa
                 </button>
             </div>
 
             {/* Lista Principal */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-lg font-black text-gray-900">Empresas Registradas</h3>
-                    <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 uppercase tracking-widest">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 border-b border-gray-200">
+                    <h3 className="std-title-section text-sm">Empresas Registradas</h3>
+                    <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600">
                         {tenants?.length || 0} Total
-                    </div>
+                    </span>
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <Loader2 className="animate-spin text-gray-200" size={48} />
-                        <p className="text-gray-400 font-bold animate-pulse">CARGANDO EMPRESAS...</p>
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <Loader2 className="animate-spin text-indigo-600" size={32} />
+                        <p className="text-xs text-gray-400 font-medium animate-pulse">Cargando empresas...</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {paginatedTenants.map(tenant => (
-                            <div key={tenant._id} className="flex items-center justify-between p-5 rounded-2xl hover:bg-gray-100 transition-all border border-transparent hover:border-gray-100 group">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-black/5 flex-shrink-0">
-                                        {tenant.name.substring(0, 1).toUpperCase()}
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-3">
-                                            <h4 className="font-black text-gray-900 text-lg leading-none">{tenant.name}</h4>
-                                            {!tenant.is_active && <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase">Inactiva</span>}
-                                        </div>
-                                        <div className="flex items-center gap-3">
+                    <div className="overflow-x-auto">
+                        <table className="std-table">
+                            <thead>
+                                <tr className="bg-gray-100/70 border-b border-gray-200 text-gray-600">
+                                    <th className="std-table-th">Empresa</th>
+                                    <th className="std-table-th">Plan</th>
+                                    <th className="std-table-th">ID / Identificador</th>
+                                    <th className="std-table-th">Estado</th>
+                                    <th className="std-table-th text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200/60">
+                                {paginatedTenants.map(tenant => (
+                                    <tr key={tenant._id} className="hover:bg-gray-50/80 transition-colors">
+                                        <td className="std-table-td">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-xs">
+                                                    {tenant.name.substring(0, 1).toUpperCase()}
+                                                </div>
+                                                <span className="font-semibold text-gray-900 text-sm">{tenant.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="std-table-td">
                                             <PlanBadge plan={tenant.plan} />
-                                            <span className="text-gray-300">|</span>
-                                            <p className="text-xs text-gray-400 font-bold tracking-tighter uppercase">ID: {tenant._id.substring(0,8)}...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <button 
-                                        onClick={() => {
-                                            setModulesTenant(tenant);
-                                            setLocalModules(tenant.modulos_activos || []);
-                                        }} 
-                                        title="Control de Módulos (Feature Toggles)"
-                                        className="w-10 h-10 flex items-center justify-center text-indigo-500 hover:text-white hover:bg-indigo-500 hover:shadow-md rounded-2xl transition-all border border-indigo-100"
-                                    >
-                                        <Settings size={20} />
-                                    </button>
-                                    <button 
-                                        onClick={() => impersonateMutation.mutate(tenant._id)} 
-                                        disabled={impersonateMutation.isPending}
-                                        title="Magic Login (Impersonation)"
-                                        className="w-10 h-10 flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-500 hover:shadow-md rounded-2xl transition-all border border-blue-100 disabled:opacity-50"
-                                    >
-                                        <LogIn size={20} />
-                                    </button>
-                                    <button onClick={() => handleEditClick(tenant)} title="Editar Empresa" className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
-                                        <Edit2 size={20} />
-                                    </button>
-                                    <button onClick={() => handleDelete(tenant)} title={tenant.is_active ? "Suspender (Kill Switch)" : "Eliminar"} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100">
-                                        <Trash2 size={20} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                                        </td>
+                                        <td className="std-table-td">
+                                            <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                                {tenant._id.substring(0, 12)}...
+                                            </span>
+                                        </td>
+                                        <td className="std-table-td">
+                                            {tenant.is_active ? (
+                                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                                    Activo
+                                                </span>
+                                            ) : (
+                                                <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                                    Inactiva
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="std-table-td text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button 
+                                                    onClick={() => {
+                                                        setModulesTenant(tenant);
+                                                        setLocalModules(tenant.modulos_activos || []);
+                                                    }} 
+                                                    title="Control de Módulos"
+                                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                >
+                                                    <Settings size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => impersonateMutation.mutate(tenant._id)} 
+                                                    disabled={impersonateMutation.isPending}
+                                                    title="Magic Login"
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                                                >
+                                                    <LogIn size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEditClick(tenant)} 
+                                                    title="Editar Empresa" 
+                                                    className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(tenant)} 
+                                                    title={tenant.is_active ? "Suspender" : "Eliminar"} 
+                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
                         {tenants?.length === 0 && (
-                            <div className="text-center py-20 space-y-3">
-                                <Building size={48} className="mx-auto text-gray-100" />
-                                <p className="text-gray-400 font-bold">Aún no hay empresas en el sistema.</p>
+                            <div className="text-center py-12 space-y-2">
+                                <Building size={36} className="mx-auto text-gray-300" />
+                                <p className="text-xs text-gray-500 font-medium">Aún no hay empresas en el sistema.</p>
                             </div>
                         )}
+
                         {tenants && tenants.length > ITEMS_PER_PAGE && (
-                            <div className="pt-6 border-t border-gray-100 mt-6">
+                            <div className="p-3 border-t border-gray-200 bg-gray-50/50">
                                 <Pagination 
                                     currentPage={currentPage}
                                     totalPages={Math.ceil(tenants.length / ITEMS_PER_PAGE)}
