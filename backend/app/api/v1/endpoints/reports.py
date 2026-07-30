@@ -1849,10 +1849,32 @@ async def get_monthly_evolution(
 
     categories_list = await Category.find(Category.tenant_id == tenant_id).to_list()
     cat_names_map = {str(c.id): c.name for c in categories_list}
+    for c in categories_list:
+        cat_names_map[c.name] = c.name
+
+    target_cat_tokens = set()
+    if categoria_id and categoria_id != "all":
+        target_cat_tokens.add(categoria_id.lower())
+        for c in categories_list:
+            if str(c.id) == categoria_id or c.name.lower() == categoria_id.lower():
+                target_cat_tokens.add(str(c.id).lower())
+                target_cat_tokens.add(c.name.lower())
 
     products_list = await Product.find(Product.tenant_id == tenant_id).to_list()
-    product_cat_map = {str(p.id): str(p.categoria_id) if p.categoria_id else "" for p in products_list}
-    product_names_map = {str(p.id): p.descripcion for p in products_list}
+    product_cat_map: Dict[str, set] = {}
+    product_cat_primary: Dict[str, str] = {}
+    product_names_map: Dict[str, str] = {}
+
+    for p in products_list:
+        p_id = str(p.id)
+        product_names_map[p_id] = p.descripcion
+        p_cat_val = str(p.categoria_id) if p.categoria_id else ""
+        resolved_name = cat_names_map.get(p_cat_val, p_cat_val)
+        product_cat_primary[p_id] = resolved_name
+        product_cat_map[p_id] = {
+            p_cat_val.lower(),
+            resolved_name.lower()
+        }
 
     # 2. Calcular rango de fechas para los meses solicitados
     now = datetime.now(BOLIVIA_TZ)
@@ -1930,14 +1952,15 @@ async def get_monthly_evolution(
         sale_items_matching = []
         for item in sale.items:
             item_prod_id = str(item.producto_id) if item.producto_id else None
-            item_cat_id = product_cat_map.get(item_prod_id, "") if item_prod_id else ""
+            item_cat_tokens = product_cat_map.get(item_prod_id, set()) if item_prod_id else set()
 
-            if categoria_id and categoria_id != "all" and item_cat_id != categoria_id:
+            if categoria_id and categoria_id != "all" and not (item_cat_tokens & target_cat_tokens):
                 continue
             if producto_id and producto_id != "all" and item_prod_id != producto_id:
                 continue
 
-            sale_items_matching.append((item, item_prod_id, item_cat_id))
+            item_cat_primary = product_cat_primary.get(item_prod_id, "General")
+            sale_items_matching.append((item, item_prod_id, item_cat_primary))
 
         if (categoria_id and categoria_id != "all" or producto_id and producto_id != "all") and not sale_items_matching:
             continue
@@ -1971,13 +1994,14 @@ async def get_monthly_evolution(
             sucursal_totals_prev_month[suc_name]["transacciones"] += 1
 
         # Acumuladores de categorías y productos
-        items_to_aggregate = sale_items_matching if ((categoria_id and categoria_id != "all") or (producto_id and producto_id != "all")) else [(i, str(i.producto_id) if i.producto_id else None, product_cat_map.get(str(i.producto_id), "") if i.producto_id else "") for i in sale.items]
+        items_to_aggregate = sale_items_matching if ((categoria_id and categoria_id != "all") or (producto_id and producto_id != "all")) else [(i, str(i.producto_id) if i.producto_id else None, product_cat_primary.get(str(i.producto_id), "General")) for i in sale.items]
 
-        for item_obj, item_prod_id, item_cat_id in items_to_aggregate:
+        for item_obj, item_prod_id, item_cat_display in items_to_aggregate:
             item_total = float(item_obj.subtotal or (item_obj.precio_unitario * item_obj.cantidad))
             item_qty = float(item_obj.cantidad)
             
-            c_name = cat_names_map.get(item_cat_id, "General")
+            c_name = item_cat_display or "General"
+            p_name = product_names_map.get(item_prod_id, item_obj.descripcion)
             p_name = product_names_map.get(item_prod_id, item_obj.descripcion)
 
             if m_key == latest_month_key:
