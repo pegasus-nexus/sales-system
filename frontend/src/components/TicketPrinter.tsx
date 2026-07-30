@@ -18,7 +18,10 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
         return new Intl.NumberFormat('es-BO', { style: 'decimal', minimumFractionDigits: 2 }).format(n);
     };
 
-
+    const isHexId = (str?: string) => !!(str && /^[0-9a-fA-F]{24}$/.test(str));
+    const headerTitle = isHexId(tenantName)
+        ? (sucursalName || 'PEGASUS SALES SYSTEM')
+        : (tenantName || sucursalName || 'PEGASUS SALES SYSTEM');
 
     const c = sale.cliente;
 
@@ -33,28 +36,28 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
                 {logoBase64 ? (
                     <img src={logoBase64} alt="Logo" style={{ maxHeight: '60px', marginBottom: '4px' }} />
                 ) : (
-                    <h2 style={{ fontSize: '18px', margin: '0 0 2px 0', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>{tenantName}</h2>
+                    <h2 style={{ fontSize: '16px', margin: '0 0 4px 0', fontWeight: '900', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{headerTitle}</h2>
                 )}
-                {direccion && <p style={{ fontSize: '10px', margin: '2px 0' }}>{direccion}</p>}
-                {telefono && <p style={{ fontSize: '10px', margin: '2px 0' }}>Telf: {telefono}</p>}
-                <div style={{ borderTop: '2px solid #000', width: '60%', margin: '4px auto 8px auto' }}></div>
+                {direccion && <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{direccion}</p>}
+                {telefono && <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>Telf: {telefono}</p>}
+                <div style={{ borderTop: '1px dashed #000', width: '100%', margin: '6px 0' }}></div>
                 
-                <h3 style={{ fontSize: '14px', margin: '0 0 8px 0', fontWeight: 'bold', border: '1px solid #000', padding: '4px', display: 'inline-block' }}>
-                    NOTA DE ENTREGA
+                <h3 style={{ fontSize: '13px', margin: '4px 0 8px 0', fontWeight: '900', border: '1px solid #000', padding: '4px 8px', display: 'inline-block', letterSpacing: '1px' }}>
+                    {sale.cliente?.es_factura ? 'FACTURA / COMPROBANTE' : 'NOTA DE ENTREGA'}
                 </h3>
 
-                <div style={{ textAlign: 'left', marginTop: '10px', lineHeight: '1.4' }}>
-                    <p style={{ margin: '0', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ textAlign: 'left', marginTop: '6px', lineHeight: '1.4', fontSize: '10px' }}>
+                    <p style={{ margin: '1px 0', display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: 'bold' }}>Sucursal:</span> 
                         <span>{sucursalName || 'Matriz'}</span>
                     </p>
-                    <p style={{ margin: '0', display: 'flex', justifyContent: 'space-between' }}>
+                    <p style={{ margin: '1px 0', display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: 'bold' }}>Fecha:</span> 
                         <span>{formatFullDate(sale.created_at || new Date().toISOString())}</span>
                     </p>
-                    <p style={{ margin: '0', display: 'flex', justifyContent: 'space-between' }}>
+                    <p style={{ margin: '1px 0', display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: 'bold' }}>Ticket Nº:</span> 
-                        <span>#{sale._id ? sale._id.slice(-6).toUpperCase() : 'PENDIENTE'}</span>
+                        <span style={{ fontWeight: '900' }}>#{sale._id ? sale._id.slice(-6).toUpperCase() : 'PENDIENTE'}</span>
                     </p>
                 </div>
             </div>

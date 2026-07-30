@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSalesMatrix, getSucursales } from '../api/api';
+import { getSalesMatrix, getSucursales, getCategories, getProveedores } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { Loader2, AlertTriangle, Calendar, Download, Search, FileDown } from 'lucide-react';
+import { Loader2, AlertTriangle, Calendar, Download, Search, FileDown, Tag, Truck } from 'lucide-react';
 import { descargarPDFMatriz } from '../utils/reportPDF';
 
 export default function SalesMatrixView() {
@@ -20,6 +20,8 @@ export default function SalesMatrixView() {
     const [endDate, setEndDate] = useState<string>(todayStr);
     const [searchTerm, setSearchTerm] = useState('');
     const [groupBy, setGroupBy] = useState<'day'|'week'|'month'>('day');
+    const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
+    const [selectedProveedor, setSelectedProveedor] = useState<string>('all');
     
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     const defaultSucursal = esMatriz ? 'all' : (sucursal_id || 'CENTRAL');
@@ -31,9 +33,19 @@ export default function SalesMatrixView() {
         enabled: esMatriz
     });
 
+    const { data: categorias = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: getCategories,
+    });
+
+    const { data: proveedores = [] } = useQuery({
+        queryKey: ['proveedores-list'],
+        queryFn: () => getProveedores(1, 200),
+    });
+
     const { data, isLoading, isError } = useQuery({
-        queryKey: ['sales-matrix', startDate, endDate, selectedSucursal],
-        queryFn: () => getSalesMatrix(startDate, endDate, selectedSucursal),
+        queryKey: ['sales-matrix', startDate, endDate, selectedSucursal, selectedCategoria, selectedProveedor],
+        queryFn: () => getSalesMatrix(startDate, endDate, selectedSucursal, selectedCategoria, selectedProveedor),
     });
 
     const columns = useMemo(() => {
@@ -224,7 +236,7 @@ export default function SalesMatrixView() {
                         <select
                             value={selectedSucursal}
                             onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="flex-1 md:w-48 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                            className="flex-1 md:w-48 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                         >
                             <option value="all">Todas las Sucursales</option>
                             <option value="CENTRAL">Central</option>
@@ -233,6 +245,28 @@ export default function SalesMatrixView() {
                             ))}
                         </select>
                     )}
+
+                    <select
+                        value={selectedCategoria}
+                        onChange={(e) => setSelectedCategoria(e.target.value)}
+                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                    >
+                        <option value="all">Todas las Categorías</option>
+                        {categorias.map(c => (
+                            <option key={c._id} value={c._id}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={selectedProveedor}
+                        onChange={(e) => setSelectedProveedor(e.target.value)}
+                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                    >
+                        <option value="all">Todos los Proveedores</option>
+                        {proveedores.map(p => (
+                            <option key={p._id} value={p._id}>{p.nombre}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 

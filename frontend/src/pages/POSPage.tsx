@@ -1179,8 +1179,8 @@ export default function POSPage() {
                 {lastSale && (
                     <TicketPrinter 
                         sale={lastSale} 
-                        tenantName={user?.tenant_id || "Mi Tienda"} 
-                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
+                        tenantName={sucursales.find(s => s._id === sucursalId)?.nombre || "PEGASUS POS"} 
+                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre || "Suc. Central"}
                         ticketFooter={tenantSettings?.ticket_footer}
                         logoBase64={tenantSettings?.logo_base64}
                         direccion={tenantSettings?.direccion}

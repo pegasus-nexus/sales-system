@@ -1209,6 +1209,8 @@ async def get_sales_matrix(
     start_date: str, # YYYY-MM-DD
     end_date: str, # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
+    categoria_id: Optional[str] = None,
+    proveedor_id: Optional[str] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
@@ -1236,9 +1238,29 @@ async def get_sales_matrix(
     if target_sucursal and target_sucursal != "all":
         match_filter["sucursal_id"] = target_sucursal
 
+    matching_ids = None
+    if (categoria_id and categoria_id != "all") or (proveedor_id and proveedor_id != "all"):
+        from app.domain.models.product import Product
+        prod_filter = {"tenant_id": tenant_id}
+        if categoria_id and categoria_id != "all":
+            prod_filter["categoria_id"] = categoria_id
+        if proveedor_id and proveedor_id != "all":
+            prod_filter["proveedor_id"] = proveedor_id
+
+        matching_prods = await Product.find(prod_filter).to_list()
+        matching_ids = [str(p.id) for p in matching_prods]
+        if not matching_ids:
+            return {"products": []}
+
     pipeline = [
         {"$match": match_filter},
         {"$unwind": {"path": "$items", "preserveNullAndEmptyArrays": False}},
+    ]
+
+    if matching_ids is not None:
+        pipeline.append({"$match": {"items.producto_id": {"$in": matching_ids}}})
+
+    pipeline.extend([
         {
             "$project": {
                 "producto_id": "$items.producto_id",

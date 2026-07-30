@@ -310,9 +310,11 @@ export const getExpensesReport = (startDate: string, endDate: string, sucursalId
     return client<unknown>(`/reports/expenses-report?${params.toString()}`);
 };
 
-export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id?: string) => {
+export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id?: string, categoria_id?: string, proveedor_id?: string) => {
     const params = new URLSearchParams({ start_date, end_date });
     if (sucursal_id && sucursal_id !== 'all') params.append('sucursal_id', sucursal_id);
+    if (categoria_id && categoria_id !== 'all') params.append('categoria_id', categoria_id);
+    if (proveedor_id && proveedor_id !== 'all') params.append('proveedor_id', proveedor_id);
     return client<{
         products: {
             producto_id: string;
