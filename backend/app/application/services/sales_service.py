@@ -3,7 +3,7 @@ from app.infrastructure.core.config import settings
 import math
 import logging
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import HTTPException
 from pymongo import ReturnDocument
@@ -36,7 +36,27 @@ class SalesService:
             raise HTTPException(status_code=403, detail="Un facturador no tiene permisos para crear ventas")
         tenant_id = current_user.tenant_id or "default"
         sucursal_id = current_user.sucursal_id or sale_in.sucursal_id or "CENTRAL"
-        
+
+        # ── Lock Anti-Duplicado (Ventana de 4 segundos) ──────────────────────
+        four_sec_ago = datetime.utcnow() - timedelta(seconds=4)
+        new_items_summary = sorted([(i.producto_id, i.cantidad) for i in sale_in.items])
+
+        recent_sales = await Sale.find(
+            Sale.tenant_id == tenant_id,
+            Sale.cashier_id == str(current_user.id),
+            Sale.created_at >= four_sec_ago,
+            Sale.anulada == False
+        ).to_list()
+
+        for recent in recent_sales:
+            recent_items_summary = sorted([(i.producto_id, i.cantidad) for i in recent.items])
+            if recent_items_summary == new_items_summary:
+                logger.warning(
+                    f"🔒 Anti-Duplicado: Venta duplicada bloqueada por solicitud repetida en menos de 4s. "
+                    f"Cajero={current_user.username}, SaleID={recent.id}"
+                )
+                return recent
+
         client = get_client()
 
         async def _run_transaction() -> Sale:
