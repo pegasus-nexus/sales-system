@@ -1285,7 +1285,7 @@ async def get_sales_matrix(
                 "cantidad": {"$sum": "$cantidad"}
             }
         }
-    ]
+    ])
 
     from app.domain.models.sale import Sale
     cursor = Sale.get_pymongo_collection().aggregate(pipeline)
