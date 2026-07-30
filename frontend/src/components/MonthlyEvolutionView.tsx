@@ -22,29 +22,29 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#3b82f6', '#f43f5e', '#84cc16'];
 
 export default function MonthlyEvolutionView() {
-    const { role } = useAuthStore();
+    const { role, sucursal_id } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
+    const defaultSucursal = esMatriz ? 'all' : (sucursal_id || 'CENTRAL');
 
     // Estado borrador (controles UI)
-    const [pendingSucursal, setPendingSucursal] = useState<string>('all');
+    const [pendingSucursal, setPendingSucursal] = useState<string>(defaultSucursal);
     const [pendingCategoria, setPendingCategoria] = useState<string>('all');
     const [pendingProducto, setPendingProducto] = useState<string>('all');
     const [pendingMonths, setPendingMonths] = useState<number>(12);
 
     // Estado aplicado (dispara la consulta API al presionar "Aplicar Filtros")
     const [appliedFilters, setAppliedFilters] = useState({
-        sucursal: 'all',
+        sucursal: defaultSucursal,
         categoria: 'all',
         producto: 'all',
         months: 12
     });
 
-    const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>('sucursales');
+    const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>(esMatriz ? 'sucursales' : 'categorias');
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
-        queryFn: getSucursales,
-        enabled: esMatriz
+        queryFn: getSucursales
     });
 
     const { data: categorias = [] } = useQuery<Category[]>({
@@ -65,7 +65,7 @@ export default function MonthlyEvolutionView() {
 
     const handleApplyFilters = () => {
         setAppliedFilters({
-            sucursal: pendingSucursal,
+            sucursal: esMatriz ? pendingSucursal : defaultSucursal,
             categoria: pendingCategoria,
             producto: pendingProducto,
             months: pendingMonths
@@ -73,7 +73,9 @@ export default function MonthlyEvolutionView() {
     };
 
     const selectedSucursalObj = sucursales.find(s => s._id === appliedFilters.sucursal);
-    const selectedSucursalNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (selectedSucursalObj?.nombre || 'Sucursal Seleccionada');
+    const selectedSucursalNombre = appliedFilters.sucursal === 'all' 
+        ? 'Todas las Sucursales' 
+        : (selectedSucursalObj?.nombre || (appliedFilters.sucursal === sucursal_id ? 'Mi Sucursal' : 'Sucursal Seleccionada'));
 
     if (isLoading) {
         return (
@@ -221,15 +223,17 @@ export default function MonthlyEvolutionView() {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => {
-                            setPendingSucursal('all');
-                            setAppliedFilters(prev => ({ ...prev, sucursal: 'all' }));
-                        }}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
-                    >
-                        Ver Todas
-                    </button>
+                    {esMatriz && (
+                        <button
+                            onClick={() => {
+                                setPendingSucursal('all');
+                                setAppliedFilters(prev => ({ ...prev, sucursal: 'all' }));
+                            }}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                        >
+                            Ver Todas
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -299,15 +303,17 @@ export default function MonthlyEvolutionView() {
             {/* ── Selector de Dimensión de Análisis ──────────────────────── */}
             <div className="flex justify-center border-b border-gray-200 pb-2">
                 <div className="flex bg-gray-100 p-1 rounded-2xl gap-1 font-extrabold text-xs">
-                    <button
-                        onClick={() => setActiveDimension('sucursales')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all cursor-pointer",
-                            activeDimension === 'sucursales' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
-                        )}
-                    >
-                        <Store size={16} /> Por Sucursales
-                    </button>
+                    {esMatriz && (
+                        <button
+                            onClick={() => setActiveDimension('sucursales')}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all cursor-pointer",
+                                activeDimension === 'sucursales' ? "bg-white text-indigo-600 shadow-md" : "text-gray-500 hover:text-gray-900"
+                            )}
+                        >
+                            <Store size={16} /> Por Sucursales
+                        </button>
+                    )}
 
                     <button
                         onClick={() => setActiveDimension('categorias')}

@@ -1840,7 +1840,7 @@ async def get_monthly_evolution(
     """
     tenant_id = current_user.tenant_id or "default"
     
-    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
         sucursal_id = current_user.sucursal_id
 
     # 1. Mapeos
