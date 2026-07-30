@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesMatrix, getSucursales, getCategories, getProveedores } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { Loader2, AlertTriangle, Calendar, Download, Search, FileDown, Tag, Truck } from 'lucide-react';
+import { Loader2, AlertTriangle, Calendar, Download, Search, FileDown } from 'lucide-react';
 import { descargarPDFMatriz } from '../utils/reportPDF';
 
 export default function SalesMatrixView() {

@@ -47,7 +47,7 @@ interface Transaccion {
 export default function CreditosPage() {
     const confirm = useConfirm();
     const qc = useQueryClient();
-    const { tenantSettings, user } = useAuthStore();
+    const { tenantSettings } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterEstado, setFilterEstado] = useState<'' | 'AL_DIA' | 'MOROSO'>('');
     const [page, setPage] = useState(1);
