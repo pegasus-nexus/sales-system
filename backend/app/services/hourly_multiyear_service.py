@@ -305,7 +305,17 @@ async def get_hourly_multiyear(
 
         cnt0 = cnt0_hist + cnt0_sales
         gr0: Dict[str, float] = {}
+        
+        # Filtrar horas futuras si f0 es hoy
+        from app.utils.date_utils import get_now_bolivia
+        now_bo = get_now_bolivia()
+        is_today = (f0 == now_bo.date())
+        current_hour = now_bo.hour
+
         for hora_str, val in {**gr0_hist, **gr0_sales}.items():
+            h_int = int(hora_str.split(":")[0])
+            if is_today and h_int > current_hour:
+                continue  # Ignorar datos del futuro (ej. importados por error para hoy)
             gr0[hora_str] = gr0.get(hora_str, 0.0) + val
 
         if es_reco or es_cala:
