@@ -272,6 +272,31 @@ export interface CategoryCreate {
     show_on_web?: boolean;
 }
 
+export interface WebCollection {
+    _id: string;
+    tenant_id: string;
+    name: string;
+    description?: string;
+    image_url?: string;
+    categories_ids: string[];
+    is_active: boolean;
+}
+
+export interface WebCollectionCreate {
+    name: string;
+    description?: string;
+    image_url?: string;
+    categories_ids?: string[];
+}
+
+export interface WebCollectionUpdate {
+    name?: string;
+    description?: string;
+    image_url?: string;
+    categories_ids?: string[];
+    is_active?: boolean;
+}
+
 export interface Descuento {
     _id: string;
     tenant_id: string;

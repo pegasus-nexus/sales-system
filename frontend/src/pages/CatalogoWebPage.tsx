@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree } from 'lucide-react';
-import type { Category, Product, ProductUpdate } from '../api/types';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2, Edit2 } from 'lucide-react';
+import type { Category, Product, ProductUpdate, WebCollection, WebCollectionCreate, WebCollectionUpdate } from '../api/types';
 import { toast } from 'sonner';
 
 const SUCURSAL_CBA = "69cd80098f3f6866d4cfbb64"; // Heroinas
@@ -13,14 +13,25 @@ export default function CatalogoWebPage() {
     const [search, setSearch] = useState('');
     const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
     
+    // State for pending changes
     const [pendingCatChanges, setPendingCatChanges] = useState<Record<string, boolean>>({});
-    const [pendingCollectionChanges, setPendingCollectionChanges] = useState<Record<string, string>>({});
     const [pendingProdChanges, setPendingProdChanges] = useState<Record<string, boolean>>({});
     const [pendingDestacadoChanges, setPendingDestacadoChanges] = useState<Record<string, boolean>>({});
+    
+    // State for collections editing
+    const [editingCollection, setEditingCollection] = useState<WebCollection | null>(null);
+    const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+    const [newCollectionName, setNewCollectionName] = useState('');
+    const [newCollectionImage, setNewCollectionImage] = useState('');
 
     const { data: categories, isLoading: isLoadingCat } = useQuery({
         queryKey: ['categories'],
         queryFn: () => client<Category[]>('/categories')
+    });
+
+    const { data: collections, isLoading: isLoadingCol } = useQuery({
+        queryKey: ['web_collections'],
+        queryFn: () => client<WebCollection[]>('/web-collections')
     });
 
     const { data: productsData, isLoading: isLoadingProd } = useQuery({
@@ -29,9 +40,11 @@ export default function CatalogoWebPage() {
     });
 
     const products = productsData?.items || [];
+    const activeCollections = collections || [];
+    const activeCategories = categories || [];
 
     const updateCategoryMutation = useMutation({
-        mutationFn: (data: { id: string, show_on_web?: boolean, web_collection?: string }) => 
+        mutationFn: (data: { id: string, show_on_web?: boolean }) => 
             client<Category>(`/categories/${data.id}`, { method: 'PATCH', body: data })
     });
 
@@ -40,22 +53,63 @@ export default function CatalogoWebPage() {
             client<Product>(`/products/${data.id}`, { method: 'PUT', body: { ...data } as unknown as ProductUpdate })
     });
 
-    const filteredCategories = useMemo(() => {
-        if (!categories) return [];
-        return categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-    }, [categories, search]);
+    const createCollectionMutation = useMutation({
+        mutationFn: (data: WebCollectionCreate) => 
+            client<WebCollection>('/web-collections', { method: 'POST', body: data })
+    });
+
+    const updateCollectionMutation = useMutation({
+        mutationFn: (data: { id: string } & WebCollectionUpdate) => 
+            client<WebCollection>(`/web-collections/${data.id}`, { method: 'PATCH', body: data })
+    });
+
+    const deleteCollectionMutation = useMutation({
+        mutationFn: (id: string) => 
+            client(`/web-collections/${id}`, { method: 'DELETE' })
+    });
+
+    const handleCreateCollection = async () => {
+        if (!newCollectionName.trim()) return toast.error("El nombre es requerido");
+        try {
+            await createCollectionMutation.mutateAsync({ name: newCollectionName, image_url: newCollectionImage });
+            toast.success("Colección creada");
+            setNewCollectionName('');
+            setNewCollectionImage('');
+            setIsCreatingCollection(false);
+            queryClient.invalidateQueries({ queryKey: ['web_collections'] });
+        } catch (e) {
+            toast.error("Error creando colección");
+        }
+    };
+
+    const handleDeleteCollection = async (id: string) => {
+        if (!confirm("¿Seguro que deseas eliminar esta colección? Las categorías volverán a estar sueltas.")) return;
+        try {
+            await deleteCollectionMutation.mutateAsync(id);
+            toast.success("Colección eliminada");
+            queryClient.invalidateQueries({ queryKey: ['web_collections'] });
+        } catch (e) {
+            toast.error("Error eliminando colección");
+        }
+    };
+
+    const toggleCategoryInCollection = async (collection: WebCollection, categoryId: string) => {
+        const currentIds = collection.categories_ids || [];
+        const isIncluded = currentIds.includes(categoryId);
+        const newIds = isIncluded ? currentIds.filter(id => id !== categoryId) : [...currentIds, categoryId];
+        
+        try {
+            await updateCollectionMutation.mutateAsync({ id: collection._id, categories_ids: newIds });
+            queryClient.invalidateQueries({ queryKey: ['web_collections'] });
+        } catch (e) {
+            toast.error("Error actualizando colección");
+        }
+    };
 
     const handleToggleCat = (catId: string, currentVal: boolean) => {
         setPendingCatChanges(prev => ({
             ...prev,
             [catId]: prev[catId] !== undefined ? !prev[catId] : !currentVal
-        }));
-    };
-
-    const handleCollectionChange = (catId: string, newVal: string) => {
-        setPendingCollectionChanges(prev => ({
-            ...prev,
-            [catId]: newVal
         }));
     };
 
@@ -78,17 +132,8 @@ export default function CatalogoWebPage() {
     };
 
     const handleApply = async () => {
-        // Collect category updates (visibility AND collections)
-        const categoryUpdates: Record<string, { show_on_web?: boolean, web_collection?: string }> = {};
-        Object.entries(pendingCatChanges).forEach(([id, val]) => {
-            categoryUpdates[id] = { ...categoryUpdates[id], show_on_web: val };
-        });
-        Object.entries(pendingCollectionChanges).forEach(([id, val]) => {
-            categoryUpdates[id] = { ...categoryUpdates[id], web_collection: val };
-        });
-
-        const catPromises = Object.entries(categoryUpdates).map(([id, data]) => 
-            updateCategoryMutation.mutateAsync({ id, ...data })
+        const catPromises = Object.entries(pendingCatChanges).map(([id, val]) => 
+            updateCategoryMutation.mutateAsync({ id, show_on_web: val })
         );
 
         const productUpdates: Record<string, { show_on_web?: boolean, is_destacado?: boolean }> = {};
@@ -107,7 +152,6 @@ export default function CatalogoWebPage() {
             await Promise.all([...catPromises, ...prodPromises]);
             toast.success('Cambios guardados correctamente');
             setPendingCatChanges({});
-            setPendingCollectionChanges({});
             setPendingProdChanges({});
             setPendingDestacadoChanges({});
             queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -117,12 +161,96 @@ export default function CatalogoWebPage() {
         }
     };
 
-    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingCollectionChanges).length > 0 || Object.keys(pendingProdChanges).length > 0 || Object.keys(pendingDestacadoChanges).length > 0;
+    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingProdChanges).length > 0 || Object.keys(pendingDestacadoChanges).length > 0;
     const isSaving = updateCategoryMutation.isPending || updateProductMutation.isPending;
 
-    if (isLoadingCat || isLoadingProd) {
+    if (isLoadingCat || isLoadingProd || isLoadingCol) {
         return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-gray-400 w-8 h-8" /></div>;
     }
+
+    // Identify which categories are inside which collection
+    const categoriesInCollections = new Set<string>();
+    activeCollections.forEach(c => c.categories_ids.forEach(id => categoriesInCollections.add(id)));
+
+    const renderCategory = (category: Category, isInsideCollection: boolean) => {
+        // filter logic
+        if (search && !category.name.toLowerCase().includes(search.toLowerCase())) return null;
+
+        const categoryProducts = products.filter(p => p.categoria_id === category._id);
+        const isCatVisibleOriginal = category.show_on_web !== false; 
+        const isCatVisible = pendingCatChanges[category._id] !== undefined ? pendingCatChanges[category._id] : isCatVisibleOriginal;
+        const isExpanded = expandedCats[category._id];
+
+        return (
+            <div key={category._id} className="border border-gray-200 rounded-2xl overflow-hidden bg-white hover:border-indigo-200 transition-colors shadow-sm">
+                <div className="flex items-center justify-between p-4 bg-white cursor-pointer select-none" onClick={() => toggleExpand(category._id)}>
+                    <div className="flex items-center gap-4 flex-1">
+                        <div className={`p-2 rounded-xl ${isExpanded ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
+                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{category.name}</h2>
+                            <p className="text-sm text-gray-500">{categoryProducts.length} productos</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
+                        <span className={`text-sm font-bold hidden md:inline ${isCatVisible ? 'text-green-600' : 'text-red-500'}`}>
+                            {isCatVisible ? 'Visible en Web' : 'Oculto en Web'}
+                        </span>
+                        <button 
+                            onClick={() => handleToggleCat(category._id, isCatVisibleOriginal)}
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${isCatVisible ? 'bg-green-500' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isCatVisible ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                </div>
+                
+                {isExpanded && categoryProducts.length > 0 && (
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 bg-gray-50/50">
+                        {categoryProducts.map(product => {
+                            const isProdVisibleOriginal = product.show_on_web !== false;
+                            const isProdVisible = pendingProdChanges[product._id] !== undefined ? pendingProdChanges[product._id] : isProdVisibleOriginal;
+                            const isDestacadoOriginal = product.is_destacado === true;
+                            const isDestacado = pendingDestacadoChanges[product._id] !== undefined ? pendingDestacadoChanges[product._id] : isDestacadoOriginal;
+
+                            return (
+                                <div key={product._id} className={`flex items-center justify-between p-3 rounded-xl border bg-white transition-all ${!isCatVisible ? 'opacity-50 grayscale' : ''} ${isProdVisible ? 'border-gray-200' : 'border-red-200 bg-red-50/50'}`}>
+                                    <div className="flex items-start gap-3 overflow-hidden flex-1">
+                                        {product.image_url ? (
+                                            <img src={product.image_url} alt={product.descripcion} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-gray-100" />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-[10px] shrink-0 border border-gray-200 font-medium">Sin img</div>
+                                        )}
+                                        <div className="truncate flex-1">
+                                            <p className="font-bold text-sm text-gray-900 truncate" title={product.descripcion}>{product.descripcion}</p>
+                                            <p className="text-[10px] font-medium text-gray-500">{product.codigo_corto || 'Sin SKU'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            disabled={!isCatVisible}
+                                            onClick={() => handleToggleDestacado(product._id, isDestacadoOriginal)}
+                                            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400' : isDestacado ? 'bg-amber-100 text-amber-500' : 'bg-gray-100 text-gray-400'}`}
+                                        >
+                                            <Star size={16} fill={isDestacado && isCatVisible ? "currentColor" : "none"} />
+                                        </button>
+                                        <button 
+                                            disabled={!isCatVisible}
+                                            onClick={() => handleToggleProd(product._id, isProdVisibleOriginal)}
+                                            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400' : isProdVisible ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
+                                        >
+                                            {isProdVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-7xl mx-auto px-3 py-4 md:p-4 space-y-6 pb-20 md:pb-4">
@@ -130,19 +258,26 @@ export default function CatalogoWebPage() {
                 <div className="relative z-10">
                     <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
                         <Globe className="text-blue-300" size={32} />
-                        Catálogo Web
+                        Colecciones y Catálogo
                     </h1>
-                    <p className="text-blue-200 mt-2 text-lg">Controla la visibilidad de tus productos en chocolatestaboada.pro</p>
+                    <p className="text-blue-200 mt-2 text-lg">Agrupa tus categorías y controla la visibilidad en tu tienda web.</p>
                 </div>
                 
-                <div className="relative z-10 flex shrink-0">
+                <div className="relative z-10 flex flex-col sm:flex-row shrink-0 gap-3">
+                    <button 
+                        onClick={() => setIsCreatingCollection(!isCreatingCollection)}
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg bg-indigo-500 text-white hover:bg-indigo-400"
+                    >
+                        <Plus size={20} />
+                        Nueva Colección
+                    </button>
                     <button 
                         onClick={handleApply}
                         disabled={!hasPendingChanges || isSaving}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${hasPendingChanges && !isSaving ? 'bg-white text-blue-900 hover:bg-gray-100 hover:scale-105' : 'bg-white/20 text-white/50 cursor-not-allowed'}`}
+                        className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${hasPendingChanges && !isSaving ? 'bg-white text-blue-900 hover:scale-105' : 'bg-white/20 text-white/50 cursor-not-allowed'}`}
                     >
                         {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                        {isSaving ? 'Guardando...' : 'Aplicar Cambios'}
+                        Guardar Visibilidad
                     </button>
                 </div>
 
@@ -151,150 +286,139 @@ export default function CatalogoWebPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200">
-                <div className="sticky top-0 z-20 bg-white pt-2 pb-4 border-b border-gray-100 mb-6">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input 
-                            type="text"
-                            placeholder="Buscar categoría..."
-                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-12 pr-4 outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-800 font-medium"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+            {isCreatingCollection && (
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-200 animate-in fade-in slide-in-from-top-4">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <FolderTree className="text-indigo-500" />
+                        Crear Nueva Colección
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre de la Colección</label>
+                            <input 
+                                type="text"
+                                placeholder="Ej: Día de la Madre 2026"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400"
+                                value={newCollectionName}
+                                onChange={e => setNewCollectionName(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">URL de Imagen (Opcional, para banner)</label>
+                            <input 
+                                type="text"
+                                placeholder="https://..."
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400"
+                                value={newCollectionImage}
+                                onChange={e => setNewCollectionImage(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button onClick={() => setIsCreatingCollection(false)} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                        <button onClick={handleCreateCollection} disabled={createCollectionMutation.isPending} className="px-6 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md flex items-center gap-2">
+                            {createCollectionMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                            Crear Colección
+                        </button>
                     </div>
                 </div>
+            )}
 
-                <div className="space-y-8">
-                    {Object.entries(
-                        filteredCategories.reduce((acc, cat) => {
-                            const col = cat.web_collection || 'Sin Colección';
-                            if (!acc[col]) acc[col] = [];
-                            acc[col].push(cat);
-                            return acc;
-                        }, {} as Record<string, Category[]>)
-                    )
-                    .sort(([a], [b]) => a === 'Sin Colección' ? 1 : b === 'Sin Colección' ? -1 : a.localeCompare(b))
-                    .map(([collectionName, cats]) => (
-                        <div key={collectionName} className="space-y-4">
-                            <h3 className="text-xl md:text-2xl font-black text-gray-800 border-b border-gray-200 pb-2 mb-4 flex items-center gap-2">
-                                {collectionName === 'Sin Colección' ? <span className="text-gray-400 text-lg">Otras Categorías</span> : <><FolderTree className="text-indigo-500" size={24}/> {collectionName}</>}
-                            </h3>
-                            <div className="space-y-4">
-                                {cats.map(category => {
-                        const categoryProducts = products.filter(p => p.categoria_id === category._id);
-                        
-                        const isCatVisibleOriginal = category.show_on_web !== false; 
-                        const isCatVisible = pendingCatChanges[category._id] !== undefined ? pendingCatChanges[category._id] : isCatVisibleOriginal;
-                        
-                        const isExpanded = expandedCats[category._id];
+            <div className="sticky top-0 z-30 bg-gray-50/90 backdrop-blur-md pt-2 pb-2 mb-2">
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input 
+                        type="text"
+                        placeholder="Buscar categoría..."
+                        className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 outline-none focus:ring-2 focus:ring-indigo-500/20 text-gray-800 font-medium shadow-sm"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+            </div>
 
-                        return (
-                            <div key={category._id} className="border border-gray-200 rounded-2xl overflow-hidden bg-white hover:border-blue-200 transition-colors">
-                                <div className="flex items-center justify-between p-4 bg-white cursor-pointer select-none" onClick={() => toggleExpand(category._id)}>
-                                    <div className="flex items-center gap-4 flex-1">
-                                        <div className={`p-2 rounded-xl ${isExpanded ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-gray-900">{category.name}</h2>
-                                            <p className="text-sm text-gray-500">{categoryProducts.length} productos</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="hidden md:block flex-1 max-w-xs mx-4" onClick={e => e.stopPropagation()}>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Añadir a Colección (ej: Verano)" 
-                                            value={pendingCollectionChanges[category._id] ?? (category.web_collection || '')}
-                                            onChange={e => handleCollectionChange(category._id, e.target.value)}
-                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-300 focus:bg-white transition-all font-medium text-indigo-900 placeholder:text-gray-400"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
-                                        <span className={`text-sm font-bold ${isCatVisible ? 'text-green-600' : 'text-red-500'}`}>
-                                            {isCatVisible ? 'Visible en Web' : 'Oculto en Web'}
-                                        </span>
-                                        <button 
-                                            onClick={() => handleToggleCat(category._id, isCatVisibleOriginal)}
-                                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${isCatVisible ? 'bg-green-500' : 'bg-gray-300'}`}
-                                        >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isCatVisible ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                {isExpanded && categoryProducts.length > 0 && (
-                                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 border-t border-gray-100 bg-gray-50/50">
-                                        {categoryProducts.map(product => {
-                                            const isProdVisibleOriginal = product.show_on_web !== false;
-                                            const isProdVisible = pendingProdChanges[product._id] !== undefined ? pendingProdChanges[product._id] : isProdVisibleOriginal;
-
-                                            const isDestacadoOriginal = product.is_destacado === true;
-                                            const isDestacado = pendingDestacadoChanges[product._id] !== undefined ? pendingDestacadoChanges[product._id] : isDestacadoOriginal;
-
-                                            const precioCba = product.precios_sucursales?.[SUCURSAL_CBA];
-                                            const precioLpz = product.precios_sucursales?.[SUCURSAL_LPZ];
-
-                                            return (
-                                                <div key={product._id} className={`flex items-center justify-between p-4 rounded-xl border bg-white transition-all ${!isCatVisible ? 'opacity-50 grayscale' : ''} ${isProdVisible ? 'border-gray-200 hover:shadow-md' : 'border-red-200 bg-red-50/50'}`}>
-                                                    <div className="flex items-start gap-4 overflow-hidden flex-1">
-                                                        {product.image_url ? (
-                                                            <img src={product.image_url} alt={product.descripcion} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-gray-100 shadow-sm" />
-                                                        ) : (
-                                                            <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs shrink-0 border border-gray-200 font-medium">Sin img</div>
-                                                        )}
-                                                        <div className="truncate flex-1">
-                                                            <p className="font-bold text-gray-900 truncate" title={product.descripcion}>{product.descripcion}</p>
-                                                            <p className="text-xs font-medium text-gray-500 mb-2">{product.codigo_corto || 'Sin SKU'}</p>
-                                                            
-                                                            <div className="flex flex-wrap gap-2">
-                                                                <div className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-xs font-bold border border-indigo-100/50">
-                                                                    CBA: {precioCba !== undefined ? `Bs. ${precioCba.toFixed(2)}` : 'N/A'}
-                                                                </div>
-                                                                <div className="bg-orange-50 text-orange-700 px-2 py-1 rounded-md text-xs font-bold border border-orange-100/50">
-                                                                    LPZ: {precioLpz !== undefined ? `Bs. ${precioLpz.toFixed(2)}` : 'N/A'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button 
-                                                            disabled={!isCatVisible}
-                                                            onClick={() => handleToggleDestacado(product._id, isDestacadoOriginal)}
-                                                            title={!isCatVisible ? "Categoría entera está oculta" : "Destacar producto"}
-                                                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : isDestacado ? 'bg-amber-100 text-amber-500 hover:bg-amber-200 shadow-inner' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                                                        >
-                                                            <Star size={20} fill={isDestacado && isCatVisible ? "currentColor" : "none"} />
-                                                        </button>
-                                                        <button 
-                                                            disabled={!isCatVisible}
-                                                            onClick={() => handleToggleProd(product._id, isProdVisibleOriginal)}
-                                                            title={!isCatVisible ? "Categoría entera está oculta" : "Alternar visibilidad"}
-                                                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isCatVisible ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : isProdVisible ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
-                                                        >
-                                                            {isProdVisible ? <Eye size={20} /> : <EyeOff size={20} />}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+            <div className="space-y-8">
+                {/* Render Collections First */}
+                {activeCollections.map(collection => (
+                    <div key={collection._id} className="bg-white rounded-3xl shadow-sm border border-indigo-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 bg-indigo-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                {collection.image_url ? (
+                                    <img src={collection.image_url} alt={collection.name} className="w-16 h-16 rounded-xl object-cover shadow-sm" />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-400">
+                                        <ImageIcon size={32} />
                                     </div>
                                 )}
+                                <div>
+                                    <h2 className="text-2xl font-black text-indigo-900">{collection.name}</h2>
+                                    <p className="text-sm font-medium text-indigo-600/70">{collection.categories_ids?.length || 0} categorías enlazadas</p>
+                                </div>
                             </div>
-                        );
-                    })}
-                    </div>
-                </div>
-            ))}
-                    {filteredCategories.length === 0 && (
-                        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
-                            <Search className="mx-auto text-gray-300 mb-3" size={40} />
-                            <h3 className="text-lg font-bold text-gray-900">No se encontraron categorías</h3>
-                            <p className="text-gray-500">Prueba buscando con otro término.</p>
+                            <div className="flex items-center gap-2">
+                                {/* Agregar / Quitar categorias selector */}
+                                <div className="relative group">
+                                    <button className="px-4 py-2 bg-white border border-indigo-200 text-indigo-700 font-bold rounded-xl shadow-sm hover:bg-indigo-50 transition-colors flex items-center gap-2">
+                                        <Plus size={18} />
+                                        Gestionar Categorías
+                                    </button>
+                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40 max-h-96 overflow-y-auto">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Selecciona categorías</p>
+                                        {activeCategories.map(cat => {
+                                            const isChecked = collection.categories_ids.includes(cat._id);
+                                            return (
+                                                <label key={cat._id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                                    <span className="font-medium text-sm text-gray-700">{cat.name}</span>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isChecked}
+                                                        onChange={() => toggleCategoryInCollection(collection, cat._id)}
+                                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                                    />
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                <button onClick={() => handleDeleteCollection(collection._id)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors">
+                                    <Trash2 size={20} />
+                                </button>
+                            </div>
                         </div>
-                    )}
+                        
+                        <div className="p-6 bg-gray-50/50">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                {collection.categories_ids.length === 0 ? (
+                                    <div className="col-span-full py-8 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+                                        <FolderTree className="mx-auto mb-2 opacity-50" size={32} />
+                                        <p className="font-medium">Esta colección está vacía.</p>
+                                        <p className="text-sm">Usa el botón "Gestionar Categorías" para agregar contenido.</p>
+                                    </div>
+                                ) : (
+                                    collection.categories_ids.map(catId => {
+                                        const cat = activeCategories.find(c => c._id === catId);
+                                        return cat ? renderCategory(cat, true) : null;
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Render Unassigned Categories */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                        Categorías sin Colección
+                    </h3>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {activeCategories.filter(cat => !categoriesInCollections.has(cat._id)).map(cat => renderCategory(cat, false))}
+                        {activeCategories.filter(cat => !categoriesInCollections.has(cat._id)).length === 0 && (
+                            <div className="col-span-full text-center py-6 text-gray-400">
+                                <p className="font-medium">Todas tus categorías ya están asignadas a colecciones.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
