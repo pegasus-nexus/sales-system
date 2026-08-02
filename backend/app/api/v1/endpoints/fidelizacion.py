@@ -63,6 +63,7 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
 from app.domain.models.product import Product
 from app.domain.models.category import Category
 from app.domain.models.inventario import Inventario
+from app.domain.models.web_collection import WebCollection
 
 @router.get("/catalog")
 async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
@@ -137,8 +138,22 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
                 "is_destacado": getattr(p, "is_destacado", False)
             })
             
+    # 4. Obtener colecciones activas
+    collections = await WebCollection.find(
+        WebCollection.tenant_id == tenant_id,
+        WebCollection.is_active == True
+    ).to_list()
+    
+    col_list = [{
+        "id": str(c.id),
+        "name": c.name,
+        "categories_ids": c.categories_ids,
+        "image_url": c.image_url
+    } for c in collections]
+
     return {
         "status": "success",
+        "colecciones": col_list,
         "categorias": cat_list,
         "productos": prod_list
     }
