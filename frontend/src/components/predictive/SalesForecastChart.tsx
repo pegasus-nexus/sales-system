@@ -7,10 +7,9 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  CartesianGrid,
-  Legend
+  CartesianGrid
 } from 'recharts';
-import { TrendingUp, Activity, HelpCircle } from 'lucide-react';
+import { Activity, HelpCircle } from 'lucide-react';
 import type { SalesForecastPoint } from '../../api/types';
 
 interface Props {

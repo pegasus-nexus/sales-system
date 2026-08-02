@@ -5,7 +5,7 @@ import {
     Activity, Calendar, Loader2, TrendingUp, TrendingDown, Store, 
     Sparkles, ChevronDown, ChevronUp, Clock, Settings, Trash2, Plus, 
     Heart, Gift, PartyPopper, X, Music, Flame, Star, Flag, Ghost, Sunrise, Map, Check,
-    Trophy, DollarSign, Users, Receipt, Sparkle, Crown
+    Trophy, DollarSign, Receipt, Sparkle, Crown
 } from 'lucide-react';
 import { useOnClickOutside } from 'usehooks-ts';
 

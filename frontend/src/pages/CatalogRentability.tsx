@@ -1065,7 +1065,7 @@ export default function CatalogRentability() {
                             if (!prev || prev.unidades === 0) return null;
                             const dropPct = ((p.unidades - prev.unidades) / prev.unidades) * 100;
                             if (dropPct >= -10) return null; // only significant drops
-                            return { nombre: p.nombreLimpio, unidades: p.unidades, prevUnidades: prev.unidades, ingreso: p.ingreso_bruto, dropPct, margen_pct: p.margen_pct, tipo: 'caida' as const };
+                            return { nombre: p.nombreLimpio, unidades: p.unidades, prevUnidades: prev.unidades, ingreso: p.ingreso_bruto, dropPct, margen_pct: (p as any).margen_pct, tipo: 'caida' as const };
                         }).filter(Boolean).sort((a,b) => (a!.dropPct - b!.dropPct)).slice(0, 8) as any[];
 
                         const hasPrevData = prevRentData.length > 0;

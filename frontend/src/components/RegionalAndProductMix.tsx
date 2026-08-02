@@ -4,8 +4,8 @@ import {
     ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip,
 } from 'recharts';
 import {
-    Store, Loader2, AlertTriangle, TrendingUp, TrendingDown,
-    Trophy, DollarSign, Activity, Percent, Sparkles, Layers, ArrowUpRight, ArrowDownRight, Calendar
+    Store, Loader2, AlertTriangle, TrendingUp,
+    Trophy, DollarSign, Activity, Percent, Sparkles, Layers
 } from 'lucide-react';
 
 const formatBs = (value: number) => {

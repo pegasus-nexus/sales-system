@@ -5,9 +5,8 @@ import { getAnalyticsDashboard, getSucursales } from '../api/api';
 import {
     LayoutDashboard, DollarSign,
     Package, AlertTriangle, Loader2,
-    Activity, CheckCircle2, CloudRain, Bot, ChevronDown, ChevronRight,
-    RefreshCw, Download, Maximize2, Minimize2, Sparkles, Clock, HelpCircle, Layers, FileSpreadsheet, RotateCcw, Zap,
-    Calendar, Store, TrendingUp
+    Activity, CheckCircle2, Bot, ChevronDown,
+    RefreshCw, Download, Maximize2, Minimize2, Clock, Layers, FileSpreadsheet, RotateCcw, Zap
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -366,7 +365,7 @@ export default function DashboardMaestro() {
     const [lastSyncTime, setLastSyncTime] = useState<string>('');
     const [showExportDropdown, setShowExportDropdown] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [activeSection, setActiveSection] = useState('kpis-financieros');
+
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
     const [startDate, endDate] = dateRange;
@@ -423,13 +422,7 @@ export default function DashboardMaestro() {
         toast.info("Filtros restablecidos a Hoy.");
     };
 
-    const scrollToSection = (id: string) => {
-        setActiveSection(id);
-        const el = document.getElementById(id);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    };
+
 
     
     const handleApplyDates = () => {

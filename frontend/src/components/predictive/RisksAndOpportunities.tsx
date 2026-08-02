@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Sparkles, ShieldAlert, TrendingUp, Award, Layers } from 'lucide-react';
+import { AlertTriangle, Sparkles } from 'lucide-react';
 import type { DetectedRisk, DetectedOpportunity } from '../../api/types';
 
 interface Props {

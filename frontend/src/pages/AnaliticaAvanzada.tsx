@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, Cell, CartesianGrid } from 'recharts';
 import { Package, TrendingUp, TrendingDown, LayoutGrid, BarChart2, Search } from 'lucide-react';
 import { client } from '../api/client';

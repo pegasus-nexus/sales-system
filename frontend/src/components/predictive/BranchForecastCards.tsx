@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, TrendingUp, TrendingDown, DollarSign, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { Building2, TrendingUp, TrendingDown, ShieldCheck } from 'lucide-react';
 import type { BranchForecast } from '../../api/types';
 
 interface Props {

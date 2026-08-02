@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Lightbulb, CheckCircle2, ArrowUpRight, ShieldCheck, Tag, Users, Package } from 'lucide-react';
+import { Bot, Lightbulb, CheckCircle2, ArrowUpRight, Tag, Users, Package } from 'lucide-react';
 import type { AIRecommendation } from '../../api/types';
 
 interface Props {

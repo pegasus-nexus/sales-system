@@ -5,7 +5,7 @@ import {
     CartesianGrid, Tooltip, ReferenceLine
 } from 'recharts';
 import { 
-    Calendar, Loader2, TrendingUp, TrendingDown, 
+    Calendar, Loader2, 
     Clock, Zap, FileSpreadsheet
 } from 'lucide-react';
 import { useOnClickOutside } from 'usehooks-ts';

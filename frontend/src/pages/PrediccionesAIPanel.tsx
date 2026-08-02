@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Bot, RefreshCw, Sparkles, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bot, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { getPredictiveCenterData } from '../api/api';
 import type { PredictiveCenterResponse } from '../api/types';
 

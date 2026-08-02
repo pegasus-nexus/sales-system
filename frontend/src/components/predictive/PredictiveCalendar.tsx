@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import type { PredictiveCalendarDay } from '../../api/types';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 export const PredictiveCalendar: React.FC<Props> = ({ days }) => {
   const formatBs = (val: number) => `Bs. ${val.toLocaleString('es-BO')}`;
 
-  const getStatusBadge = (color: string, level: string, isHol?: boolean, holName?: string | null) => {
+  const getStatusBadge = (color: string, _level: string, isHol?: boolean, holName?: string | null) => {
     if (isHol || color === 'azul') {
       return (
         <span className="text-[10px] font-black uppercase bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200/80">
