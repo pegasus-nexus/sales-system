@@ -13,6 +13,9 @@ from app.domain.models.category import Category
 from app.utils.serializers import normalize_bson
 from datetime import datetime, timedelta, time, timezone
 from app.utils.date_utils import BOLIVIA_TZ, get_day_range_bolivia, get_range_bolivia
+from app.domain.models.daily_summary import DailySalesSummary
+from app.application.services.reporting_service import ConsolidatedReportingService
+from app.application.services.tenant_context import TenantContextCache
 
 
 _ZERO = Decimal("0")  # Constante DRY para el valor cero monetario
@@ -152,9 +155,8 @@ async def get_general_reports(
     ventas_por_sucursal_raw = await cursor.to_list(length=100)
     ventas_por_sucursal_raw = [normalize_bson(r) for r in ventas_por_sucursal_raw]
     
-    # Resolver nombres en Python usando el modelo Sucursal (no Tenant)
-    todas_sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
-    map_sucursales = {str(s.id): s.nombre for s in todas_sucursales}
+    # Resolver nombres en Python usando TenantContextCache
+    map_sucursales = await TenantContextCache.get_sucursal_map(tenant_id)
     
     ventas_por_sucursal = []
     for reg in ventas_por_sucursal_raw:
@@ -267,95 +269,74 @@ async def get_daily_report(
 ):
     """
     Returns a detailed daily report for a specific branch.
-    Accessible by Matriz admins (for any branch) or Branch admins (only for their branch).
+    Reads from the DailySalesSummary Snapshot. If the day is still open, 
+    it generates an on-the-fly snapshot.
     """
     tenant_id = current_user.tenant_id or "default"
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
-    # Permission check
     target_sucursal = sucursal_id
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR]:
         target_sucursal = current_user.sucursal_id
     elif not target_sucursal:
-         # For general admins, if no sucursal is provided, they might want a global daily report or it might be an error.
-         # Let's assume they MUST provide one or we take a default one like "CENTRAL".
          target_sucursal = "CENTRAL"
 
     try:
-        start_dt, end_dt = get_day_range_bolivia(date)
+        # Validate format
+        get_day_range_bolivia(date)
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
-
-    # 1. Sales summary (Pagos)
-    sales = await Sale.find(
-        Sale.tenant_id == tenant_id,
-        Sale.sucursal_id == target_sucursal,
-        Sale.created_at >= start_dt,
-        Sale.created_at <= end_dt
-    ).to_list()
-
-    ventas_por_metodo: Dict[str, Decimal] = {
-        "EFECTIVO": _ZERO, "QR": _ZERO, "TARJETA": _ZERO, "TRANSFERENCIA": _ZERO
-    }
-    total_ventas    = _ZERO
-    total_descuentos = _ZERO
-    total_creditos   = _ZERO
-    anuladas_count  = 0
-    anuladas_monto  = _ZERO
+    # 1. Intentar obtener el Snapshot
+    summary = await DailySalesSummary.find_one(
+        DailySalesSummary.tenant_id == tenant_id,
+        DailySalesSummary.sucursal_id == target_sucursal,
+        DailySalesSummary.fecha == date
+    )
     
-    for s in sales:
-        if s.anulada:
-            anuladas_count += 1
-            anuladas_monto += s.total
-            continue
-            
-        total_ventas += s.total
-        total_descuentos += s.get_total_descuento()
+    # 2. Si no existe (porque el día no ha cerrado o porque nunca se generó), calcular on-the-fly
+    if not summary:
+        summary = await ConsolidatedReportingService.generate_daily_snapshot(
+            tenant_id=tenant_id,
+            sucursal_id=target_sucursal,
+            fecha=date,
+            es_definitivo=False,
+            generado_por_id=str(current_user.id)
+        )
 
-        if s.estado_pago in ["PENDIENTE", "PARCIAL"]:
-            pagado = sum((p.monto for p in s.pagos), _ZERO)
-            credito_otorgado = s.total - pagado
-            total_creditos += credito_otorgado
-            
-        for p in s.pagos:
-            metodo = p.metodo.upper()
-            ventas_por_metodo[metodo] = ventas_por_metodo.get(metodo, _ZERO) + p.monto
-
-    # 2. Expenses (Gastos) from CajaMovimiento
+    # Convertir el snapshot al formato de respuesta esperado por el frontend
+    gastos_list = []
+    # Nota: El frontend espera el detalle de gastos ("descripcion", "monto", "cajero", "hora").
+    # El snapshot actual solo guarda el total de gastos.
+    # Para mantener compatibilidad con el front, si piden el detalle, lo traemos en tiempo real.
+    start_dt, end_dt = get_day_range_bolivia(date)
     movimientos = await CajaMovimiento.find(
         CajaMovimiento.tenant_id == tenant_id,
         CajaMovimiento.sucursal_id == target_sucursal,
         CajaMovimiento.fecha >= start_dt,
-        CajaMovimiento.fecha <= end_dt
+        CajaMovimiento.fecha <= end_dt,
+        CajaMovimiento.subtipo == SubtipoMovimiento.GASTO
     ).to_list()
-
-    total_gastos = _ZERO
-    total_cambio = _ZERO
-    gastos_list = []
     
     for m in movimientos:
         if m.tipo == "EGRESO":
-            if m.subtipo == SubtipoMovimiento.GASTO:
-                total_gastos += m.monto
-                gastos_list.append({
-                    "descripcion": m.descripcion,
-                    "monto": float(m.monto),
-                    "cajero": m.cajero_name,
-                    "hora": m.fecha.strftime("%H:%M")
-                })
-            elif m.subtipo == SubtipoMovimiento.CAMBIO:
-                total_cambio += m.monto
+            gastos_list.append({
+                "descripcion": m.descripcion,
+                "monto": float(m.monto.to_decimal()),
+                "cajero": m.cajero_name,
+                "hora": m.fecha.strftime("%H:%M")
+            })
 
-    # Ajustar el total en efectivo restando los cambios entregados (vueltos)
-    ventas_por_metodo["EFECTIVO"] = max(_ZERO, ventas_por_metodo.get("EFECTIVO", _ZERO) - total_cambio)
-
-    # 3. Simple inventory items sold count
+    # Frontend expects "items_vendidos", we map `por_categoria` to it (since it's an aggregation)
+    # If the frontend specifically wants top items, we fetch them here or adapt the frontend to use categories.
+    # Let's map `por_categoria` as the summary, but also do a quick item query just for the top 10 items 
+    # since `items_vendidos` was a product-level list before.
+    
     items_vendidos_pipeline = [
         {
             "$match": {
-                "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
+                "tenant_id": tenant_id,
                 "sucursal_id": target_sucursal,
                 "sale_date": {"$gte": start_dt, "$lte": end_dt}
             }
@@ -394,23 +375,29 @@ async def get_daily_report(
     return {
         "fecha": date,
         "sucursal_id": target_sucursal,
+        "es_definitivo": summary.es_definitivo,
         "resumen_ventas": {
-            "total_bruto":      float(total_ventas),
-            "total_descuentos": float(total_descuentos),
-            "total_cambio":     float(total_cambio),
-            "total_creditos":   float(total_creditos),
-            "por_metodo":       {k: float(v) for k, v in ventas_por_metodo.items()},
+            "total_bruto":      float(summary.total_bruto.to_decimal()),
+            "total_descuentos": float(summary.total_descuentos.to_decimal()),
+            "total_cambio":     float(summary.total_cambio.to_decimal()),
+            "total_creditos":   float(summary.por_metodo.credito.to_decimal()),
+            "por_metodo": {
+                "EFECTIVO": float(summary.por_metodo.efectivo.to_decimal()),
+                "QR": float(summary.por_metodo.qr.to_decimal()),
+                "TARJETA": float(summary.por_metodo.tarjeta.to_decimal()),
+                "TRANSFERENCIA": float(summary.por_metodo.transferencia.to_decimal()),
+            },
             "anuladas": {
-                "cantidad": anuladas_count,
-                "monto":    float(anuladas_monto)
+                "cantidad": summary.anuladas.cantidad,
+                "monto":    float(summary.anuladas.monto.to_decimal())
             }
         },
         "gastos": {
-            "total":   float(total_gastos),
+            "total":   float(summary.total_gastos.to_decimal()),
             "detalle": gastos_list
         },
         "items_vendidos": items_list,
-        "balance_neto": float(ventas_por_metodo.get("EFECTIVO", _ZERO) - total_gastos)
+        "balance_neto": float(summary.balance_neto.to_decimal())
     }
 
 @router.get("/financial-report")
@@ -454,18 +441,20 @@ async def get_financial_report(
     if category or proveedor:
         prod_query: dict = {"tenant_id": tenant_id, "is_active": True}
         if category:
-            cat_docs = await Category.find({"$or": [{"name": category}, {"nombre": category}]}).to_list()
+            cat_regex = {"$regex": f"^{category}$", "$options": "i"}
+            cat_docs = await Category.find({"$or": [{"name": cat_regex}, {"nombre": cat_regex}]}).to_list()
             cat_ids = [str(c.id) for c in cat_docs]
             prod_query["$or"] = [
-                {"categoria_nombre": category},
-                {"categoria": category},
+                {"categoria_nombre": cat_regex},
+                {"categoria": cat_regex},
                 {"categoria_id": {"$in": cat_ids}}
             ]
         if proveedor:
+            prov_regex = {"$regex": f"^{proveedor}$", "$options": "i"}
             prov_conditions = [
-                {"proveedor_nombre": proveedor},
-                {"proveedor": proveedor},
-                {"proveedores": proveedor}
+                {"proveedor_nombre": prov_regex},
+                {"proveedor": prov_regex},
+                {"proveedores": prov_regex}
             ]
             if "$or" in prod_query:
                 prod_query["$and"] = [{"$or": prod_query.pop("$or")}, {"$or": prov_conditions}]
@@ -554,8 +543,7 @@ async def get_financial_report(
     results = [normalize_bson(r) for r in await cursor.to_list(length=2000)]
 
     # Resolve sucursal names
-    todas_sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
-    map_sucursales = {str(s.id): s.nombre for s in todas_sucursales}
+    map_sucursales = await TenantContextCache.get_sucursal_map(tenant_id)
     
     for r in results:
         r["sucursal_nombre"] = map_sucursales.get(r["sucursal_id"], r["sucursal_id"])
@@ -606,8 +594,7 @@ async def get_anulaciones_report(
     raw_results = await cursor.to_list(length=2000)
     
     # Resolve sucursal names
-    todas_sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
-    map_sucursales = {str(s.id): s.nombre for s in todas_sucursales}
+    map_sucursales = await TenantContextCache.get_sucursal_map(tenant_id)
     map_sucursales["CENTRAL"] = "Almacén Central (Matriz)"
 
     results = []
@@ -836,8 +823,7 @@ async def get_valued_inventory(
     raw_results = await cursor.to_list(length=100)
     
     # Resolve sucursal names
-    todas_sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
-    map_sucursales = {str(s.id): s.nombre for s in todas_sucursales}
+    map_sucursales = await TenantContextCache.get_sucursal_map(tenant_id)
     map_sucursales["CENTRAL"] = "Almacén Central (Matriz)"
 
     results = []

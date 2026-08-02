@@ -25,7 +25,24 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("Database initialized successfully.", flush=True)
     
+    # Iniciar Cron Jobs (Fase 4 - Auto Sellado)
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    from app.jobs.nightly_seal import run_nightly_seal
+    
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        run_nightly_seal,
+        trigger=CronTrigger(hour=0, minute=15, timezone="America/La_Paz"),
+        id="nightly_seal_job",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("APScheduler started (Nightly Seal scheduled at 00:15 LPB).", flush=True)
+    
     yield
+    
+    scheduler.shutdown()
 
 app = FastAPI(
     lifespan=lifespan,

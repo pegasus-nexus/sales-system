@@ -47,8 +47,8 @@ async def get_dashboard(
     if clear_cache:
         _dashboard_cache.clear()
 
-    from app.services.analytics_v2_service import get_dashboard_metrics_v2
-    return await get_dashboard_metrics_v2(
+    from app.services.analytics_ssot_service import get_dashboard_metrics_ssot
+    return await get_dashboard_metrics_ssot(
         tenant_id=current_user.tenant_id,
         start_date=start_date,
         end_date=end_date,

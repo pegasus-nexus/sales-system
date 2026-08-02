@@ -33,6 +33,7 @@ from app.domain.models.meal_schedule import MealSchedule
 from app.domain.models.proveedor import Proveedor
 from app.domain.models.client_wallet import ClientWallet
 from app.domain.models.compra import PurchaseOrder, PurchaseReception
+from app.domain.models.daily_summary import DailySalesSummary
 
 from app.infrastructure.core.config import settings
 
@@ -120,7 +121,8 @@ async def init_db():
             MealSchedule,
             ClientWallet,
             PurchaseOrder,
-            PurchaseReception
+            PurchaseReception,
+            DailySalesSummary
         ],
         skip_indexes=True
     )

@@ -8,6 +8,8 @@ from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, Sub
 from app.domain.models.user import User
 from app.domain.schemas.caja import AbrirCajaIn, CerrarCajaIn
 from app.domain.models.base import DecimalMoney
+from app.application.services.reporting_service import ConsolidatedReportingService
+import asyncio
 
 logger = logging.getLogger("CajaService")
 
@@ -75,4 +77,17 @@ class CajaService:
         sesion.monto_cierre_fisico   = DecimalMoney(str(round(body.monto_fisico_contado, 1)))
         sesion.notas_cierre          = body.notas
         await sesion.save()
+        
+        # Generar snapshot definitivo del día en background
+        fecha_str = sesion.abierta_at.strftime("%Y-%m-%d") if sesion.abierta_at else datetime.utcnow().strftime("%Y-%m-%d")
+        asyncio.create_task(
+            ConsolidatedReportingService.generate_daily_snapshot(
+                tenant_id=tenant_id,
+                sucursal_id=sesion.sucursal_id,
+                fecha=fecha_str,
+                es_definitivo=True,
+                generado_por_id=str(current_user.id)
+            )
+        )
+        
         return sesion
