@@ -254,7 +254,7 @@ export default function TenantsAdminPage() {
 
 
     return (
-        <div className="max-w-7xl mx-auto p-4 space-y-4">
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-20 md:pb-8">
 
             {credentials && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
@@ -296,120 +296,84 @@ export default function TenantsAdminPage() {
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="std-title-page">Panel SaaS</h1>
-                    <p className="std-description">Control global de empresas y facturación</p>
+                    <h1 className="text-lg font-black text-gray-900 tracking-tight">Panel SaaS</h1>
+                    <p className="text-gray-500 font-medium">Control global de empresas y facturación</p>
                 </div>
-                <button onClick={() => setIsModalOpen(true)} className="std-btn-primary">
-                    <Plus size={18} /> Nueva Empresa
+                <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-8 py-4 bg-black text-white rounded-2xl font-bold shadow-xl shadow-black/15 hover:bg-gray-800 hover:-translate-y-0.5 transition-all active:scale-95">
+                    <Plus size={20} /> Nueva Empresa
                 </button>
             </div>
 
             {/* Lista Principal */}
-            <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 border-b border-gray-200">
-                    <h3 className="std-title-section text-sm">Empresas Registradas</h3>
-                    <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-lg font-black text-gray-900">Empresas Registradas</h3>
+                    <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 uppercase tracking-widest">
                         {tenants?.length || 0} Total
-                    </span>
+                    </div>
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-3">
-                        <Loader2 className="animate-spin text-indigo-600" size={32} />
-                        <p className="text-xs text-gray-400 font-medium animate-pulse">Cargando empresas...</p>
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Loader2 className="animate-spin text-gray-200" size={48} />
+                        <p className="text-gray-400 font-bold animate-pulse">CARGANDO EMPRESAS...</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="std-table">
-                            <thead>
-                                <tr className="bg-gray-100/70 border-b border-gray-200 text-gray-600">
-                                    <th className="std-table-th">Empresa</th>
-                                    <th className="std-table-th">Plan</th>
-                                    <th className="std-table-th">ID / Identificador</th>
-                                    <th className="std-table-th">Estado</th>
-                                    <th className="std-table-th text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200/60">
-                                {paginatedTenants.map(tenant => (
-                                    <tr key={tenant._id} className="hover:bg-gray-50/80 transition-colors">
-                                        <td className="std-table-td">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-xs">
-                                                    {tenant.name.substring(0, 1).toUpperCase()}
-                                                </div>
-                                                <span className="font-semibold text-gray-900 text-sm">{tenant.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="std-table-td">
+                    <div className="space-y-4">
+                        {paginatedTenants.map(tenant => (
+                            <div key={tenant._id} className="flex items-center justify-between p-5 rounded-2xl hover:bg-gray-100 transition-all border border-transparent hover:border-gray-100 group">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-black/5 flex-shrink-0">
+                                        {tenant.name.substring(0, 1).toUpperCase()}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center gap-3">
+                                            <h4 className="font-black text-gray-900 text-lg leading-none">{tenant.name}</h4>
+                                            {!tenant.is_active && <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase">Inactiva</span>}
+                                        </div>
+                                        <div className="flex items-center gap-3">
                                             <PlanBadge plan={tenant.plan} />
-                                        </td>
-                                        <td className="std-table-td">
-                                            <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                                {tenant._id.substring(0, 12)}...
-                                            </span>
-                                        </td>
-                                        <td className="std-table-td">
-                                            {tenant.is_active ? (
-                                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px] font-semibold">
-                                                    Activo
-                                                </span>
-                                            ) : (
-                                                <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full text-[11px] font-semibold">
-                                                    Inactiva
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="std-table-td text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button 
-                                                    onClick={() => {
-                                                        setModulesTenant(tenant);
-                                                        setLocalModules(tenant.modulos_activos || []);
-                                                    }} 
-                                                    title="Control de Módulos"
-                                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                >
-                                                    <Settings size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => impersonateMutation.mutate(tenant._id)} 
-                                                    disabled={impersonateMutation.isPending}
-                                                    title="Magic Login"
-                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-                                                >
-                                                    <LogIn size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleEditClick(tenant)} 
-                                                    title="Editar Empresa" 
-                                                    className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(tenant)} 
-                                                    title={tenant.is_active ? "Suspender" : "Eliminar"} 
-                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
+                                            <span className="text-gray-300">|</span>
+                                            <p className="text-xs text-gray-400 font-bold tracking-tighter uppercase">ID: {tenant._id.substring(0,8)}...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button 
+                                        onClick={() => {
+                                            setModulesTenant(tenant);
+                                            setLocalModules(tenant.modulos_activos || []);
+                                        }} 
+                                        title="Control de Módulos (Feature Toggles)"
+                                        className="w-10 h-10 flex items-center justify-center text-indigo-500 hover:text-white hover:bg-indigo-500 hover:shadow-md rounded-2xl transition-all border border-indigo-100"
+                                    >
+                                        <Settings size={20} />
+                                    </button>
+                                    <button 
+                                        onClick={() => impersonateMutation.mutate(tenant._id)} 
+                                        disabled={impersonateMutation.isPending}
+                                        title="Magic Login (Impersonation)"
+                                        className="w-10 h-10 flex items-center justify-center text-blue-500 hover:text-white hover:bg-blue-500 hover:shadow-md rounded-2xl transition-all border border-blue-100 disabled:opacity-50"
+                                    >
+                                        <LogIn size={20} />
+                                    </button>
+                                    <button onClick={() => handleEditClick(tenant)} title="Editar Empresa" className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black hover:bg-white hover:shadow-md rounded-2xl transition-all border border-transparent hover:border-gray-200">
+                                        <Edit2 size={20} />
+                                    </button>
+                                    <button onClick={() => handleDelete(tenant)} title={tenant.is_active ? "Suspender (Kill Switch)" : "Eliminar"} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100">
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                         {tenants?.length === 0 && (
-                            <div className="text-center py-12 space-y-2">
-                                <Building size={36} className="mx-auto text-gray-300" />
-                                <p className="text-xs text-gray-500 font-medium">Aún no hay empresas en el sistema.</p>
+                            <div className="text-center py-20 space-y-3">
+                                <Building size={48} className="mx-auto text-gray-100" />
+                                <p className="text-gray-400 font-bold">Aún no hay empresas en el sistema.</p>
                             </div>
                         )}
-
                         {tenants && tenants.length > ITEMS_PER_PAGE && (
-                            <div className="p-3 border-t border-gray-200 bg-gray-50/50">
+                            <div className="pt-6 border-t border-gray-100 mt-6">
                                 <Pagination 
                                     currentPage={currentPage}
                                     totalPages={Math.ceil(tenants.length / ITEMS_PER_PAGE)}
@@ -425,28 +389,28 @@ export default function TenantsAdminPage() {
 
             {/* Modal: Feature Toggles (Mock) */}
             {modulesTenant && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-xl shadow-xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-4">
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-10 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="text-base font-bold text-gray-900">Control de Módulos</h2>
-                                <p className="text-xs text-gray-500">Configurando accesos para: <span className="text-indigo-600 font-semibold">{modulesTenant.name}</span></p>
+                                <h2 className="text-lg font-black text-gray-900 tracking-tight">Control de Módulos</h2>
+                                <p className="text-gray-500 font-medium mt-1">Configurando accesos para: <span className="text-indigo-600 font-bold">{modulesTenant.name}</span></p>
                             </div>
-                            <button onClick={() => setModulesTenant(null)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                                <X size={18} />
+                            <button onClick={() => setModulesTenant(null)} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-2xl text-gray-500 transition-colors">
+                                <X size={24} />
                             </button>
                         </div>
                         
-                        <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
                             {AVAILABLE_MODULES.map(mod => {
                                 const isChecked = localModules.includes(mod.code);
                                 return (
-                                    <div key={mod.code} className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 flex items-center justify-between">
+                                    <div key={mod.code} className="p-5 rounded-3xl border border-gray-100 bg-gray-50 flex items-center justify-between">
                                         <div>
-                                            <h4 className="text-sm font-semibold text-gray-900">{mod.name}</h4>
+                                            <h4 className="font-bold text-gray-900">{mod.name}</h4>
                                             <p className="text-xs text-gray-500">{mod.desc}</p>
                                         </div>
-                                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <label className="relative inline-flex items-center cursor-pointer">
                                             <input 
                                                 type="checkbox" 
                                                 className="sr-only peer" 
@@ -459,14 +423,14 @@ export default function TenantsAdminPage() {
                                                     }
                                                 }}
                                             />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                            <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
                                         </label>
                                     </div>
                                 );
                             })}
                         </div>
 
-                        <div className="mt-5 flex justify-end">
+                        <div className="mt-8 flex justify-end">
                             <button 
                                 onClick={() => {
                                     updateTenantMutation.mutate({ 
@@ -476,7 +440,7 @@ export default function TenantsAdminPage() {
                                     setModulesTenant(null);
                                 }} 
                                 disabled={updateTenantMutation.isPending}
-                                className="std-btn-primary"
+                                className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition-colors disabled:opacity-50"
                             >
                                 {updateTenantMutation.isPending ? 'Guardando...' : 'Guardar Configuración'}
                             </button>
@@ -489,25 +453,25 @@ export default function TenantsAdminPage() {
 
             {/* Modal: Crear Empresa */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-base font-bold text-gray-900">Nueva Empresa</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                                <X size={18} />
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-10 w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-lg font-black text-gray-900 tracking-tight">Nueva Empresa</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-2xl text-gray-500 transition-colors">
+                                <X size={24} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="std-label text-xs">Nombre Comercial</label>
-                                    <input type="text" required placeholder="ej. Chocolates Para Ti" className="std-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 tracking-widest uppercase ml-1">Nombre Comercial</label>
+                                    <input type="text" required placeholder="ej. Chocolates Para Ti" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold transition-all" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                                 </div>
 
-                                <div>
-                                    <label className="std-label text-xs">Suscripción Inicial</label>
-                                    <select className="std-input cursor-pointer" value={formData.plan} onChange={e => setFormData({ ...formData, plan: e.target.value })}>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 tracking-widest uppercase ml-1">Suscripción Inicial</label>
+                                    <select className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold transition-all appearance-none cursor-pointer" value={formData.plan} onChange={e => setFormData({ ...formData, plan: e.target.value })}>
                                         {plansList.filter(p => p.is_public).map(p => (
                                             <option key={p.code} value={p.code}>{p.name}</option>
                                         ))}
@@ -515,22 +479,22 @@ export default function TenantsAdminPage() {
                                 </div>
                             </div>
 
-                            <div className="p-3.5 bg-gray-50/80 rounded-lg border border-gray-200 space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center text-white"><Users size={14}/></div>
-                                    <p className="text-xs font-bold text-gray-900 uppercase">Admin Principal</p>
+                            <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white"><Users size={16}/></div>
+                                    <p className="text-sm font-black text-gray-900 uppercase tracking-widest">Admin Principal</p>
                                 </div>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="std-label text-[11px]">Email de Acceso</label>
-                                        <input type="email" required placeholder="admin@empresa.com" className="std-input bg-white" value={formData.admin_username} onChange={e => setFormData({ ...formData, admin_username: e.target.value })} />
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Email de Acceso</label>
+                                        <input type="email" required placeholder="admin@empresa.com" className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold transition-all" value={formData.admin_username} onChange={e => setFormData({ ...formData, admin_username: e.target.value })} />
                                     </div>
                                     <PasswordField value={formData.admin_password} onChange={v => setFormData({ ...formData, admin_password: v })} confirmValue={confirmPassword} onConfirmChange={setConfirmPassword} label="Contraseña Secreta" inputClassName="bg-white border-gray-200" />
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={createTenantMutation.isPending || formData.admin_password !== confirmPassword || formData.admin_password.length < 8} className="std-btn-primary w-full py-2.5 mt-2 shadow-sm disabled:opacity-50">
-                                {createTenantMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <>Crear Empresa <Check size={18} /></>}
+                            <button type="submit" disabled={createTenantMutation.isPending || formData.admin_password !== confirmPassword || formData.admin_password.length < 8} className="w-full bg-black text-white py-5 rounded-2xl font-black text-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-3 mt-6 shadow-xl shadow-black/10 disabled:opacity-30">
+                                {createTenantMutation.isPending ? <Loader2 className="animate-spin" /> : <>Crear Empresa <Check size={24} /></>}
                             </button>
                         </form>
                     </div>
@@ -539,25 +503,25 @@ export default function TenantsAdminPage() {
 
             {/* Modal: Editar Empresa */}
             {editingTenant && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-base font-bold text-gray-900">Gestionar Empresa</h2>
-                            <button onClick={() => setEditingTenant(null)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                                <X size={18} />
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-lg font-black text-gray-900 tracking-tight">Gestionar Empresa</h2>
+                            <button onClick={() => setEditingTenant(null)} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-2xl text-gray-500 transition-colors">
+                                <X size={24} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleUpdate} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="std-label text-xs">Nombre Comercial</label>
-                                    <input type="text" required className="std-input" value={editingTenant.name} onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })} />
+                        <form onSubmit={handleUpdate} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Nombre Comercial</label>
+                                    <input type="text" required className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={editingTenant.name} onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })} />
                                 </div>
 
-                                <div>
-                                    <label className="std-label text-xs">Plan Asignado</label>
-                                    <select className="std-input cursor-pointer" value={editingTenant.plan} onChange={e => setEditingTenant({ ...editingTenant, plan: e.target.value as any })}>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Plan Asignado</label>
+                                    <select className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none text-gray-900 font-black cursor-pointer" value={editingTenant.plan} onChange={e => setEditingTenant({ ...editingTenant, plan: e.target.value as any })}>
                                         {plansList.map(p => (
                                             <option key={p.code} value={p.code}>{p.name} {!p.is_public ? '(Interno)' : ''}</option>
                                         ))}
@@ -565,40 +529,40 @@ export default function TenantsAdminPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="std-label text-xs">Fecha de Vencimiento de Pago</label>
-                                <input type="date" className="std-input" value={editingTenant.plan_expires_at as string || ''} onChange={e => setEditingTenant({ ...editingTenant, plan_expires_at: e.target.value as any })} />
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-400 uppercase ml-1">Fecha de Vencimiento de Pago</label>
+                                <input type="date" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={editingTenant.plan_expires_at as string || ''} onChange={e => setEditingTenant({ ...editingTenant, plan_expires_at: e.target.value as any })} />
                             </div>
 
-                            <div className="p-3.5 bg-gray-50/80 rounded-lg border border-gray-200 space-y-3">
-                                <h3 className="text-xs font-bold text-gray-900 uppercase flex items-center gap-1.5"><KeyRound size={14}/> Accesos del Administrador</h3>
-                                <div>
-                                    <label className="std-label text-[11px]">Correo de Acceso</label>
-                                    <input type="email" required placeholder="admin@empresa.com" className="std-input bg-white" value={adminCreds.username} onChange={e => setAdminCreds({ ...adminCreds, username: e.target.value })} />
+                            <div className="p-4 bg-gray-50 rounded-[28px] border border-gray-100 space-y-4">
+                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2"><KeyRound size={16}/> Accesos del Administrador</h3>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Correo de Acceso</label>
+                                    <input type="email" required placeholder="admin@empresa.com" className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold" value={adminCreds.username} onChange={e => setAdminCreds({ ...adminCreds, username: e.target.value })} />
                                 </div>
-                                <div>
-                                    <label className="std-label text-[11px]">Nueva Contraseña (Dejar en blanco para no cambiar)</label>
-                                    <input type="text" placeholder="Escribe la nueva contraseña..." className="std-input bg-white placeholder:text-gray-400" value={adminCreds.password} onChange={e => setAdminCreds({ ...adminCreds, password: e.target.value })} />
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Nueva Contraseña (Dejar en blanco para no cambiar)</label>
+                                    <input type="text" placeholder="Escribe la nueva contraseña..." className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-3 outline-none focus:ring-4 focus:ring-black/5 text-gray-900 font-bold placeholder:text-gray-300" value={adminCreds.password} onChange={e => setAdminCreds({ ...adminCreds, password: e.target.value })} />
                                 </div>
                             </div>
 
-                            <div className="bg-gray-50/80 p-3 rounded-lg border border-gray-200">
-                                <label className="flex items-center gap-3 cursor-pointer">
+                            <div className="bg-gray-50 p-4 rounded-[28px] border border-gray-200">
+                                <label className="flex items-center gap-4 cursor-pointer group">
                                     <div className="relative">
                                         <input type="checkbox" className="sr-only peer" checked={editingTenant.is_active} onChange={e => setEditingTenant({ ...editingTenant, is_active: e.target.checked })} />
-                                        <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-emerald-600 transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
+                                        <div className="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-all after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-6"></div>
                                     </div>
-                                    <span className="text-xs font-bold text-gray-700 uppercase">Estado de la cuenta</span>
+                                    <span className="font-black text-gray-700 uppercase tracking-wider">Estado de la cuenta</span>
                                 </label>
                                 {!editingTenant.is_active && (
-                                    <p className="text-[11px] text-red-500 mt-2 font-medium flex items-center gap-1">
+                                    <p className="text-[10px] text-red-500 mt-4 font-bold flex items-center gap-1.5 uppercase tracking-tighter">
                                         <ShieldAlert size={14}/> Acceso bloqueado para todos los usuarios de esta empresa.
                                     </p>
                                 )}
                             </div>
 
-                            <button type="submit" disabled={updateTenantMutation.isPending} className="std-btn-primary w-full py-2.5 mt-2 shadow-sm disabled:opacity-50">
-                                {updateTenantMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <>Guardar Cambios <Check size={18} /></>}
+                            <button type="submit" disabled={updateTenantMutation.isPending} className="w-full bg-black text-white py-5 rounded-2xl font-black text-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/10 disabled:opacity-50">
+                                {updateTenantMutation.isPending ? <Loader2 className="animate-spin" /> : <>Guardar Cambios <Check size={24} /></>}
                             </button>
                         </form>
                     </div>

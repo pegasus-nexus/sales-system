@@ -16,11 +16,11 @@ export default function MatrizBCGDefinitiva() {
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [vista, setVista] = useState<'grafico' | 'cuadrantes'>('grafico');
-  
+
   const [dataBCG, setDataBCG] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+
   const [productoSeleccionado, setProductoSeleccionado] = useState<any>(null);
 
   // 1. FETCH REPOSITORIO CON INYECCIÓN DEMO MODE DE SUCURSALES
@@ -33,10 +33,10 @@ export default function MatrizBCGDefinitiva() {
         const bcgData = await client<any[]>(`/analytics/bcg`);
 
         if (!bcgData || bcgData.length === 0) {
-            setErrorMsg("No hay productos en el catálogo.");
-            setDataBCG([]);
-            setLoading(false);
-            return;
+          setErrorMsg("No hay productos en el catálogo.");
+          setDataBCG([]);
+          setLoading(false);
+          return;
         }
 
         const productosRecibidos = Array.isArray(bcgData) ? bcgData : (bcgData as any).products || [];
@@ -46,7 +46,7 @@ export default function MatrizBCGDefinitiva() {
           if (index % 3 === 0) sucs = ['Heroinas'];
           if (index % 3 === 1) sucs = ['Recoleta', 'Calacoto'];
           if (index % 5 === 0) sucs = ['Calacoto'];
-          
+
           return {
             ...prod,
             sucursales: prod.sucursales || sucs,
@@ -121,7 +121,7 @@ export default function MatrizBCGDefinitiva() {
 
   return (
     <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 w-full mb-10">
-      
+
       {/* ── CABECERA Y FILTROS PRINCIPALES ── */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-100 pb-5">
         <div>
@@ -132,7 +132,7 @@ export default function MatrizBCGDefinitiva() {
           </p>
           {errorMsg && <p className="text-xs text-rose-500 font-bold mt-1">⚠️ {errorMsg}</p>}
         </div>
-        
+
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full xl:w-auto">
           {/* Barra de Búsqueda Superior */}
           <div className="relative w-full md:w-64 xl:w-72">
@@ -147,7 +147,7 @@ export default function MatrizBCGDefinitiva() {
               className="w-full pl-10 pr-8 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white shadow-sm transition-all text-slate-700 placeholder-slate-400"
             />
             {searchTerm && (
-              <button 
+              <button
                 onClick={() => setSearchTerm('')}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 font-bold"
               >
@@ -162,17 +162,15 @@ export default function MatrizBCGDefinitiva() {
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button
               onClick={() => setVista('grafico')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                vista === 'grafico' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${vista === 'grafico' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               <BarChart2 size={16} /> Scatter
             </button>
             <button
               onClick={() => setVista('cuadrantes')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                vista === 'cuadrantes' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${vista === 'cuadrantes' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               <LayoutGrid size={16} /> Grid 2x2
             </button>
@@ -189,11 +187,10 @@ export default function MatrizBCGDefinitiva() {
                   setSucursal(suc);
                   setProductoSeleccionado(null);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                  sucursal === suc 
-                    ? 'bg-indigo-600 text-white shadow-md' 
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${sucursal === suc
+                    ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-600 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 {suc === 'todas' ? 'Global' : suc}
               </button>
@@ -210,9 +207,8 @@ export default function MatrizBCGDefinitiva() {
         </div>
         <button
           onClick={() => setCategoriaFiltro('todas')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-            categoriaFiltro === 'todas' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-          }`}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${categoriaFiltro === 'todas' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+            }`}
         >
           Todas ({productosFiltrados.length})
         </button>
@@ -222,9 +218,8 @@ export default function MatrizBCGDefinitiva() {
             <button
               key={cat}
               onClick={() => setCategoriaFiltro(cat)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-                categoriaFiltro === cat ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-              }`}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${categoriaFiltro === cat ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                }`}
             >
               {cat} ({count})
             </button>
@@ -245,43 +240,43 @@ export default function MatrizBCGDefinitiva() {
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={true} stroke="#E2E8F0" />
-                  
-                  <XAxis 
-                    type="number" 
-                    dataKey="participacion" 
-                    name="Participación Relativa" 
-                    unit="%" 
-                    domain={[0, 'auto']} 
-                    tick={{fontSize: 12, fill: '#64748B', fontWeight: 600}}
-                    axisLine={{stroke: '#94A3B8', strokeWidth: 2}}
+
+                  <XAxis
+                    type="number"
+                    dataKey="participacion"
+                    name="Participación Relativa"
+                    unit="%"
+                    domain={[0, 'auto']}
+                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 600 }}
+                    axisLine={{ stroke: '#94A3B8', strokeWidth: 2 }}
                   />
-                  <YAxis 
-                    type="number" 
-                    dataKey="crecimiento" 
-                    name="Crecimiento de Mercado" 
-                    unit="%" 
-                    domain={['auto', 'auto']} 
-                    tick={{fontSize: 12, fill: '#64748B', fontWeight: 600}}
-                    axisLine={{stroke: '#94A3B8', strokeWidth: 2}}
+                  <YAxis
+                    type="number"
+                    dataKey="crecimiento"
+                    name="Crecimiento de Mercado"
+                    unit="%"
+                    domain={['auto', 'auto']}
+                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 600 }}
+                    axisLine={{ stroke: '#94A3B8', strokeWidth: 2 }}
                   />
                   {/* ZAxis Controla el tamaño de la burbuja en base al Margen Pct */}
                   <ZAxis type="number" dataKey="margen" range={[50, 800]} name="Margen %" />
-                  
-                  <Tooltip 
-                    cursor={{ strokeDasharray: '3 3', stroke: '#CBD5E1' }} 
+
+                  <Tooltip
+                    cursor={{ strokeDasharray: '3 3', stroke: '#CBD5E1' }}
                     content={({ payload }) => {
                       if (payload && payload.length) {
                         const data = payload[0].payload;
                         return (
                           <div className="bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-slate-200 text-xs w-64 z-50">
                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
-                              <div className="w-3 h-3 rounded-full" style={{backgroundColor: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS]}}></div>
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS] }}></div>
                               <p className="font-black text-slate-800 text-sm truncate" title={data.name}>{data.name}</p>
                             </div>
                             <div className="space-y-1.5 text-slate-600 font-medium">
                               <p className="flex justify-between">Categoría: <span className="font-bold text-slate-900">{data.categoria}</span></p>
                               <p className="flex justify-between">Sucursal: <span className="font-bold text-indigo-600">{data.sucursal}</span></p>
-                              <p className="flex justify-between">Cuadrante: <span className="font-bold" style={{color: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS]}}>{data.cuadrante}</span></p>
+                              <p className="flex justify-between">Cuadrante: <span className="font-bold" style={{ color: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS] }}>{data.cuadrante}</span></p>
                               <p className="flex justify-between">Ventas Totales: <span className="font-bold text-slate-900">Bs. {data.ventas}</span></p>
                               <p className="flex justify-between">Participación: <span className="font-bold text-slate-900">{data.participacion}%</span></p>
                               <p className="flex justify-between">Crecimiento (MoM): <span className="font-bold text-slate-900">{data.crecimiento}%</span></p>
@@ -290,9 +285,9 @@ export default function MatrizBCGDefinitiva() {
                                 <span className="font-black text-sm">{data.margen}%</span>
                               </div>
                               <p className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
-                                Variación Ventas: 
+                                Variación Ventas:
                                 <span className={`flex items-center gap-1 font-black ${String(data.vsMesAnterior).startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                  {String(data.vsMesAnterior).startsWith('+') ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
+                                  {String(data.vsMesAnterior).startsWith('+') ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                                   {data.vsMesAnterior}
                                 </span>
                               </p>
@@ -303,13 +298,13 @@ export default function MatrizBCGDefinitiva() {
                       return null;
                     }}
                   />
-                  
+
                   <Scatter data={productosFiltrados} animationDuration={800} onClick={(data) => setProductoSeleccionado(data)}>
                     {productosFiltrados.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]} 
-                        fillOpacity={entry.ventas === 0 ? 0.3 : 0.80} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]}
+                        fillOpacity={entry.ventas === 0 ? 0.3 : 0.80}
                         stroke={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]}
                         strokeWidth={1}
                         className="cursor-pointer hover:opacity-100 transition-opacity"
@@ -327,7 +322,7 @@ export default function MatrizBCGDefinitiva() {
           {/* VISTA 2: CLASSIC GRID 2x2 (Con tarjetas aisladas por sucursal) */}
           {vista === 'cuadrantes' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-              
+
               {/* ESTRELLA */}
               <div className="bg-emerald-50/70 border-2 border-emerald-200 rounded-2xl p-4 shadow-sm flex flex-col h-[700px]">
                 <div className="flex justify-between items-start mb-3 shrink-0">
@@ -440,9 +435,9 @@ export default function MatrizBCGDefinitiva() {
             <span className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Inspección Táctica</span>
             <h4 className="text-base font-bold leading-tight mt-0.5 truncate">{productoSeleccionado.name}</h4>
             <p className="text-xs text-slate-400 mt-1">
-              Cat: <span className="text-slate-200">{productoSeleccionado.categoria}</span> | 
-              Sucursal: <span className="text-indigo-400 font-semibold">{productoSeleccionado.sucursal}</span> | 
-              Clasificación: <span className="font-bold" style={{color: QUADRANT_COLORS[productoSeleccionado.cuadrante as keyof typeof QUADRANT_COLORS]}}> {productoSeleccionado.cuadrante}</span>
+              Cat: <span className="text-slate-200">{productoSeleccionado.categoria}</span> |
+              Sucursal: <span className="text-indigo-400 font-semibold">{productoSeleccionado.sucursal}</span> |
+              Clasificación: <span className="font-bold" style={{ color: QUADRANT_COLORS[productoSeleccionado.cuadrante as keyof typeof QUADRANT_COLORS] }}> {productoSeleccionado.cuadrante}</span>
             </p>
           </div>
           <div className="flex gap-6 text-right items-center">
@@ -458,7 +453,7 @@ export default function MatrizBCGDefinitiva() {
               <p className="text-[10px] text-slate-400 uppercase font-bold">Margen</p>
               <p className="text-sm font-black text-amber-300">{productoSeleccionado.margen}%</p>
             </div>
-            <button 
+            <button
               onClick={() => setProductoSeleccionado(null)}
               className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 flex items-center justify-center rounded-full transition-colors ml-2"
               title="Cerrar detalle"

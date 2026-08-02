@@ -15,7 +15,7 @@ export default function CatalogoPage() {
     const { user } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-
+    const [categorySearch, setCategorySearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
 
@@ -63,7 +63,10 @@ export default function CatalogoPage() {
         return map;
     }, [categories]);
 
-
+    const filteredCategories = useMemo(() => {
+        if (!categorySearch) return categories;
+        return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
+    }, [categories, categorySearch]);
     const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
     const isBranchAdmin = user?.role === 'ADMIN_SUCURSAL';
     const isEditor = isMatrizAdmin || isBranchAdmin;
@@ -167,56 +170,96 @@ export default function CatalogoPage() {
                 )}
             </div>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center">
-                <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            {/* Filters */}
+            {/* Filtros Modernos */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div className="relative w-full">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={20} />
                     <input
                         type="text"
-                        placeholder="Buscar productos..."
+                        placeholder="Buscar productos por nombre, código o EAN..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="std-input pl-10 pr-10"
+                        className="w-full pl-12 pr-10 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-50 rounded-xl outline-none transition-all text-sm text-gray-900 shadow-inner"
                     />
                     {searchTerm && (
                         <button 
                             onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100"
+                            title="Limpiar búsqueda"
                         >
                             <X size={16} />
                         </button>
                     )}
                 </div>
 
-                <div className="w-full sm:w-64 shrink-0">
-                    <select
-                        className="std-input appearance-none cursor-pointer"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                    >
-                        <option value="ALL">Todas las categorías</option>
-                        {categories.map((cat: any) => (
-                            <option key={cat._id} value={cat._id!}>{cat.name}</option>
+                {/* Relieve Category Pills */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-4">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Categorías</h3>
+                        <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                            <input
+                                type="text"
+                                placeholder="Buscar categoría..."
+                                value={categorySearch}
+                                onChange={(e) => setCategorySearch(e.target.value)}
+                                className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 rounded-lg outline-none transition-all text-xs text-gray-900"
+                            />
+                            {categorySearch && (
+                                <button 
+                                    onClick={() => setCategorySearch('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                        <button
+                            onClick={() => setSelectedCategory('ALL')}
+                            className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                selectedCategory === 'ALL' 
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            }`}
+                        >
+                            Todas
+                        </button>
+                        {filteredCategories.map((cat: any) => (
+                            <button
+                                key={cat._id}
+                                onClick={() => setSelectedCategory(cat._id!)}
+                                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                    selectedCategory === cat._id 
+                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
+                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                }`}
+                            >
+                                {cat.name}
+                            </button>
                         ))}
-                    </select>
+                    </div>
                 </div>
             </div>
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="std-table">
+                    <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 text-gray-500 uppercase font-semibold text-xs tracking-wider border-b border-gray-100">
                             <tr>
-                                    <th className="std-table-th">Producto</th>
-                                    <th className="std-table-th">Categoría</th>
+                                <th className="px-6 py-4">Producto</th>
+                                <th className="px-6 py-4">Categoría</th>
                                 {user?.sucursal_id ? (
-                                        <th className="std-table-th text-right">Precio Final (Bs)</th>
+                                    <th className="px-6 py-4 text-right">Precio Final (Bs)</th>
                                 ) : (
-                                        <th className="std-table-th text-right">Precios (Bs)</th>
+                                    <th className="px-6 py-4 text-right">Precios (Bs)</th>
                                 )}
-                                    {isMatrizAdmin && <th className="std-table-th text-right">Costo (Bs)</th>}
-                                    <th className="std-table-th text-center">Estado</th>
-                                    {isEditor && <th className="std-table-th text-right">Acciones</th>}
+                                {isMatrizAdmin && <th className="px-6 py-4 text-right">Costo (Bs)</th>}
+                                <th className="px-6 py-4 text-center">Estado</th>
+                                {isEditor && <th className="px-6 py-4 text-right">Acciones</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -238,7 +281,7 @@ export default function CatalogoPage() {
                             ) : (
                                 products.map((p) => (
                                     <tr key={p._id} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="std-table-td">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {p.image_url ? (
                                                     <img src={p.image_url} alt={p.descripcion} className="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm bg-white" />
@@ -256,7 +299,7 @@ export default function CatalogoPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="std-table-td">
+                                        <td className="px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium border border-gray-200">
                                                 <Tag size={12} className="text-gray-400" />
                                                 {p.categoria_nombre && !p.categoria_nombre.match(/^[0-9a-fA-F]{24}$/)
@@ -266,7 +309,7 @@ export default function CatalogoPage() {
                                                         : 'General')}
                                             </span>
                                         </td>
-                                        <td className="std-table-td text-right font-semibold text-gray-900">
+                                        <td className="px-6 py-4 text-right font-semibold text-gray-900">
                                             {user?.sucursal_id ? (
                                                 (p.precio_venta || 0).toFixed(2)
                                             ) : (
@@ -274,17 +317,17 @@ export default function CatalogoPage() {
                                             )}
                                         </td>
                                         {isMatrizAdmin && (
-                                            <td className="std-table-td text-right text-gray-500">
+                                            <td className="px-6 py-4 text-right text-gray-500">
                                                 {(p.costo_producto || 0).toFixed(2)}
                                             </td>
                                         )}
-                                        <td className="std-table-td text-center">
+                                        <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${p.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                                 {p.is_active !== false ? 'Activo' : 'Inactivo'}
                                             </span>
                                         </td>
                                         {isEditor && (
-                                            <td className="std-table-td text-right flex justify-end gap-1">
+                                            <td className="px-6 py-4 text-right flex justify-end gap-1">
                                                 {isBranchAdmin ? (
                                                     <button onClick={() => handleOpenEdit(p)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-colors" title="Gestionar foto del producto">
                                                         <ImageIcon size={16} />
@@ -544,7 +587,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
         costo_producto: product?.costo_producto || 0,
         codigo_corto: product?.codigo_corto || '',
         codigo_largo: product?.codigo_largo || '',
-        proveedores: (product?.proveedores && product.proveedores.length > 0) ? product.proveedores : (product?.proveedor ? [product.proveedor] : []),
+        proveedores: product?.proveedores || [],
         image_url: product?.image_url || '',
         precios_sucursales: product?.precios_sucursales || {},
         meal_plan_template_id: product?.meal_plan_template_id || '',
@@ -614,7 +657,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
                     <h3 className="text-lg font-bold text-gray-900">
-                        {isBranchAdmin ? 'Editar Producto (Foto y Proveedores)' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
+                        {isBranchAdmin ? 'Gestionar Foto del Producto' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
                     </h3>
                     <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
                         <X size={20} />
@@ -624,17 +667,17 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
                     {isBranchAdmin && (
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-                            🔒 Como Administrador de Sucursal puedes actualizar la fotografía y gestionar los proveedores asignados del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
+                            🔒 Como Administrador de Sucursal solo puedes actualizar o eliminar la fotografía del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
                         </div>
                     )}
 
                     <div>
-                        <label className="std-label">Descripción / Nombre</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Descripción / Nombre</label>
                         <input
                             required
                             type="text"
                             disabled={isBranchAdmin}
-                            className="std-input placeholder-gray-400"
+                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                             value={formData.descripcion}
                             onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
                             placeholder="Ej. Coca Cola 2L"
@@ -642,11 +685,11 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                     </div>
 
                     <div>
-                        <label className="std-label">Categoría</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Categoría</label>
                         <select
                             required
                             disabled={isBranchAdmin}
-                            className="std-input"
+                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                             value={formData.categoria_id}
                             onChange={e => setFormData({ ...formData, categoria_id: e.target.value })}
                         >
@@ -657,22 +700,22 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="std-label">SKU (Código Corto)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">SKU (Código Corto)</label>
                             <input
                                 type="text"
                                 disabled={isBranchAdmin}
-                                className="std-input placeholder-gray-400 uppercase font-mono"
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 uppercase font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={formData.codigo_corto}
                                 onChange={e => setFormData({ ...formData, codigo_corto: e.target.value })}
                                 placeholder="Ej: C-COLA-2L"
                             />
                         </div>
                         <div>
-                            <label className="std-label">EAN (Código Largo)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">EAN (Código Largo)</label>
                             <input
                                 type="text"
                                 disabled={isBranchAdmin}
-                                className="std-input placeholder-gray-400 font-mono"
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 value={formData.codigo_largo}
                                 onChange={e => setFormData({ ...formData, codigo_largo: e.target.value })}
                                 placeholder="Ej: 777123456789"
@@ -682,10 +725,10 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     {!isBranchAdmin && (
                         <div className="pb-4 border-b border-gray-100">
-                            <label className="std-label">Costo Base (Bs) (Opcional)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Costo Base (Bs) (Opcional)</label>
                             <input
                                 type="number" step="0.01" min="0" required
-                                className="std-input"
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
                                 value={formData.costo_producto === 0 ? '' : formData.costo_producto}
                                 onChange={e => setFormData({ ...formData, costo_producto: parseFloat(e.target.value) || 0 })}
                                 placeholder="Costo de adquisición"
@@ -693,48 +736,50 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                         </div>
                     )}
 
-                    <div>
-                        <label className="std-label">Proveedores (Opcional)</label>
-                        <select
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                            value=""
-                            onChange={(e) => {
-                                if (!e.target.value) return;
-                                const current = formData.proveedores || [];
-                                if (!current.includes(e.target.value)) {
-                                    setFormData({ ...formData, proveedores: [...current, e.target.value] });
-                                }
-                            }}
-                        >
-                            <option value="">Añadir proveedor...</option>
-                            {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
-                                <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
-                            ))}
-                        </select>
-                        
-                        {(formData.proveedores || []).length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                {(formData.proveedores || []).map((provName) => (
-                                    <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
-                                        {provName}
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
-                                            className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </span>
+                    {!isBranchAdmin && (
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
+                            <select
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
+                                value=""
+                                onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    const current = formData.proveedores || [];
+                                    if (!current.includes(e.target.value)) {
+                                        setFormData({ ...formData, proveedores: [...current, e.target.value] });
+                                    }
+                                }}
+                            >
+                                <option value="">Añadir proveedor...</option>
+                                {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
+                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
                                 ))}
-                            </div>
-                        )}
-                    </div>
+                            </select>
+                            
+                            {(formData.proveedores || []).length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                    {(formData.proveedores || []).map((provName) => (
+                                        <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
+                                            {provName}
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
+                                                className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {!isBranchAdmin && (
                         <div>
-                            <label className="std-label">Vincular a Plan de Comidas (Opcional)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Vincular a Plan de Comidas (Opcional)</label>
                             <select
-                                className="std-input"
+                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
                                 value={formData.meal_plan_template_id || ''}
                                 onChange={e => setFormData({ ...formData, meal_plan_template_id: e.target.value || '' })}
                             >
@@ -748,7 +793,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
 
                     <div className="flex gap-4 items-end">
                         <div className="flex-1">
-                            <label className="std-label">Fotografía del Producto (Opcional)</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fotografía del Producto (Opcional)</label>
                             <label className={`flex items-center justify-center w-full h-12 px-4 transition bg-white border-2 border-gray-200 border-dashed rounded-xl appearance-none cursor-pointer hover:border-indigo-400 focus:outline-none ${isUploading ? 'opacity-50' : ''}`}>
                                 <span className="flex items-center space-x-2 text-gray-600">
                                     {isUploading ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <Upload className="w-5 h-5 text-gray-400" />}
@@ -781,7 +826,7 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Bs.</span>
                                             <input
                                                 type="number" step="0.01" min="0" required
-                                                className="std-input pl-9"
+                                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg pl-9 pr-3 py-1.5 outline-none transition-all text-sm text-gray-900"
                                                 value={formData.precios_sucursales?.[suc._id] ?? ''}
                                                 onChange={e => handlePriceChange(suc._id, e.target.value)}
                                                 placeholder="0.00"

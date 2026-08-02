@@ -8,8 +8,6 @@ import { toast } from 'sonner';
 import { useConfirm } from '../components/ConfirmModal';
 
 
-import { useAuthStore } from '../store/authStore';
-
 const formatDate = (dateStr: string) => {
     const isoStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
     return new Date(isoStr).toLocaleString();
@@ -47,7 +45,6 @@ interface Transaccion {
 export default function CreditosPage() {
     const confirm = useConfirm();
     const qc = useQueryClient();
-    const { tenantSettings } = useAuthStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterEstado, setFilterEstado] = useState<'' | 'AL_DIA' | 'MOROSO'>('');
     const [page, setPage] = useState(1);
@@ -142,49 +139,37 @@ export default function CreditosPage() {
                 <html>
                 <head>
                     <style>
-                        body { font-family: monospace; font-size: 11px; margin: 0; padding: 5px; width: 280px; color: #000; }
+                        body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; width: 300px; color: #000; }
                         .text-center { text-align: center; }
                         .font-bold { font-weight: bold; }
-                        .font-black { font-weight: 900; }
-                        .title { font-size: 14px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-                        .badge { border: 1px solid #000; padding: 3px 6px; display: inline-block; font-weight: bold; font-size: 10px; margin: 4px 0; }
-                        .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
-                        .divider-solid { border-bottom: 2px solid #000; margin: 6px 0; }
-                        table { width: 100%; border-collapse: collapse; font-size: 10px; }
-                        td { padding: 2px 0; }
+                        .title { font-size: 16px; margin-bottom: 5px; }
+                        .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+                        table { width: 100%; border-collapse: collapse; }
+                        td { padding: 3px 0; }
                         .right { text-align: right; }
-                        .text-xs { font-size: 9px; }
+                        .text-xs { font-size: 10px; }
                     </style>
                 </head>
                 <body>
-                    <div class="text-center font-black title">COMPROBANTE DE PAGO</div>
+                    <div class="text-center font-bold title">COMPROBANTE DE PAGO</div>
                     <div class="text-center text-xs">Pago a Crédito / Abono de Cuenta</div>
-                    ${tenantSettings?.direccion ? `<div class="text-center text-xs">${tenantSettings.direccion}</div>` : ''}
-                    ${tenantSettings?.telefono ? `<div class="text-center text-xs">Telf: ${tenantSettings.telefono}</div>` : ''}
                     <div class="divider"></div>
                     <table>
-                        <tr><td>Fecha y Hora:</td><td class="right">${formatDate(t.created_at)}</td></tr>
-                        <tr><td>Cliente:</td><td class="right font-bold">${selectedCuenta.cliente_nombre}</td></tr>
-                        ${selectedCuenta.cliente_nit ? `<tr><td>NIT/CI:</td><td class="right">${selectedCuenta.cliente_nit}</td></tr>` : ''}
-                        ${selectedCuenta.cliente_telefono ? `<tr><td>Celular:</td><td class="right">${selectedCuenta.cliente_telefono}</td></tr>` : ''}
+                        <tr><td>Fecha:</td><td class="right">${formatDate(t.created_at)}</td></tr>
+                        <tr><td>Cliente:</td><td class="right font-bold">${selectedCuenta.cliente_nombre.substring(0,25)}</td></tr>
                         <tr><td>Transacción:</td><td class="right text-xs">#${t.id.substring(t.id.length - 8).toUpperCase()}</td></tr>
                     </table>
                     <div class="divider"></div>
-                    <div class="font-bold text-xs" style="margin-bottom: 4px;">DESGLOSE DE MÉTODOS DE PAGO:</div>
-                    <table style="margin-bottom: 6px;">
-                        ${(t.pagos || []).map(p => `<tr><td>PAGO ${p.metodo}</td><td class="right font-bold">Bs. ${Number(p.monto).toFixed(2)}</td></tr>`).join('')}
-                    </table>
-                    ${t.notas ? `
-                        <div class="divider"></div>
-                        <div class="text-xs"><b>Notas / Detalle:</b> ${t.notas}</div>
-                    ` : ''}
-                    <div class="divider-solid"></div>
-                    <table>
-                        <tr><td class="font-black" style="font-size: 12px;">TOTAL ABONADO:</td><td class="right font-black" style="font-size: 14px;">Bs. ${Number(t.monto).toFixed(2)}</td></tr>
-                        <tr><td class="text-xs font-bold">SALDO RESTANTE CUENTA:</td><td class="right text-xs font-bold">Bs. ${Number(selectedCuenta.saldo_total).toFixed(2)}</td></tr>
+                    <table style="margin-bottom: 10px;">
+                        ${(t.pagos || []).map(p => `<tr><td>${p.metodo}</td><td class="right">Bs. ${p.monto.toFixed(2)}</td></tr>`).join('')}
                     </table>
                     <div class="divider"></div>
-                    <div class="text-center text-xs" style="margin-top:12px;">
+                    <table>
+                        <tr><td class="font-bold">TOTAL ABONADO:</td><td class="right font-bold" style="font-size: 14px;">Bs. ${t.monto.toFixed(2)}</td></tr>
+                        <tr><td class="text-xs">SALDO RESTANTE CUENTA:</td><td class="right text-xs">Bs. ${selectedCuenta.saldo_total.toFixed(2)}</td></tr>
+                    </table>
+                    <div class="divider"></div>
+                    <div class="text-center text-xs" style="margin-top:20px;">
                         Verifique su comprobante.<br/>Gracias por su preferencia.
                     </div>
                 </body>

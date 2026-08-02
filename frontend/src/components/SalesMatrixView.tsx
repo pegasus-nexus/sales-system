@@ -236,7 +236,7 @@ export default function SalesMatrixView() {
                         <select
                             value={selectedSucursal}
                             onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="flex-1 md:w-48 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                            className="flex-1 md:w-48 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                         >
                             <option value="all">Todas las Sucursales</option>
                             <option value="CENTRAL">Central</option>
@@ -249,7 +249,7 @@ export default function SalesMatrixView() {
                     <select
                         value={selectedCategoria}
                         onChange={(e) => setSelectedCategoria(e.target.value)}
-                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                        className="flex-1 md:w-44 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                     >
                         <option value="all">Todas las Categorías</option>
                         {categorias.map(c => (
@@ -260,7 +260,7 @@ export default function SalesMatrixView() {
                     <select
                         value={selectedProveedor}
                         onChange={(e) => setSelectedProveedor(e.target.value)}
-                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                        className="flex-1 md:w-44 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
                     >
                         <option value="all">Todos los Proveedores</option>
                         {proveedores.map(p => (

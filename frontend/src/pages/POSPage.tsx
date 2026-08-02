@@ -1077,27 +1077,8 @@ export default function POSPage() {
                             </div>
 
                             <div className="flex gap-2 w-full">
-                                <button 
-                                    type="button"
-                                    disabled={saleMut.isPending} 
-                                    onClick={() => setConfirmSale(false)} 
-                                    className="flex-1 py-2 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    type="button"
-                                    disabled={saleMut.isPending} 
-                                    onClick={() => { 
-                                        if (saleMut.isPending) return;
-                                        saleMut.mutate(undefined, {
-                                            onSuccess: () => {
-                                                setConfirmSale(false);
-                                            }
-                                        }); 
-                                    }} 
-                                    className="flex-1 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
+                                <button onClick={() => setConfirmSale(false)} className="flex-1 py-2 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
+                                <button onClick={() => { setConfirmSale(false); saleMut.mutate(); }} disabled={saleMut.isPending} className="flex-1 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2">
                                     {saleMut.isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Confirmar
                                 </button>
                             </div>
@@ -1179,8 +1160,8 @@ export default function POSPage() {
                 {lastSale && (
                     <TicketPrinter 
                         sale={lastSale} 
-                        tenantName={sucursales.find(s => s._id === sucursalId)?.nombre || "PEGASUS POS"} 
-                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre || "Suc. Central"}
+                        tenantName={user?.tenant_id || "Mi Tienda"} 
+                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
                         ticketFooter={tenantSettings?.ticket_footer}
                         logoBase64={tenantSettings?.logo_base64}
                         direccion={tenantSettings?.direccion}

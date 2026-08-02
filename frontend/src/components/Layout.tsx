@@ -198,7 +198,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: Package, label: 'Pedidos Compra', path: '/compras/pedidos', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
                     { icon: Truck, label: 'Ingreso Mercadería', path: '/compras/recepciones', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO'] },
-                    { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN', 'SUPERADMIN_STAFF'] },
+                    { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                 ]
             },
@@ -241,15 +241,6 @@ export default function Layout({ children }: LayoutProps) {
     const navGroups = getNavGroups();
     const allFlatNavItems = navGroups.flatMap(g => g.items);
     const mobileBottomItems = allFlatNavItems.slice(0, 4);
-
-    const searchItems = navGroups.flatMap(g => g.items.map(item => ({
-        id: item.path,
-        title: item.label,
-        category: g.title,
-        path: item.path,
-        icon: item.icon,
-        keywords: [item.label.toLowerCase(), g.title.toLowerCase(), item.path.replace('/', '')]
-    })));
 
     // Desplegar automáticamente el grupo que contenga la ruta activa
     React.useEffect(() => {
@@ -494,11 +485,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
 
                     {/* View Search Modal */}
-                    <ViewSearchModal 
-                        isOpen={searchModalOpen} 
-                        onClose={() => setSearchModalOpen(false)} 
-                        items={searchItems}
-                    />
+                    <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
 
 
                     {/* Scrollable Content */}
