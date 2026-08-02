@@ -641,8 +641,6 @@ export default function RegionalAndProductMix() {
                             </table>
                         </div>
                     </div>
-
-
                 </div>
             )}
 
