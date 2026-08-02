@@ -64,8 +64,8 @@ class Sale(Document):
     cliente_id: Optional[str] = None  # Ref to Clientes collection
     cliente: Optional[ClienteInfo] = None
     qr_info: Optional[QRInfo] = None
-    cashier_id: str
-    cashier_name: str
+    cashier_id: Optional[str] = None
+    cashier_name: Optional[str] = None
     vendedor_id: Optional[str] = None
     vendedor_name: Optional[str] = None
     anulada: bool = False

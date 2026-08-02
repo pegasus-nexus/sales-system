@@ -393,6 +393,11 @@ async def get_dashboard_metrics_v2(
             sales_by_branch_map[n]["margen"] += safe_float(b.get("margen", 0))
             sales_by_branch_map[n]["tickets_cliente"] += int(b.get("tickets_cliente", 0))
             
+        # Corregir `ventas_brutas` para que incluya las ventas históricas crudas
+        total_unificado_sucursales = sum(d["ventas"] for d in sales_by_branch_map.values())
+        if total_unificado_sucursales > 0:
+            ventas_brutas = total_unificado_sucursales
+            
         sales_by_branch = []
         desglose_sucursales = {}
         for n, d in sales_by_branch_map.items():
