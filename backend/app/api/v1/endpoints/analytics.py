@@ -11,6 +11,7 @@ from app.services.orchestration_service import get_dashboard_orchestration
 from app.services.hourly_multiyear_service import get_hourly_multiyear
 from app.services.percentile_service import get_sales_percentiles
 from app.services.rentabilidad_service import get_rentabilidad_real
+from app.services.bcg_service import get_bcg_matrix
 
 router = APIRouter()
 
@@ -31,6 +32,19 @@ async def get_portfolio(
         sucursal_id=sucursal_id
     )
 
+@router.get("/bcg")
+async def get_bcg(
+    sucursal_id: Optional[str] = Query(None, description="Id de la sucursal"),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Entrega los datos precalculados de la Matriz BCG con el cruce de ventas reales.
+    """
+    return await get_bcg_matrix(
+        tenant_id=current_user.tenant_id,
+        sucursal_id=sucursal_id
+    )
+
 @router.get("/dashboard")
 async def get_dashboard(
     start_date: datetime = Query(..., description="Fecha de inicio (ejemplo: 2023-01-01T00:00:00)"),
@@ -46,6 +60,8 @@ async def get_dashboard(
     """
     if clear_cache:
         _dashboard_cache.clear()
+        from app.services.analytics_v2_service import _dashboard_cache as _dashboard_cache_v2
+        _dashboard_cache_v2.clear()
 
     from app.services.analytics_v2_service import get_dashboard_metrics_v2
     return await get_dashboard_metrics_v2(
@@ -230,3 +246,33 @@ async def clear_analytics_cache(
     count = len(_dashboard_cache)
     _dashboard_cache.clear()
     return {"ok": True, "cleared_keys": count, "message": f"Caché limpiado: {count} entradas eliminadas"}
+
+from app.schemas.predictive_ai import PredictiveCenterResponse, ScenarioSimulationRequest, ScenarioSimulationResponse
+from app.services.predictive_ai_service import get_predictive_center_data, simulate_scenario_service
+
+@router.get("/predictive-center", response_model=PredictiveCenterResponse)
+async def get_predictive_center(
+    predict_days: int = Query(14, description="Días a proyectar en el futuro"),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Entrega la totalidad de las 13 secciones del Centro de Inteligencia Predictiva.
+    """
+    return await get_predictive_center_data(
+        tenant_id=current_user.tenant_id,
+        predict_days=predict_days
+    )
+
+@router.post("/predictive-center/simulate", response_model=ScenarioSimulationResponse)
+async def simulate_scenario(
+    payload: ScenarioSimulationRequest,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Simulación inteligente de escenarios en tiempo real recalculando ventas, margen, transacciones y riesgo.
+    """
+    return await simulate_scenario_service(
+        tenant_id=current_user.tenant_id,
+        req=payload
+    )
+

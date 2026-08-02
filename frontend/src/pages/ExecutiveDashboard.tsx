@@ -6,7 +6,7 @@ import { twMerge } from 'tailwind-merge';
 
 import DashboardMaestro from './DashboardMaestro';
 import CatalogRentability from './CatalogRentability';
-import AnaliticaAvanzada from './AnaliticaAvanzada';
+import PrediccionesAIPanel from './PrediccionesAIPanel';
 
 import ImportadorInteligente from '../components/DataImporterWizard';
 // DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
@@ -144,7 +144,7 @@ export default function ExecutiveDashboard() {
             <div className="flex-1 w-full animate-in fade-in zoom-in-95 duration-500">
                 {activeTab === 'maestro' && <DashboardMaestro />}
                 {activeTab === 'bi' && <CatalogRentability />}
-                {activeTab === 'ml' && <AnaliticaAvanzada />}
+                {activeTab === 'ml' && <PrediccionesAIPanel />}
                 {activeTab === 'importar' && <ImportadorInteligente />}
             </div>
 

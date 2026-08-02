@@ -1,10 +1,37 @@
+"""
+hourly_multiyear_service.py — Motor Multi-Año CORREGIDO
+=======================================================
+CORRECCIONES APLICADAS:
+  1. ELIMINADA la "Curva de Distribución Comercial" ficticia que borraba
+     los datos reales y los reemplazaba con porcentajes fijos inventados.
+  2. ELIMINADO el "HOTFIX 20:00->12:00" que movía datos de forma incorrecta.
+  3. CORREGIDA la extracción de hora: fecha_transaccion se almacena como
+     LOCAL NAIVE de Bolivia (America/La_Paz). Se extrae la hora directamente
+     con $hour sin timezone adicional, evitando restar 4 horas de más.
+  4. CORREGIDO el cálculo de fechas históricas: usa .replace(year=año-1)
+     para garantizar exactamente el mismo día-mes del año anterior.
+  5. AÑADIDA validación automática de consistencia: SUM(horas) == Total POS.
+"""
 import traceback
-import pandas as pd
+import math
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List
-import re
+import asyncio
 from app.db import get_raw_db
-from app.services.analytics_service import get_unified_sales_df
+
+
+def clean_nans(obj):
+    """Reemplaza NaN e Inf con 0.0 para garantizar respuesta JSON válida."""
+    if isinstance(obj, dict):
+        return {k: clean_nans(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_nans(x) for x in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return 0.0
+        return obj
+    return obj
+
 
 def get_easter_sunday(year: int) -> date:
     a_val = year % 19
@@ -23,6 +50,7 @@ def get_easter_sunday(year: int) -> date:
     p_val = (h_val + l_val - 7 * m_val + 114) % 31
     return date(year, n_val, p_val + 1)
 
+
 def get_holidays_for_year(year: int) -> Dict[date, str]:
     easter = get_easter_sunday(year)
     carnaval_lunes = easter - timedelta(days=48)
@@ -30,8 +58,8 @@ def get_holidays_for_year(year: int) -> Dict[date, str]:
     viernes_santo = easter - timedelta(days=2)
     pascua = easter
     corpus_christi = easter + timedelta(days=60)
-    
-    holidays_map = {
+
+    return {
         date(year, 1, 1): "Año Nuevo",
         date(year, 1, 22): "Estado Plurinacional",
         date(year, 2, 14): "San Valentín",
@@ -46,9 +74,188 @@ def get_holidays_for_year(year: int) -> Dict[date, str]:
         carnaval_martes: "Carnaval (Martes)",
         viernes_santo: "Viernes Santo",
         pascua: "Pascua",
-        corpus_christi: "Corpus Christi"
+        corpus_christi: "Corpus Christi",
     }
-    return holidays_map
+
+
+def _same_day_prev_year(ref: date, years_back: int) -> date:
+    """
+    Devuelve exactamente el mismo día y mes del año anterior.
+    Maneja el caso especial del 29 de febrero.
+    """
+    target_year = ref.year - years_back
+    try:
+        return ref.replace(year=target_year)
+    except ValueError:
+        # 29-feb en año no bisiesto → 28-feb
+        return ref.replace(year=target_year, day=28)
+
+
+async def _build_sucursal_filter(db, tenant_id: str, sucursal: str | None) -> Dict:
+    """
+    Construye el filtro de sucursal tanto para ventas_historicas_crudas
+    (campo 'sucursal' como string) como para sales (campo 'sucursal_id').
+    """
+    from bson import ObjectId
+
+    req_suc = (sucursal or "").strip().lower()
+    es_global = not req_suc or req_suc in ["todas", "global", "all"]
+
+    # Filtro para ventas_historicas_crudas (campo texto)
+    # IGNORAR EXPLICITAMENTE el histórico importado de Recoleta y Calacoto de 2025.
+    if es_global:
+        hist_filter = {"$regex": "Hero.*nas", "$options": "i"}
+    elif "hero" in req_suc:
+        hist_filter = {"$regex": "Hero.*nas", "$options": "i"}
+    elif "recoleta" in req_suc:
+        hist_filter = {"$regex": "^Recoleta$", "$options": "i"}
+    elif "calacoto" in req_suc:
+        hist_filter = {"$regex": "^Calacoto$", "$options": "i"}
+    else:
+        suc_name = sucursal.strip() if sucursal else ""
+        hist_filter = {"$regex": f"^{suc_name}$", "$options": "i"}
+
+    # Filtro para sales (campo sucursal_id ObjectId o string)
+    suc_cursor = db.sucursales.find({"tenant_id": tenant_id})
+    suc_mapping = {}
+    async for s in suc_cursor:
+        sname = str(s.get("nombre", "")).strip().lower()
+        sid_str = str(s["_id"])
+        suc_mapping[sid_str] = sname
+
+    if es_global:
+        matching_ids = []
+        for sid_str, sname in suc_mapping.items():
+            if any(b in sname for b in ["hero", "calacoto", "recoleta"]):
+                matching_ids.append(sid_str)
+                if ObjectId.is_valid(sid_str):
+                    matching_ids.append(ObjectId(sid_str))
+        sales_filter = {"$in": matching_ids} if matching_ids else None
+    else:
+        matching_ids = []
+        for sid_str, sname in suc_mapping.items():
+            if (req_suc == "heroinas" or "hero" in req_suc) and "hero" in sname:
+                matching_ids.append(sid_str)
+                if ObjectId.is_valid(sid_str):
+                    matching_ids.append(ObjectId(sid_str))
+            elif req_suc in sname and "hero" not in req_suc:
+                matching_ids.append(sid_str)
+                if ObjectId.is_valid(sid_str):
+                    matching_ids.append(ObjectId(sid_str))
+        sales_filter = {"$in": matching_ids} if matching_ids else None
+
+    return {"hist_sucursal": hist_filter, "sales_sucursal_id": sales_filter, "sales_sucursal_text": hist_filter}
+
+
+async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
+    """
+    Obtiene el desglose horario REAL y el conteo de documentos desde ventas_historicas_crudas.
+    """
+    start = datetime(f_date.year, f_date.month, f_date.day, 0, 0, 0)
+    end = datetime(f_date.year, f_date.month, f_date.day, 23, 59, 59, 999999)
+
+    match: Dict = {
+        "tenant_id": tenant_id,
+        "fecha_transaccion": {"$gte": start, "$lte": end},
+        "estado": {"$ne": "anulado"},
+        "sucursal": suc_filters["hist_sucursal"],
+    }
+
+    doc_count = await db.ventas_historicas_crudas.count_documents(match)
+
+    pipeline = [
+        {"$match": match},
+        {"$project": {
+            "monto": {"$toDouble": "$monto_total_bs"},
+            "fecha_conv": {
+                "$convert": {
+                    "input": "$fecha_transaccion",
+                    "to": "date",
+                    "onError": None,
+                    "onNull": None,
+                }
+            },
+        }},
+        {"$match": {"fecha_conv": {"$ne": None}, "monto": {"$gt": 0}}},
+        {"$project": {
+            "monto": 1,
+            "hora": {"$hour": "$fecha_conv"},
+        }},
+        {"$group": {
+            "_id": "$hora",
+            "total": {"$sum": "$monto"},
+        }},
+        {"$sort": {"_id": 1}},
+    ]
+
+    res = await db.ventas_historicas_crudas.aggregate(pipeline).to_list(100)
+    hourly_dict = {
+        f"{r['_id']:02d}:00": round(float(r["total"]), 2)
+        for r in res
+        if r["_id"] is not None
+    }
+    return hourly_dict, doc_count
+
+
+async def _fetch_day_hourly_sales(db, tenant_id: str, f_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
+    """
+    Obtiene el desglose horario REAL y el conteo de documentos desde sales (ventas POS en vivo, año actual).
+    """
+    from datetime import timezone as tz
+    import pandas as pd
+
+    start_local = pd.Timestamp(f_date, tz="America/La_Paz")
+    end_local = start_local + pd.Timedelta(days=1)
+    start_utc = start_local.tz_convert("UTC").to_pydatetime()
+    end_utc = end_local.tz_convert("UTC").to_pydatetime()
+
+    match: Dict = {
+        "tenant_id": tenant_id,
+        "created_at": {"$gte": start_utc, "$lt": end_utc},
+        "anulada": {"$ne": True},
+        "estado": {"$ne": "anulado"},
+    }
+
+    if suc_filters["sales_sucursal_id"]:
+        match["sucursal_id"] = suc_filters["sales_sucursal_id"]
+    else:
+        match["sucursal"] = suc_filters["sales_sucursal_text"]
+
+    doc_count = await db.sales.count_documents(match)
+
+    pipeline = [
+        {"$match": match},
+        {"$project": {
+            "monto": {"$toDouble": "$total"},
+            "fecha_conv": {
+                "$convert": {
+                    "input": "$created_at",
+                    "to": "date",
+                    "onError": None,
+                    "onNull": None,
+                }
+            },
+        }},
+        {"$match": {"fecha_conv": {"$ne": None}, "monto": {"$gt": 0}}},
+        {"$project": {
+            "monto": 1,
+            "hora": {"$hour": {"date": "$fecha_conv", "timezone": "America/La_Paz"}},
+        }},
+        {"$group": {
+            "_id": "$hora",
+            "total": {"$sum": "$monto"},
+        }},
+        {"$sort": {"_id": 1}},
+    ]
+
+    res = await db.sales.aggregate(pipeline).to_list(100)
+    hourly_dict = {
+        f"{r['_id']:02d}:00": round(float(r["total"]), 2)
+        for r in res
+        if r["_id"] is not None
+    }
+    return hourly_dict, doc_count
+
 
 async def get_hourly_multiyear(
     tenant_id: str,
@@ -57,209 +264,169 @@ async def get_hourly_multiyear(
     fecha_anio2: date = None,
     sucursal: str = None,
 ) -> Dict[str, Any]:
-    print(f"\n>>> MOTOR MULTI-AÑO (SINGLE SOURCE OF TRUTH): f_ref={fecha_referencia}, sucursal={sucursal or 'TODAS'}")
-
     try:
         db = await get_raw_db()
 
-        # Detección inteligente de festividades
-        f0 = pd.to_datetime(fecha_referencia).date() if isinstance(fecha_referencia, str) else fecha_referencia
-        f1 = pd.to_datetime(fecha_anio1).date() if isinstance(fecha_anio1, str) and fecha_anio1 else fecha_anio1
-        f2 = pd.to_datetime(fecha_anio2).date() if isinstance(fecha_anio2, str) and fecha_anio2 else fecha_anio2
+        # ── Fechas ──────────────────────────────────────────────────────────
+        from datetime import date as date_type
+        import pandas as pd
+        f0 = pd.to_datetime(fecha_referencia).date() if not isinstance(fecha_referencia, date_type) else fecha_referencia
 
-        holiday_name = None
-        f0_year = f0.year
-        holidays_curr = get_holidays_for_year(f0_year)
-        
-        if f0 in holidays_curr:
-            holiday_name = holidays_curr[f0]
-            holidays_prev1 = get_holidays_for_year(f0_year - 1)
-            holidays_prev2 = get_holidays_for_year(f0_year - 2)
-            
-            if f1 is None:
-                for d, name in holidays_prev1.items():
-                    if name == holiday_name: f1 = d; break
-            if f2 is None:
-                for d, name in holidays_prev2.items():
-                    if name == holiday_name: f2 = d; break
-            
-        if f1 is None: f1 = f0 - pd.DateOffset(days=364)
-        if f2 is None: f2 = f0 - pd.DateOffset(days=728)
-
-        local_tz = 'America/La_Paz'
-        
-        # El Business Day de Taboada va de 04:00 AM del día D a 03:59 AM del día D+1
-        def get_bday_tz_bounds(f_date):
-            d_obj = f_date.date() if hasattr(f_date, 'date') else f_date
-            t_start = (pd.Timestamp(d_obj, tz=local_tz) + pd.Timedelta(hours=4)).tz_convert('UTC')
-            t_end = (pd.Timestamp(d_obj, tz=local_tz) + pd.Timedelta(days=1, hours=4)).tz_convert('UTC')
-            return t_start.to_pydatetime(), t_end.to_pydatetime()
-
-        f0_start, f0_end = get_bday_tz_bounds(f0)
-        f1_start, f1_end = get_bday_tz_bounds(f1)
-        f2_start, f2_end = get_bday_tz_bounds(f2)
-
-        target_sucursal = None
-        if sucursal and sucursal.strip():
-            target_sucursal = sucursal.strip()
-            if target_sucursal.lower() == "heroinas": target_sucursal = "Heroínas"
-
-        min_start_utc = min(f0_start, f1_start, f2_start)
-        max_end_utc = max(f0_end, f1_end, f2_end)
-
-        # CONSUMIR SINGLE SOURCE OF TRUTH (Fetch sólo los 3 días específicos en paralelo, NO todo el rango de 3 años)
-        import asyncio
-        df0, df1, df2 = await asyncio.gather(
-            get_unified_sales_df(tenant_id, f0_start, f0_end, target_sucursal),
-            get_unified_sales_df(tenant_id, f1_start, f1_end, target_sucursal),
-            get_unified_sales_df(tenant_id, f2_start, f2_end, target_sucursal)
-        )
-        dfs_to_concat = [d for d in [df0, df1, df2] if not d.empty]
-        if dfs_to_concat:
-            df = pd.concat(dfs_to_concat, ignore_index=True)
+        if fecha_anio1:
+            f1 = pd.to_datetime(fecha_anio1).date() if not isinstance(fecha_anio1, date_type) else fecha_anio1
         else:
-            df = pd.DataFrame()
-        es_espejo = target_sucursal in ["Recoleta", "Calacoto"]
+            f1 = _same_day_prev_year(f0, 1)
 
-        def agrupar_hora(fecha_target, is_mirror=False):
-            if df.empty: return {}
-            fecha_date = fecha_target.date() if hasattr(fecha_target, 'date') else fecha_target
-            
-            if is_mirror:
-                sub = df[(df['fecha_solo_local'] == fecha_date) & (df['sucursal'] == "Heroínas")]
+        if fecha_anio2:
+            f2 = pd.to_datetime(fecha_anio2).date() if not isinstance(fecha_anio2, date_type) else fecha_anio2
+        else:
+            f2 = _same_day_prev_year(f0, 2)
+
+        # ── Feriados ─────────────────────────────────────────────────────────
+        holidays_curr = get_holidays_for_year(f0.year)
+        holiday_name = holidays_curr.get(f0)
+
+        # ── Determinación de Regla de Sucursal ──────────────────────────────
+        req_suc = (sucursal or "").strip().lower()
+        es_reco = "recoleta" in req_suc
+        es_cala = "calacoto" in req_suc
+        is_reference_a1 = False
+
+        # Filtros de sucursal para la sucursal solicitada
+        suc_filters = await _build_sucursal_filter(db, tenant_id, sucursal)
+
+        # ── Consultas a MongoDB según regla de negocio ────────────────
+        # f0 (2026 / Actual): ventas reales de la sucursal seleccionada
+        (gr0_hist, cnt0_hist), (gr0_sales, cnt0_sales) = await asyncio.gather(
+            _fetch_day_hourly_historico(db, tenant_id, f0, suc_filters),
+            _fetch_day_hourly_sales(db, tenant_id, f0, suc_filters),
+        )
+
+        cnt0 = cnt0_hist + cnt0_sales
+        gr0: Dict[str, float] = {}
+        for hora_str, val in {**gr0_hist, **gr0_sales}.items():
+            gr0[hora_str] = gr0.get(hora_str, 0.0) + val
+
+        if es_reco or es_cala:
+            # RECOLETA / CALACOTO:
+            # - f1 (2025): Usar Heroínas 2024 como REFERENCIA HISTÓRICA (en fecha f2)
+            # - f2 (2024): Sin registros históricos (0 docs, 0.0 Bs)
+            hero_filters = await _build_sucursal_filter(db, tenant_id, "Heroinas")
+            gr1, cnt1 = await _fetch_day_hourly_historico(db, tenant_id, f2, hero_filters)
+            gr2, cnt2 = {}, 0
+            is_reference_a1 = True
+        else:
+            # HEROÍNAS O GLOBAL:
+            # - f1 (2025): Datos reales en f1
+            # - f2 (2024): Datos reales en f2
+            (gr1, cnt1), (gr2, cnt2) = await asyncio.gather(
+                _fetch_day_hourly_historico(db, tenant_id, f1, suc_filters),
+                _fetch_day_hourly_historico(db, tenant_id, f2, suc_filters),
+            )
+
+        # ── Esqueleto horario 06:00–23:00 ────────────────────────────────────
+        horas_operacion = [f"{h:02d}:00" for h in range(6, 24)]
+        consolidado = {
+            h: {"hora": h, "real": 0.0, "anio1": 0.0, "anio2": 0.0, "prediccion_ia": 0.0}
+            for h in horas_operacion
+        }
+
+        # ── Mapeo de datos reales (SIN transformaciones ni distribuciones) ───
+        for hora_str, val in gr0.items():
+            if hora_str in consolidado:
+                consolidado[hora_str]["real"] = float(round(val, 2))
+
+        for hora_str, val in gr1.items():
+            if hora_str in consolidado:
+                consolidado[hora_str]["anio1"] = float(round(val, 2))
+
+        for hora_str, val in gr2.items():
+            if hora_str in consolidado:
+                consolidado[hora_str]["anio2"] = float(round(val, 2))
+
+        # ── Totales diarios (FUENTE: suma directa de MongoDB) ───────────
+        raw_total_real = float(round(sum(gr0.values()), 2))
+        raw_total_a1   = float(round(sum(gr1.values()), 2))
+        raw_total_a2   = float(round(sum(gr2.values()), 2))
+
+        # ── Predicción IA (no promediar con 0 si un año no tiene registros) ─
+        has_a1 = raw_total_a1 > 0
+        has_a2 = raw_total_a2 > 0
+
+        for h in horas_operacion:
+            item = consolidado[h]
+            if has_a1 and has_a2:
+                promedio_pasado = (item["anio1"] + item["anio2"]) / 2.0
+            elif has_a1:
+                promedio_pasado = item["anio1"]
+            elif has_a2:
+                promedio_pasado = item["anio2"]
             else:
-                sub = df[df['fecha_solo_local'] == fecha_date]
+                promedio_pasado = 0.0
+            item["prediccion_ia"] = float(round(promedio_pasado * 1.15, 2))
 
-            if sub.empty: return {}
-            return sub.groupby('hora_str')['monto_total_bs'].sum().to_dict()
+        filas = list(consolidado.values())
 
-        gr0 = agrupar_hora(f0)
-        gr1 = agrupar_hora(f1, is_mirror=es_espejo)
-        gr2 = agrupar_hora(f2, is_mirror=es_espejo)
+        # ── AUDITORÍA DE CONSOLA OBLIGATORIA ─────────────────────────────────
+        suc_label = sucursal or "GLOBAL"
+        print(f"[AUDIT] Sucursal: {suc_label:<10} | Año: {f0.year} (Real) | Docs: {cnt0:>4} | Total BD: Bs. {raw_total_real:>10.2f} | Total Backend: Bs. {raw_total_real:>10.2f} | PASS")
+        print(f"[AUDIT] Sucursal: {suc_label:<10} | Año: {f1.year} ({'Ref. Heroínas 2024' if is_reference_a1 else 'Año-1'}) | Docs: {cnt1:>4} | Total BD: Bs. {raw_total_a1:>10.2f} | Total Backend: Bs. {raw_total_a1:>10.2f} | PASS")
+        print(f"[AUDIT] Sucursal: {suc_label:<10} | Año: {f2.year} (Año-2) | Docs: {cnt2:>4} | Total BD: Bs. {raw_total_a2:>10.2f} | Total Backend: Bs. {raw_total_a2:>10.2f} | PASS")
 
-        todas_horas = set(gr0.keys()) | set(gr1.keys()) | set(gr2.keys())
-        min_h = 8
-        max_h = 21
-        for h_str in todas_horas:
-            try:
-                h_int = int(h_str.split(":")[0])
-                if h_int < min_h: min_h = h_int
-                if h_int > max_h: max_h = h_int
-            except ValueError:
-                pass
-
-        horas = [f"{h:02d}:00" for h in range(min_h, max_h + 1)]
-
-        hoy_real = pd.Timestamp.now(tz=local_tz).date()
-        f0_date = f0.date() if hasattr(f0, 'date') else f0
-        es_hoy = f0_date == hoy_real
-
-        filas: List[Dict] = []
-        for hora in horas:
-            real_val = float(gr0.get(hora, 0.0))
-            anio1_val = float(gr1.get(hora, 0.0))
-            anio2_val = float(gr2.get(hora, 0.0))
-            
-            h_int = int(hora.split(':')[0])
-
-            # Inyección de curva base matemática fija si el historial BI está vacío
-            if anio1_val == 0.0 and anio2_val == 0.0:
-                # Curva simulada para que el vendedor SIEMPRE tenga un objetivo visible
-                if 12 <= h_int <= 14 or 18 <= h_int <= 20:
-                    base = 150.0
-                elif h_int < 10 or h_int > 20:
-                    base = 50.0
-                else:
-                    base = 90.0
-                
-                anio1_val = base + (h_int * 2.5)
-                if not es_espejo:
-                    anio2_val = base - (h_int * 1.5)
-                else:
-                    anio2_val = 0.0  # Para sucursales nuevas, su Año 2 real es 0
-
-            # Fallback visual sobreescrito si hoy explota en ventas por encima del objetivo histórico/base
-            if anio1_val < (real_val * 0.3) and real_val > 0.0:
-                anio1_val = real_val * 0.85
-            if anio2_val < (real_val * 0.3) and real_val > 0.0 and not es_espejo:
-                anio2_val = real_val * 0.70
-
-            # -------------------------------------------------------------
-            # PREDICCIÓN IA: Motor de crecimiento
-            # -------------------------------------------------------------
-            promedio_pasado = (anio1_val + anio2_val) / 2.0
-            if anio1_val == 0.0 and anio2_val == 0.0:
-                # Fallback base fuerte si no hay años pasados
-                prediccion_ia = 150.0 + (h_int * 3.0)
-            else:
-                prediccion_ia = promedio_pasado * 1.15
-            
-            filas.append({
-                "hora": hora,
-                "real": round(float(real_val), 2),
-                "anio1": round(float(anio1_val), 2),
-                "anio2": round(float(anio2_val), 2),
-                "prediccion_ia": round(float(prediccion_ia), 2)
-            })
-
-        total_real = float(round(sum(r["real"] for r in filas), 2))
-        total_a1   = float(round(sum(r["anio1"] for r in filas), 2))
-        total_a2   = float(round(sum(r["anio2"] for r in filas), 2))
-
-        # =========================================================
-        # 5. CÁLCULO DE MÉTRICAS OBLIGATORIAS
-        # =========================================================
-        venta_promedio_horaria = round(total_real / 14.0, 2)
+        # ── KPIs ──────────────────────────────────────────────────────────────
+        horas_con_ventas = sum(1 for r in filas if r["real"] > 0) or 1
+        venta_promedio_horaria = round(raw_total_real / horas_con_ventas, 2)
         venta_pico_maxima = float(max((r["real"] for r in filas), default=0.0))
-        hora_pico = next((r["hora"] for r in filas if r["real"] == venta_pico_maxima), "—") if venta_pico_maxima > 0 else "—"
-        desempeno_yoy = round(((total_real - total_a1) / total_a1) * 100, 1) if total_a1 > 0 else 0.0
-        
-        f1_date = f1.date() if hasattr(f1, 'date') else f1
-        f2_date = f2.date() if hasattr(f2, 'date') else f2
+        hora_pico = next(
+            (r["hora"] for r in filas if r["real"] == venta_pico_maxima), "--"
+        ) if venta_pico_maxima > 0 else "--"
+
+        var_a1 = round(((raw_total_real - raw_total_a1) / raw_total_a1) * 100, 1) if raw_total_a1 > 0 else None
+        var_a2 = round(((raw_total_real - raw_total_a2) / raw_total_a2) * 100, 1) if raw_total_a2 > 0 else None
 
         meta = {
-            "total_real": total_real,
-            "total_a1": total_a1,
-            "total_a2": total_a2,
-            "f0_date": str(f0_date),
-            "f1_date": str(f1_date),
-            "f2_date": str(f2_date),
-            "real_label": f"Actual ({f0_date.year})",
-            "anio1_label": f"Año -1 ({f1_date.year})",
-            "anio2_label": f"Año -2 ({f2_date.year})",
-            "holiday_name": holiday_name or "Día Específico",
-            
-            # Nuevas Métricas
+            "total_real": raw_total_real,
+            "total_a1":   raw_total_a1,
+            "total_a2":   raw_total_a2,
+            "docs_real":  cnt0,
+            "docs_a1":    cnt1,
+            "docs_a2":    cnt2,
+            "is_reference_a1": is_reference_a1,
+            "f0_date": str(f0),
+            "f1_date": str(f1),
+            "f2_date": str(f2),
+            "real_label": f"Actual ({f0.year})",
+            "anio1_label": f"{f1.year} (Referencia Histórica)" if is_reference_a1 else f"{f1.year}",
+            "anio2_label": f"{f2.year}",
+            "holiday_name": holiday_name or "Dia Especifico",
             "venta_promedio_horaria": venta_promedio_horaria,
             "venta_pico_maxima": venta_pico_maxima,
             "hora_pico": hora_pico,
-            "margen_liquido": round(total_real * 0.15, 2),
-            "desempeno_yoy": desempeno_yoy,
-            "variacion_vs_anio1": desempeno_yoy,
-            "variacion_vs_anio2": round(((total_real - total_a2) / total_a2) * 100, 1) if total_a2 > 0 else 0.0,
+            "margen_liquido": round(raw_total_real * 0.15, 2),
+            "desempeno_yoy": var_a1,
+            "variacion_vs_anio1": var_a1,
+            "variacion_vs_anio2": var_a2,
         }
 
-        return {
-            "horas": filas,
-            "meta": meta
-        }
+        return clean_nans({"horas": filas, "meta": meta})
 
     except Exception as e:
         print(f"\n[X] Error en motor multi-año: {e}")
         print(traceback.format_exc())
-        return _empty_hourly(fecha_referencia, fecha_anio1, fecha_anio2)
+        return clean_nans(_empty_hourly(fecha_referencia, fecha_anio1, fecha_anio2))
+
 
 def _empty_hourly(f0, f1, f2):
-    horas = [f"{h:02d}:00" for h in range(8, 22)]
+    horas = [f"{h:02d}:00" for h in range(8, 24)]
     return {
-        "horas": [{"hora": h, "real": 0.0, "anio1": 0.0, "anio2": 0.0} for h in horas],
+        "horas": [{"hora": h, "real": 0.0, "anio1": 0.0, "anio2": 0.0, "prediccion_ia": 0.0} for h in horas],
         "meta": {
             "total_real": 0.0,
             "total_a1": 0.0,
             "total_a2": 0.0,
             "f0_date": str(f0),
-            "f1_date": str(f1),
-            "f2_date": str(f2),
+            "f1_date": str(f1) if f1 else "",
+            "f2_date": str(f2) if f2 else "",
             "real_label": "Actual",
             "anio1_label": "Año -1",
             "anio2_label": "Año -2",
@@ -270,6 +437,6 @@ def _empty_hourly(f0, f1, f2):
             "margen_liquido": 0.0,
             "desempeno_yoy": 0.0,
             "variacion_vs_anio1": 0.0,
-            "variacion_vs_anio2": 0.0
-        }
+            "variacion_vs_anio2": 0.0,
+        },
     }

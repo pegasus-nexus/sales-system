@@ -80,18 +80,40 @@ async def get_rentabilidad_real(
 
     async def get_product_costs():
         prods = await db.products.find(
-            {}, {"descripcion": 1, "costo_producto": 1, "proveedor": 1}
+            {}, 
+            {
+                "descripcion": 1, 
+                "costo_producto": 1, 
+                "costo_base": 1,
+                "precio_distribucion": 1,
+                "costo_distribucion": 1,
+                "precio_matriz": 1,
+                "proveedores": 1, 
+                "proveedor": 1,
+                "categoria_id": 1,
+                "categoria_nombre": 1,
+            }
         ).to_list(5000)
+
+        cats = await db.categories.find({}, {"_id": 1, "nombre": 1}).to_list(500)
+        cat_map = {str(c["_id"]): str(c.get("nombre", "")) for c in cats}
+
         costs: Dict[str, dict] = {}
         for p in prods:
             k = str(p.get("descripcion", "")).strip().upper()
             try:
+                c_base = float(str(p.get("costo_producto") or p.get("costo_base") or 0.0))
+                p_dist = float(str(p.get("precio_distribucion") or p.get("costo_distribucion") or p.get("precio_matriz") or 0.0))
+                prov = str(p.get("proveedor") or (p.get("proveedores", [""])[0] if p.get("proveedores") else "")).strip()
+                cat = str(p.get("categoria_nombre") or cat_map.get(str(p.get("categoria_id", "")), "Sin Categoría")).strip()
                 costs[k] = {
-                    "costo": float(str(p.get("costo_producto", 0))),
-                    "proveedor": str(p.get("proveedor", "")).strip().lower()
+                    "costo_base": c_base,
+                    "precio_distribucion": p_dist,
+                    "proveedor": prov,
+                    "categoria": cat,
                 }
             except Exception:
-                costs[k] = {"costo": 0.0, "proveedor": ""}
+                costs[k] = {"costo_base": 0.0, "precio_distribucion": 0.0, "proveedor": "", "categoria": "Sin Categoría"}
         return costs
 
     async def get_suc_names():
@@ -138,6 +160,7 @@ async def get_rentabilidad_real(
             "_id": "$items.descripcion",
             "unidades":        {"$sum": {"$toInt": "$items.cantidad"}},
             "ingreso_bruto":   {"$sum": {"$toDouble": "$items.subtotal"}},
+            "tickets_set":     {"$addToSet": "$_id"},
             "costo_real":      {"$sum": {"$multiply": [
                 {"$toDouble": "$items.costo_unitario"},
                 {"$toDouble": "$items.cantidad"}
@@ -156,6 +179,7 @@ async def get_rentabilidad_real(
             "_id": "$nombre_producto",
             "unidades":      {"$sum": {"$toDouble": {"$ifNull": ["$cantidad_vendida", 1]}}},
             "ingreso_bruto": {"$sum": {"$toDouble": "$monto_total_bs"}},
+            "tickets":       {"$sum": 1},
         }},
     ]
 
@@ -173,6 +197,7 @@ async def get_rentabilidad_real(
         pos_map[name_key] = {
             "nombre":          name,
             "unidades":        int(d.get("unidades", 0)),
+            "tickets":         len(d.get("tickets_set", [])),
             "ingreso_bruto":   float(d.get("ingreso_bruto", 0)),
             "costo_real_pos":  float(d.get("costo_real", 0)),
             "descuentos":      float(d.get("descuentos", 0)),
@@ -186,11 +211,12 @@ async def get_rentabilidad_real(
         name_key = name.upper()
         unidades = float(d.get("unidades", 1) or 1)
         ingreso  = float(d.get("ingreso_bruto", 0))
-        prod_info = product_costs.get(name_key, {"costo": 0.0, "proveedor": ""})
-        costo_base = prod_info["costo"]
+        prod_info = product_costs.get(name_key, {"costo_base": 0.0, "precio_distribucion": 0.0, "proveedor": "", "categoria": "Sin Categoría"})
+        costo_base = prod_info["costo_base"]
         hist_map[name_key] = {
             "nombre":          name,
             "unidades":        unidades,
+            "tickets":         int(d.get("tickets", 1)),
             "ingreso_bruto":   ingreso,
             "costo_real_pos":  costo_base * unidades,
             "descuentos":      0.0,
@@ -199,18 +225,9 @@ async def get_rentabilidad_real(
         }
 
     # ── MERGE ──────────────────────────────────────────────────────────────────
-    # REGLA ANTI-DUPLICADO:
-    # Las ventas POS se copian automáticamente a ventas_historicas_crudas.
-    # Por eso: si un producto tiene datos POS en ese período → usar SOLO POS.
-    # El historial solo aporta productos que NO aparecen en POS (ej: datos importados
-    # de períodos anteriores al sistema POS).
     merged: Dict[str, dict] = {}
-
-    # 1. Poblar con pos_map primero (fuente más confiable y sin duplicados)
     for name_key, data in pos_map.items():
         merged[name_key] = dict(data)
-
-    # 2. Agregar del historial SOLO los productos que NO tienen dato POS
     for name_key, data in hist_map.items():
         if name_key not in merged:
             merged[name_key] = dict(data)
@@ -234,43 +251,68 @@ async def get_rentabilidad_real(
     for name_key, d in merged.items():
         ingreso  = d["ingreso_bruto"]
         unidades = d["unidades"]
+        tickets  = d.get("tickets", 1)
         
-        prod_info = product_costs.get(name_key, {"costo": 0.0, "proveedor": ""})
-        costo_base = prod_info["costo"]
+        prod_info = product_costs.get(name_key, {"costo_base": 0.0, "precio_distribucion": 0.0, "proveedor": "Sin Proveedor", "categoria": "Sin Categoría"})
+        costo_base = prod_info["costo_base"]
+        precio_distribucion = prod_info["precio_distribucion"]
         proveedor = prod_info["proveedor"]
+        categoria = prod_info["categoria"]
         
-        costo_real = d["costo_real_pos"] if d["costo_real_pos"] > 0 else (costo_base * unidades)
+        # Precio de venta promedio real por unidad
+        precio_prom = (ingreso / unidades) if unidades > 0 else 0.0
         
-        # Regla Taboada (alineada al Dashboard)
-        es_taboada = "taboada" in proveedor
-        if es_taboada:
-            # Matriz gana el 15% sobre el costo base de los productos
-            ganancia_matriz = costo_real * 0.15
-            # La sucursal gana la diferencia entre el ingreso y el costo base
-            ganancia_suc = ingreso - costo_real
+        # Costo de distribución (lo que paga la sucursal). Si no está configurado, usa costo_base
+        costo_distribucion = precio_distribucion if precio_distribucion > 0 else costo_base
+        
+        # Ganancia Matriz: si precio_distribucion > costo_base
+        if precio_distribucion > costo_base and costo_base > 0:
+            ganancia_matriz = (precio_distribucion - costo_base) * unidades
         else:
             ganancia_matriz = 0.0
-            ganancia_suc = ingreso - costo_real
             
-        margen_pct = (ganancia_suc / ingreso * 100) if ingreso > 0 else 0.0
+        # Ganancia Sucursal: Ingreso - (costo_distribucion * unidades)
+        ganancia_suc = ingreso - (costo_distribucion * unidades)
+        
+        # Ganancia Empresa (Total): Ingreso - (costo_base * unidades)
+        ganancia_total = ingreso - (costo_base * unidades)
+        
+        # Márgenes %
+        margen_suc_pct = (ganancia_suc / ingreso * 100) if ingreso > 0 else 0.0
+        margen_empresa_pct = (ganancia_total / ingreso * 100) if ingreso > 0 else 0.0
         
         result.append({
-            "nombre":          d["nombre"],
-            "unidades":        int(unidades),
-            "ingreso_bruto":   round(ingreso, 2),
-            "costo_real":      round(costo_real, 2),
-            "ganancia_suc":    round(ganancia_suc, 2),
-            "ganancia_matriz": round(ganancia_matriz, 2),
-            "descuentos":      round(d["descuentos"], 2),
-            "margen_pct":      round(margen_pct, 1),
-            "precio_prom":     round(ingreso / unidades, 2) if unidades > 0 else 0.0,
-            "costo_prom":      round(costo_base, 2) if costo_base > 0 else (round(costo_real / unidades, 2) if unidades > 0 else 0.0),
-            "stock":           stock_map.get(d.get("producto_id_ref", ""), {}),
-            "fuente":          d.get("fuente", "?"),
+            "nombre":              d["nombre"],
+            "unidades":            int(unidades),
+            "tickets":             int(tickets),
+            "precio_prom":         round(precio_prom, 2),
+            "ingreso_bruto":       round(ingreso, 2),
+            "costo_base":          round(costo_base, 2),
+            "precio_distribucion": round(precio_distribucion, 2),
+            "ganancia_suc":        round(ganancia_suc, 2),
+            "ganancia_matriz":     round(ganancia_matriz, 2),
+            "ganancia_total":      round(ganancia_total, 2),
+            "margen_suc_pct":      round(margen_suc_pct, 1),
+            "margen_empresa_pct":  round(margen_empresa_pct, 1),
+            "categoria":           categoria,
+            "proveedor":           proveedor,
+            "costo_real":          round(costo_base * unidades, 2),
+            "costo_prom":          round(costo_base, 2),
+            "descuentos":          round(d.get("descuentos", 0), 2),
+            "stock":               stock_map.get(d.get("producto_id_ref", ""), {}),
+            "fuente":              d.get("fuente", "?"),
         })
 
     result.sort(key=lambda x: x["ingreso_bruto"], reverse=True)
-    result = result[:limit]
+
+    # REGLA DE LÍMITE:
+    # Consolidado (todas las sucursales): Top 20
+    # Sucursal específica (Heroínas, Recoleta, Calacoto): Top 15
+    effective_limit = limit
+    if limit == 50 or limit == 0 or limit == 5000:
+        effective_limit = 15 if sucursal_id else 20
+    
+    result = result[:effective_limit]
 
     # Guardar en caché
     _rent_cache[cache_key] = (time.time(), result)

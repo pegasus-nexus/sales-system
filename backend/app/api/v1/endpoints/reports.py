@@ -14,6 +14,7 @@ from app.utils.serializers import normalize_bson
 from datetime import datetime, timedelta, time, timezone
 from app.utils.date_utils import BOLIVIA_TZ, get_day_range_bolivia, get_range_bolivia
 
+from app.services.daily_sales_service import get_official_daily_sales
 
 _ZERO = Decimal("0")  # Constante DRY para el valor cero monetario
 
@@ -288,31 +289,27 @@ async def get_daily_report(
         raise HTTPException(status_code=400, detail="Formato de fecha inválido. Use YYYY-MM-DD")
 
 
-    # 1. Sales summary (Pagos)
-    sales = await Sale.find(
-        Sale.tenant_id == tenant_id,
-        Sale.sucursal_id == target_sucursal,
-        Sale.created_at >= start_dt,
-        Sale.created_at <= end_dt
-    ).to_list()
+    # 1. Sales summary oficial
+    daily_res = await get_official_daily_sales(
+        tenant_id=tenant_id,
+        start_dt=start_dt,
+        end_dt=end_dt,
+        sucursal_id=target_sucursal
+    )
+    sales = daily_res["raw_sales"]
+    total_ventas = Decimal(str(daily_res["total_ventas"]))
+    total_descuentos = Decimal(str(daily_res["total_descuentos"]))
+    anuladas_count = daily_res["anuladas_count"]
+    anuladas_monto = Decimal(str(daily_res["anuladas_monto"]))
 
     ventas_por_metodo: Dict[str, Decimal] = {
         "EFECTIVO": _ZERO, "QR": _ZERO, "TARJETA": _ZERO, "TRANSFERENCIA": _ZERO
     }
-    total_ventas    = _ZERO
-    total_descuentos = _ZERO
-    total_creditos   = _ZERO
-    anuladas_count  = 0
-    anuladas_monto  = _ZERO
+    total_creditos = _ZERO
     
     for s in sales:
         if s.anulada:
-            anuladas_count += 1
-            anuladas_monto += s.total
             continue
-            
-        total_ventas += s.total
-        total_descuentos += s.get_total_descuento()
 
         if s.estado_pago in ["PENDIENTE", "PARCIAL"]:
             pagado = sum((p.monto for p in s.pagos), _ZERO)

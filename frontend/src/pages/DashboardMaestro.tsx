@@ -1,26 +1,337 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 import { getAnalyticsDashboard, getSucursales } from '../api/api';
 import {
     LayoutDashboard, DollarSign,
     Package, AlertTriangle, Loader2,
-    Activity, CheckCircle2, CloudRain, Bot, ChevronDown, ChevronRight
+    Activity, CheckCircle2, Bot, ChevronDown,
+    RefreshCw, Download, Maximize2, Minimize2, Clock, Layers, FileSpreadsheet, RotateCcw, Zap
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import HourlyMultiyearChart from '../components/HourlyMultiyearChart';
-import SpecialDatesChart from '../components/SpecialDatesChart';
-import RegionalAndProductMix from '../components/RegionalAndProductMix';
-import SalesPercentileTracker from '../components/SalesPercentileTracker';
+
+import HourlyMultiyearChartRaw from '../components/HourlyMultiyearChart';
+import SpecialDatesChartRaw from '../components/SpecialDatesChart';
+import RegionalAndProductMixRaw from '../components/RegionalAndProductMix';
+import SalesPercentileTrackerRaw from '../components/SalesPercentileTracker';
+
+const HourlyMultiyearChart = memo(HourlyMultiyearChartRaw);
+const SpecialDatesChart = memo(SpecialDatesChartRaw);
+const RegionalAndProductMix = memo(RegionalAndProductMixRaw);
+const SalesPercentileTracker = memo(SalesPercentileTrackerRaw);
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+
+export interface DesgloseSucursal {
+    ingresos: number;
+    comision: number;
+    margenRetail: number;
+    margenNeto: number;
+    ticketMedio: number;
+    visitas: number;
+}
+export type DesgloseSucursales = Record<string, DesgloseSucursal>;
+
+
+interface VentasCardProps {
+    ventasBrutas: number;
+    desgloseSucursales?: DesgloseSucursales;
+    showBreakdown: boolean;
+    setShowBreakdown: (val: boolean) => void;
+    formatBs: (num?: number) => string;
+}
+
+const VentasCard = memo((props: VentasCardProps) => {
+    const { ventasBrutas, desgloseSucursales, showBreakdown, setShowBreakdown, formatBs } = props;
+    console.log("RENDER VENTASCARD", {
+        ventasBrutas,
+        timestamp: new Date().toISOString()
+    });
+
+    return (
+        <div className="bg-[#7b75a6] rounded-3xl p-6 shadow-md flex flex-col justify-between text-white h-full min-h-[295px] select-none border border-white/10 transition-all hover:shadow-lg">
+            {/* Header */}
+            <div className="pb-3 border-b border-white/20 flex justify-between items-center">
+                <div>
+                    <span className="text-base font-black uppercase tracking-wider opacity-95 block">Ingresos Totales</span>
+                    <span className="text-xs font-semibold opacity-80 mt-0.5 block">Global</span>
+                </div>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            </div>
+            
+            {/* Cifra Gigante Centrada Visualmente (+40-50% más grande) */}
+            <div className="my-auto py-4 text-center sm:text-left flex flex-col justify-center">
+                <h2 className="text-4xl xl:text-5xl font-black tracking-tight drop-shadow-md leading-none">{formatBs(ventasBrutas)}</h2>
+                <p className="text-xs font-bold opacity-90 mt-2">Ventas Brutas Acumuladas</p>
+                
+                {showBreakdown && desgloseSucursales && Object.keys(desgloseSucursales).length > 0 && (
+                    <div className="mt-3 space-y-1.5 bg-white/10 p-2.5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-top-2 text-left">
+                        {Object.entries(desgloseSucursales).map(([nombre, datos]) => (
+                            <div key={nombre} className="flex justify-between items-center text-xs text-white/90">
+                                <span className="font-semibold">{nombre}</span>
+                                <span className="font-bold text-white">{formatBs(datos.ingresos)}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t border-white/20 flex justify-between items-center">
+                <button 
+                    onClick={() => setShowBreakdown(!showBreakdown)}
+                    className="flex items-center gap-1 opacity-90 hover:opacity-100 transition-opacity uppercase tracking-wider text-xs font-extrabold"
+                >
+                    <span>Desglose por tienda</span>
+                    <ChevronDown size={14} className={cn("transition-transform", showBreakdown && "rotate-180")} />
+                </button>
+            </div>
+        </div>
+    );
+});
+
+VentasCard.displayName = 'VentasCard';
+
+interface MargenCardProps {
+    comisionMatriz: number;
+    margenRetail: number;
+    margenLiquido: number;
+    revenueGrowth: number;
+    desgloseSucursales?: DesgloseSucursales;
+    showDetails: boolean;
+    setShowDetails: (val: boolean) => void;
+    formatBs: (num?: number) => string;
+}
+
+const MargenCard = memo(({ comisionMatriz, margenRetail, margenLiquido, revenueGrowth, desgloseSucursales, showDetails, setShowDetails, formatBs }: MargenCardProps) => {
+    const entries = desgloseSucursales ? Object.values(desgloseSucursales) : [];
+    const hasBranches = entries.length > 0;
+
+    const totalComision   = hasBranches ? entries.reduce((a, d) => a + d.comision,    0) : comisionMatriz;
+    const totalRetail     = hasBranches ? entries.reduce((a, d) => a + d.margenRetail, 0) : margenRetail;
+    const totalMargen     = hasBranches ? entries.reduce((a, d) => a + d.margenNeto,   0) : margenLiquido;
+    const totalVentas     = hasBranches ? entries.reduce((a, d) => a + d.ingresos,     0) : 0;
+    const margenPct       = totalVentas > 0 ? (totalMargen / totalVentas) * 100 : revenueGrowth;
+
+    return (
+        <div className="bg-[#fbfafd] rounded-3xl p-6 shadow-md border border-slate-200/80 flex flex-col justify-between h-full min-h-[295px] select-none transition-all hover:shadow-lg">
+            {/* Header */}
+            <div className="pb-3 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <span className="text-base font-black text-slate-900 uppercase tracking-wider block">Margen Líquido</span>
+                    <span className="text-xs font-semibold text-slate-400 mt-0.5 block">Ganancia Neta</span>
+                </div>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                    +{margenPct.toFixed(1)}%
+                </span>
+            </div>
+            
+            {/* Cifra Gigante Centrada Visualmente (+40-50% más grande) */}
+            <div className="my-auto py-4 text-center sm:text-left flex flex-col justify-center">
+                <h2 className="text-4xl xl:text-5xl font-black tracking-tight text-slate-900 leading-none">{formatBs(totalMargen)}</h2>
+                <p className="text-xs font-bold text-slate-500 mt-2 truncate">
+                    Comisión: {formatBs(totalComision)} • Retail: {formatBs(totalRetail)}
+                </p>
+
+                {showDetails && desgloseSucursales && Object.keys(desgloseSucursales).length > 0 && (
+                    <div className="mt-3 space-y-1.5 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/60 animate-in fade-in slide-in-from-top-2 text-left">
+                        {Object.entries(desgloseSucursales).map(([nombre, datos]) => (
+                            <div key={nombre} className="flex justify-between items-center text-xs text-slate-700">
+                                <span className="font-semibold">{nombre}</span>
+                                <span className="font-bold text-slate-900">{formatBs(datos.margenNeto)}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                <button 
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="flex items-center gap-1 text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider text-xs font-extrabold"
+                >
+                    <span>Desglose por tienda</span>
+                    <ChevronDown size={14} className={cn("transition-transform", showDetails && "rotate-180")} />
+                </button>
+            </div>
+        </div>
+    );
+});
+
+MargenCard.displayName = 'MargenCard';
+
+interface TicketMedioCardProps {
+    ticketMedio: number;
+    desgloseSucursales?: DesgloseSucursales;
+    showDetails: boolean;
+    setShowDetails: (val: boolean) => void;
+    formatBs: (num?: number) => string;
+}
+
+const TicketMedioCard = memo(({ ticketMedio, desgloseSucursales, showDetails, setShowDetails, formatBs }: TicketMedioCardProps) => {
+    return (
+        <div className="bg-[#f3faeb] rounded-3xl p-6 shadow-md border border-[#e8f1df] flex flex-col justify-between h-full min-h-[295px] select-none transition-all hover:shadow-lg">
+            {/* Header */}
+            <div className="pb-3 border-b border-[#d3e2cd] flex justify-between items-center">
+                <div>
+                    <span className="text-base font-black text-[#455c45] uppercase tracking-wider block">Ticket Medio</span>
+                    <span className="text-xs font-semibold text-[#455c45]/70 mt-0.5 block">Promedio Global</span>
+                </div>
+            </div>
+            
+            {/* Cifra Gigante Centrada Visualmente (+40-50% más grande) */}
+            <div className="my-auto py-4 text-center sm:text-left flex flex-col justify-center">
+                <h2 className="text-4xl xl:text-5xl font-black tracking-tight text-[#3a443a] leading-none">{formatBs(ticketMedio)}</h2>
+                <p className="text-xs font-bold text-[#455c45]/90 mt-2">Gasto promedio por cliente</p>
+
+                {showDetails && desgloseSucursales && Object.keys(desgloseSucursales).length > 0 && (
+                    <div className="mt-3 space-y-1.5 bg-white/70 p-2.5 rounded-2xl border border-[#d3e2cd] animate-in fade-in slide-in-from-top-2 text-left">
+                        {Object.entries(desgloseSucursales).map(([nombre, datos]) => (
+                            <div key={nombre} className="flex justify-between items-center text-xs text-[#455c45]">
+                                <span className="font-semibold">{nombre}</span>
+                                <span className="font-bold text-[#2d362d]">{formatBs(datos.ticketMedio)}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t border-[#d3e2cd] flex justify-between items-center">
+                <button 
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="flex items-center gap-1 text-[#455c45] hover:opacity-80 transition-opacity uppercase tracking-wider text-xs font-extrabold"
+                >
+                    <span>Desglose por tienda</span>
+                    <ChevronDown size={14} className={cn("transition-transform", showDetails && "rotate-180")} />
+                </button>
+            </div>
+        </div>
+    );
+});
+
+TicketMedioCard.displayName = 'TicketMedioCard';
+
+interface TicketClienteCardProps {
+    totalOrders: number;
+    desgloseSucursales?: DesgloseSucursales;
+    showDetails: boolean;
+    setShowDetails: (val: boolean) => void;
+}
+
+const TicketClienteCard = memo(({ totalOrders, desgloseSucursales, showDetails, setShowDetails }: TicketClienteCardProps) => {
+    const branchSummaryLine = desgloseSucursales && Object.keys(desgloseSucursales).length > 0
+        ? Object.entries(desgloseSucursales).map(([nombre, datos]) => `${nombre}: ${datos.visitas}`).join(' • ')
+        : null;
+
+    return (
+        <div className="bg-[#fcf5f1] rounded-3xl p-6 shadow-md border border-[#f3e7e0] flex flex-col justify-between h-full min-h-[295px] select-none transition-all hover:shadow-lg">
+            {/* Header */}
+            <div className="pb-3 border-b border-[#e8dacd] flex justify-between items-center">
+                <div>
+                    <span className="text-base font-black text-[#b56d47] uppercase tracking-wider block">Total de Visitas</span>
+                    <span className="text-xs font-semibold text-[#c78b66] mt-0.5 block">Ticket Cliente</span>
+                </div>
+            </div>
+            
+            {/* Cifra Gigante Centrada Visualmente (+40-50% más grande) */}
+            <div className="my-auto py-4 text-center sm:text-left flex flex-col justify-center">
+                <h2 className="text-4xl xl:text-5xl font-black tracking-tight text-[#bd754e] leading-none">{totalOrders}</h2>
+                <p className="text-xs font-bold text-[#b56d47]/90 mt-2">Clientes atendidos</p>
+                {branchSummaryLine && (
+                    <p className="text-[10px] font-bold text-[#b56d47]/90 mt-1 truncate">
+                        {branchSummaryLine}
+                    </p>
+                )}
+
+                {showDetails && desgloseSucursales && Object.keys(desgloseSucursales).length > 0 && (
+                    <div className="mt-3 space-y-1.5 bg-white/70 p-2.5 rounded-2xl border border-[#e8dacd] animate-in fade-in slide-in-from-top-2 text-left">
+                        {Object.entries(desgloseSucursales).map(([nombre, datos]) => (
+                            <div key={nombre} className="flex justify-between items-center text-xs text-[#b56d47]">
+                                <span className="font-semibold">{nombre}</span>
+                                <span className="font-bold text-[#a65f3a]">{datos.visitas} Tickets</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t border-[#e8dacd] flex justify-between items-center">
+                <button 
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="flex items-center gap-1 text-[#b56d47] hover:opacity-80 transition-opacity uppercase tracking-wider text-xs font-extrabold"
+                >
+                    <span>Desglose por tienda</span>
+                    <ChevronDown size={14} className={cn("transition-transform", showDetails && "rotate-180")} />
+                </button>
+            </div>
+        </div>
+    );
+});
+
+TicketClienteCard.displayName = 'TicketClienteCard';
+
+interface AiCardProps {
+    ventasBrutas: number;
+    climaEvento: string;
+    formatBs: (num?: number) => string;
+}
+
+const AiCard = memo(({ ventasBrutas, climaEvento, formatBs }: AiCardProps) => {
+    const actual = ventasBrutas || 0;
+    const meta = actual * (climaEvento ? 1.15 : 1.05);
+    const porcentaje = meta > 0 ? (actual / meta) * 100 : 0;
+
+    return (
+        <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 rounded-3xl p-6 shadow-md border border-indigo-500/30 text-white flex flex-col justify-between h-full min-h-[295px] select-none transition-all relative overflow-hidden hover:shadow-lg">
+            {/* Header */}
+            <div className="pb-3 border-b border-indigo-500/20 flex justify-between items-center relative z-10">
+                <div>
+                    <span className="text-base font-black uppercase tracking-wider text-indigo-100 block">Impacto IA</span>
+                    <span className="text-xs font-semibold text-indigo-300 mt-0.5 block">Proyección</span>
+                </div>
+                {climaEvento && <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>}
+            </div>
+            
+            {/* Cifra Gigante Centrada Visualmente (+40-50% más grande) */}
+            <div className="my-auto py-4 relative z-10 text-center sm:text-left flex flex-col justify-center">
+                <h2 className="text-4xl xl:text-5xl font-black tracking-tight text-white drop-shadow-md leading-none">{formatBs(meta)}</h2>
+                <div className="mt-3 space-y-1.5 text-left">
+                    <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                        <div 
+                            className="bg-gradient-to-r from-emerald-400 to-indigo-400 h-full rounded-full transition-all duration-500" 
+                            style={{ width: `${Math.min(porcentaje, 100)}%` }}
+                        />
+                    </div>
+                    <div className="flex justify-between text-xs text-indigo-200 font-bold pt-0.5">
+                        <span>Progreso: {porcentaje.toFixed(1)}%</span>
+                        <span>Objetivo: {formatBs(meta)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t border-indigo-500/20 flex justify-between items-center relative z-10">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-300">Meta Ajustada</span>
+                <span className="text-xs font-bold bg-indigo-500/20 text-indigo-200 px-2.5 py-1 rounded-lg uppercase tracking-wider border border-indigo-400/30">
+                    Motor IA
+                </span>
+            </div>
+        </div>
+    );
+});
+
+AiCard.displayName = 'AiCard';
 
 
 
@@ -51,12 +362,69 @@ export default function DashboardMaestro() {
     const [showTicketMedioDetails, setShowTicketMedioDetails] = useState(false);
     const [showTicketClienteDetails, setShowTicketClienteDetails] = useState(false);
 
+    const [lastSyncTime, setLastSyncTime] = useState<string>('');
+    const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
     const [startDate, endDate] = dateRange;
     const [activeQuickBtn, setActiveQuickBtn] = useState<'today' | 'yesterday' | '30days' | null>('today');
     
     const [dates, setDates] = useState({ start: '2024-01-01T00:00:00.000Z', end: '2026-12-31T23:59:59.000Z' });
 
+    const handleExportCSV = () => {
+        if (!data || !data.overview) {
+            toast.error("No hay datos disponibles para exportar.");
+            return;
+        }
+        const rows = [
+            ["Metrica", "Valor"],
+            ["Ventas Brutas", data.overview.ventas_brutas || 0],
+            ["Margen Liquido", data.overview.margen_liquido || 0],
+            ["Comision Matriz", data.overview.comision_matriz || 0],
+            ["Margen Retail", data.overview.margen_retail || 0],
+            ["Ticket Medio", data.overview.ticket_medio || 0],
+            ["Total Ordenes", data.overview.total_orders || 0],
+            [""],
+            ["Sucursal", "Ingresos", "Margen Neto", "Ticket Medio", "Visitas"]
+        ];
+
+        if (data.desgloseSucursales) {
+            Object.entries(data.desgloseSucursales).forEach(([suc, datos]: [string, any]) => {
+                rows.push([suc, datos.ingresos, datos.margenNeto, datos.ticketMedio, datos.visitas]);
+            });
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Reporte_Panel_General_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Reporte CSV descargado exitosamente.");
+        setShowExportDropdown(false);
+    };
+
+    const handleToggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(console.error);
+        } else {
+            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(console.error);
+        }
+    };
+
+    const handleResetFilters = () => {
+        setQuickDate('today');
+        setClimaEvento('');
+        toast.info("Filtros restablecidos a Hoy.");
+    };
+
+
+
+    
     const handleApplyDates = () => {
         if (startDate) {
             const s = new Date(startDate);
@@ -65,24 +433,44 @@ export default function DashboardMaestro() {
             const e = endDate ? new Date(endDate) : new Date(startDate);
             e.setHours(23, 59, 59, 999);
 
+            console.log("SETDATES");
+            console.log({ start: s.toISOString(), end: e.toISOString() });
+            console.trace();
             setDates({ start: s.toISOString(), end: e.toISOString() });
         }
     };
 
     const setQuickDate = (type: 'today' | 'yesterday' | '30days') => {
         const today = new Date();
+        let start: Date;
+        let end: Date;
+
         if (type === 'today') {
+            start = today;
+            end = today;
             setDateRange([today, null]);
         } else if (type === 'yesterday') {
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
+            start = yesterday;
+            end = yesterday;
             setDateRange([yesterday, null]);
-        } else if (type === '30days') {
+        } else {
             const past = new Date(today);
             past.setDate(today.getDate() - 29);
+            start = past;
+            end = today;
             setDateRange([past, today]);
         }
         setActiveQuickBtn(type);
+
+        const s = new Date(start);
+        s.setHours(0, 0, 0, 0);
+
+        const e = new Date(end);
+        e.setHours(23, 59, 59, 999);
+
+        setDates({ start: s.toISOString(), end: e.toISOString() });
     };
 
     // Aplicar las fechas iniciales
@@ -102,6 +490,13 @@ export default function DashboardMaestro() {
             setIsError(false);
             setIsBackendOffline(false);
             try {
+                console.log("REQUEST DASHBOARD", {
+                    start: dates.start,
+                    end: dates.end,
+                    selectedSucursal,
+                    timeRange: 'custom',
+                    now: new Date().toISOString()
+                });
                 const res = await getAnalyticsDashboard(
                     dates.start,
                     dates.end,
@@ -109,7 +504,15 @@ export default function DashboardMaestro() {
                     'custom',
                     climaEvento
                 );
-                if (isMounted) setData(res);
+                if (isMounted) {
+                    console.log("RESPONSE DASHBOARD", {
+                        ventas: (res as any)?.overview?.ventas_brutas,
+                        start: dates.start,
+                        end: dates.end
+                    });
+                    setData(res);
+                    setLastSyncTime(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }
             } catch (err: any) {
                 if (isMounted) {
                     // Detectar si es error de conexión (backend apagado)
@@ -128,6 +531,18 @@ export default function DashboardMaestro() {
         fetchData();
         return () => { isMounted = false; };
     }, [climaEvento, dates, selectedSucursal]);
+
+    useEffect(() => {
+        console.log("RENDER NUEVO");
+        console.log({
+            start: dates.start,
+            end: dates.end,
+            selectedSucursal,
+            overview: data?.overview,
+            ventasBrutas: data?.overview?.ventas_brutas,
+            desglose: data?.desgloseSucursales
+        });
+    }, [data, dates, selectedSucursal]);
 
     const esAdmin = ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(role || '');
 
@@ -178,22 +593,88 @@ export default function DashboardMaestro() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 pb-24">
+        <div className="max-w-[90rem] mx-auto px-6 md:px-8 space-y-6 pb-24">
 
             {/* Header */}
             <div className="flex flex-col gap-6">
-                <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-gray-900 flex items-center gap-3 tracking-tight whitespace-nowrap">
-                        <div className="p-3 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-2xl shadow-lg shadow-indigo-200">
-                            <LayoutDashboard size={28} />
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-black text-gray-900 flex items-center gap-3 tracking-tight whitespace-nowrap">
+                            <div className="p-3 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-2xl shadow-lg shadow-indigo-200">
+                                <LayoutDashboard size={28} />
+                            </div>
+                            Panel General — Día a Día
+                        </h1>
+                        <p className="text-gray-500 mt-2 text-base font-medium flex flex-wrap items-center gap-2">
+                            <Activity size={16} className="text-emerald-500" />
+                            <span>Orquestación en tiempo real sobre <strong>~110,482 Registros Históricos</strong>.</span>
+                            {lastSyncTime && (
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full ml-2">
+                                    <Clock size={12} /> Sync: {lastSyncTime}
+                                </span>
+                            )}
+                        </p>
+                    </div>
+
+                    {/* Toolbar de Acciones Rápidas */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                            onClick={() => handleApplyDates()}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl border border-gray-200 shadow-sm transition-all"
+                            title="Refrescar métricas del backend"
+                        >
+                            <RefreshCw size={14} className={isLoading ? "animate-spin text-indigo-600" : "text-gray-500"} />
+                            <span>Actualizar</span>
+                        </button>
+
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+                                title="Exportar reporte"
+                            >
+                                <Download size={14} />
+                                <span>Exportar</span>
+                                <ChevronDown size={12} />
+                            </button>
+
+                            {showExportDropdown && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-2 animate-in fade-in slide-in-from-top-2">
+                                    <button
+                                        onClick={handleExportCSV}
+                                        className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2"
+                                    >
+                                        <FileSpreadsheet size={14} className="text-emerald-600" /> Exportar a CSV / Excel
+                                    </button>
+                                    <button
+                                        onClick={() => { window.print(); setShowExportDropdown(false); }}
+                                        className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2"
+                                    >
+                                        <Download size={14} className="text-indigo-600" /> Imprimir Reporte (PDF)
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        Panel General — Día a Día
-                    </h1>
-                    <p className="text-gray-500 mt-2 text-base font-medium flex flex-wrap items-center gap-2">
-                        <Activity size={16} className="text-emerald-500" />
-                        <span>Orquestación en tiempo real sobre ~110k Registros Históricos.</span>
-                    </p>
+
+                        <button
+                            onClick={handleResetFilters}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-xl border border-gray-200 shadow-sm transition-all"
+                            title="Restablecer filtros a valores por defecto"
+                        >
+                            <RotateCcw size={14} className="text-gray-500" />
+                            <span className="hidden sm:inline">Restablecer</span>
+                        </button>
+
+                        <button
+                            onClick={handleToggleFullscreen}
+                            className="p-2 bg-white hover:bg-gray-50 text-gray-700 rounded-xl border border-gray-200 shadow-sm transition-all"
+                            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                        >
+                            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                        </button>
+                    </div>
                 </div>
+
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full border-t border-gray-100 pt-5">
 
                     {/* Segmented Control Rango (Sin Fondo) */}
@@ -274,12 +755,41 @@ export default function DashboardMaestro() {
                 </div>
             </div>
 
-            {/* Sub-header text indicating period and branch for the data below */}
-            <div className="flex justify-start mb-2 mt-0">
-                <span className="text-gray-500 font-black text-[11px] bg-white px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-widest shadow-sm">
-                    Mostrando: {getDynamicPeriodText(startDate, endDate)}
-                    {selectedSucursal !== 'all' && ` • ${sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal}`}
-                </span>
+            {/* Header Ejecutivo - Barra Superior Horizontal (5 Columnas de Igual Ancho, Texto Centrado, Líneas Verticales Sutiles) */}
+            <div className="w-full bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-sm mb-4 min-h-[64px] flex items-center overflow-hidden">
+                <div className="w-full grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 text-center py-2.5">
+                    {/* Columna 1: FECHA */}
+                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">FECHA</span>
+                        <span className="text-xs font-black text-slate-800 block truncate">{getDynamicPeriodText(startDate, endDate)}</span>
+                    </div>
+
+                    {/* Columna 2: ESTADO */}
+                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">ESTADO</span>
+                        <span className="text-xs font-black text-emerald-700 block truncate">Datos sincronizados con POS</span>
+                    </div>
+
+                    {/* Columna 3: ÚLTIMA ACTUALIZACIÓN */}
+                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">ÚLTIMA ACTUALIZACIÓN</span>
+                        <span className="text-xs font-black text-slate-800 block truncate">{lastSyncTime || new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                    </div>
+
+                    {/* Columna 4: MODO */}
+                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">MODO</span>
+                        <span className="text-xs font-black text-indigo-700 block truncate">Comparativa Multi-Año activa</span>
+                    </div>
+
+                    {/* Columna 5: SUCURSALES */}
+                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">SUCURSALES</span>
+                        <span className="text-xs font-black text-slate-800 block truncate">
+                            {selectedSucursal !== 'all' ? (sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal) : 'Heroínas • Recoleta • Calacoto'}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             {isLoading && !data ? (
@@ -295,271 +805,102 @@ export default function DashboardMaestro() {
                     <h3 className="font-bold">Error obteniendo métricas ejecutivas</h3>
                 </div>
             ) : (
-                <div className={cn("space-y-8 transition-opacity duration-500", isLoading ? "opacity-50 pointer-events-none" : "opacity-100")}>
+                <div className={cn("space-y-10 transition-opacity duration-500", isLoading ? "opacity-50 pointer-events-none" : "opacity-100")}>
 
-                    {/* CAPA 1: 5 KPIs FINANCIEROS (INCLUYE PREDICCIÓN AI) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6">
-                        {/* Ventas Brutas */}
-                        <div className="bg-[#7b75a6] rounded-[2rem] p-6 shadow-sm relative flex flex-col justify-between text-white h-full min-h-[220px]">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-semibold opacity-90">Ingresos Totales</span>
-                                <div className="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center">
-                                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                                </div>
-                            </div>
-                            
-                            <div className="text-sm opacity-80 mb-4 font-semibold">Global</div>
-                            
-                            <div className="flex items-baseline gap-1 mb-6">
-                                <h2 className="text-4xl xl:text-5xl font-black tracking-tighter">{formatBs(data.overview.ventas_brutas)}</h2>
-                            </div>
-                            
-                            <div className="mt-auto pt-4 flex flex-col">
-                                <div className="text-xl font-bold tracking-wide mb-3">
-                                    Ventas Brutas
-                                </div>
-                                
-                                <div className="border-t border-white/20 pt-3">
-                                    <div 
-                                        className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => setShowRevenueBreakdown(!showRevenueBreakdown)}
-                                    >
-                                        <span className="text-sm font-bold uppercase tracking-wider">Desglose</span>
-                                        <ChevronDown size={18} className={cn("transition-transform", showRevenueBreakdown && "rotate-180")} />
-                                    </div>
-                                    
-                                    {showRevenueBreakdown && (
-                                        <div className="mt-3 space-y-2 relative z-10 animate-in fade-in slide-in-from-top-2 bg-white/10 p-4 rounded-xl shadow-sm">
-                                            {data.sales_by_branch?.map((branch: any) => (
-                                                <div key={branch.name} className="flex flex-col border-b border-white/10 pb-2 last:border-0 last:pb-0">
-                                                    <div className="flex justify-between items-center text-base">
-                                                        <span className="font-medium text-white/90 truncate mr-2">{branch.name}</span>
-                                                        <span className="font-bold text-white whitespace-nowrap">{formatBs(branch.ventas)}</span>
-                                                    </div>
-                                                    {branch.tickets_cliente !== undefined && (
-                                                        <div className="text-sm text-white/70 mt-1 font-medium">
-                                                            {branch.tickets_cliente} Tickets Cliente
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {(!data.sales_by_branch || data.sales_by_branch.length === 0) && (
-                                                <div className="text-sm text-white/50 text-center py-2 font-medium">Sin desglose disponible</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Margen Líquido */}
-                        <div className="bg-[#fbfafd] rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[220px]">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-bold text-gray-800">Margen Líquido</span>
-                                <ChevronRight size={16} className="text-gray-400" />
-                            </div>
-                            
-                            <div className="text-sm font-semibold text-gray-500 mb-4">
-                                Com: {formatBs(data.overview.comision_matriz ?? 0)} + Ret: {formatBs(data.overview.margen_retail ?? 0)}
-                            </div>
-                            
-                            <div className="flex items-baseline gap-2 mb-6">
-                                <h2 className="text-4xl xl:text-5xl font-black tracking-tighter text-gray-900">{formatBs(data.overview.margen_liquido)}</h2>
-                                <span className="text-xs font-bold text-gray-400 mb-1">+{data.overview.revenue_growth}%</span>
-                            </div>
-                            
-                            <div className="mt-auto pt-4 flex flex-col">
-                                <div className="text-xl font-bold tracking-wide text-gray-700 mb-3">
-                                    Ganancia Neta
-                                </div>
-                                
-                                <div className="border-t border-gray-200 pt-3">
-                                    <div 
-                                        className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity text-gray-600"
-                                        onClick={() => setShowMargenDetails(!showMargenDetails)}
-                                    >
-                                        <span className="text-sm font-bold uppercase tracking-wider">Desglose</span>
-                                        <ChevronDown size={18} className={cn("transition-transform", showMargenDetails && "rotate-180")} />
-                                    </div>
-                                    
-                                    {showMargenDetails && (
-                                        <div className="mt-3 space-y-2 relative z-10 animate-in fade-in slide-in-from-top-2 bg-gray-50 border border-gray-200 p-4 rounded-xl shadow-sm">
-                                            {data.sales_by_branch?.map((branch: any) => (
-                                                <div key={branch.name} className="flex flex-col border-b border-gray-200 pb-2 last:border-0 last:pb-0">
-                                                    <div className="flex justify-between items-center text-base">
-                                                        <span className="font-semibold text-gray-700 truncate mr-2">{branch.name}</span>
-                                                        <span className="font-bold text-gray-900 whitespace-nowrap">{formatBs(branch.margen)}</span>
-                                                    </div>
-                                                    <div className="text-sm text-gray-500 mt-1 font-medium">
-                                                        Matriz: {formatBs(branch.comision_matriz ?? 0)} | Retail: {formatBs(branch.margen_retail ?? 0)}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {(!data.sales_by_branch || data.sales_by_branch.length === 0) && (
-                                                <div className="text-sm text-gray-400 text-center py-2 font-medium">Sin desglose disponible</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                    {/* SECCIÓN 1: KPIS FINANCIEROS (5 Tarjetas en 1 Fila en Desktop) */}
+                    <div id="sec-kpis" className="space-y-4">
 
-                        {/* Ticket Medio */}
-                        <div className="bg-[#f3faeb] rounded-[2rem] p-6 shadow-sm border border-[#e8f1df] flex flex-col justify-between h-full min-h-[220px]">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-bold text-[#455c45]">Ticket Medio</span>
-                                <ChevronRight size={16} className="text-[#8ca18c]" />
-                            </div>
-                            
-                            <div className="text-sm font-semibold text-[#455c45]/60 mb-4">Promedio Global</div>
-                            
-                            <div className="flex items-baseline gap-2 mb-6">
-                                <h2 className="text-4xl xl:text-5xl font-black tracking-tighter text-[#3a443a]">{formatBs(data.overview.ticket_medio)}</h2>
-                            </div>
-                            
-                            <div className="mt-auto pt-4 flex flex-col">
-                                <div className="text-xl font-bold tracking-wide text-[#455c45] mb-3">
-                                    Gasto por Cliente
-                                </div>
-                                
-                                <div className="border-t border-[#d3e2cd] pt-3">
-                                    <div 
-                                        className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity text-[#455c45]"
-                                        onClick={() => setShowTicketMedioDetails(!showTicketMedioDetails)}
-                                    >
-                                        <span className="text-sm font-bold uppercase tracking-wider">Desglose</span>
-                                        <ChevronDown size={18} className={cn("transition-transform", showTicketMedioDetails && "rotate-180")} />
-                                    </div>
-                                    
-                                    {showTicketMedioDetails && (
-                                        <div className="mt-3 space-y-2 relative z-10 animate-in fade-in slide-in-from-top-2 bg-white/60 border border-[#d3e2cd] p-4 rounded-xl shadow-sm">
-                                            {data.sales_by_branch?.map((branch: any) => {
-                                                const tickets = branch.tickets_cliente || 0;
-                                                const branchTicketMedio = tickets > 0 ? (branch.ventas / tickets) : 0;
-                                                return (
-                                                    <div key={branch.name} className="flex flex-col border-b border-[#d3e2cd]/50 pb-2 last:border-0 last:pb-0">
-                                                        <div className="flex justify-between items-center text-base">
-                                                            <span className="font-semibold text-[#3a443a] truncate mr-2">{branch.name}</span>
-                                                            <span className="font-bold text-[#2d362d] whitespace-nowrap">{formatBs(branchTicketMedio)}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                            {(!data.sales_by_branch || data.sales_by_branch.length === 0) && (
-                                                <div className="text-sm text-[#586b58]/50 text-center py-2 font-medium">Sin desglose disponible</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <VentasCard 
+                                ventasBrutas={data.overview.ventas_brutas}
+                                desgloseSucursales={data?.desgloseSucursales}
+                                showBreakdown={showRevenueBreakdown}
+                                setShowBreakdown={setShowRevenueBreakdown}
+                                formatBs={formatBs}
+                            />
 
-                        {/* Ticket Cliente */}
-                        <div className="bg-[#fcf5f1] rounded-[2rem] p-6 shadow-sm border border-[#f3e7e0] flex flex-col justify-between h-full min-h-[220px]">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-bold text-[#c78b66]">Ticket Cliente</span>
-                                <ChevronRight size={16} className="text-[#d8ab91]" />
-                            </div>
-                            
-                            <div className="text-sm font-semibold text-[#c78b66]/80 mb-4 flex items-center gap-1 overflow-hidden">
-                                {data.sales_by_branch?.map((branch: any, index: number) => (
-                                    <span key={branch.name} className="whitespace-nowrap">
-                                        {branch.name}: {branch.tickets_cliente ?? 0}
-                                        {index < data.sales_by_branch.length - 1 && <span className="mx-1 opacity-50">|</span>}
-                                    </span>
-                                ))}
-                            </div>
-                            
-                            <div className="flex items-baseline gap-2 mb-6">
-                                <h2 className="text-4xl xl:text-5xl font-black tracking-tighter text-[#bd754e]">{data.overview.total_orders}</h2>
-                            </div>
-                            
-                            <div className="mt-auto pt-4 flex flex-col">
-                                <div className="text-xl font-bold tracking-wide text-[#b56d47] mb-3">
-                                    Total de Visitas
-                                </div>
-                                
-                                <div className="border-t border-[#e8dacd] pt-3">
-                                    <div 
-                                        className="flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity text-[#b56d47]"
-                                        onClick={() => setShowTicketClienteDetails(!showTicketClienteDetails)}
-                                    >
-                                        <span className="text-sm font-bold uppercase tracking-wider">Desglose</span>
-                                        <ChevronDown size={18} className={cn("transition-transform", showTicketClienteDetails && "rotate-180")} />
-                                    </div>
-                                    
-                                    {showTicketClienteDetails && (
-                                        <div className="mt-3 space-y-2 relative z-10 animate-in fade-in slide-in-from-top-2 bg-white/60 border border-[#e8dacd] p-4 rounded-xl shadow-sm">
-                                            {data.sales_by_branch?.map((branch: any) => (
-                                                <div key={branch.name} className="flex flex-col border-b border-[#e8dacd]/50 pb-2 last:border-0 last:pb-0">
-                                                    <div className="flex justify-between items-center text-base">
-                                                        <span className="font-semibold text-[#b56d47] truncate mr-2">{branch.name}</span>
-                                                        <span className="font-bold text-[#a65f3a] whitespace-nowrap">{branch.tickets_cliente ?? 0} Tickets</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {(!data.sales_by_branch || data.sales_by_branch.length === 0) && (
-                                                <div className="text-sm text-[#b56d47]/50 text-center py-2 font-medium">Sin desglose disponible</div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                            <MargenCard 
+                                comisionMatriz={data.overview.comision_matriz}
+                                margenRetail={data.overview.margen_retail}
+                                margenLiquido={data.overview.margen_liquido}
+                                revenueGrowth={data.overview.revenue_growth}
+                                desgloseSucursales={data?.desgloseSucursales}
+                                showDetails={showMargenDetails}
+                                setShowDetails={setShowMargenDetails}
+                                formatBs={formatBs}
+                            />
 
-                        {/* RECUADRO NUEVO: Predicción AI Contextual */}
-                        <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 rounded-[2rem] p-6 shadow-xl border-2 border-indigo-500/30 relative overflow-hidden group flex flex-col justify-between md:col-span-3 xl:col-span-1">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform duration-500"><Bot size={90} className="text-white" /></div>
-                            
-                            {/* Decorative background grid */}
-                            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
+                            <TicketMedioCard 
+                                ticketMedio={data.overview.ticket_medio}
+                                desgloseSucursales={data?.desgloseSucursales}
+                                showDetails={showTicketMedioDetails}
+                                setShowDetails={setShowTicketMedioDetails}
+                                formatBs={formatBs}
+                            />
 
-                            <div>
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-2xl border border-indigo-400/20 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-                                        <Bot size={24} />
-                                    </div>
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/20 border border-indigo-400/30 backdrop-blur-md rounded-lg shadow-[0_0_10px_rgba(99,102,241,0.1)]">
-                                        <CloudRain size={12} className="text-indigo-300" />
-                                        <span className="text-[10px] font-black tracking-widest text-indigo-100 uppercase">Impacto AI</span>
-                                    </div>
-                                </div>
-                                <h3 className="text-indigo-200 font-semibold text-sm mb-1 relative z-10">Proyección (Contexto)</h3>
-                                <div className="relative z-10 flex items-center gap-2">
-                                    <h2 className="text-3xl xl:text-4xl font-black text-white tracking-tight">
-                                        {formatBs((data.overview.ventas_brutas || 0) * (climaEvento ? 1.15 : 1.05))}
-                                    </h2>
-                                </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-indigo-500/20 relative z-10 bg-black/20 backdrop-blur-sm p-2.5 rounded-lg flex justify-between items-center">
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-indigo-300">Meta ajustada</span>
-                                {climaEvento && <span className="flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>}
-                            </div>
+                            <TicketClienteCard 
+                                totalOrders={data.overview.total_orders}
+                                desgloseSucursales={data?.desgloseSucursales}
+                                showDetails={showTicketClienteDetails}
+                                setShowDetails={setShowTicketClienteDetails}
+                            />
+
+                            <AiCard 
+                                ventasBrutas={data.overview.ventas_brutas}
+                                climaEvento={climaEvento}
+                                formatBs={formatBs}
+                            />
                         </div>
                     </div>
 
-                    {/* CAPA 2: Comparativa Dinámica Horaria Multi-Año */}
-                    <HourlyMultiyearChart />
+                    {/* SECCIÓN 2: COMPARATIVA HORARIA MULTI-AÑO */}
+                    <div id="sec-comparativa" className="space-y-4 pt-2">
+                        <div className="border-b border-gray-100 pb-2">
+                            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                <Activity className="text-purple-600" size={18} /> Comparativa Horaria Multi-Año
+                            </h2>
+                        </div>
+                        <HourlyMultiyearChart />
+                    </div>
 
-                    {/* CAPA 2.5: Comparativa de Fechas Especiales y Festividades */}
-                    <SpecialDatesChart />
+                    {/* SECCIÓN 2.5: FECHAS ESPECIALES */}
+                    <div id="sec-fechas" className="space-y-4 pt-2">
+                        <SpecialDatesChart />
+                    </div>
 
-                    {/* CAPA 2B: Radar de Percentiles con Semáforo */}
-                    <SalesPercentileTracker />
+                    {/* SECCIÓN 3: BENCHMARK HISTÓRICO */}
+                    <div id="sec-radar" className="space-y-4 pt-2">
+                        <div className="border-b border-gray-100 pb-2">
+                            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                <CheckCircle2 className="text-emerald-600" size={18} /> Benchmark Histórico
+                            </h2>
+                        </div>
+                        <SalesPercentileTracker />
+                    </div>
 
-                    {/* CAPA 3: Sucursales + Mix Rápido Top 5 con Fechas Independientes */}
-                    <RegionalAndProductMix />
+                    {/* SECCIÓN 4: RENDIMIENTO REGIONAL */}
+                    <div id="sec-regional" className="space-y-4 pt-2">
+                        <div className="border-b border-gray-100 pb-2">
+                            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                <Layers className="text-cyan-600" size={18} /> Rendimiento Comparativo por Sucursal
+                            </h2>
+                        </div>
+                        <RegionalAndProductMix />
+                    </div>
 
-                    {/* CAPA 4: Orquestador de Eventos */}
+                    {/* SECCIÓN 5: EVENTOS EN TIEMPO REAL */}
                     {data.recent_activity?.length > 0 && (
-                        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
-                            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
-                                <Activity className="text-sky-500" /> Orquestador de Eventos en Tiempo Real
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {data.recent_activity.map((act: any) => (
-                                    <div key={act.id} className="p-5 rounded-2xl bg-slate-50 border border-gray-100 flex flex-col h-full hover:bg-white hover:shadow-lg transition-all group">
-                                        <div className="flex items-center justify-between mb-3">
+                        <div id="sec-eventos" className="space-y-4 pt-2">
+                            <div className="border-b border-gray-100 pb-2">
+                                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                    <Zap className="text-sky-500" size={18} /> Eventos en Tiempo Real
+                                </h2>
+                            </div>
+                            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 overflow-x-auto">
+                                <div className="flex gap-4 min-w-max">
+                                    {data.recent_activity.map((act: any) => (
+                                        <div key={act.id} className="p-4 rounded-xl bg-slate-50 border border-gray-100 flex items-center gap-4 hover:bg-white hover:shadow-md transition-all group w-[300px]">
                                             <div className={cn(
                                                 "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
                                                 act.type === 'sale' ? 'bg-emerald-100 text-emerald-600' :
@@ -567,17 +908,21 @@ export default function DashboardMaestro() {
                                                 act.type === 'goal' ? 'bg-indigo-100 text-indigo-600' :
                                                 'bg-rose-100 text-rose-600'
                                             )}>
-                                                {act.type === 'sale' && <DollarSign size={20} />}
-                                                {act.type === 'inventory' && <Package size={20} />}
-                                                {act.type === 'goal' && <CheckCircle2 size={20} />}
-                                                {act.type === 'alert' && <AlertTriangle size={20} />}
+                                                {act.type === 'sale' && <DollarSign size={18} />}
+                                                {act.type === 'inventory' && <Package size={18} />}
+                                                {act.type === 'goal' && <CheckCircle2 size={18} />}
+                                                {act.type === 'alert' && <AlertTriangle size={18} />}
                                             </div>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase">{act.time}</span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-[9px] font-black text-gray-400 uppercase">{act.time}</span>
+                                                    <span className="font-black text-xs text-indigo-950">{act.val}</span>
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-700 truncate mt-0.5">{act.msg}</p>
+                                            </div>
                                         </div>
-                                        <p className="text-sm font-bold text-indigo-950 mb-auto leading-tight">{act.msg}</p>
-                                        <div className="mt-4 pt-3 border-t border-gray-100 font-black text-base text-indigo-950">{act.val}</div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
