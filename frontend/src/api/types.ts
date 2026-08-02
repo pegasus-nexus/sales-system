@@ -706,3 +706,140 @@ export interface Proveedor {
     is_active: boolean;
     created_at: string;
 }
+
+// ── Centro de Inteligencia Predictiva (Predictive AI) ──
+
+export interface ExecutiveAISummary {
+    confidence_score: number;
+    summary_text: string;
+    top_growth_driver: string;
+    critical_risks: string[];
+    top_recommendations: string[];
+}
+
+export interface SalesForecastPoint {
+    date: string;
+    real?: number | null;
+    pred_p10: number;
+    pred_p50: number;
+    pred_p90: number;
+    is_future: boolean;
+    weather_temp?: number | null;
+    weather_precip?: number | null;
+}
+
+export interface BranchForecast {
+    branch_name: string;
+    expected_sales: number;
+    variation_pct: number;
+    confidence: number;
+    expected_margin: number;
+    expected_transactions: number;
+}
+
+export interface ProductGrowthItem {
+    product_name: string;
+    current_sales: number;
+    expected_sales: number;
+    growth_pct: number;
+    confidence: number;
+}
+
+export interface ProductRiskItem {
+    product_name: string;
+    expected_drop_pct: number;
+    reason: string;
+    confidence: number;
+}
+
+export interface AIRecommendation {
+    title: string;
+    reason: string;
+    impact_level: string;
+    branch_target?: string | null;
+    action_type: string;
+}
+
+export interface ScenarioSimulationRequest {
+    sucursal: string;
+    temperatura: number;
+    lluvia: number;
+    descuento: number;
+    inventario_pct: number;
+    festivo: boolean;
+}
+
+export interface ScenarioSimulationResponse {
+    expected_sales: number;
+    expected_margin: number;
+    expected_transactions: number;
+    expected_customers: number;
+    risk_level: string;
+    confidence: number;
+}
+
+export interface PredictiveCalendarDay {
+    date: string;
+    day_name: string;
+    expected_sales: number;
+    demand_level: string;
+    confidence: number;
+    status_color: string;
+    is_holiday?: boolean;
+    holiday_name?: string | null;
+}
+
+export interface UpcomingImpactEvent {
+    event_name: string;
+    date_approx: string;
+    expected_impact_pct: number;
+    confidence: number;
+    icon_type: string;
+}
+
+export interface DetectedRisk {
+    risk_type: string;
+    product_or_category: string;
+    probability_pct: number;
+    severity: string;
+}
+
+export interface DetectedOpportunity {
+    type: string;
+    title: string;
+    growth_pct: number;
+    description: string;
+}
+
+export interface ModelExplanation {
+    model_name: string;
+    quantile_loss: string;
+    features: string[];
+    description: string;
+}
+
+export interface ModelConfidenceMeta {
+    reliability_pct: number;
+    trained_transactions: number;
+    historical_days: number;
+    festivities_count: number;
+    branches_count: number;
+    products_count: number;
+    last_trained: string;
+}
+
+export interface PredictiveCenterResponse {
+    executive_summary: ExecutiveAISummary;
+    sales_forecast: SalesForecastPoint[];
+    branch_forecasts: BranchForecast[];
+    top_growth_products: ProductGrowthItem[];
+    products_at_risk: ProductRiskItem[];
+    ai_recommendations: AIRecommendation[];
+    predictive_calendar: PredictiveCalendarDay[];
+    upcoming_events: UpcomingImpactEvent[];
+    detected_risks: DetectedRisk[];
+    detected_opportunities: DetectedOpportunity[];
+    model_explanation: ModelExplanation;
+    model_meta: ModelConfidenceMeta;
+}
+

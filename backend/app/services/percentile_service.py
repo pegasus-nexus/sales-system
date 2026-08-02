@@ -47,6 +47,7 @@ async def get_sales_percentiles(
         start_dt = end_dt - timedelta(days=days_history)
 
         mongo_filter: Dict[str, Any] = {
+            "tenant_id": tenant_id,
             "fecha_transaccion": {"$gte": start_dt, "$lte": end_dt},
         }
         
@@ -65,7 +66,7 @@ async def get_sales_percentiles(
         # Inyectar ventas POS (caja en vivo)
         # 1) Mapeo de sucursales si hay filtro
         import re
-        sucursales_cursor = db.sucursales.find({}, {"_id": 1, "nombre": 1})
+        sucursales_cursor = db.sucursales.find({"tenant_id": tenant_id}, {"_id": 1, "nombre": 1})
         sucursales_list = await sucursales_cursor.to_list(length=50)
         suc_id_to_name = {}
         for s in sucursales_list:
@@ -94,6 +95,7 @@ async def get_sales_percentiles(
                     valid_pos_sids.append(sid)
                     
         pos_filter = {
+            "tenant_id": tenant_id,
             "anulada": {"$ne": True},
             "created_at": {"$gte": start_dt, "$lte": end_dt}
         }

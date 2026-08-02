@@ -1,93 +1,143 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSalesPercentiles } from "../api/api";
 import { Loader2, AlertTriangle, Store, BarChart2, ChevronLeft, ChevronRight, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { clsx } from "clsx"; import { twMerge } from "tailwind-merge";
+import { clsx } from "clsx"; 
+import { twMerge } from "tailwind-merge";
+
 function cn(...i: any[]) { return twMerge(clsx(i)); }
-const fmt  = (n: number) => `Bs. ${n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const fmt = (n: number) => `Bs. ${n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+
 const ZONES = {
-  critico:{ 
-    label:"Critico", 
-    color:"text-red-700",    
-    bg:"bg-red-100",    
-    border:"border-red-300",    
-    dot:"bg-red-500",    
-    pill:"bg-red-500 text-white",
-    pastelBar:"bg-red-200",
-    pastelPill:"bg-red-50 text-red-700 border border-red-200"
+  critico: { 
+    label: "Crítico", 
+    color: "text-rose-700",    
+    bg: "bg-rose-50/90",    
+    border: "border-rose-200/90",    
+    dot: "bg-rose-500",    
+    pill: "bg-rose-50 text-rose-700 border border-rose-200/80 font-black",
   },
-  bajo:   { 
-    label:"Bajo",    
-    color:"text-amber-700",  
-    bg:"bg-amber-100",  
-    border:"border-amber-300",  
-    dot:"bg-amber-400",  
-    pill:"bg-amber-400 text-white",
-    pastelBar:"bg-amber-200",
-    pastelPill:"bg-amber-50 text-amber-700 border border-amber-200"
+  bajo: { 
+    label: "Bajo",    
+    color: "text-amber-700",  
+    bg: "bg-amber-50/90",  
+    border: "border-amber-200/90",  
+    dot: "bg-amber-500",  
+    pill: "bg-amber-50 text-amber-700 border border-amber-200/80 font-black",
   },
   normal: { 
-    label:"Normal",  
-    color:"text-emerald-700",
-    bg:"bg-emerald-100",
-    border:"border-emerald-300",
-    dot:"bg-emerald-500",
-    pill:"bg-emerald-500 text-white",
-    pastelBar:"bg-emerald-200",
-    pastelPill:"bg-emerald-50 text-emerald-700 border border-emerald-200"
+    label: "Normal",  
+    color: "text-blue-700",
+    bg: "bg-blue-50/90",
+    border: "border-blue-200/90",
+    dot: "bg-blue-500",
+    pill: "bg-blue-50 text-blue-700 border border-blue-200/80 font-black",
   },
-  alto:   { 
-    label:"Alto",    
-    color:"text-violet-700", 
-    bg:"bg-violet-100", 
-    border:"border-violet-300", 
-    dot:"bg-violet-500", 
-    pill:"bg-violet-500 text-white",
-    pastelBar:"bg-violet-200",
-    pastelPill:"bg-violet-50 text-violet-700 border border-violet-200"
+  alto: { 
+    label: "Alto",    
+    color: "text-emerald-700", 
+    bg: "bg-emerald-50/90", 
+    border: "border-emerald-200/90", 
+    dot: "bg-emerald-500", 
+    pill: "bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-black",
   },
 } as const;
+
 const SUCS = [
   {value:"",label:"Tiendas Minoristas (Consolidado)"},
   {value:"Heroinas",label:"Heroínas"},
   {value:"Recoleta",label:"Recoleta"},
   {value:"Calacoto",label:"Calacoto"},
 ];
-const DAYS  = ["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
-const MES   = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+const DAYS = ["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
+const MES  = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
 function getMonday(d:Date){ const c=new Date(d),day=c.getDay(); c.setDate(c.getDate()-(day===0?6:day-1)); c.setHours(0,0,0,0); return c; }
 function iso(d:Date){ return d.toISOString().slice(0,10); }
 
-function Tooltip({entry,p25,p50,p75}:{entry:any,p25:number,p50:number,p75:number}){
-  if(!entry) return null;
+// ───────────────────────────────────────────────────────────────────────────────
+// FUNCIONES PURAS DE CÁLCULO ESTADÍSTICO (MEMOIZADAS Y REUTILIZABLES)
+// ───────────────────────────────────────────────────────────────────────────────
+export interface PercentileResult {
+  p25: number;
+  p50: number;
+  p75: number;
+  min: number;
+  max: number;
+  media: number;
+}
+
+export function calculatePercentiles(values: number[]): PercentileResult {
+  if (!values || values.length === 0) {
+    return { p25: 0, p50: 0, p75: 0, min: 0, max: 0, media: 0 };
+  }
+  const sorted = [...values].filter(v => v > 0).sort((a, b) => a - b);
+  if (sorted.length === 0) {
+    return { p25: 0, p50: 0, p75: 0, min: 0, max: 0, media: 0 };
+  }
+  const len = sorted.length;
+  const sum = sorted.reduce((acc, v) => acc + v, 0);
+
+  const getPercentile = (p: number) => {
+    const idx = (len - 1) * p;
+    const lower = Math.floor(idx);
+    const upper = Math.ceil(idx);
+    const weight = idx - lower;
+    if (upper >= len) return sorted[len - 1];
+    return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+  };
+
+  return {
+    p25: Math.round(getPercentile(0.25)),
+    p50: Math.round(getPercentile(0.50)),
+    p75: Math.round(getPercentile(0.75)),
+    min: Math.round(sorted[0]),
+    max: Math.round(sorted[len - 1]),
+    media: Math.round(sum / len)
+  };
+}
+
+export function calculateDailyStatus(sales: number, p25: number, p50: number, p75: number) {
+  if (sales < p25) return ZONES.critico;
+  if (sales < p50) return ZONES.bajo;
+  if (sales < p75) return ZONES.normal;
+  return ZONES.alto;
+}
+
+function Tooltip({ entry, p25, p50, p75 }: { entry: any, p25: number, p50: number, p75: number }) {
+  if (!entry) return null;
   const isFut = entry.is_future;
+  const totalVal = entry.total || 0;
+  const pctVsP50 = p50 > 0 ? Math.round(((totalVal - p50) / p50) * 100) : 0;
+
   return (
     <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none hidden group-hover:flex flex-col">
-      <div className="bg-gray-900/95 text-white text-[10px] rounded-2xl px-3 py-2.5 shadow-2xl min-w-[160px]">
-        <p className="text-gray-400 text-[9px] uppercase tracking-widest mb-1.5">{entry.fecha}</p>
+      <div className="bg-slate-900/95 text-white text-[10px] rounded-2xl px-3.5 py-2.5 shadow-2xl min-w-[170px] border border-slate-700">
+        <p className="text-slate-400 text-[9px] uppercase font-black tracking-widest mb-1.5">{entry.fecha}</p>
         <div className="flex justify-between gap-4 mb-1">
-          <span className="text-gray-400">{isFut?"Referencia historica":"Venta real"}</span>
-          <span className="font-black">{fmt(entry.total)}</span>
+          <span className="text-slate-300 font-semibold">{isFut ? "Referencia histórica" : "Venta real"}</span>
+          <span className="font-black text-white">{fmt(totalVal)}</span>
         </div>
-        <div className="h-px bg-white/10 my-1.5"/>
+        <div className="h-px bg-slate-700/80 my-1.5"/>
         <div className="flex justify-between gap-4 mb-0.5">
-          <span className="text-red-400 flex items-center gap-1"><TrendingDown size={8}/>Min (P25)</span>
-          <span className="font-black text-red-300">{fmt(isFut?(entry.total_low??p25):p25)}</span>
+          <span className="text-rose-400 flex items-center gap-1 font-bold"><TrendingDown size={10}/>Min (P25)</span>
+          <span className="font-black text-rose-300">{fmt(p25)}</span>
         </div>
         <div className="flex justify-between gap-4 mb-0.5">
-          <span className="text-amber-400 flex items-center gap-1"><Minus size={8}/>Med (P50)</span>
+          <span className="text-amber-400 flex items-center gap-1 font-bold"><Minus size={10}/>Med (P50)</span>
           <span className="font-black text-amber-300">{fmt(p50)}</span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-violet-400 flex items-center gap-1"><TrendingUp size={8}/>Max (P75)</span>
-          <span className="font-black text-violet-300">{fmt(isFut?(entry.total_high??p75):p75)}</span>
+          <span className="text-emerald-400 flex items-center gap-1 font-bold"><TrendingUp size={10}/>Max (P75)</span>
+          <span className="font-black text-emerald-300">{fmt(p75)}</span>
         </div>
-        {!isFut&&entry.pct_vs_p50!==0&&(
-          <div className={cn("mt-1.5 font-black text-[9px]",entry.pct_vs_p50>=0?"text-emerald-400":"text-red-400")}>
-            {entry.pct_vs_p50>0?"+":""}{entry.pct_vs_p50}% vs mediana
+        {!isFut && p50 > 0 && (
+          <div className={cn("mt-2 pt-1 border-t border-slate-800 font-black text-[9px]", pctVsP50 >= 0 ? "text-emerald-400" : "text-rose-400")}>
+            {pctVsP50 >= 0 ? "+" : ""}{pctVsP50}% vs mediana (P50)
           </div>
         )}
       </div>
-      <div className="w-2.5 h-2.5 bg-gray-900/95 rotate-45 -mt-1.5 self-center"/>
+      <div className="w-2.5 h-2.5 bg-slate-900/95 rotate-45 -mt-1.5 self-center border-b border-r border-slate-700"/>
     </div>
   );
 }
@@ -116,32 +166,73 @@ export default function SalesPercentileTracker(){
       setIsLoading(false); 
     }
   },[]);
+
   useEffect(()=>{ fetchData(sucursal); },[sucursal,fetchData]);
 
-  const byDate:Record<string,any>={};
-  if(data?.periods){ for(const p of data.periods) byDate[p.fecha]=p; }
+  // Mapa rápido de períodos por fecha
+  const byDate: Record<string, any> = useMemo(() => {
+    const map: Record<string, any> = {};
+    if (data?.periods) {
+      for (const p of data.periods) {
+        map[p.fecha] = p;
+      }
+    }
+    return map;
+  }, [data]);
 
-  const p    = data?.percentiles;
-  const lastR= data?.last_real;
-  const lastZ= lastR?(ZONES[lastR.zone as keyof typeof ZONES]??ZONES.normal):null;
-  const p50  = p?.p50??0; const p25=p?.p25??0; const p75=p?.p75??0;
+  // Histórico de ventas (solo períodos con ventas reales pre-futuras)
+  const histPeriods = useMemo(() => {
+    return data?.periods ? data.periods.filter((x: any) => !x.is_future && x.total > 0) : [];
+  }, [data]);
 
-  const histPeriods = data?.periods ? data.periods.filter((x: any) => !x.is_future) : [];
+  // Agrupación por día de la semana (0=Dom, 1=Lun, ..., 6=Sáb) para benchmark por día equivalente
+  const salesByDow = useMemo(() => {
+    const map: Record<number, number[]> = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    for (const p of histPeriods) {
+      const parts = p.fecha.split("-");
+      if (parts.length === 3) {
+        const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        const dow = dObj.getDay();
+        map[dow].push(p.total);
+      }
+    }
+    return map;
+  }, [histPeriods]);
 
-  // Current year calculations
-  const currentYearStr = String(now.getFullYear());
-  const currentYearPeriods = histPeriods.filter((x: any) => x.fecha.startsWith(currentYearStr));
-  const totalSalesCurrentYear = currentYearPeriods.reduce((acc: number, curr: any) => acc + curr.total, 0);
-  const avgSalesCurrentYear = currentYearPeriods.length > 0 
-    ? Math.round(totalSalesCurrentYear / currentYearPeriods.length) 
-    : (p?.media ?? 0);
+  // Percentiles globales del filtro activo (calculados dinámicamente según el set de datos filtrado)
+  const globalPercentiles = useMemo(() => {
+    const allSales = histPeriods.map((p: any) => p.total);
+    if (allSales.length === 0 && data?.percentiles) {
+      return {
+        p25: data.percentiles.p25 ?? 0,
+        p50: data.percentiles.p50 ?? 0,
+        p75: data.percentiles.p75 ?? 0,
+        min: data.percentiles.min ?? 0,
+        max: data.percentiles.max ?? 0,
+        media: data.percentiles.media ?? 0,
+      };
+    }
+    return calculatePercentiles(allSales);
+  }, [histPeriods, data]);
 
-  // Sparkline calculations
-  const last7Days = histPeriods.slice(-7);
-  const maxLast7 = last7Days.length > 0 ? Math.max(...last7Days.map((d: any) => d.total), 1) : 1;
-  const maxP = p75 || 1;
-  const p25Pct = (p25 / maxP) * 100;
-  const p50Pct = (p50 / maxP) * 100;
+  // Función para obtener el benchmark dinámico específico de un día según su día de la semana y fecha
+  const getDailyBenchmark = useCallback((dateStr: string) => {
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return globalPercentiles;
+    const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const dow = dObj.getDay();
+    const dowSales = salesByDow[dow] || [];
+    
+    // Si tenemos suficientes datos históricos para ese día de la semana (e.g. todos los Viernes del año)
+    if (dowSales.length >= 4) {
+      return calculatePercentiles(dowSales);
+    }
+    return globalPercentiles;
+  }, [salesByDow, globalPercentiles]);
+
+  const p50 = globalPercentiles.p50;
+  const p25 = globalPercentiles.p25;
+  const p75 = globalPercentiles.p75;
 
   const firstOfMonth = new Date(navYear,navMonth,1);
   const daysInMonth  = new Date(navYear,navMonth+1,0).getDate();
@@ -152,38 +243,40 @@ export default function SalesPercentileTracker(){
   function wkDay(i:number){ const d=new Date(weekStart); d.setDate(weekStart.getDate()+i); return {date:d,entry:byDate[iso(d)]??null}; }
 
   return(
-    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+    <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-slate-200/80 flex flex-col space-y-6">
+      
+      {/* ─────────────────────────────────────────────────────────────────────────── */}
+      {/* 2. ENCABEZADO REORGANIZADO SIN EL BLOQUE 'RADAR DE VENTAS' (REGLA DIRECTA) */}
+      {/* ─────────────────────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div>
-          <h3 className="text-2xl font-black text-gray-900 flex items-center gap-2 mb-1">
-            <BarChart2 className="text-indigo-600" size={22}/>Radar de Percentiles — Ventas Históricas
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 mb-1">
+            <BarChart2 className="text-indigo-600" size={24}/>
+            Benchmark Histórico
           </h3>
-          <div className="flex flex-wrap gap-3 text-xs font-bold text-gray-400">
-            {(Object.entries(ZONES) as any[]).map(([k,z])=>(
-              <span key={k} className="flex items-center gap-1.5"><span className={cn("w-2 h-2 rounded-full",z.dot)}/>{z.label}</span>
-            ))}
-            <span className="flex items-center gap-1.5 italic"><Sparkles size={9} className="text-slate-400"/>Referencia estadística (sin IA)</span>
-          </div>
+          <p className="text-xs font-semibold text-slate-400">
+            Evaluación del rendimiento utilizando datos históricos dinámicos y días equivalentes.
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+
+        <div className="flex items-center gap-3 shrink-0">
           <div className="relative">
-            <Store size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none"/>
+            <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none"/>
             <select 
               value={sucursal} 
               onChange={e=>setSucursal(e.target.value)} 
-              className="pl-8 pr-6 py-2 bg-white border border-gray-200 hover:border-indigo-300 rounded-xl font-bold text-sm text-gray-800 outline-none appearance-none cursor-pointer"
+              className="pl-8 pr-6 py-2 bg-slate-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-bold text-xs text-slate-800 outline-none appearance-none cursor-pointer shadow-2xs"
             >
               {SUCS.map(s=>(
-                <option key={s.value} value={s.value} className="bg-white text-gray-800">
+                <option key={s.value} value={s.value} className="bg-white text-slate-800">
                   {s.label}
                 </option>
               ))}
             </select>
           </div>
-          <div className="flex bg-gray-100 p-1 rounded-xl gap-0.5">
+          <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 border border-slate-200/50">
             {([{v:"month",l:"Mes"},{v:"week",l:"Semana"}] as const).map(o=>(
-              <button key={o.v} onClick={()=>setView(o.v)} className={cn("px-4 py-1.5 rounded-lg text-sm font-black transition-all",view===o.v?"bg-white text-indigo-700 shadow-sm border border-gray-200/50":"text-gray-500 hover:text-gray-800")}>
+              <button key={o.v} onClick={()=>setView(o.v)} className={cn("px-3.5 py-1.5 rounded-lg text-xs font-black transition-all",view===o.v?"bg-white text-indigo-700 shadow-2xs border border-slate-200/60":"text-slate-500 hover:text-slate-800")}>
                 {o.l}
               </button>
             ))}
@@ -192,274 +285,260 @@ export default function SalesPercentileTracker(){
       </div>
 
       {isLoading?(
-        <div className="flex flex-col items-center justify-center py-20 gap-4 text-indigo-400">
-          <Loader2 size={36} className="animate-spin"/>
-          <p className="text-sm font-black uppercase tracking-widest animate-pulse">Calculando percentiles históricos...</p>
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-indigo-500">
+          <Loader2 size={40} className="animate-spin"/>
+          <p className="text-xs font-black uppercase tracking-widest animate-pulse">Calculando benchmark histórico dinámico...</p>
         </div>
       ):isError||!data?(
-        <div className="flex items-center justify-center py-12 text-red-400 text-sm font-bold bg-red-50 rounded-2xl border border-red-100 gap-2">
-          <AlertTriangle size={18}/> Error cargando datos.
+        <div className="flex items-center justify-center py-10 text-rose-500 text-xs font-bold bg-rose-50 rounded-2xl border border-rose-100 gap-2">
+          <AlertTriangle size={18}/> Error cargando datos de percentiles.
         </div>
       ):(
         <div className="space-y-6">
-          {/* Top KPI Cards in 2 rows with Sparkline bars */}
-          <div className="space-y-4">
-            
-            {/* Row 1: Main Statistics (2 larger cards) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              
-              {/* Card 1: Total Facturado */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all">
-                <div>
-                  <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1">
-                    💰 Total Facturado
-                  </span>
-                  <p className="text-[10px] text-slate-400 font-medium mb-2">
-                    Acumulado año actual ({currentYearStr}) • {sucursal ? `Sucursal: ${SUCS.find(s=>s.value===sucursal)?.label}` : "Todas las sucursales"}
-                  </p>
-                </div>
-                <div className="flex items-end justify-between gap-4 mt-2">
-                  {/* Mini Bars */}
-                  <div className="flex items-end gap-1.5 h-16 w-32 pb-0.5">
-                    {last7Days.map((day: any, idx: number) => {
-                      const z = ZONES[day.zone as keyof typeof ZONES] ?? ZONES.normal;
-                      const pctHeight = (day.total / maxLast7) * 100;
-                      return (
-                        <div 
-                          key={idx} 
-                          className={cn("w-2.5 rounded-t-sm transition-all duration-300", z.dot)} 
-                          style={{ height: `${Math.max(pctHeight, 10)}%` }}
-                          title={`${day.label}: ${fmt(day.total)}`}
-                        />
-                      );
-                    })}
-                  </div>
-                  {/* Values */}
-                  <div className="text-right">
-                    <p className="text-3xl lg:text-4xl font-black text-slate-700 leading-none">{fmt(totalSalesCurrentYear)}</p>
-                    <span className="text-[10px] text-slate-400 font-extrabold block mt-2 leading-none">
-                      Promedio diario: {fmt(avgSalesCurrentYear)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Última Venta */}
-              {lastR && lastZ && (
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between min-h-[140px] hover:shadow-md transition-all">
-                  <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1">
-                    ⚡ Último Día ({lastR.label})
-                  </span>
-                  <div className="flex items-end justify-between gap-4 mt-2">
-                    {/* Mini Bars */}
-                    <div className="flex items-end gap-1.5 h-16 w-32 pb-0.5">
-                      {last7Days.map((day: any, idx: number) => {
-                        const z = ZONES[day.zone as keyof typeof ZONES] ?? ZONES.normal;
-                        const pctHeight = (day.total / maxLast7) * 100;
-                        const isLast = idx === last7Days.length - 1;
-                        return (
-                          <div 
-                            key={idx} 
-                            className={cn("w-2.5 rounded-t-sm transition-all duration-300", z.dot, isLast ? "opacity-100 shadow-sm ring-1 ring-black/5" : "opacity-40")} 
-                            style={{ height: `${Math.max(pctHeight, 10)}%` }}
-                            title={`${day.label}: ${fmt(day.total)}`}
-                          />
-                        );
-                      })}
-                    </div>
-                    {/* Values */}
-                    <div className="text-right">
-                      <p className={cn("text-3xl lg:text-4xl font-black leading-none", lastZ.color)}>{fmt(lastR.total)}</p>
-                      <span className={cn("text-[10px] font-black leading-none block mt-2", lastR.pct_vs_p50 >= 0 ? "text-emerald-600" : "text-red-500")}>
-                        {lastR.pct_vs_p50 >= 0 ? "▲" : "▼"} {Math.abs(lastR.pct_vs_p50)}% vs P50 (Mediana)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
+          
+          {/* ─────────────────────────────────────────────────────────────────────────── */}
+          {/* RECUADROS DE PERCENTILES DINÁMICOS RECALCULADOS SEGÚN EL FILTRO ACTIVO */}
+          {/* ─────────────────────────────────────────────────────────────────────────── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black tracking-widest text-indigo-700 bg-indigo-50 border border-indigo-100 px-3.5 py-1 rounded-full uppercase block w-max">
+                📈 Percentiles Históricos
+              </span>
+              {/* PUNTO 8: Pequeña descripción elegante sobre el origen de los datos */}
+              <span className="text-[11px] font-bold text-slate-400">
+                Base estadística: <strong className="text-slate-700">365 días históricos comparables</strong> segun filtro activo.
+              </span>
             </div>
 
-            {/* Row 2: Percentile Thresholds (3 cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              
-              {/* Card 3: P25 Mínimo */}
-              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
-                <div>
-                  <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400"/> P25 (Mínimo)
+              {/* Card P25 */}
+              <div className="bg-rose-50/80 rounded-3xl p-5 border border-rose-200/80 shadow-2xs flex flex-col justify-between hover:shadow-md transition-all min-h-[150px]">
+                <div className="flex justify-between items-center pb-2 border-b border-rose-200/60">
+                  <span className="text-xs font-black text-rose-800 uppercase flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500"/> P25
                   </span>
-                  <p className="text-[9px] text-slate-400 font-medium">Límite inferior del último año</p>
+                  <span className="text-[9px] font-black bg-rose-200/70 text-rose-800 px-2 py-0.5 rounded-full uppercase">CRÍTICO</span>
                 </div>
-                <div className="flex items-end justify-between mt-2">
-                  {/* Mini Bars */}
-                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
-                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
-                  </div>
-                  {/* Values */}
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-red-600 leading-none">{fmt(p25)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
-                      Basado en 365 días
-                    </span>
-                  </div>
+                <div className="my-auto py-2">
+                  <h4 className="text-2xl font-black text-rose-900 tracking-tight">{fmt(p25)}</h4>
+                  <p className="text-[10px] font-bold text-rose-700/80 mt-1">Mínimo recomendado</p>
+                </div>
+                <div className="pt-2 border-t border-rose-200/60 text-[10px] font-bold text-rose-600/80">
+                  Límite inferior dinámico
                 </div>
               </div>
 
-              {/* Card 4: Mediana (P50) */}
-              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
-                <div>
-                  <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400"/> P50 (Mediana)
+              {/* Card P50 */}
+              <div className="bg-amber-50/80 rounded-3xl p-5 border border-amber-200/80 shadow-2xs flex flex-col justify-between hover:shadow-md transition-all min-h-[150px]">
+                <div className="flex justify-between items-center pb-2 border-b border-amber-200/60">
+                  <span className="text-xs font-black text-amber-800 uppercase flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500"/> P50
                   </span>
-                  <p className="text-[9px] text-slate-400 font-medium">Punto de equilibrio exacto del año</p>
+                  <span className="text-[9px] font-black bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full uppercase">NORMAL</span>
                 </div>
-                <div className="flex items-end justify-between mt-2">
-                  {/* Mini Bars */}
-                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
-                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: "100%" }} />
-                  </div>
-                  {/* Values */}
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-amber-600 leading-none">{fmt(p50)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
-                      Basado en 365 días
-                    </span>
-                  </div>
+                <div className="my-auto py-2">
+                  <h4 className="text-2xl font-black text-amber-900 tracking-tight">{fmt(p50)}</h4>
+                  <p className="text-[10px] font-bold text-amber-700/80 mt-1">Punto medio histórico</p>
+                </div>
+                <div className="pt-2 border-t border-amber-200/60 text-[10px] font-bold text-amber-600/80">
+                  Mediana del negocio
                 </div>
               </div>
 
-              {/* Card 5: P75 (Meta) */}
-              <div className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
-                <div>
-                  <span className="text-xs font-black tracking-widest text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-violet-400"/> P75 (Meta)
+              {/* Card P75 */}
+              <div className="bg-emerald-50/80 rounded-3xl p-5 border border-emerald-200/80 shadow-2xs flex flex-col justify-between hover:shadow-md transition-all min-h-[150px]">
+                <div className="flex justify-between items-center pb-2 border-b border-emerald-200/60">
+                  <span className="text-xs font-black text-emerald-800 uppercase flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"/> P75
                   </span>
-                  <p className="text-[9px] text-slate-400 font-medium">El 25% superior de tu historial</p>
+                  <span className="text-[9px] font-black bg-emerald-200/70 text-emerald-800 px-2 py-0.5 rounded-full uppercase">META</span>
                 </div>
-                <div className="flex items-end justify-between mt-2">
-                  {/* Mini Bars */}
-                  <div className="flex items-end gap-1.5 h-8 w-20 pb-0.5">
-                    <div className="w-3.5 bg-red-500 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p25Pct}%` }} />
-                    <div className="w-3.5 bg-amber-400 rounded-t-sm transition-all duration-300 opacity-30" style={{ height: `${p50Pct}%` }} />
-                    <div className="w-3.5 bg-violet-500 rounded-t-sm transition-all duration-300" style={{ height: "100%" }} />
-                  </div>
-                  {/* Values */}
-                  <div className="text-right">
-                    <p className="text-2xl lg:text-3xl font-black text-violet-600 leading-none">{fmt(p75)}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1 leading-none">
-                      Solo 25% de días arriba
-                    </span>
-                  </div>
+                <div className="my-auto py-2">
+                  <h4 className="text-2xl font-black text-emerald-900 tracking-tight">{fmt(p75)}</h4>
+                  <p className="text-[10px] font-bold text-emerald-700/80 mt-1">Nivel alto esperado</p>
+                </div>
+                <div className="pt-2 border-t border-emerald-200/60 text-[10px] font-bold text-emerald-600/80">
+                  Rendimiento superior
                 </div>
               </div>
-
             </div>
           </div>
           
-          {/* ── SECCIÓN 4: Vista por período ── */}
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 bg-indigo-400 rounded-full"/>
-            <p className="text-sm font-black text-gray-700">
-              {view==="month"?"Calendario mensual":"Timetable semanal"}
-            </p>
-            <span className="text-xs text-gray-400 font-medium">
-              {view==="month"
-                ?"— Cada celda muestra el monto real del día, su zona y si superó P25/P50/P75. Días futuros muestran la referencia estadística."
-                :"— Cada fila muestra el día con su barra comparativa. La línea azul es la mediana (P50). Las etiquetas dentro de la barra muestran los umbrales exactos."}
-            </span>
-          </div>
+          {/* ─────────────────────────────────────────────────────────────────────────── */}
+          {/* CALENDARIO RE DISEÑADO CON DÍAS EQUIVALENTES Y BENCHMARKS DÍA POR DÍA */}
+          {/* ─────────────────────────────────────────────────────────────────────────── */}
           {view==="month"&&(
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <button onClick={prevM} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"><ChevronLeft size={16}/></button>
-                <h4 className="text-lg font-black text-gray-800 flex items-center gap-2">
+            <div className="space-y-4 pt-2">
+              
+              {/* Encabezado del Mes con Navegación Circular */}
+              <div className="flex items-center justify-between bg-white p-3 sm:px-6 rounded-2xl border border-slate-100 shadow-2xs">
+                <button 
+                  onClick={prevM} 
+                  className="p-2.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-all shadow-2xs active:scale-95 flex items-center justify-center"
+                  title="Mes anterior"
+                >
+                  <ChevronLeft size={18}/>
+                </button>
+
+                <h4 className="text-lg sm:text-xl font-black text-slate-900 flex items-center justify-center gap-2">
                   {MES[navMonth]} {navYear}
                   {(navYear>now.getFullYear()||(navYear===now.getFullYear()&&navMonth>now.getMonth()))&&(
-                    <span className="text-xs font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-full flex items-center gap-1"><Sparkles size={9}/>Proyeccion</span>
+                    <span className="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-0.5 rounded-full flex items-center gap-1">
+                      <Sparkles size={11}/> Proyección
+                    </span>
                   )}
                 </h4>
-                <button onClick={nextM} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"><ChevronRight size={16}/></button>
+
+                <button 
+                  onClick={nextM} 
+                  className="p-2.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-all shadow-2xs active:scale-95 flex items-center justify-center"
+                  title="Mes siguiente"
+                >
+                  <ChevronRight size={18}/>
+                </button>
               </div>
-              <div className="grid grid-cols-7 gap-1 mb-1">
-                {DAYS.map(d=><div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase py-1">{d}</div>)}
+
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 gap-2">
+                {DAYS.map(d=>(
+                  <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-wider py-1">
+                    {d}
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-7 gap-1.5">
-                {Array.from({length:startDow}).map((_,i)=><div key={i} className="min-h-[90px]"/>)}
+
+              {/* Grilla del Calendario con Benchmark Individual Día a Día (Puntos 5, 6 y 10) */}
+              <div className="grid grid-cols-7 gap-2 sm:gap-3">
+                {Array.from({length:startDow}).map((_,i)=><div key={i} className="min-h-[105px]"/>)}
                 {Array.from({length:daysInMonth}).map((_,i)=>{
-                  const day=i+1; const entry=dayData(day);
+                  const day=i+1; 
+                  const entry=dayData(day);
+                  const dateStr=`${navYear}-${String(navMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
                   const dateObj=new Date(navYear,navMonth,day);
                   const isToday=iso(dateObj)===iso(now);
                   const isFut=dateObj>now;
-                  const z=entry?(ZONES[entry.zone as keyof typeof ZONES]??ZONES.normal):null;
-                  return(
-                    <div key={day} className={cn("relative group min-h-[90px] rounded-2xl border p-2 flex flex-col gap-1 cursor-default hover:shadow-lg transition-all",
-                      isToday?"ring-2 ring-indigo-400 border-indigo-200 bg-indigo-50":
-                      entry&&!entry.is_future&&z?`${z.bg} ${z.border}`:
-                      entry?.is_future?"border-dashed border-violet-200 bg-violet-50/20":
-                      "border-gray-100 bg-white")}>
-                      {/* Número del dia */}
-                      <span className={cn("text-[10px] font-black self-start w-5 h-5 flex items-center justify-center rounded-full shrink-0",
-                        isToday?"bg-indigo-500 text-white":
-                        entry&&!entry.is_future&&z?z.color:
-                        entry?.is_future?"text-violet-400 bg-violet-100":
-                        isFut?"text-gray-300":"text-gray-500")}>{day}</span>
-                      {/* Datos reales */}
-                      {entry&&!entry.is_future&&(
-                        <>
-                          <p className={cn("text-[12px] font-black leading-tight mt-0.5",z?.color)}>{fmt(entry.total)}</p>
-                          <p className={cn("text-[9px] font-bold",z?.color)}>{z?.label}</p>
-                          {/* Mini semaforos */}
-                          <div className="flex gap-0.5 mt-auto">
-                            {[{l:"P25",ok:entry.paso_p25,c:"bg-amber-400"},{l:"P50",ok:entry.paso_p50,c:"bg-emerald-500"},{l:"P75",ok:entry.paso_p75,c:"bg-violet-500"}].map(s=>(
-                              <span key={s.l} className={cn("text-[7px] font-black px-1 py-0.5 rounded flex items-center gap-0.5",s.ok?"bg-white/80 text-gray-700":"bg-black/5 text-gray-400")}>
-                                <span className={cn("w-1.5 h-1.5 rounded-full inline-block",s.ok?s.c:"bg-gray-300")}/>{s.l}
-                              </span>
-                            ))}
-                          </div>
-                          {entry.pct_vs_p50!==0&&(
-                            <span className={cn("text-[8px] font-black",entry.pct_vs_p50>=0?"text-emerald-600":"text-red-500")}>
-                              {entry.pct_vs_p50>0?"+":""}{entry.pct_vs_p50}% vs P50
-                            </span>
-                          )}
-                        </>
-                      )}
-                      {/* Referencia estadística futura (solo si el backend envió datos de proyección) */}
-                      {entry?.is_future&&(
-                        <>
-                          <p className="text-[10px] text-violet-600 font-black mt-0.5">~{fmt(entry.total)}</p>
-                          <p className="text-[8px] text-violet-400 font-bold">Min: {fmt(entry.total_low??p25)}</p>
-                          <p className="text-[8px] text-violet-400 font-bold">Max: {fmt(entry.total_high??p75)}</p>
-                          <span className="text-[7px] text-violet-400 font-bold mt-auto">📊 Ref. histórica</span>
-                        </>
-                      )}
-                      {/* Dia futuro sin datos = celda vacía neutral */}
-                      {!entry&&isFut&&(
-                        <div className="flex-1 flex items-center justify-center">
-                          <span className="text-[8px] text-gray-200 font-medium">—</span>
-                        </div>
-                      )}
-                      {/* Dia pasado sin ventas */}
-                      {!entry&&!isFut&&(
-                        <div className="flex-1 flex items-center justify-center">
-                          <span className="text-[8px] text-gray-300 font-medium">Sin ventas</span>
-                        </div>
-                      )}
-                      <Tooltip entry={entry} p25={p25} p50={p50} p75={p75}/>
 
+                  // Benchmark estadístico individual del día equivalente
+                  const dailyBench = getDailyBenchmark(dateStr);
+                  const dailyP25 = dailyBench.p25;
+                  const dailyP50 = dailyBench.p50;
+                  const dailyP75 = dailyBench.p75;
+
+                  // Estado según los percentiles individuales del día
+                  const z = entry && !entry.is_future ? calculateDailyStatus(entry.total, dailyP25, dailyP50, dailyP75) : null;
+                  const pctVsDailyP50 = dailyP50 > 0 && entry ? Math.round(((entry.total - dailyP50) / dailyP50) * 100) : 0;
+
+                  return(
+                    <div 
+                      key={day} 
+                      className={cn(
+                        "relative group min-h-[105px] rounded-2xl border p-3 flex flex-col justify-between cursor-default transition-all duration-300 hover:shadow-md",
+                        isToday ? "ring-2 ring-indigo-500 border-indigo-200 bg-indigo-50/50" :
+                        entry && !entry.is_future && z ? `${z.bg} ${z.border}` :
+                        entry?.is_future ? "border-slate-200/80 bg-slate-50/90 opacity-90" :
+                        "border-slate-100 bg-white"
+                      )}
+                    >
+                      {/* Número del Día y Badge de Categoría */}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={cn(
+                          "text-xs font-black w-6 h-6 flex items-center justify-center rounded-xl shrink-0 transition-colors",
+                          isToday ? "bg-indigo-600 text-white shadow-2xs" :
+                          entry && !entry.is_future && z ? z.pill :
+                          entry?.is_future ? "text-slate-600 bg-slate-200/70" :
+                          isFut ? "text-slate-300" : "text-slate-500 bg-slate-100"
+                        )}>
+                          {day}
+                        </span>
+
+                        {entry && !entry.is_future && z && (
+                          <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider", z.pill)}>
+                            {z.label}
+                          </span>
+                        )}
+                        {entry?.is_future && (
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Pronóstico
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Monto Real Destacado + Variación vs P50 Diario */}
+                      {entry && !entry.is_future && (
+                        <div className="my-1.5 space-y-0.5">
+                          <p className={cn("text-sm sm:text-base font-black tracking-tight leading-tight", z?.color)}>
+                            {fmt(entry.total)}
+                          </p>
+                          {pctVsDailyP50 !== 0 && (
+                            <div className={cn("text-[9px] font-black flex items-center gap-0.5", pctVsDailyP50 >= 0 ? "text-emerald-700" : "text-rose-700")}>
+                              {pctVsDailyP50 > 0 ? "▲ +" : "▼ "}{pctVsDailyP50}% vs P50
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Indicadores de Percentiles Individuales del Día */}
+                      {entry && !entry.is_future && (
+                        <div className="flex items-center gap-1 mt-auto pt-1.5 border-t border-slate-200/60 text-[9px] font-bold text-slate-500">
+                          {[
+                            { l: "P25", ok: entry.total >= dailyP25, dot: "bg-amber-400" },
+                            { l: "P50", ok: entry.total >= dailyP50, dot: "bg-blue-500" },
+                            { l: "P75", ok: entry.total >= dailyP75, dot: "bg-emerald-500" }
+                          ].map(s => (
+                            <span key={s.l} className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-black", s.ok ? "bg-white/80 text-slate-800 border border-slate-200/60 shadow-2xs" : "bg-slate-200/50 text-slate-400")}>
+                              <span className={cn("w-1.5 h-1.5 rounded-full inline-block", s.ok ? s.dot : "bg-slate-300")} />
+                              {s.l}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Punto 11: Días Futuros (Solo Referencia Estadística y Rango Min-Max, Sin Venta Real) */}
+                      {entry?.is_future && (
+                        <div className="my-1 space-y-1 text-slate-700">
+                          <p className="text-xs font-black text-indigo-700 leading-tight">
+                            ~{fmt(dailyP50 > 0 ? dailyP50 : (entry.total || p50))}
+                          </p>
+                          <div className="text-[9px] font-bold text-slate-500 flex flex-col gap-0.5 pt-1 border-t border-slate-200/60">
+                            <span>Min: {fmt(dailyP25 > 0 ? dailyP25 : (entry.total_low ?? p25))}</span>
+                            <span>Max: {fmt(dailyP75 > 0 ? dailyP75 : (entry.total_high ?? p75))}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Día Futuro Sin Datos */}
+                      {!entry && isFut && (
+                        <div className="flex-1 flex items-center justify-center min-h-[40px]">
+                          <span className="text-[10px] text-slate-300 font-bold">—</span>
+                        </div>
+                      )}
+
+                      {/* Día Pasado Sin Ventas */}
+                      {!entry && !isFut && (
+                        <div className="flex-1 flex items-center justify-center min-h-[40px]">
+                          <span className="text-[10px] text-slate-400 font-bold italic">Sin ventas</span>
+                        </div>
+                      )}
+
+                      {/* Tooltip con Estadísticas Únicas por Día (Punto 7) */}
+                      <Tooltip entry={entry} p25={dailyP25} p50={dailyP50} p75={dailyP75}/>
                     </div>
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-3 mt-4 text-[10px] font-bold text-gray-500 justify-center">
+
+              {/* Leyenda de Categorías */}
+              <div className="flex flex-wrap gap-4 mt-4 text-[11px] font-bold text-slate-500 justify-center bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
                 {(Object.entries(ZONES) as any[]).map(([k,z])=>(
-                  <span key={k} className="flex items-center gap-1"><span className={cn("w-2.5 h-2.5 rounded-full",z.dot)}/>{z.label}</span>
+                  <span key={k} className="flex items-center gap-1.5">
+                    <span className={cn("w-2.5 h-2.5 rounded-full",z.dot)}/>
+                    {z.label}
+                  </span>
                 ))}
-                <span className="flex items-center gap-1"><Sparkles size={9} className="text-violet-400"/>Referencia estadística futura</span>
+                <span className="flex items-center gap-1.5 text-indigo-700">
+                  <Sparkles size={11} className="text-indigo-500"/>
+                  Referencia estadística / Pronóstico
+                </span>
               </div>
             </div>
           )}
@@ -468,93 +547,54 @@ export default function SalesPercentileTracker(){
           {view==="week"&&(
             <div>
               <div className="flex items-center justify-between mb-4">
-                <button onClick={()=>setWeekOffset(w=>w-1)} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"><ChevronLeft size={16}/></button>
+                <button onClick={()=>setWeekOffset(w=>w-1)} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-all"><ChevronLeft size={16}/></button>
                 <div className="text-center">
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                     {weekOffset===0?"Semana actual":weekOffset<0?`Hace ${Math.abs(weekOffset)} semana(s)`:`En ${weekOffset} semana(s)`}
                   </p>
-                  <p className="text-sm font-black text-gray-800">
+                  <p className="text-sm font-black text-slate-800">
                     {weekStart.toLocaleDateString("es-ES",{day:"numeric",month:"long"})} – {new Date(weekStart.getTime()+6*86400000).toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"})}
                   </p>
                 </div>
-                <button onClick={()=>setWeekOffset(w=>w+1)} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"><ChevronRight size={16}/></button>
+                <button onClick={()=>setWeekOffset(w=>w+1)} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-all"><ChevronRight size={16}/></button>
               </div>
               <div className="space-y-3">
                 {DAYS.map((_,i)=>{
                   const {date,entry}=wkDay(i);
-                  const isToday=iso(date)===iso(now); const isFut=date>now;
-                  const z=entry?(ZONES[entry.zone as keyof typeof ZONES]??ZONES.normal):null;
-                  const maxRef=(p75||1)*1.2;
-                  const barW=entry?Math.min((entry.total/maxRef)*100,100):isFut?Math.min((p50/maxRef)*100,100):0;
-                  const p25W=Math.min((p25/maxRef)*100,100);
-                  const medW=Math.min((p50/maxRef)*100,100);
-                  const p75W=Math.min((p75/maxRef)*100,100);
-                  const total=entry?.total??(isFut?p50:0);
+                  const dateStr = iso(date);
+                  const isToday=dateStr===iso(now); 
+                  const isFut=date>now;
+                  const dailyBench = getDailyBenchmark(dateStr);
+                  const z = entry && !entry.is_future ? calculateDailyStatus(entry.total, dailyBench.p25, dailyBench.p50, dailyBench.p75) : null;
+                  
                   return(
-                    <div key={i} className={cn("relative group bg-white rounded-2xl border border-gray-100 transition-all hover:shadow-md",
-                      isToday ? "ring-2 ring-indigo-400 bg-indigo-50 border-indigo-200" : isFut ? "border-dashed border-violet-200 bg-violet-50/20" : "")}>
-                      <div className="flex items-start gap-3 px-4 pt-3 pb-2">
-                        {/* Stripe + dia */}
-                        <div className="flex items-center gap-2 w-24 shrink-0 pt-1">
-                          <div className={cn("w-1.5 h-10 rounded-full shrink-0", z ? z.dot : isFut ? "bg-violet-300" : "bg-gray-200")}/>
-                          <div>
-                            <p className={cn("text-sm font-black",isToday?"text-indigo-700":z?z.color:isFut?"text-violet-500":"text-gray-400")}>{DAYS[i]}</p>
-                            <p className="text-[10px] text-gray-400">{date.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</p>
-                          </div>
-                        </div>
-                        {/* Barra + etiquetas Min/Med/Max */}
-                        <div className="flex-1 min-w-0">
-                          {/* Barra */}
-                          <div className="relative h-6 bg-slate-50/80 rounded-lg overflow-hidden border border-slate-100 mb-1">
-                            <div className={cn("absolute left-0 top-1 bottom-1 rounded-md transition-all duration-700", z ? z.pastelBar : isFut ? "bg-violet-200" : "bg-gray-200")} style={{width:`${barW}%`}}/>
-                            {/* P25 */}
-                            <div className="absolute top-0 bottom-0 w-px bg-amber-400 z-10" style={{left:`${p25W}%`}}/>
-                            {/* P50 */}
-                            <div className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 z-20" style={{left:`${medW}%`}}/>
-                            {/* P75 */}
-                            <div className="absolute top-0 bottom-0 w-px bg-violet-400 z-10" style={{left:`${p75W}%`}}/>
-                            {!entry&&isFut&&<div className="absolute inset-0 flex items-center px-3"><span className="text-[8px] text-violet-400 italic font-black">Ref. histórica basada en P50</span></div>}
-                            {!entry&&!isFut&&<div className="absolute inset-0 flex items-center justify-center"><span className="text-[9px] text-gray-400">Sin datos</span></div>}
-                          </div>
-                          {/* Etiquetas de umbral debajo de la barra */}
-                          <div className="relative h-4">
-                            <span className="absolute text-[8px] font-black text-amber-600 -translate-x-1/2 whitespace-nowrap" style={{left:`${p25W}%`}}>Min {fmt(p25)}</span>
-                            <span className="absolute text-[8px] font-black text-indigo-600 -translate-x-1/2 whitespace-nowrap" style={{left:`${medW}%`}}>Med {fmt(p50)}</span>
-                            <span className="absolute text-[8px] font-black text-violet-600 -translate-x-1/2 whitespace-nowrap" style={{left:`${p75W}%`}}>Max {fmt(p75)}</span>
-                          </div>
-                        </div>
-                        {/* Monto + zona + % */}
-                        <div className="shrink-0 text-right w-36 pt-1">
-                          {total>0?(
-                            <>
-                              <p className={cn("text-base font-black",z?z.color:isFut?"text-violet-500":"text-gray-900")}>{fmt(total)}</p>
-                              {entry&&entry.pct_vs_p50!==0&&(
-                                <p className={cn("text-[10px] font-black",entry.pct_vs_p50>=0?"text-emerald-600":"text-red-500")}>
-                                  {entry.pct_vs_p50>0?"+":""}{entry.pct_vs_p50}% vs mediana
-                                </p>
-                              )}
-                              {isFut&&!entry&&<p className="text-[9px] text-violet-400 italic">ref. histórica</p>}
-                            </>
-                          ):<p className="text-sm text-gray-300">—</p>}
-                          {z&&<span className={cn("inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-lg",z.pastelPill)}>{z.label}</span>}
-                          {isFut&&!z&&<span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200">📊 Ref.</span>}
+                    <div key={i} className={cn("relative group bg-white rounded-2xl border border-slate-100 transition-all hover:shadow-md p-3 flex items-center justify-between",
+                      isToday ? "ring-2 ring-indigo-400 bg-indigo-50/50 border-indigo-200" : isFut ? "border-dashed border-indigo-200 bg-indigo-50/20" : "")}>
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-1.5 h-10 rounded-full shrink-0", z ? z.dot : isFut ? "bg-indigo-300" : "bg-slate-200")}/>
+                        <div>
+                          <p className={cn("text-sm font-black",isToday?"text-indigo-700":z?z.color:isFut?"text-indigo-500":"text-slate-400")}>{DAYS[i]}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">{date.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}</p>
                         </div>
                       </div>
-                      <Tooltip entry={entry||(isFut?{total:p50,fecha:iso(date),is_future:true,total_low:p25,total_high:p75}:null)} p25={p25} p50={p50} p75={p75}/>
+                      <div className="text-right">
+                        <p className={cn("text-sm font-black", z?.color || "text-slate-800")}>
+                          {entry ? fmt(entry.total) : isFut ? `~${fmt(dailyBench.p50)}` : 'Sin ventas'}
+                        </p>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {entry?.is_future ? 'Pronóstico' : z?.label || (isFut ? 'Esperado' : 'Sin datos')}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-4 mt-4 text-[10px] font-bold text-gray-400">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-amber-400 inline-block rounded"/>Mín (P25) = {fmt(p25)} — umbral de zona crítica</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-indigo-500 inline-block rounded"/>Mediana (P50) = {fmt(p50)} — venta típica real, referencia principal</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-violet-400 inline-block rounded"/>Meta (P75) = {fmt(p75)} — superar esto es gran venta</span>
-                <span className="flex items-center gap-1.5 italic"><Sparkles size={9} className="text-violet-400"/>Días futuros = referencia estadística sin IA</span>
-              </div>
             </div>
           )}
+
         </div>
       )}
+
     </div>
   );
 }

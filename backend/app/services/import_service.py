@@ -4,10 +4,10 @@ from typing import Dict, Any
 from app.db import get_raw_db
 
 ALIASES = {
-    "fecha_transaccion": ["FECHA"], 
-    "nombre_producto": ["DESCRIPCION", "PRODUCTO"], 
-    "monto_total_bs": ["TOTAL", "VENTA NETA"], 
-    "cantidad_vendida": ["CANTIDAD", "CANT"]
+    "fecha_transaccion": ["FECHA", "FECHA_TRANSACCION", "FECHA/HORA", "FECHAYHORA"], 
+    "nombre_producto": ["DESCRIPCION", "PRODUCTO", "NOMBRE_PRODUCTO", "ARTICULO"], 
+    "monto_total_bs": ["VENTA NETA", "VENTANETA", "TOTAL", "VENTA BRUTA", "VENTA NETA"], 
+    "cantidad_vendida": ["CANTIDAD", "CANT", "UNIDADES"]
 }
 
 async def procesar_archivo(file_bytes: bytes, sucursal: str) -> Dict[str, Any]:

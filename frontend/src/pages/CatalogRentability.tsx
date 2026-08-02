@@ -11,11 +11,22 @@ import {
     Loader2, 
     Activity,
     FileSpreadsheet, 
-    Clock
+    FileText,
+    Info,
+    Clock,
+    Award,
+    Lightbulb,
+    TrendingDown,
+    ChevronDown,
+    BarChart3,
+    Store
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-
+import AnaliticaAvanzada from './AnaliticaAvanzada';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -47,6 +58,13 @@ export default function CatalogRentability() {
     const [trendDataRaw, setTrendDataRaw] = useState<any[]>([]);
     const [rendMonth, setRendMonth] = useState('2026-07');
     const [rendSucursal, setRendSucursal] = useState('');
+
+    // Per-branch data for comparison section
+    const [branchData, setBranchData] = useState<Record<string, any[]>>({});
+    const [isBranchLoading, setIsBranchLoading] = useState(false);
+    const [activeBranchTab] = useState('Total');
+    // Previous period data for suggestions
+    const [prevRentData, setPrevRentData] = useState<any[]>([]);
 
     const [catalogo, setCatalogo] = useState<any[]>([]);
     const [proveedoresBD, setProveedoresBD] = useState<any[]>([]);
@@ -125,6 +143,57 @@ export default function CatalogRentability() {
         fetchRent();
         return () => { isMounted = false; };
     }, [rentRange, rentSucursal]);
+
+    // Fetch per-branch data in parallel for the Top por Sucursal section
+    useEffect(() => {
+        let isMounted = true;
+        const fetchBranches = async () => {
+            setIsBranchLoading(true);
+            try {
+                const now = new Date();
+                let start = new Date('2024-01-01T00:00:00.000Z');
+                let end   = new Date();
+                if (rentRange === 'today') {
+                    start = new Date(); start.setHours(0,0,0,0);
+                    end   = new Date(); end.setHours(23,59,59,999);
+                } else if (rentRange === '7days') {
+                    start = new Date(now); start.setDate(now.getDate() - 7);
+                } else if (rentRange === '30days') {
+                    start = new Date(now); start.setDate(now.getDate() - 30);
+                } else if (rentRange === 'this_month') {
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59);
+                } else if (rentRange === 'this_year') {
+                    start = new Date(now.getFullYear(), 0, 1);
+                }
+
+                // Previous period for suggestions
+                const periodMs = end.getTime() - start.getTime();
+                const prevEnd = new Date(start.getTime() - 1);
+                const prevStart = new Date(prevEnd.getTime() - periodMs);
+
+                const branches = ['Heroinas', 'Recoleta', 'Calacoto'];
+                const [allRes, prevRes, ...branchRes] = await Promise.all([
+                    getRentabilidadReal(start.toISOString(), end.toISOString(), undefined, 200),
+                    getRentabilidadReal(prevStart.toISOString(), prevEnd.toISOString(), undefined, 200),
+                    ...branches.map(b => getRentabilidadReal(start.toISOString(), end.toISOString(), b, 50))
+                ]);
+
+                if (isMounted) {
+                    const map: Record<string, any[]> = { 'Total': Array.isArray(allRes) ? allRes : [] };
+                    branches.forEach((b, i) => { map[b] = Array.isArray(branchRes[i]) ? branchRes[i] : []; });
+                    setBranchData(map);
+                    setPrevRentData(Array.isArray(prevRes) ? prevRes : []);
+                }
+            } catch {
+                // silent
+            } finally {
+                if (isMounted) setIsBranchLoading(false);
+            }
+        };
+        fetchBranches();
+        return () => { isMounted = false; };
+    }, [rentRange]);
 
     const rangeLabels: Record<string, string> = {
         'today': 'Hoy',
@@ -275,100 +344,42 @@ export default function CatalogRentability() {
 
 
     const processedRentData = useMemo(() => {
-        // 1. Filtro estricto de Zona Horaria para "today"
-        const isTodayFilter = rentRange === 'today';
-        const hoyStrBO = new Date().toLocaleDateString('es-BO', { timeZone: 'America/La_Paz' });
+        if (!Array.isArray(rentData)) return [];
 
-        const ventasValidas = rentData.filter((venta: any) => {
-            if (venta.estado === 'Cancelado' || venta.estado === 'Borrador' || venta.estado === 'En proceso' || venta.anulada === true) {
-                return false;
-            }
-            if (isTodayFilter && venta.fecha) {
-                const ventaDateStrBO = new Date(venta.fecha).toLocaleDateString('es-BO', { timeZone: 'America/La_Paz' });
-                if (ventaDateStrBO !== hoyStrBO) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        // 2. Normalización de Clave (La Clave Única)
-        const claveUnica = (nombre: string) => String(nombre || '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-        // 3. Agrupación Consolidada
-        const mapaProductos = new Map<string, {
-            nombreLimpio: string;
-            unidades: number;
-            ingreso_bruto: number;
-        }>();
-
-        ventasValidas.forEach((venta: any) => {
-            if (!venta.nombre) return;
-            const key = claveUnica(venta.nombre);
+        return rentData.map((item: any) => {
+            const nombreLimpio = String(item.nombre || '').toUpperCase().trim();
+            const unidades = Number(item.unidades || 0);
+            const tickets = Number(item.tickets || 1);
+            const ingreso_bruto = Number(item.ingreso_bruto || 0);
+            const costo_base = Number(item.costo_base ?? item.costo_prom ?? 0);
+            const precio_distribucion = Number(item.precio_distribucion || 0);
+            const precio_prom = Number(item.precio_prom ?? (unidades > 0 ? ingreso_bruto / unidades : 0));
             
-            if (mapaProductos.has(key)) {
-                const existente = mapaProductos.get(key)!;
-                existente.unidades += Number(venta.unidades || venta.cantidad || 0);
-                existente.ingreso_bruto += Number(venta.ingreso_bruto || venta.ingresos || 0);
-            } else {
-                mapaProductos.set(key, {
-                    nombreLimpio: String(venta.nombre).toUpperCase().trim(),
-                    unidades: Number(venta.unidades || venta.cantidad || 0),
-                    ingreso_bruto: Number(venta.ingreso_bruto || venta.ingresos || 0)
-                });
-            }
-        });
-
-        const productosFinales = Array.from(mapaProductos.values());
-
-        // 4. Motor de Cálculo Financiero
-        return productosFinales.map((group) => {
-            const cleanName = group.nombreLimpio;
-            const unidades = group.unidades;
-            const ingreso_bruto = group.ingreso_bruto;
-
-            // Buscar en el catálogo
-            const prodCat = catalogo.find((c: any) => {
-                const desc = (c.descripcion || c.nombre || '').toUpperCase().trim();
-                return desc === cleanName;
-            });
-
-            const proveedorNombre = prodCat?.proveedor || 'Sin Proveedor';
-            const categoriaNombre = prodCat?.categoria_nombre || prodCat?.categoria_id || 'Sin Categoría';
-            const costoBase = Number(prodCat?.costo_producto || prodCat?.costo_base || 0);
-            const esTaboada = String(proveedorNombre).toLowerCase().includes('taboada');
-
-            let ganancia_matriz = 0;
-            let ganancia_sucursal = 0;
-
-            if (esTaboada) {
-                const precioMatriz = costoBase * 1.15;
-                ganancia_matriz = (precioMatriz - costoBase) * unidades;
-                ganancia_sucursal = ingreso_bruto - (precioMatriz * unidades);
-            } else {
-                ganancia_matriz = 0;
-                ganancia_sucursal = ingreso_bruto - (costoBase * unidades);
-            }
-
-            const costo_real = costoBase * unidades;
-            const margen_pct = ingreso_bruto > 0 ? ((ingreso_bruto - costo_real) / ingreso_bruto) * 100 : 0;
-            const precio_venta_retail = unidades > 0 ? (ingreso_bruto / unidades) : 0;
+            const ganancia_matriz = Number(item.ganancia_matriz || 0);
+            const ganancia_suc = Number(item.ganancia_suc ?? (ingreso_bruto - (precio_distribucion > 0 ? precio_distribucion : costo_base) * unidades));
+            const ganancia_total = Number(item.ganancia_total ?? (ganancia_suc + ganancia_matriz));
+            
+            const margen_suc_pct = Number(item.margen_suc_pct ?? (ingreso_bruto > 0 ? (ganancia_suc / ingreso_bruto * 100) : 0));
+            const margen_empresa_pct = Number(item.margen_empresa_pct ?? (ingreso_bruto > 0 ? (ganancia_total / ingreso_bruto * 100) : 0));
 
             return {
-                nombreLimpio: cleanName,
-                categoria: categoriaNombre,
-                proveedor: proveedorNombre,
+                nombreLimpio,
                 unidades,
+                tickets,
+                precio_prom,
                 ingreso_bruto,
-                costo_real,
-                ganancia_suc: ganancia_sucursal,
+                costo_base,
+                precio_distribucion,
+                ganancia_suc,
                 ganancia_matriz,
-                precio_prom: precio_venta_retail,
-                costo_prom: costoBase,
-                margen_pct
+                ganancia_total,
+                margen_suc_pct,
+                margen_empresa_pct,
+                categoria: String(item.categoria || 'Sin Categoría'),
+                proveedor: String(item.proveedor || 'Sin Proveedor'),
             };
         });
-    }, [rentData, catalogo, rentRange]);
+    }, [rentData]);
 
     const categoriasDisponibles = useMemo(() => {
         const set = new Set<string>();
@@ -398,7 +409,7 @@ export default function CatalogRentability() {
     }, [proveedoresBD, catalogo]);
 
     const filteredRentData = useMemo(() => {
-        return processedRentData.filter((p: any) => {
+        const filtered = processedRentData.filter((p: any) => {
             const matchesSearch = p.nombreLimpio.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesCat = !selectedCategoria || p.categoria === selectedCategoria;
             const matchesProv = !selectedProveedor || 
@@ -407,13 +418,17 @@ export default function CatalogRentability() {
                 (String(p.proveedor || '').includes(selectedProveedor));
             return matchesSearch && matchesCat && matchesProv;
         });
-    }, [processedRentData, searchTerm, selectedCategoria, selectedProveedor]);
+
+        // REGLA: Consolidado -> Top 20. Sucursal seleccionada (Heroínas, Recoleta, Calacoto) -> Top 15.
+        const limitToApply = rentSucursal ? 15 : 20;
+        return filtered.slice(0, limitToApply);
+    }, [processedRentData, searchTerm, selectedCategoria, selectedProveedor, rentSucursal]);
 
     const handleExportCSV = () => {
         if (!filteredRentData.length) return;
-        const header = ["Producto", "Categoría", "Proveedor", "Unidades Vendidas", "Ingreso Bruto (Bs)", "Costo Real (Bs)", "Ganancia Sucursal (Bs)", "Ganancia Matriz (Bs)", "Precio Prom. Venta (Bs)", "Costo Unit. Base (Bs)", "% Margen"];
+        const header = ["Producto", "Unidades", "Tickets", "Precio Promedio (Bs)", "Ingreso (Bs)", "Ganancia Sucursal (Bs)", "Ganancia Matriz (Bs)", "Ganancia Total (Bs)", "Margen Sucursal %", "Margen Empresa %", "Categoría", "Proveedor"];
         const csvRows = filteredRentData.map((p: any) =>
-            `"${p.nombreLimpio.replace(/"/g, '""')}","${String(p.categoria).replace(/"/g, '""')}","${String(p.proveedor).replace(/"/g, '""')}",${p.unidades},${p.ingreso_bruto.toFixed(2)},${p.costo_real.toFixed(2)},${p.ganancia_suc.toFixed(2)},${p.ganancia_matriz.toFixed(2)},${p.precio_prom.toFixed(2)},${p.costo_prom.toFixed(2)},${p.margen_pct.toFixed(1)}%`
+            `"${p.nombreLimpio.replace(/"/g, '""')}",${p.unidades},${p.tickets},${p.precio_prom.toFixed(2)},${p.ingreso_bruto.toFixed(2)},${p.ganancia_suc.toFixed(2)},${p.ganancia_matriz.toFixed(2)},${p.ganancia_total.toFixed(2)},${p.margen_suc_pct.toFixed(1)}%,${p.margen_empresa_pct.toFixed(1)}%,"${String(p.categoria).replace(/"/g, '""')}","${String(p.proveedor).replace(/"/g, '""')}"`
         );
         const csvContent = "\uFEFF" + [header.join(","), ...csvRows].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -421,6 +436,65 @@ export default function CatalogRentability() {
         const a = document.createElement('a'); a.href = url;
         a.download = `Reporte_Rentabilidad_${rentRange}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
         window.URL.revokeObjectURL(url);
+    };
+
+    const handleExportExcel = () => {
+        if (!filteredRentData.length) return;
+        const excelRows = filteredRentData.map((p: any) => ({
+            "Producto": p.nombreLimpio,
+            "Unidades": p.unidades,
+            "Tickets": p.tickets,
+            "Precio Promedio (Bs)": Number(p.precio_prom.toFixed(2)),
+            "Ingreso (Bs)": Number(p.ingreso_bruto.toFixed(2)),
+            "Ganancia Sucursal (Bs)": Number(p.ganancia_suc.toFixed(2)),
+            "Ganancia Matriz (Bs)": Number(p.ganancia_matriz.toFixed(2)),
+            "Ganancia Total (Bs)": Number(p.ganancia_total.toFixed(2)),
+            "Margen Sucursal (%)": Number(p.margen_suc_pct.toFixed(1)),
+            "Margen Empresa (%)": Number(p.margen_empresa_pct.toFixed(1)),
+            "Categoría": p.categoria,
+            "Proveedor": p.proveedor,
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Rentabilidad");
+        XLSX.writeFile(workbook, `Reporte_Rentabilidad_${rentRange}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    };
+
+    const handleExportPDF = () => {
+        if (!filteredRentData.length) return;
+        const doc = new jsPDF('landscape', 'pt', 'a4');
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Reporte Ejecutivo de Rentabilidad por Producto", 40, 40);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Período: ${rentRangeLabels[rentRange] || rentRange} | Sucursal: ${rentSucursal || 'Consolidado'} | Generado: ${new Date().toLocaleDateString('es-BO')}`, 40, 58);
+        
+        const tableColumn = ["Producto", "Unidades", "Tickets", "P. Prom (Bs)", "Ingreso (Bs)", "Gan. Sucursal", "Gan. Matriz", "Gan. Total", "Margen Suc.", "Margen Emp."];
+        const tableRows = filteredRentData.map((p: any) => [
+            p.nombreLimpio,
+            p.unidades.toLocaleString(),
+            p.tickets.toLocaleString(),
+            `Bs. ${p.precio_prom.toFixed(2)}`,
+            `Bs. ${p.ingreso_bruto.toFixed(2)}`,
+            `Bs. ${p.ganancia_suc.toFixed(2)}`,
+            `Bs. ${p.ganancia_matriz.toFixed(2)}`,
+            `Bs. ${p.ganancia_total.toFixed(2)}`,
+            `${p.margen_suc_pct.toFixed(1)}%`,
+            `${p.margen_empresa_pct.toFixed(1)}%`,
+        ]);
+        
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 75,
+            styles: { fontSize: 8, cellPadding: 5 },
+            headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+        });
+        
+        doc.save(`Reporte_Ejecutivo_Rentabilidad_${rentRange}_${new Date().toISOString().slice(0,10)}.pdf`);
     };
 
     if (!esAdmin) {
@@ -525,8 +599,43 @@ export default function CatalogRentability() {
                                         <p className="text-gray-500 text-sm mt-1">
                                             Costos y márgenes <strong className="text-emerald-600">reales</strong> desde cada venta POS e historial importado.
                                         </p>
+                                        {/* Rango de fechas analizado */}
+                                        {(() => {
+                                            const now = new Date();
+                                            let start = new Date('2024-01-01');
+                                            let end = new Date();
+                                            if (rentRange === 'today') {
+                                                start = new Date(); start.setHours(0,0,0,0);
+                                                end = new Date(); end.setHours(23,59,59,999);
+                                            } else if (rentRange === '7days') {
+                                                start = new Date(now); start.setDate(now.getDate() - 7);
+                                            } else if (rentRange === '30days') {
+                                                start = new Date(now); start.setDate(now.getDate() - 30);
+                                            } else if (rentRange === 'this_month') {
+                                                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                                                end   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59);
+                                            } else if (rentRange === 'this_year') {
+                                                start = new Date(now.getFullYear(), 0, 1);
+                                            }
+                                            const fmt = (d: Date) => d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/La_Paz' });
+                                            return (
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-black text-emerald-700">
+                                                        <Calendar size={11} />
+                                                        {rentRange === 'historico'
+                                                            ? 'Analizando: Histórico completo'
+                                                            : `Analizando: ${fmt(start)} — ${fmt(end)}`}
+                                                    </span>
+                                                    {rentSucursal && (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-full text-xs font-black text-indigo-700">
+                                                            🏪 {SUCS.find(s => s.value === rentSucursal)?.label}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
-                                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                                    <div className="flex flex-col sm:flex-row items-center gap-2">
                                         <div className="relative w-full sm:w-64">
                                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                             <input
@@ -539,10 +648,27 @@ export default function CatalogRentability() {
                                         </div>
                                         <button
                                             onClick={handleExportCSV}
-                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                                            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all flex items-center gap-1.5 shadow-sm"
+                                            title="Exportar como CSV"
                                         >
-                                            <FileSpreadsheet size={18} />
-                                            Exportar CSV
+                                            <FileSpreadsheet size={16} className="text-emerald-600" />
+                                            CSV
+                                        </button>
+                                        <button
+                                            onClick={handleExportExcel}
+                                            className="px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-xs font-bold hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-1.5 shadow-sm"
+                                            title="Exportar Excel (.xlsx)"
+                                        >
+                                            <FileSpreadsheet size={16} />
+                                            Excel
+                                        </button>
+                                        <button
+                                            onClick={handleExportPDF}
+                                            className="px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-xs font-bold hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-1.5 shadow-sm"
+                                            title="Exportar PDF Ejecutivo"
+                                        >
+                                            <FileText size={16} />
+                                            PDF Ejecutivo
                                         </button>
                                     </div>
                                 </div>
@@ -608,31 +734,30 @@ export default function CatalogRentability() {
 
                         {(() => {
                             const rows = filteredRentData;
-                            const totIngreso   = rows.reduce((s: number, p: any) => s + (p.ingreso_bruto  || 0), 0);
-                            const totCosto     = rows.reduce((s: number, p: any) => s + (p.costo_real     || 0), 0);
-                            const totGanSuc    = rows.reduce((s: number, p: any) => s + (p.ganancia_suc   || 0), 0);
-                            const totGanMat    = rows.reduce((s: number, p: any) => s + (p.ganancia_matriz || 0), 0);
-                            const margenTotal  = totIngreso > 0 ? ((totIngreso - totCosto) / totIngreso * 100) : 0;
                             return rows.length > 0 ? (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-gray-50 text-xs text-gray-700 uppercase font-bold">
                                         <tr>
-                                            <th className="px-4 py-3">Producto</th>
-                                            <th className="px-4 py-3 text-right">Unidades Vendidas</th>
-                                            <th className="px-4 py-3 text-right">Ingreso Bruto</th>
-                                            <th className="px-4 py-3 text-right">Costo Real</th>
+                                            <th className="px-4 py-3 text-left">Producto</th>
+                                            <th className="px-4 py-3 text-right">Unidades</th>
+                                            <th className="px-4 py-3 text-right">Tickets</th>
+                                            <th className="px-4 py-3 text-right">Precio Promedio</th>
+                                            <th className="px-4 py-3 text-right">Ingreso</th>
                                             <th className="px-4 py-3 text-right">Ganancia Sucursal</th>
                                             <th className="px-4 py-3 text-right">Ganancia Matriz</th>
-                                            <th className="px-4 py-3 text-right">Precio Venta (Retail)</th>
-                                            <th className="px-4 py-3 text-right">Costo Unitario</th>
-                                            <th className="px-4 py-3 text-right">Margen %</th>
+                                            <th className="px-4 py-3 text-right">Ganancia Total</th>
+                                            <th className="px-4 py-3 text-center">Margen Sucursal</th>
+                                            <th className="px-4 py-3 text-center">Margen Empresa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {rows.map((prod: any, i: number) => {
-                                            const margenColor = prod.margen_pct > 15 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                : prod.margen_pct > 5 ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                            const margenSucColor = prod.margen_suc_pct > 15 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                : prod.margen_suc_pct > 5 ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                                : 'bg-red-50 text-red-600 border-red-100';
+                                            const margenEmpColor = prod.margen_empresa_pct > 15 ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                                : prod.margen_empresa_pct > 5 ? 'bg-amber-50 text-amber-700 border-amber-100'
                                                 : 'bg-red-50 text-red-600 border-red-100';
                                             return (
                                             <tr
@@ -643,16 +768,53 @@ export default function CatalogRentability() {
                                                 )}
                                             >
                                                 <td className="px-4 py-3 max-w-[220px]">
-                                                    <span className="font-bold text-gray-800">{prod.nombreLimpio}</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-gray-800">{prod.nombreLimpio}</span>
+                                                        <div className="relative group/tooltip inline-block cursor-pointer shrink-0">
+                                                            <Info size={14} className="text-gray-400 hover:text-emerald-600 transition-colors" />
+                                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover/tooltip:block w-72 p-3.5 bg-gray-900 text-white text-xs rounded-xl shadow-2xl z-50 pointer-events-none backdrop-blur-md bg-opacity-95 border border-gray-700">
+                                                                <p className="font-black text-emerald-400 border-b border-gray-700 pb-1 mb-2 leading-tight">{prod.nombreLimpio}</p>
+                                                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                                                                    <span className="text-gray-400">Precio prom. vendido:</span>
+                                                                    <span className="font-bold text-right text-indigo-300">{formatBs(prod.precio_prom)}</span>
+                                                                    <span className="text-gray-400">Costo base:</span>
+                                                                    <span className="font-bold text-right">{formatBs(prod.costo_base)}</span>
+                                                                    <span className="text-gray-400">Precio distribución:</span>
+                                                                    <span className="font-bold text-right">{formatBs(prod.precio_distribucion)}</span>
+                                                                    <span className="text-gray-400">Ganancia matriz:</span>
+                                                                    <span className="font-bold text-violet-400 text-right">{formatBs(prod.ganancia_matriz)}</span>
+                                                                    <span className="text-gray-400">Ganancia sucursal:</span>
+                                                                    <span className="font-bold text-emerald-400 text-right">{formatBs(prod.ganancia_suc)}</span>
+                                                                    <span className="text-gray-400">Ganancia empresa:</span>
+                                                                    <span className="font-bold text-amber-400 text-right">{formatBs(prod.ganancia_total)}</span>
+                                                                    <span className="text-gray-400">Margen sucursal:</span>
+                                                                    <span className="font-bold text-right">{prod.margen_suc_pct.toFixed(1)}%</span>
+                                                                    <span className="text-gray-400">Margen empresa:</span>
+                                                                    <span className="font-bold text-right">{prod.margen_empresa_pct.toFixed(1)}%</span>
+                                                                    <span className="text-gray-400">Tickets:</span>
+                                                                    <span className="font-bold text-right">{prod.tickets}</span>
+                                                                    <span className="text-gray-400">Categoría:</span>
+                                                                    <span className="font-semibold text-right truncate">{prod.categoria}</span>
+                                                                    <span className="text-gray-400">Proveedor:</span>
+                                                                    <span className="font-semibold text-right truncate">{prod.proveedor}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <span className="font-semibold text-gray-600">{(prod.unidades||0).toLocaleString()}</span>
                                                 </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className="font-semibold text-gray-600">{(prod.tickets||1).toLocaleString()}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg text-xs">
+                                                        Bs. {(prod.precio_prom || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                    </span>
+                                                </td>
                                                 <td className="px-4 py-3 text-right font-bold text-gray-900">
                                                     Bs. {(prod.ingreso_bruto || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-bold text-red-500">
-                                                    Bs. {(prod.costo_real || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-black text-emerald-600 text-base">
                                                     Bs. {(prod.ganancia_suc || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
@@ -660,47 +822,24 @@ export default function CatalogRentability() {
                                                 <td className="px-4 py-3 text-right font-semibold text-violet-600">
                                                     Bs. {(prod.ganancia_matriz || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
                                                 </td>
+                                                <td className="px-4 py-3 text-right font-black text-amber-600 text-base">
+                                                    Bs. {(prod.ganancia_total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg text-xs">
-                                                        Bs. {(prod.precio_prom || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${margenSucColor}`}>
+                                                        {(prod.margen_suc_pct||0).toFixed(1)}%
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <span className="font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-lg text-xs">
-                                                        Bs. {(prod.costo_prom || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${margenColor}`}>
-                                                        {(prod.margen_pct||0).toFixed(1)}%
+                                                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${margenEmpColor}`}>
+                                                        {(prod.margen_empresa_pct||0).toFixed(1)}%
                                                     </span>
                                                 </td>
                                             </tr>
                                             );
                                         })}
                                     </tbody>
-                                    <tfoot>
-                                        <tr className="bg-gray-50">
-                                            <td colSpan={2} className="px-4 py-4 font-black text-gray-700 text-sm uppercase tracking-wider">
-                                                TOTAL ({rows.length} productos)
-                                            </td>
-                                            <td className="px-4 py-4 text-right font-black text-gray-900">Bs. {totIngreso.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                            <td className="px-4 py-4 text-right font-black text-red-500">Bs. {totCosto.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                            <td className="px-4 py-4 text-right font-black text-emerald-600 text-base">Bs. {totGanSuc.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                            <td className="px-4 py-4 text-right font-semibold text-violet-600">Bs. {totGanMat.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                            <td className="px-4 py-4 text-center text-gray-400">-</td>
-                                            <td className="px-4 py-4 text-center text-gray-400">-</td>
-                                            <td className="px-4 py-4 text-center">
-                                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${
-                                                    margenTotal > 15 ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                                    : margenTotal > 5 ? 'bg-amber-100 text-amber-800 border-amber-200'
-                                                    : 'bg-red-100 text-red-700 border-red-200'
-                                                }`}>
-                                                    {margenTotal.toFixed(1)}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tfoot>
+
                                 </table>
                             </div>
                             ) : (
@@ -711,6 +850,344 @@ export default function CatalogRentability() {
                             );
                         })()}
                     </div>
+
+                    {/* ─── SECCIÓN: TOP POR SUCURSAL ─── */}
+                    {(() => {
+                        const BRANCH_CONFIG = [
+                            { key: 'Total',     label: 'Total Consolidado', icon: BarChart3,  color: 'indigo',  bg: 'bg-indigo-50',   text: 'text-indigo-700',  border: 'border-indigo-200',  bar: 'bg-indigo-500' },
+                            { key: 'Heroinas',  label: 'Suc. Heroínas',    icon: Store,      color: 'emerald', bg: 'bg-emerald-50',  text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-500' },
+                            { key: 'Recoleta',  label: 'Suc. Recoleta',    icon: Store,      color: 'violet',  bg: 'bg-violet-50',   text: 'text-violet-700',  border: 'border-violet-200',  bar: 'bg-violet-500' },
+                            { key: 'Calacoto',  label: 'Suc. Calacoto',    icon: Store,      color: 'amber',   bg: 'bg-amber-50',    text: 'text-amber-700',   border: 'border-amber-200',   bar: 'bg-amber-500' },
+                        ];
+
+                        // Build top-5 per branch from branchData (raw sale rows) using same aggregation logic
+                        const claveUnica = (nombre: string) => String(nombre || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+                        const buildTop = (rawRows: any[], limit = 5) => {
+                            const map = new Map<string, { nombre: string; unidades: number; ingreso: number }>();
+                            rawRows.forEach((v: any) => {
+                                if (!v.nombre || v.estado === 'Cancelado' || v.anulada === true) return;
+                                const k = claveUnica(v.nombre);
+                                if (map.has(k)) {
+                                    const e = map.get(k)!;
+                                    e.unidades += Number(v.unidades || v.cantidad || 0);
+                                    e.ingreso   += Number(v.ingreso_bruto || v.ingresos || 0);
+                                } else {
+                                    map.set(k, { nombre: String(v.nombre).toUpperCase().trim(), unidades: Number(v.unidades||v.cantidad||0), ingreso: Number(v.ingreso_bruto||v.ingresos||0) });
+                                }
+                            });
+                            return Array.from(map.values()).sort((a,b) => b.unidades - a.unidades).slice(0, limit);
+                        };
+
+                        void activeBranchTab; // used for future tab switching
+
+                        return (
+                            <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                                <div className="flex flex-col gap-2 mb-7">
+                                    <span className="text-[10px] uppercase font-black text-indigo-700 tracking-wider">Ranking Comercial</span>
+                                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><Award size={22} /></div>
+                                        Top Más Vendidos por Sucursal
+                                    </h2>
+                                    <p className="text-gray-400 text-sm">Los 5 productos con mayor volumen de unidades vendidas en cada punto de venta para el período seleccionado.</p>
+                                </div>
+
+                                {isBranchLoading ? (
+                                    <div className="flex justify-center items-center py-16">
+                                        <Loader2 size={36} className="animate-spin text-indigo-400" />
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                                        {BRANCH_CONFIG.map(cfg => {
+                                            const Icon = cfg.icon;
+                                            const rows = buildTop(branchData[cfg.key] || [], 5);
+                                            const maxUnits = rows[0]?.unidades || 1;
+                                            return (
+                                                <div key={cfg.key} className={`rounded-2xl border ${cfg.border} ${cfg.bg} p-5 flex flex-col gap-3`}>
+                                                    <div className={`flex items-center gap-2 ${cfg.text} font-black text-sm`}>
+                                                        <Icon size={16}/> {cfg.label}
+                                                    </div>
+                                                    {rows.length === 0 ? (
+                                                        <p className="text-xs text-gray-400 italic py-4 text-center">Sin datos</p>
+                                                    ) : (
+                                                        <ol className="flex flex-col gap-2.5">
+                                                            {rows.map((p, i) => (
+                                                                <li key={i} className="flex flex-col gap-1">
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <span className="flex items-center gap-1.5 min-w-0">
+                                                                            <span className={`shrink-0 w-5 h-5 rounded-full ${cfg.bar} text-white text-[10px] font-black flex items-center justify-center`}>{i+1}</span>
+                                                                            <span className="text-[11px] font-bold text-gray-800 truncate leading-tight">{p.nombre}</span>
+                                                                        </span>
+                                                                        <span className="shrink-0 text-[11px] font-black text-gray-700">{p.unidades.toLocaleString()} uds.</span>
+                                                                    </div>
+                                                                    <div className="h-1.5 w-full bg-white/70 rounded-full overflow-hidden">
+                                                                        <div className={`h-full ${cfg.bar} rounded-full transition-all duration-700`} style={{width:`${Math.round((p.unidades/maxUnits)*100)}%`}}/>
+                                                                    </div>
+                                                                    <span className="text-[10px] text-gray-400 font-semibold text-right">{formatBs(p.ingreso)}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ol>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                    {/* ─── SECCIÓN: TOP 10 PRODUCTOS MÁS VENDIDOS GLOBAL ─── */}
+                    {(() => {
+                        const top10 = [...processedRentData]
+                            .sort((a,b) => b.unidades - a.unidades)
+                            .slice(0, 10);
+                        const maxU = top10[0]?.unidades || 1;
+                        const maxI = top10[0]?.ingreso_bruto || 1;
+
+                        return (
+                            <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                                <div className="flex flex-col gap-2 mb-7">
+                                    <span className="text-[10px] uppercase font-black text-amber-600 tracking-wider">Estrellas del Período</span>
+                                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><TrendingUp size={22} /></div>
+                                        10 Productos Más Vendidos
+                                    </h2>
+                                    <p className="text-gray-400 text-sm">Ranking global de los diez productos con mayor volumen de unidades en el período seleccionado, con sus márgenes reales.</p>
+                                </div>
+
+                                {top10.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-400">
+                                        <Package size={40} className="mx-auto mb-3 opacity-40" />
+                                        <p className="font-semibold">Sin datos disponibles en este período.</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gradient-to-r from-amber-50 to-orange-50 text-xs text-gray-700 uppercase font-black">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left w-8">#</th>
+                                                    <th className="px-4 py-3 text-left">Producto</th>
+                                                    <th className="px-4 py-3 text-right">Unidades</th>
+                                                    <th className="px-4 py-3 text-right">Ingreso Bruto</th>
+                                                    <th className="px-4 py-3 text-right">Ganancia</th>
+                                                    <th className="px-4 py-3 text-right">P. Retail Prom.</th>
+                                                    <th className="px-4 py-3 text-right">Costo Unit.</th>
+                                                    <th className="px-4 py-3 text-center">Margen %</th>
+                                                    <th className="px-4 py-3 text-left">Vol. Relativo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {top10.map((prod: any, i: number) => {
+                                                    const margenColor = prod.margen_pct > 15 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                        : prod.margen_pct > 5 ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                                        : 'bg-red-50 text-red-600 border-red-100';
+                                                    const medalColors = ['text-yellow-500','text-gray-400','text-amber-600'];
+                                                    return (
+                                                        <tr key={i} className={`border-b border-gray-50 hover:bg-amber-50/20 transition-colors ${i < 3 ? 'bg-amber-50/10' : ''}`}>
+                                                            <td className="px-4 py-3">
+                                                                <span className={`text-lg font-black ${medalColors[i] || 'text-gray-400'}`}>
+                                                                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 max-w-[200px]">
+                                                                <span className="font-bold text-gray-800 text-xs leading-tight block truncate">{prod.nombreLimpio}</span>
+                                                                <span className="text-[10px] text-gray-400">{prod.categoria}</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-black text-gray-900">{(prod.unidades||0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-right font-bold text-gray-800">{formatBs(prod.ingreso_bruto)}</td>
+                                                            <td className="px-4 py-3 text-right font-black text-emerald-600">{formatBs(prod.ganancia_suc)}</td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg text-xs">{formatBs(prod.precio_prom)}</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <span className="font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-lg text-xs">{formatBs(prod.costo_prom)}</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${margenColor}`}>
+                                                                    {(prod.margen_pct||0).toFixed(1)}%
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 min-w-[120px]">
+                                                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-700"
+                                                                        style={{width:`${Math.round((prod.unidades/maxU)*100)}%`}}
+                                                                    />
+                                                                </div>
+                                                                <div className="text-[9px] text-gray-400 font-semibold mt-0.5 text-right">
+                                                                    {Math.round((prod.ingreso_bruto/maxI)*100)}% del top
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                    {/* ─── SECCIÓN: SUGERENCIAS — Productos que bajaron o no salieron ─── */}
+                    {(() => {
+                        const claveUnica = (n: string) => String(n || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+                        // Build name-set of current period
+                        const currentNames = new Set(processedRentData.map(p => claveUnica(p.nombreLimpio)));
+
+                        // Aggregate previous period
+                        const prevMap = new Map<string, { nombre: string; unidades: number; ingreso: number }>();
+                        prevRentData.forEach((v: any) => {
+                            if (!v.nombre || v.estado === 'Cancelado' || v.anulada === true) return;
+                            const k = claveUnica(v.nombre);
+                            if (prevMap.has(k)) {
+                                const e = prevMap.get(k)!;
+                                e.unidades += Number(v.unidades||v.cantidad||0);
+                                e.ingreso   += Number(v.ingreso_bruto||v.ingresos||0);
+                            } else {
+                                prevMap.set(k, { nombre: String(v.nombre).toUpperCase().trim(), unidades: Number(v.unidades||v.cantidad||0), ingreso: Number(v.ingreso_bruto||v.ingresos||0) });
+                            }
+                        });
+
+                        // Products that disappeared (were in prev but not in current)
+                        const disappeared = Array.from(prevMap.entries())
+                            .filter(([k]) => !currentNames.has(k))
+                            .map(([, v]) => ({ ...v, tipo: 'desaparecido' as const, dropPct: -100 }))
+                            .sort((a,b) => b.unidades - a.unidades)
+                            .slice(0, 8);
+
+                        // Products that dropped significantly (in both but dropped >30%)
+                        const dropped = processedRentData.map(p => {
+                            const k = claveUnica(p.nombreLimpio);
+                            const prev = prevMap.get(k);
+                            if (!prev || prev.unidades === 0) return null;
+                            const dropPct = ((p.unidades - prev.unidades) / prev.unidades) * 100;
+                            if (dropPct >= -10) return null; // only significant drops
+                            return { nombre: p.nombreLimpio, unidades: p.unidades, prevUnidades: prev.unidades, ingreso: p.ingreso_bruto, dropPct, margen_pct: p.margen_pct, tipo: 'caida' as const };
+                        }).filter(Boolean).sort((a,b) => (a!.dropPct - b!.dropPct)).slice(0, 8) as any[];
+
+                        const hasPrevData = prevRentData.length > 0;
+                        const hasSuggestions = disappeared.length > 0 || dropped.length > 0;
+
+                        return (
+                            <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
+                                <div className="flex flex-col gap-2 mb-7">
+                                    <span className="text-[10px] uppercase font-black text-violet-700 tracking-wider">Inteligencia Comercial</span>
+                                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                                        <div className="p-2 bg-violet-50 text-violet-600 rounded-xl"><Lightbulb size={22} /></div>
+                                        Sugerencias: Productos a Revisar
+                                    </h2>
+                                    <p className="text-gray-400 text-sm">Productos que no aparecieron en el período actual o que registraron una caída notable vs. el período anterior equivalente.</p>
+                                </div>
+
+                                {!hasPrevData ? (
+                                    <div className="text-center py-10 text-gray-400">
+                                        <Lightbulb size={36} className="mx-auto mb-3 opacity-30" />
+                                        <p className="font-semibold text-sm">Selecciona un período con historial previo para ver sugerencias comparativas.</p>
+                                    </div>
+                                ) : !hasSuggestions ? (
+                                    <div className="text-center py-10">
+                                        <span className="text-4xl">🎉</span>
+                                        <p className="font-bold text-gray-700 mt-3">¡Excelente! Todos los productos del período anterior siguen activos y sin caídas significativas.</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-8">
+                                        {/* Desaparecidos */}
+                                        {disappeared.length > 0 && (
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-black border border-red-200">
+                                                        <Package size={12}/> {disappeared.length} producto{disappeared.length > 1 ? 's' : ''} sin ventas este período
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">Vendidos en el período anterior, ausentes en el actual</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                                    {disappeared.map((p: any, i: number) => (
+                                                        <div key={i} className="bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
+                                                            <div className="flex items-start justify-between gap-1">
+                                                                <span className="text-xs font-black text-gray-800 leading-tight line-clamp-2">{p.nombre}</span>
+                                                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
+                                                                    <TrendingDown size={9}/> Sin ventas
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-auto pt-2 border-t border-red-100">
+                                                                <p className="text-[10px] text-gray-500 font-semibold">Período anterior:</p>
+                                                                <p className="text-sm font-black text-red-600">{p.unidades.toLocaleString()} uds. · {formatBs(p.ingreso)}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Caídas significativas */}
+                                        {dropped.length > 0 && (
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-black border border-amber-200">
+                                                        <TrendingDown size={12}/> {dropped.length} producto{dropped.length > 1 ? 's' : ''} con caída notable
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">Bajaron más del 10% en unidades vs. período anterior</span>
+                                                </div>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-sm">
+                                                        <thead className="bg-amber-50 text-xs text-gray-700 uppercase font-black">
+                                                            <tr>
+                                                                <th className="px-4 py-2.5 text-left">Producto</th>
+                                                                <th className="px-4 py-2.5 text-right">Uds. Actual</th>
+                                                                <th className="px-4 py-2.5 text-right">Uds. Anterior</th>
+                                                                <th className="px-4 py-2.5 text-right">Variación</th>
+                                                                <th className="px-4 py-2.5 text-center">Margen</th>
+                                                                <th className="px-4 py-2.5 text-left">Tendencia</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {dropped.map((p: any, i: number) => (
+                                                                <tr key={i} className="border-b border-amber-50 hover:bg-amber-50/30 transition-colors">
+                                                                    <td className="px-4 py-3">
+                                                                        <span className="font-bold text-gray-800 text-xs block truncate max-w-[180px]">{p.nombre}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right font-black text-gray-900">{p.unidades.toLocaleString()}</td>
+                                                                    <td className="px-4 py-3 text-right font-semibold text-gray-500">{p.prevUnidades.toLocaleString()}</td>
+                                                                    <td className="px-4 py-3 text-right">
+                                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-black bg-red-50 text-red-600 border border-red-100">
+                                                                            <ChevronDown size={11}/> {Math.abs(p.dropPct).toFixed(0)}%
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-center">
+                                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-black border ${
+                                                                            p.margen_pct > 15 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                                            : p.margen_pct > 5 ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                                                            : 'bg-red-50 text-red-600 border-red-100'
+                                                                        }`}>{(p.margen_pct||0).toFixed(1)}%</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 min-w-[120px]">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className="h-full bg-gradient-to-r from-amber-400 to-red-400 rounded-full"
+                                                                                    style={{width:`${Math.max(Math.round((p.unidades/(p.prevUnidades||1))*100), 2)}%`}}
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-[9px] text-gray-400 font-semibold shrink-0">
+                                                                                {Math.round((p.unidades/(p.prevUnidades||1))*100)}%
+                                                                            </span>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* CAPA 4: Rendimiento por período vs Media Histórica */}
                     <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100">
@@ -921,6 +1398,11 @@ export default function CatalogRentability() {
                                 </>
                             );
                         })()}
+                    </div>
+
+                    {/* ── Matriz BCG & Análisis de Cartera de Productos ── */}
+                    <div className="mt-12 pt-10 border-t border-slate-200">
+                        <AnaliticaAvanzada />
                     </div>
         </div>
     );

@@ -18,7 +18,8 @@ import type {
     PedidoInterno, PedidoCreate,
     PriceChangeRequest, PriceRequestCreate, ReportStats,
     OrchestrationResponse, DemandPredictionResponse,
-    Etiqueta, EtiquetaCreate, EtiquetaUpdate
+    Etiqueta, EtiquetaCreate, EtiquetaUpdate,
+    PredictiveCenterResponse, ScenarioSimulationRequest, ScenarioSimulationResponse
 } from './types';
 import type {
     CajaSesion, CajaMovimiento, CajaGastoCategoria,
@@ -130,10 +131,9 @@ export const getFinancialReport = (startDate: string, endDate: string, sucursal_
     return client<unknown[]>(`/reports/financial-report?${params.toString()}`);
 };
 
-export const getAnalyticsDashboard = (start_date: string, end_date: string, sucursal_id?: string, time_range?: string, clima_evento?: string) => {
-    const params = new URLSearchParams({ start_date, end_date });
+export const getAnalyticsDashboard = (start_date: string, end_date: string, sucursal_id?: string, time_range: string = 'custom', clima_evento?: string) => {
+    const params = new URLSearchParams({ start_date, end_date, time_range: time_range || 'custom' });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
-    if (time_range) params.append('time_range', time_range);
     if (clima_evento) params.append('clima_evento', clima_evento);
     params.append('clear_cache', 'true');
     params.append('_t', new Date().getTime().toString()); // Evitar caché del navegador
@@ -199,6 +199,18 @@ export const getDemandPrediction = (predict_days: number = 7, sucursal_id?: stri
     const params = new URLSearchParams({ predict_days: String(predict_days) });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);
     return client<DemandPredictionResponse>(`/analytics/ml/predict-demand?${params.toString()}`);
+};
+
+export const getPredictiveCenterData = (predictDays: number = 14) => {
+    const params = new URLSearchParams({ predict_days: String(predictDays) });
+    return client<PredictiveCenterResponse>(`/analytics/predictive-center?${params.toString()}`);
+};
+
+export const simulateScenario = (body: ScenarioSimulationRequest) => {
+    return client<ScenarioSimulationResponse>('/analytics/predictive-center/simulate', {
+        method: 'POST',
+        body
+    });
 };
 
 export const uploadHistoricalData = (data: { sucursal_id: string, rows: unknown[] }) => {
