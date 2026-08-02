@@ -193,15 +193,16 @@ async def get_dashboard_metrics_v2(
                     "coll": "sales",
                     "pipeline": [
                         {"$match": sales_match},
+                        {"$unwind": {"path": "$items", "preserveNullAndEmptyArrays": False}},
                         {"$project": {
                             "_id": 0,
                             "id_ticket": {"$toString": "$_id"},
                             "fecha": "$created_at",
-                            "monto": {"$toDouble": "$total"},
-                            "costo": {"$literal": 0},
+                            "monto": {"$toDouble": "$items.subtotal"},
+                            "costo": {"$multiply": [{"$toDouble": "$items.costo_unitario"}, {"$toDouble": "$items.cantidad"}]},
                             "sucursal": "$sucursal_id",
-                            "producto": "GENERAL",
-                            "cantidad": 1,
+                            "producto": "$items.descripcion",
+                            "cantidad": {"$toDouble": "$items.cantidad"},
                             "cliente": {"$ifNull": ["$cliente.razon_social", "$cliente.nit", ""]},
                             "estado": "$estado"
                         }}
