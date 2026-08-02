@@ -283,9 +283,11 @@ export default function CatalogoWebPage() {
                                     </div>
                                 )}
                             </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
+                    </div>
+                </div>
+            ))}
                     {filteredCategories.length === 0 && (
                         <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
                             <Search className="mx-auto text-gray-300 mb-3" size={40} />
