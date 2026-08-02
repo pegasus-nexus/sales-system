@@ -10,6 +10,7 @@ router = APIRouter()
 class CategoryCreate(BaseModel):
     name: str
     description: str = None
+    web_collection: str = None
 
 @router.get("/categories", response_model=List[Category])
 async def get_categories(current_user: User = Depends(get_current_active_user)):
@@ -41,6 +42,7 @@ async def create_category(category_in: CategoryCreate, current_user: User = Depe
 class CategoryUpdate(BaseModel):
     name: str = None
     description: str = None
+    web_collection: str = None
     show_on_web: bool = None
 
 @router.patch("/categories/{category_id}", response_model=Category)
@@ -56,6 +58,8 @@ async def update_category(category_id: str, category_in: CategoryUpdate, current
         category.name = category_in.name
     if category_in.description is not None:
         category.description = category_in.description
+    if category_in.web_collection is not None:
+        category.web_collection = category_in.web_collection
     if category_in.show_on_web is not None:
         category.show_on_web = category_in.show_on_web
         

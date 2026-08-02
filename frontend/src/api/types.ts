@@ -261,12 +261,14 @@ export interface Category {
     tenant_id: string;
     name: string;
     description?: string;
+    web_collection?: string;
     show_on_web?: boolean;
 }
 
 export interface CategoryCreate {
     name: string;
     description?: string;
+    web_collection?: string;
     show_on_web?: boolean;
 }
 

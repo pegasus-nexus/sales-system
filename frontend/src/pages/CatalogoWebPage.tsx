@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star } from 'lucide-react';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree } from 'lucide-react';
 import type { Category, Product, ProductUpdate } from '../api/types';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ export default function CatalogoWebPage() {
     const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
     
     const [pendingCatChanges, setPendingCatChanges] = useState<Record<string, boolean>>({});
+    const [pendingCollectionChanges, setPendingCollectionChanges] = useState<Record<string, string>>({});
     const [pendingProdChanges, setPendingProdChanges] = useState<Record<string, boolean>>({});
     const [pendingDestacadoChanges, setPendingDestacadoChanges] = useState<Record<string, boolean>>({});
 
@@ -30,8 +31,8 @@ export default function CatalogoWebPage() {
     const products = productsData?.items || [];
 
     const updateCategoryMutation = useMutation({
-        mutationFn: (data: { id: string, show_on_web: boolean }) => 
-            client<Category>(`/categories/${data.id}`, { method: 'PATCH', body: { show_on_web: data.show_on_web } })
+        mutationFn: (data: { id: string, show_on_web?: boolean, web_collection?: string }) => 
+            client<Category>(`/categories/${data.id}`, { method: 'PATCH', body: data })
     });
 
     const updateProductMutation = useMutation({
@@ -48,6 +49,13 @@ export default function CatalogoWebPage() {
         setPendingCatChanges(prev => ({
             ...prev,
             [catId]: prev[catId] !== undefined ? !prev[catId] : !currentVal
+        }));
+    };
+
+    const handleCollectionChange = (catId: string, newVal: string) => {
+        setPendingCollectionChanges(prev => ({
+            ...prev,
+            [catId]: newVal
         }));
     };
 
@@ -70,8 +78,17 @@ export default function CatalogoWebPage() {
     };
 
     const handleApply = async () => {
-        const catPromises = Object.entries(pendingCatChanges).map(([id, val]) => 
-            updateCategoryMutation.mutateAsync({ id, show_on_web: val })
+        // Collect category updates (visibility AND collections)
+        const categoryUpdates: Record<string, { show_on_web?: boolean, web_collection?: string }> = {};
+        Object.entries(pendingCatChanges).forEach(([id, val]) => {
+            categoryUpdates[id] = { ...categoryUpdates[id], show_on_web: val };
+        });
+        Object.entries(pendingCollectionChanges).forEach(([id, val]) => {
+            categoryUpdates[id] = { ...categoryUpdates[id], web_collection: val };
+        });
+
+        const catPromises = Object.entries(categoryUpdates).map(([id, data]) => 
+            updateCategoryMutation.mutateAsync({ id, ...data })
         );
 
         const productUpdates: Record<string, { show_on_web?: boolean, is_destacado?: boolean }> = {};
@@ -90,6 +107,7 @@ export default function CatalogoWebPage() {
             await Promise.all([...catPromises, ...prodPromises]);
             toast.success('Cambios guardados correctamente');
             setPendingCatChanges({});
+            setPendingCollectionChanges({});
             setPendingProdChanges({});
             setPendingDestacadoChanges({});
             queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -99,7 +117,7 @@ export default function CatalogoWebPage() {
         }
     };
 
-    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingProdChanges).length > 0 || Object.keys(pendingDestacadoChanges).length > 0;
+    const hasPendingChanges = Object.keys(pendingCatChanges).length > 0 || Object.keys(pendingCollectionChanges).length > 0 || Object.keys(pendingProdChanges).length > 0 || Object.keys(pendingDestacadoChanges).length > 0;
     const isSaving = updateCategoryMutation.isPending || updateProductMutation.isPending;
 
     if (isLoadingCat || isLoadingProd) {
@@ -147,8 +165,23 @@ export default function CatalogoWebPage() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    {filteredCategories.map(category => {
+                <div className="space-y-8">
+                    {Object.entries(
+                        filteredCategories.reduce((acc, cat) => {
+                            const col = cat.web_collection || 'Sin Colección';
+                            if (!acc[col]) acc[col] = [];
+                            acc[col].push(cat);
+                            return acc;
+                        }, {} as Record<string, Category[]>)
+                    )
+                    .sort(([a], [b]) => a === 'Sin Colección' ? 1 : b === 'Sin Colección' ? -1 : a.localeCompare(b))
+                    .map(([collectionName, cats]) => (
+                        <div key={collectionName} className="space-y-4">
+                            <h3 className="text-xl md:text-2xl font-black text-gray-800 border-b border-gray-200 pb-2 mb-4 flex items-center gap-2">
+                                {collectionName === 'Sin Colección' ? <span className="text-gray-400 text-lg">Otras Categorías</span> : <><FolderTree className="text-indigo-500" size={24}/> {collectionName}</>}
+                            </h3>
+                            <div className="space-y-4">
+                                {cats.map(category => {
                         const categoryProducts = products.filter(p => p.categoria_id === category._id);
                         
                         const isCatVisibleOriginal = category.show_on_web !== false; 
@@ -168,6 +201,17 @@ export default function CatalogoWebPage() {
                                             <p className="text-sm text-gray-500">{categoryProducts.length} productos</p>
                                         </div>
                                     </div>
+                                    
+                                    <div className="hidden md:block flex-1 max-w-xs mx-4" onClick={e => e.stopPropagation()}>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Añadir a Colección (ej: Verano)" 
+                                            value={pendingCollectionChanges[category._id] ?? (category.web_collection || '')}
+                                            onChange={e => handleCollectionChange(category._id, e.target.value)}
+                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-300 focus:bg-white transition-all font-medium text-indigo-900 placeholder:text-gray-400"
+                                        />
+                                    </div>
+
                                     <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
                                         <span className={`text-sm font-bold ${isCatVisible ? 'text-green-600' : 'text-red-500'}`}>
                                             {isCatVisible ? 'Visible en Web' : 'Oculto en Web'}
@@ -239,8 +283,9 @@ export default function CatalogoWebPage() {
                                     </div>
                                 )}
                             </div>
-                        );
-                    })}
+                            </div>
+                        </div>
+                    ))}
                     {filteredCategories.length === 0 && (
                         <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
                             <Search className="mx-auto text-gray-300 mb-3" size={40} />
