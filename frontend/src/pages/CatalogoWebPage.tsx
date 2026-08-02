@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2, Edit2 } from 'lucide-react';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
 import type { Category, Product, ProductUpdate, WebCollection, WebCollectionCreate, WebCollectionUpdate } from '../api/types';
 import { toast } from 'sonner';
 
-const SUCURSAL_CBA = "69cd80098f3f6866d4cfbb64"; // Heroinas
-const SUCURSAL_LPZ = "69ce6b7e8a00124dac6ecc99"; // Calacoto
 
 export default function CatalogoWebPage() {
     const queryClient = useQueryClient();
@@ -19,7 +17,6 @@ export default function CatalogoWebPage() {
     const [pendingDestacadoChanges, setPendingDestacadoChanges] = useState<Record<string, boolean>>({});
     
     // State for collections editing
-    const [editingCollection, setEditingCollection] = useState<WebCollection | null>(null);
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const [newCollectionName, setNewCollectionName] = useState('');
     const [newCollectionImage, setNewCollectionImage] = useState('');
@@ -172,7 +169,7 @@ export default function CatalogoWebPage() {
     const categoriesInCollections = new Set<string>();
     activeCollections.forEach(c => c.categories_ids.forEach(id => categoriesInCollections.add(id)));
 
-    const renderCategory = (category: Category, isInsideCollection: boolean) => {
+    const renderCategory = (category: Category) => {
         // filter logic
         if (search && !category.name.toLowerCase().includes(search.toLowerCase())) return null;
 
@@ -397,7 +394,7 @@ export default function CatalogoWebPage() {
                                 ) : (
                                     collection.categories_ids.map(catId => {
                                         const cat = activeCategories.find(c => c._id === catId);
-                                        return cat ? renderCategory(cat, true) : null;
+                                        return cat ? renderCategory(cat) : null;
                                     })
                                 )}
                             </div>
@@ -412,7 +409,7 @@ export default function CatalogoWebPage() {
                         Categorías sin Colección
                     </h3>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        {activeCategories.filter(cat => !categoriesInCollections.has(cat._id)).map(cat => renderCategory(cat, false))}
+                        {activeCategories.filter(cat => !categoriesInCollections.has(cat._id)).map(cat => renderCategory(cat))}
                         {activeCategories.filter(cat => !categoriesInCollections.has(cat._id)).length === 0 && (
                             <div className="col-span-full text-center py-6 text-gray-400">
                                 <p className="font-medium">Todas tus categorías ya están asignadas a colecciones.</p>
