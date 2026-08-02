@@ -26,8 +26,10 @@ from app.schemas.predictive_ai import (
     ModelConfidenceMeta,
     PredictiveCenterResponse
 )
+from zoneinfo import ZoneInfo
 
 OFFICIAL_BRANCHES = ["Heroínas", "Recoleta", "Calacoto"]
+BOLIVIA_TZ = ZoneInfo("America/La_Paz")
 
 async def get_predictive_center_data(
     tenant_id: str,
@@ -97,9 +99,13 @@ async def get_predictive_center_data(
                 branch_name = OFFICIAL_BRANCHES[idx]
 
         items = s.get("items", [])
+        
+        # Convertir a zona horaria local para agrupar por el día correcto de Bolivia
+        dt_local = dt.astimezone(BOLIVIA_TZ)
+        
         processed_rows.append({
-            "created_at": dt,
-            "date": dt.date(),
+            "created_at": dt_local,
+            "date": dt_local.date(),
             "total": tot,
             "branch": branch_name,
             "items": items

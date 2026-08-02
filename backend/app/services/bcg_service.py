@@ -1,7 +1,10 @@
 import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
+from zoneinfo import ZoneInfo
 from app.db import get_raw_db
+
+BOLIVIA_TZ = ZoneInfo("America/La_Paz")
 
 async def get_bcg_matrix(
     tenant_id: str,
@@ -13,16 +16,28 @@ async def get_bcg_matrix(
     """
     db = await get_raw_db()
     
-    # 1. Definir fechas (Mes Actual y Mes Anterior)
-    now = datetime.now(timezone.utc)
+    # 1. Definir fechas (Mes Actual y Mes Anterior) en hora local de Bolivia
+    now_local = datetime.now(BOLIVIA_TZ)
     
-    current_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if now.month == 1:
-        prev_start = now.replace(year=now.year-1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
+    current_start_local = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if now_local.month == 1:
+        prev_start_local = now_local.replace(year=now_local.year-1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
     else:
-        prev_start = now.replace(month=now.month-1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev_start_local = now_local.replace(month=now_local.month-1, day=1, hour=0, minute=0, second=0, microsecond=0)
     
-    prev_end = current_start
+    prev_end_local = current_start_local
+
+    # Fechas para sales (UTC)
+    current_start_utc = current_start_local.astimezone(timezone.utc)
+    now_utc = now_local.astimezone(timezone.utc)
+    prev_start_utc = prev_start_local.astimezone(timezone.utc)
+    prev_end_utc = prev_end_local.astimezone(timezone.utc)
+
+    # Fechas para ventas históricas crudas (Naive Local)
+    current_start_naive = current_start_local.replace(tzinfo=None)
+    now_naive = now_local.replace(tzinfo=None)
+    prev_start_naive = prev_start_local.replace(tzinfo=None)
+    prev_end_naive = prev_end_local.replace(tzinfo=None)
 
     req_suc = (sucursal_id or "").strip().lower()
     es_global = not req_suc or req_suc in ["todas", "global", "all"]
@@ -79,10 +94,10 @@ async def get_bcg_matrix(
     coroutines = [
         db["products"].find(product_query, {"descripcion": 1, "codigo_corto": 1, "categoria_id": 1}).to_list(length=3000),
         db["categories"].find(product_query).to_list(length=500),
-        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(current_start, now)).to_list(length=5000),
-        db["sales"].aggregate(build_pos_pipeline(current_start, now)).to_list(length=5000),
-        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(prev_start, prev_end)).to_list(length=5000),
-        db["sales"].aggregate(build_pos_pipeline(prev_start, prev_end)).to_list(length=5000)
+        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(current_start_naive, now_naive)).to_list(length=5000),
+        db["sales"].aggregate(build_pos_pipeline(current_start_utc, now_utc)).to_list(length=5000),
+        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(prev_start_naive, prev_end_naive)).to_list(length=5000),
+        db["sales"].aggregate(build_pos_pipeline(prev_start_utc, prev_end_utc)).to_list(length=5000)
     ]
     
     results = await asyncio.gather(*coroutines)
