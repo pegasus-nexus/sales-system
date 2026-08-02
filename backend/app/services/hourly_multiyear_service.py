@@ -265,6 +265,7 @@ async def get_hourly_multiyear(
     sucursal: str = None,
 ) -> Dict[str, Any]:
     try:
+        tenant_id = tenant_id or "69cd7f0a8f3f6866d4cfbb62"
         db = await get_raw_db()
 
         # ── Fechas ──────────────────────────────────────────────────────────

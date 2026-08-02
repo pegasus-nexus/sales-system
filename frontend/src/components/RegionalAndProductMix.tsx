@@ -642,36 +642,6 @@ export default function RegionalAndProductMix() {
                         </div>
                     </div>
 
-                    {/* 8. INSIGHTS AUTOMÁTICOS */}
-                    <div className="bg-slate-50/80 rounded-3xl p-5 border border-slate-100/90 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Sparkles size={16} className="text-indigo-600" />
-                            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Insights Automáticos del Período</h4>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold text-slate-700">
-                            <div className="flex items-start gap-2 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-2xs">
-                                <span className="text-base">🏆</span>
-                                <div>
-                                    <strong className="text-slate-900 block font-black">Mayor Venta</strong>
-                                    <span>{topSalesBranch.nombre} generó el {topSalesBranch.sharePct}% de las ventas del período.</span>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-2xs">
-                                <span className="text-base">📈</span>
-                                <div>
-                                    <strong className="text-slate-900 block font-black">Mayor Crecimiento</strong>
-                                    <span>{topGrowthBranch.nombre} presentó el mayor crecimiento {comparisonMeta.labelVs} ({topGrowthBranch.pctYoY >= 0 ? '+' : ''}{topGrowthBranch.pctYoY.toFixed(1)}%).</span>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-2xs">
-                                <span className="text-base">💰</span>
-                                <div>
-                                    <strong className="text-slate-900 block font-black">Mejor Margen</strong>
-                                    <span>{topMarginBranch.nombre} obtuvo el mayor margen neto del período ({formatBs(topMarginBranch.margen)}).</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             )}

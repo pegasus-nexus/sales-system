@@ -30,6 +30,7 @@ async def get_dashboard_metrics_v2(
     clima_evento: str = None
 ) -> Dict[str, Any]:
     
+    tenant_id = tenant_id or "69cd7f0a8f3f6866d4cfbb62"
     LOCAL_TZ = 'America/La_Paz'
     _local_date_today = pd.Timestamp.now(tz=LOCAL_TZ).strftime('%Y-%m-%d')
     

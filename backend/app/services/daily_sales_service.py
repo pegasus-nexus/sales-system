@@ -25,6 +25,7 @@ async def get_official_daily_sales(
     excluyendo tickets anulados. Usa PyMongo raw para máxima tolerancia a esquemas históricos.
     """
     db = await get_raw_db()
+    tenant_id = tenant_id or "69cd7f0a8f3f6866d4cfbb62"
 
     # 1. Mapeo de sucursales del tenant
     sucursales = await db.sucursales.find({"tenant_id": tenant_id}).to_list(length=None)
@@ -40,6 +41,17 @@ async def get_official_daily_sales(
         match_query["sucursal_id"] = sucursal_id
 
     sales = await db.sales.find(match_query).to_list(length=None)
+
+    # 3. Fallback a ventas_historicas_crudas si sales no contiene registros para este rango
+    hist_match = {
+        "tenant_id": tenant_id,
+        "fecha_transaccion": {"$gte": start_dt, "$lte": end_dt},
+        "estado": {"$ne": "anulado"}
+    }
+    if sucursal_id and sucursal_id != "all" and sucursal_id != "CENTRAL":
+        hist_match["sucursal"] = {"$regex": sucursal_id, "$options": "i"}
+
+    hist_sales = await db.ventas_historicas_crudas.find(hist_match).to_list(length=None)
 
     total_ventas = _ZERO
     total_descuentos = _ZERO
@@ -78,6 +90,13 @@ async def get_official_daily_sales(
         sname_norm = "Heroínas" if "hero" in sname.lower() else "Recoleta" if "recoleta" in sname.lower() else "Calacoto" if "calacoto" in sname.lower() else sname
         
         por_sucursal[sname_norm] = por_sucursal.get(sname_norm, 0.0) + float(monto_ticket)
+
+    for hs in hist_sales:
+        monto_hist = Decimal(str(hs.get("monto_total_bs", 0)))
+        total_ventas += monto_hist
+        sname_h = str(hs.get("sucursal", "Heroínas"))
+        sname_h_norm = "Heroínas" if "hero" in sname_h.lower() else "Recoleta" if "recoleta" in sname_h.lower() else "Calacoto" if "calacoto" in sname_h.lower() else sname_h
+        por_sucursal[sname_h_norm] = por_sucursal.get(sname_h_norm, 0.0) + float(monto_hist)
 
     return {
         "total_ventas": float(total_ventas),
