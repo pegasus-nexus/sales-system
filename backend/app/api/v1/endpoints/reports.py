@@ -1898,11 +1898,19 @@ async def get_monthly_evolution(
     from app.domain.models.sale import SaleItem
     from app.domain.models.base import DecimalMoney
 
+    class SaleItemLightProjection(BaseModel):
+        producto_id: Optional[str] = None
+        descripcion: str = ""
+        cantidad: float = 1.0
+        precio_unitario: DecimalMoney = DecimalMoney("0")
+        costo_unitario: DecimalMoney = DecimalMoney("0")
+        subtotal: DecimalMoney = DecimalMoney("0")
+
     class SaleLightProjection(BaseModel):
         created_at: datetime
         sucursal_id: Optional[str] = None
         total: DecimalMoney = DecimalMoney("0")
-        items: List[SaleItem] = []
+        items: List[SaleItemLightProjection] = []
         pagos: list = []
 
     sales = await Sale.find(*filters).project(SaleLightProjection).sort(Sale.created_at).to_list()

@@ -13,12 +13,12 @@ class EstadoPago(str, Enum):
 
 class SaleItem(BaseModel):
     producto_id: str
-    descripcion: str
-    cantidad: int = Field(gt=0)
-    precio_unitario: DecimalMoney
-    costo_unitario: DecimalMoney
+    descripcion: str = ""
+    cantidad: float = Field(default=1.0, gt=0)
+    precio_unitario: DecimalMoney = DecimalMoney("0")
+    costo_unitario: DecimalMoney = DecimalMoney("0")
     descuento_unitario: DecimalMoney = DecimalMoney("0")
-    subtotal: DecimalMoney
+    subtotal: DecimalMoney = DecimalMoney("0")
     almacen_id: str = "default"  # Almacén de origen del stock descontado (auditoría + anulación correcta)
 
 
