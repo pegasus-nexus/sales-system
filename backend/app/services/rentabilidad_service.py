@@ -42,6 +42,7 @@ async def get_rentabilidad_real(
     sucursal_id: Optional[str] = None,
     limit: int = 50,
 ) -> List[Dict[str, Any]]:
+    tenant_id = tenant_id or "69cd7f0a8f3f6866d4cfbb62"
     """
     Tabla de rentabilidad por producto con costos REALES.
     Usa asyncio.gather para lanzar todas las queries en paralelo.
