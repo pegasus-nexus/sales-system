@@ -61,22 +61,38 @@ async def get_products(
     products = await query.skip(skip).limit(limit).to_list()
         
     p_ids = [str(p.id) for p in products]
-    from beanie.operators import In
+    from app.db import get_raw_db
+    raw_db = await get_raw_db()
     
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
-        invs = await Inventario.find(In(Inventario.producto_id, p_ids), Inventario.sucursal_id == current_user.sucursal_id).to_list() if current_user.sucursal_id else []
-        price_map = {i.producto_id: i.precio_sucursal for i in invs if i.precio_sucursal is not None}
+        price_map = {}
+        if current_user.sucursal_id and p_ids:
+            cursor = raw_db.inventarios.find(
+                {"producto_id": {"$in": p_ids}, "sucursal_id": current_user.sucursal_id},
+                {"producto_id": 1, "precio_sucursal": 1, "_id": 0}
+            )
+            async for i in cursor:
+                pr = i.get("precio_sucursal")
+                if pr is not None:
+                    price_map[str(i.get("producto_id"))] = float(str(pr))
         for p in products:
             if str(p.id) in price_map:
                 p.precio_venta = price_map[str(p.id)]
             p.precios_sucursales = {} # Hide prices of other branches
             p.costo_producto = 0.0 # Hide product cost from branch users
     else:
-        invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
         p_map = {str(p.id): {} for p in products}
-        for i in invs:
-            if i.precio_sucursal is not None:
-                p_map[str(i.producto_id)][i.sucursal_id] = i.precio_sucursal
+        if p_ids:
+            cursor = raw_db.inventarios.find(
+                {"producto_id": {"$in": p_ids}},
+                {"producto_id": 1, "sucursal_id": 1, "precio_sucursal": 1, "_id": 0}
+            )
+            async for i in cursor:
+                p_id = str(i.get("producto_id", ""))
+                suc_id = str(i.get("sucursal_id", ""))
+                pr = i.get("precio_sucursal")
+                if p_id in p_map and pr is not None:
+                    p_map[p_id][suc_id] = float(str(pr))
         for p in products:
             p.precios_sucursales = p_map.get(str(p.id), {})
 

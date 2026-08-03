@@ -29,7 +29,7 @@ export default function TenantDashboard() {
     const [copied, setCopied] = useState(false);
 
     const { data: stats } = useQuery({ queryKey: ['tenant-stats'], queryFn: getTenantStats });
-    const { data: productsData, isLoading: loadingProducts } = useQuery({ queryKey: ['products'], queryFn: () => getProducts(1, 1000) });
+    const { data: productsData, isLoading: loadingProducts } = useQuery({ queryKey: ['products'], queryFn: () => getProducts(1, 50) });
     const products = productsData?.items || [];
     const { data: employees, isLoading: loadingEmployees } = useQuery({ queryKey: ['employees'], queryFn: getUsers });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
