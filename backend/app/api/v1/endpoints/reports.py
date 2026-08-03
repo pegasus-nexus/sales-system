@@ -1924,8 +1924,6 @@ async def get_monthly_evolution(
         items: List[SaleItemLightProjection] = []
         pagos: list = []
 
-    sales = await Sale.find(*filters).project(SaleLightProjection).sort(Sale.created_at).to_list()
-
     # 4. Agrupar por mes (%Y-%m)
     monthly_data: Dict[str, Dict[str, Any]] = {}
     curr_yr, curr_mo = start_date.year, start_date.month
@@ -1956,7 +1954,7 @@ async def get_monthly_evolution(
     product_totals_latest_month: Dict[str, Dict[str, Any]] = {}
     product_totals_prev_month: Dict[str, Dict[str, Any]] = {}
 
-    for sale in sales:
+    async for sale in Sale.find(*filters).project(SaleLightProjection).sort(Sale.created_at):
         m_key = sale.created_at.strftime("%Y-%m")
         if m_key not in monthly_data:
             monthly_data[m_key] = {
