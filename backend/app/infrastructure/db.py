@@ -123,7 +123,7 @@ async def init_db():
             ClientWallet,
             PurchaseOrder,
             PurchaseReception,
-            Sucursal, Role, WebCollection, WebConfig
+            Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True
     )
