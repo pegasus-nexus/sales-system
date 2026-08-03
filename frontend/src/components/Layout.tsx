@@ -193,6 +193,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: Package, label: 'Catálogo', path: '/catalogo', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
                     { icon: Warehouse, label: 'Inventario', path: '/inventario', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: Globe, label: 'Catálogo Web', path: '/catalogo-web', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: Globe, label: 'Configuración Web', path: '/web-config', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                     { icon: Tag, label: 'Categorías', path: '/categories', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Truck, label: 'Traslados', path: '/traslados', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },

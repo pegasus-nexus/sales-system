@@ -20,6 +20,7 @@ const POSPage = lazy(() => import('./pages/POSPage'));
 const CajaPage = lazy(() => import('./pages/CajaPage'));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
 const CatalogoWebPage = lazy(() => import('./pages/CatalogoWebPage'));
+const WebConfigPage = lazy(() => import('./pages/WebConfigPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const DescuentosPage = lazy(() => import('./pages/DescuentosPage'));
 const DashboardSucursal = lazy(() => import('./pages/DashboardSucursal'));
@@ -414,6 +415,14 @@ function App() {
                           <CatalogoWebPage />
                         </ProtectedRoute>
                       } />
+                      
+                      {/* Web Config */}
+                      <Route path="/web-config" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <WebConfigPage />
+                        </ProtectedRoute>
+                      } />
+
 
                       {/* Users */}
                       <Route path="/usuarios" element={
