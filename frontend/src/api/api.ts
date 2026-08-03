@@ -2,8 +2,8 @@
  * Centralized API service layer.
  * All backend route strings are defined here — never scattered in components.
  */
-export { client } from './client';
-import { client } from './client';
+export { client, BASE_URL } from './client';
+import { client, BASE_URL } from './client';
 
 import type {
     Tenant, TenantCreate, TenantUpdate, TenantSettings,
@@ -54,9 +54,7 @@ export const uploadImage = async (file: File): Promise<{url: string}> => {
     formData.append('file', file);
 
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+    const CACHE_URL = BASE_URL;
 
     const res = await fetch(`${CACHE_URL}/upload`, {
         method: 'POST',
@@ -94,9 +92,7 @@ export const getValuedInventory = async (date?: string, sucursal_id?: string) =>
 
 export const exportValuedInventory = async (date?: string, sucursal_id?: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+    const CACHE_URL = BASE_URL;
         
     const params = new URLSearchParams();
     if (date) params.append('date', date);
@@ -382,9 +378,7 @@ export const getGlobalAuditLogs = async () => {
 
 export const exportProductTemplate = async () => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     const response = await fetch(`${CACHE_URL}/productos/exportar-plantilla`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -403,9 +397,7 @@ export const exportProductTemplate = async () => {
 
 export const importProductsExcel = async (file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     
     const formData = new FormData();
     formData.append('file', file);
@@ -433,9 +425,7 @@ export const importGlobalExcel = async (file: File) => {
     formData.append('file', file);
     
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
         
     const response = await fetch(`${CACHE_URL}/productos/importacion-global`, {
         method: 'POST',
@@ -457,9 +447,7 @@ export const importGlobalExcel = async (file: File) => {
 
 export const exportProductPriceTemplate = async (sucursal_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     const response = await fetch(`${CACHE_URL}/productos/exportar-plantilla-precios?sucursal_id=${sucursal_id}`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -482,9 +470,7 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
     formData.append('file', file);
     
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
         
     const response = await fetch(`${CACHE_URL}/productos/importar-precios`, {
         method: 'POST',
@@ -551,9 +537,7 @@ export const getMovimientosInventario = (
 
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8001/api/v1');
+    const CACHE_URL = BASE_URL;
         
     const params = new URLSearchParams({ sucursal_id, almacen_id });
     if (producto_id) params.set('producto_id', producto_id);
@@ -578,9 +562,7 @@ export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almac
 
 export const exportInventoryTemplate = async (sucursal_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     const response = await fetch(`${CACHE_URL}/inventario/exportar-plantilla?sucursal_id=${sucursal_id}`, {
         method: 'GET',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -599,9 +581,7 @@ export const exportInventoryTemplate = async (sucursal_id: string) => {
 
 export const importInventoryExcel = async (sucursal_id: string, file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     
     const formData = new FormData();
     formData.append('file', file);
@@ -626,9 +606,7 @@ export const importInventoryExcel = async (sucursal_id: string, file: File) => {
 
 export const importInventoryBranchExcel = async (sucursal_id: string, file: File) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
     
     const formData = new FormData();
     formData.append('file', file);
@@ -674,9 +652,7 @@ export const recibirPedido = (id: string, items?: { producto_id: string, cantida
 
 export const downloadPedidoPDF = async (pedido_id: string) => {
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
-    const CACHE_URL = import.meta.env.VITE_API_URL ?? (window.location.hostname.includes('vercel.app') 
-        ? 'https://sales-system-kappa.vercel.app/api/v1' 
-        : 'http://127.0.0.1:8000/api/v1');
+    const CACHE_URL = BASE_URL;
         
     const response = await fetch(`${CACHE_URL}/pedidos/${pedido_id}/pdf`, {
         method: 'GET',

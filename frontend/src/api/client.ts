@@ -5,9 +5,9 @@ interface ClientConfig extends Omit<RequestInit, 'body'> {
     body?: unknown;
 }
 
-const isProductionUrl = window.location.hostname.includes('vercel.app');
-const FALLBACK_URL = isProductionUrl
-    ? 'https://sales-system-kappa.vercel.app/api/v1'
+const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const FALLBACK_URL = isProduction
+    ? '/api/v1'
     : 'http://127.0.0.1:8001/api/v1';
 
 export const BASE_URL = import.meta.env.VITE_API_URL ?? FALLBACK_URL;
