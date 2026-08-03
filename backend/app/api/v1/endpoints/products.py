@@ -100,6 +100,7 @@ async def get_products(
     cat_ids = list(set([p.categoria_id for p in products if p.categoria_id]))
     if cat_ids:
         from bson import ObjectId
+        from beanie.operators import In
         obj_ids = [ObjectId(cid) for cid in cat_ids if ObjectId.is_valid(cid)]
         cats = await Category.find(In(Category.id, obj_ids)).to_list() if obj_ids else []
         cat_map = {str(c.id): c.name for c in cats}
