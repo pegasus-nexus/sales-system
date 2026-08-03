@@ -36,7 +36,9 @@ export default function CatalogoPage() {
 
     const { data: productsResponse, isLoading: loadingProducts } = useQuery({
         queryKey: ['products', currentPage, ITEMS_PER_PAGE, debouncedSearch, selectedCategory],
-        queryFn: () => getProducts(currentPage, ITEMS_PER_PAGE, debouncedSearch || undefined, selectedCategory === 'ALL' ? undefined : selectedCategory)
+        queryFn: () => getProducts(currentPage, ITEMS_PER_PAGE, debouncedSearch || undefined, selectedCategory === 'ALL' ? undefined : selectedCategory),
+        staleTime: 0,
+        refetchOnMount: 'always',
     });
     
     const products = productsResponse?.items || [];

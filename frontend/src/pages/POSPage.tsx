@@ -78,7 +78,8 @@ export default function POSPage() {
     const { data: productsData, isLoading: loadingP } = useQuery({ 
         queryKey: ['products'], 
         queryFn: () => getProducts(1, 1000),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0,
+        refetchOnMount: 'always',
     });
     const products = productsData?.items || [];
     const { data: categories = [] } = useQuery({ 
