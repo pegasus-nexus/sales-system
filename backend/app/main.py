@@ -38,6 +38,14 @@ app = FastAPI(
 from app.infrastructure.middleware.tenant_context import TenantContextMiddleware
 app.add_middleware(TenantContextMiddleware)
 
+import gc
+@app.middleware("http")
+async def garbage_collection_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/v1/analytics") or request.url.path.startswith("/api/v1/reports"):
+        gc.collect()
+    return response
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

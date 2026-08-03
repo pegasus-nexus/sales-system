@@ -896,6 +896,9 @@ async def get_dashboard_metrics(
         }
         
         if result.get("kpis", {}).get("ingresos_totales", 0) > 0:
+            if len(_dashboard_cache) >= 5:
+                oldest_key = min(_dashboard_cache, key=lambda k: _dashboard_cache[k][0])
+                _dashboard_cache.pop(oldest_key, None)
             _dashboard_cache[cache_key] = (time.time(), result)
         else:
             _dashboard_cache.pop(cache_key, None)
