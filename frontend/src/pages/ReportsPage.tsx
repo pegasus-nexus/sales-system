@@ -1,6 +1,9 @@
 import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { AlertTriangle } from 'lucide-react';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import RegionalAndProductMix from '../components/RegionalAndProductMix';
+import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import DailyReportView from '../components/DailyReportView';
 import FinancialDetailView from '../components/FinancialDetailView';
 import ValuedInventoryView from '../components/ValuedInventoryView';
@@ -14,7 +17,6 @@ import AnulacionesReportView from '../components/AnulacionesReportView';
 import ProductTrendsView from '../components/ProductTrendsView';
 import ProductStatsView from '../components/ProductStatsView';
 import PurchasesByClientView from '../components/PurchasesByClientView';
-import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import PortfolioAnalysisView from '../components/PortfolioAnalysisView';
 
 
@@ -41,11 +43,11 @@ export default function ReportsPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
             {activeTab === 'general' ? (
-                <MonthlyEvolutionView key="general" activeTab="general" initialDimension="sucursales" />
+                <AnalyticsDashboard />
             ) : activeTab === 'sucursales' ? (
-                <MonthlyEvolutionView key="sucursales" activeTab="sucursales" initialDimension="sucursales" />
+                <RegionalAndProductMix />
             ) : activeTab === 'evolucion_mensual' ? (
-                <MonthlyEvolutionView key="evolucion_mensual" activeTab="evolucion_mensual" initialDimension="categorias" />
+                <MonthlyEvolutionView />
             ) : activeTab === 'matriz_bcg' ? (
                 <PortfolioAnalysisView />
             ) : activeTab === 'daily' ? (
@@ -75,7 +77,7 @@ export default function ReportsPage() {
             ) : activeTab === 'compras_cliente' ? (
                 <PurchasesByClientView />
             ) : (
-                <MonthlyEvolutionView key="default" initialDimension="sucursales" />
+                <MonthlyEvolutionView />
             )}
         </div>
     );
