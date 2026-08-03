@@ -306,6 +306,7 @@ async def get_dashboard_metrics_v2(
                         "_id": "$id_ticket",
                         "monto_total": {"$sum": "$monto"}
                     }},
+                    {"$limit": 1000},
                     {"$project": {"monto_total": 1, "_id": 0}}
                 ],
                 "horas": [
@@ -350,11 +351,9 @@ async def get_dashboard_metrics_v2(
         ]
         
         t_mongo_start = time.time()
-        curr_task = db.ventas_historicas_crudas.aggregate(pipeline_current).to_list(length=None)
-        prev_task = db.ventas_historicas_crudas.aggregate(pipeline_prev).to_list(length=None)
-        yoy_task = db.ventas_historicas_crudas.aggregate(pipeline_yoy).to_list(length=None)
-        
-        curr_res, prev_res, yoy_res = await asyncio.gather(curr_task, prev_task, yoy_task)
+        curr_res = await db.ventas_historicas_crudas.aggregate(pipeline_current).to_list(length=None)
+        prev_res = await db.ventas_historicas_crudas.aggregate(pipeline_prev).to_list(length=None)
+        yoy_res = await db.ventas_historicas_crudas.aggregate(pipeline_yoy).to_list(length=None)
         t_mongo_end = time.time()
         print(f"PIPELINES EXECUTED IN: {t_mongo_end - t_mongo_start:.4f}s")
         
