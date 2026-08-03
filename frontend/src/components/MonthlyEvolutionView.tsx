@@ -21,7 +21,11 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#3b82f6', '#f43f5e', '#84cc16'];
 
-export default function MonthlyEvolutionView() {
+interface MonthlyEvolutionViewProps {
+    initialDimension?: 'sucursales' | 'categorias' | 'productos';
+}
+
+export default function MonthlyEvolutionView({ initialDimension = 'sucursales' }: MonthlyEvolutionViewProps) {
     const { role } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
 
@@ -39,7 +43,7 @@ export default function MonthlyEvolutionView() {
         months: 12
     });
 
-    const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>('sucursales');
+    const [activeDimension, setActiveDimension] = useState<'sucursales' | 'categorias' | 'productos'>(initialDimension);
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
@@ -58,7 +62,7 @@ export default function MonthlyEvolutionView() {
     });
     const productos: Product[] = productosRes?.items || [];
 
-    const { data, isLoading, isError, isFetching } = useQuery({
+    const { data, isLoading, isError, isFetching, refetch } = useQuery({
         queryKey: ['monthly-evolution', appliedFilters.months, appliedFilters.sucursal, appliedFilters.categoria, appliedFilters.producto],
         queryFn: () => getMonthlyEvolution(appliedFilters.months, appliedFilters.sucursal, appliedFilters.categoria, appliedFilters.producto)
     });
@@ -86,10 +90,16 @@ export default function MonthlyEvolutionView() {
 
     if (isError || !data) {
         return (
-            <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100 flex flex-col items-center">
-                <AlertTriangle size={36} className="mb-2" />
-                <h3 className="font-bold text-lg">Error al cargar la evolución mensual</h3>
-                <p className="text-sm opacity-80">Por favor, intenta nuevamente más tarde.</p>
+            <div className="bg-red-50 text-red-600 p-8 rounded-3xl text-center border border-red-100 flex flex-col items-center max-w-md mx-auto my-12">
+                <AlertTriangle size={40} className="mb-3 text-red-500" />
+                <h3 className="font-bold text-lg text-red-900 mb-1">Error al cargar datos</h3>
+                <p className="text-sm opacity-80 mb-4">No se pudo obtener el reporte en este momento.</p>
+                <button
+                    onClick={() => refetch()}
+                    className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-all shadow-md"
+                >
+                    Reintentar
+                </button>
             </div>
         );
     }
