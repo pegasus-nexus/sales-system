@@ -827,8 +827,8 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
                                             <input
                                                 type="number" step="0.01" min="0" required
                                                 className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg pl-9 pr-3 py-1.5 outline-none transition-all text-sm text-gray-900"
-                                                value={formData.precios_sucursales?.[suc._id] ?? ''}
-                                                onChange={e => handlePriceChange(suc._id, e.target.value)}
+                                                value={formData.precios_sucursales?.[suc._id] ?? formData.precios_sucursales?.[(suc as any).id] ?? ''}
+                                                onChange={e => handlePriceChange(suc._id || (suc as any).id, e.target.value)}
                                                 placeholder="0.00"
                                             />
                                         </div>

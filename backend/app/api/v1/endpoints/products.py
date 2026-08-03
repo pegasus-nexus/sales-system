@@ -86,9 +86,29 @@ async def get_products(
                 pr = i.get("precio_sucursal")
                 if pr is not None:
                     price_map[str(i.get("producto_id"))] = float(str(pr))
+                    
+        # Fallback map for products whose branch price is 0.0 or unmapped
+        all_branch_prices = {}
+        if p_ids:
+            cursor_all = raw_db.inventario.find(
+                {"producto_id": {"$in": p_id_match}, "precio_sucursal": {"$gt": 0}},
+                {"producto_id": 1, "precio_sucursal": 1, "_id": 0}
+            )
+            async for i in cursor_all:
+                pid_str = str(i.get("producto_id"))
+                if pid_str not in all_branch_prices:
+                    all_branch_prices[pid_str] = float(str(i.get("precio_sucursal")))
+
         for p in products:
-            if str(p.id) in price_map:
-                p.precio_venta = price_map[str(p.id)]
+            pid_str = str(p.id)
+            branch_pr = price_map.get(pid_str)
+            if branch_pr is not None and branch_pr > 0:
+                p.precio_venta = branch_pr
+            elif all_branch_prices.get(pid_str):
+                p.precio_venta = all_branch_prices[pid_str]
+            elif float(str(p.precio_venta or 0)) > 0:
+                pass # keep base product price
+                
             p.precios_sucursales = {} # Hide prices of other branches
             p.costo_producto = 0.0 # Hide product cost from branch users
     else:
