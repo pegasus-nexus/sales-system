@@ -210,9 +210,14 @@ async def get_tenant_stats(current_user: User = Depends(get_current_active_user)
         User.role == UserRole.USER
     ).count()
 
-    # Sum all sales totals for this tenant safely as float
-    sales = await Sale.find(Sale.tenant_id == tenant_id).to_list()
-    total_sales = sum(float(str(s.total or 0)) for s in sales)
+    from app.db import get_raw_db
+    raw_db = await get_raw_db()
+    pipeline = [
+        {"$match": {"tenant_id": tenant_id, "anulada": {"$ne": True}}},
+        {"$group": {"_id": None, "total": {"$sum": {"$toDouble": "$total"}}}}
+    ]
+    res = await raw_db.sales.aggregate(pipeline).to_list(1)
+    total_sales = float(res[0]["total"]) if res and res[0].get("total") is not None else 0.0
 
     return {
         "total_sales": round(total_sales, 2),

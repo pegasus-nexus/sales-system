@@ -14,7 +14,7 @@ class EstadoPago(str, Enum):
 class SaleItem(BaseModel):
     producto_id: str
     descripcion: str = ""
-    cantidad: float = Field(default=1.0, gt=0)
+    cantidad: float = Field(default=1.0, ge=0)
     precio_unitario: DecimalMoney = DecimalMoney("0")
     costo_unitario: DecimalMoney = DecimalMoney("0")
     descuento_unitario: DecimalMoney = DecimalMoney("0")
