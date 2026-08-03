@@ -65,7 +65,7 @@ async def get_products(
     
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
         invs = await Inventario.find(In(Inventario.producto_id, p_ids), Inventario.sucursal_id == current_user.sucursal_id).to_list() if current_user.sucursal_id else []
-        price_map = {i.producto_id: i.precio_sucursal for i in invs if i.precio_sucursal is not None}
+        price_map = {i.producto_id: float(i.precio_sucursal) for i in invs if i.precio_sucursal is not None and float(i.precio_sucursal) > 0}
         for p in products:
             if str(p.id) in price_map:
                 p.precio_venta = price_map[str(p.id)]
@@ -76,7 +76,7 @@ async def get_products(
         p_map = {str(p.id): {} for p in products}
         for i in invs:
             if i.precio_sucursal is not None:
-                p_map[str(i.producto_id)][i.sucursal_id] = i.precio_sucursal
+                p_map[str(i.producto_id)][i.sucursal_id] = float(i.precio_sucursal)
         for p in products:
             p.precios_sucursales = p_map.get(str(p.id), {})
 
