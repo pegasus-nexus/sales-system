@@ -62,6 +62,7 @@ async def get_products(
         
     p_ids = [str(p.id) for p in products]
     from bson import ObjectId
+    from app.db import get_raw_db
     raw_db = await get_raw_db()
     
     p_id_match = []
