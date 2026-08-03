@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import type { Category, Product, ProductUpdate, WebCollection, WebCollectionCreate, WebCollectionUpdate } from '../api/types';
+import { uploadImage } from '../api/api';
 import { toast } from 'sonner';
 
 
@@ -20,6 +21,7 @@ export default function CatalogoWebPage() {
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const [newCollectionName, setNewCollectionName] = useState('');
     const [newCollectionImage, setNewCollectionImage] = useState('');
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const { data: categories, isLoading: isLoadingCat } = useQuery({
         queryKey: ['categories'],
@@ -291,21 +293,49 @@ export default function CatalogoWebPage() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre de la Colección</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-1">Nombre de la Colección</label>
                             <input 
                                 type="text"
                                 placeholder="Ej: Día de la Madre 2026"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400"
+                                className="w-full bg-white text-gray-900 font-medium placeholder-gray-400 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400 shadow-sm"
                                 value={newCollectionName}
                                 onChange={e => setNewCollectionName(e.target.value)}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">URL de Imagen (Opcional, para banner)</label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-bold text-gray-900">Imagen de Colección (Banner / Icono)</label>
+                                <label className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg cursor-pointer transition-colors border border-indigo-200">
+                                    {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                    <span>Subir Imagen</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        disabled={isUploadingImage}
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setIsUploadingImage(true);
+                                            try {
+                                                const res = await uploadImage(file);
+                                                if (res.url) {
+                                                    setNewCollectionImage(res.url);
+                                                    toast.success("Imagen subida correctamente");
+                                                }
+                                            } catch (err: any) {
+                                                toast.error(err.message || "Error al subir imagen");
+                                            } finally {
+                                                setIsUploadingImage(false);
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            </div>
                             <input 
                                 type="text"
-                                placeholder="https://..."
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400"
+                                placeholder="https://... o sube una imagen"
+                                className="w-full bg-white text-gray-900 font-medium text-sm placeholder-gray-400 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400 shadow-sm"
                                 value={newCollectionImage}
                                 onChange={e => setNewCollectionImage(e.target.value)}
                             />
@@ -327,7 +357,7 @@ export default function CatalogoWebPage() {
                     <input 
                         type="text"
                         placeholder="Buscar categoría..."
-                        className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 outline-none focus:ring-2 focus:ring-indigo-500/20 text-gray-800 font-medium shadow-sm"
+                        className="w-full bg-white text-gray-900 placeholder-gray-400 font-medium border border-gray-200 rounded-2xl py-3 pl-12 pr-4 outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
