@@ -22,12 +22,25 @@ const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { m
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#3b82f6', '#f43f5e', '#84cc16'];
 
 interface MonthlyEvolutionViewProps {
+    activeTab?: 'general' | 'sucursales' | 'evolucion_mensual';
     initialDimension?: 'sucursales' | 'categorias' | 'productos';
 }
 
-export default function MonthlyEvolutionView({ initialDimension = 'sucursales' }: MonthlyEvolutionViewProps) {
+export default function MonthlyEvolutionView({ activeTab = 'evolucion_mensual', initialDimension = 'sucursales' }: MonthlyEvolutionViewProps) {
     const { role } = useAuthStore();
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
+
+    const viewTitle = activeTab === 'general' 
+        ? 'Visión General de Ventas'
+        : activeTab === 'sucursales'
+        ? 'Rendimiento por Sucursal'
+        : 'Evolución e Indicadores MoM';
+
+    const loadingMsg = activeTab === 'general'
+        ? 'Cargando visión general...'
+        : activeTab === 'sucursales'
+        ? 'Cargando rendimiento por sucursal...'
+        : 'Cargando reporte de evolución mensual (MoM)...';
 
     // Estado borrador (controles UI)
     const [pendingSucursal, setPendingSucursal] = useState<string>('all');
@@ -83,7 +96,7 @@ export default function MonthlyEvolutionView({ initialDimension = 'sucursales' }
         return (
             <div className="flex flex-col justify-center items-center py-28 bg-white rounded-3xl border border-gray-100 shadow-sm">
                 <Loader2 size={44} className="animate-spin text-indigo-600 mb-4" />
-                <p className="text-gray-500 font-medium animate-pulse">Cargando reporte de evolución mensual (MoM)...</p>
+                <p className="text-gray-500 font-medium animate-pulse">{loadingMsg}</p>
             </div>
         );
     }
@@ -127,7 +140,7 @@ export default function MonthlyEvolutionView({ initialDimension = 'sucursales' }
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h2 className="font-extrabold text-gray-900 text-lg">Evolución e Indicadores MoM</h2>
+                            <h2 className="font-extrabold text-gray-900 text-lg">{viewTitle}</h2>
                             {isFetching && <Loader2 size={16} className="animate-spin text-indigo-600" />}
                         </div>
                         <p className="text-xs text-gray-400">

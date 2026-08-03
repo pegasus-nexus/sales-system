@@ -1,7 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { AlertTriangle } from 'lucide-react';
-import DashboardMaestro from './DashboardMaestro';
 import DailyReportView from '../components/DailyReportView';
 import FinancialDetailView from '../components/FinancialDetailView';
 import ValuedInventoryView from '../components/ValuedInventoryView';
@@ -42,11 +41,11 @@ export default function ReportsPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
             {activeTab === 'general' ? (
-                <DashboardMaestro />
+                <MonthlyEvolutionView key="general" activeTab="general" initialDimension="sucursales" />
             ) : activeTab === 'sucursales' ? (
-                <MonthlyEvolutionView key="sucursales" initialDimension="sucursales" />
+                <MonthlyEvolutionView key="sucursales" activeTab="sucursales" initialDimension="sucursales" />
             ) : activeTab === 'evolucion_mensual' ? (
-                <MonthlyEvolutionView key="evolucion_mensual" initialDimension="categorias" />
+                <MonthlyEvolutionView key="evolucion_mensual" activeTab="evolucion_mensual" initialDimension="categorias" />
             ) : activeTab === 'matriz_bcg' ? (
                 <PortfolioAnalysisView />
             ) : activeTab === 'daily' ? (
