@@ -108,9 +108,7 @@ async def get_products(
                 pr = i.get("precio_sucursal")
                 if p_id in p_map and pr is not None:
                     try:
-                        pr_val = float(str(pr))
-                        if pr_val > 0:
-                            p_map[p_id][suc_id] = pr_val
+                        p_map[p_id][suc_id] = float(str(pr))
                     except (ValueError, TypeError):
                         pass
         for p in products:
