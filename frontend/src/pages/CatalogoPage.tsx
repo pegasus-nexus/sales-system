@@ -595,6 +595,23 @@ function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin,
         meal_plan_template_id: product?.meal_plan_template_id || '',
     });
 
+    useEffect(() => {
+        if (product) {
+            setFormData({
+                descripcion: product.descripcion || '',
+                categoria_id: product.categoria_id || (categories.length > 0 ? categories[0]._id : ''),
+                precio_venta: product.precio_venta || 0,
+                costo_producto: product.costo_producto || 0,
+                codigo_corto: product.codigo_corto || '',
+                codigo_largo: product.codigo_largo || '',
+                proveedores: product.proveedores || [],
+                image_url: product.image_url || '',
+                precios_sucursales: product.precios_sucursales || {},
+                meal_plan_template_id: product.meal_plan_template_id || '',
+            });
+        }
+    }, [product, categories]);
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
