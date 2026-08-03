@@ -1987,7 +1987,7 @@ async def get_monthly_evolution(
         m_obj = monthly_data[m_key]
 
         if (categoria_id and categoria_id != "all") or (producto_id and producto_id != "all"):
-            sale_total = sum(float(str(i[0].subtotal)) or (float(str(i[0].precio_unitario)) * int(i[0].cantidad)) for i in sale_items_matching)
+            sale_total = sum(float(str(i[0].subtotal)) if i[0].subtotal else (float(str(i[0].precio_unitario or 0)) * float(i[0].cantidad or 0)) for i in sale_items_matching)
             sum_items = sum(float(i[0].cantidad) for i in sale_items_matching)
         else:
             sale_total = float(str(sale.total))
@@ -2016,7 +2016,7 @@ async def get_monthly_evolution(
         items_to_aggregate = sale_items_matching if ((categoria_id and categoria_id != "all") or (producto_id and producto_id != "all")) else [(i, str(i.producto_id) if i.producto_id else None, product_cat_primary.get(str(i.producto_id), "General")) for i in sale.items]
 
         for item_obj, item_prod_id, item_cat_display in items_to_aggregate:
-            item_total = float(item_obj.subtotal or (item_obj.precio_unitario * item_obj.cantidad))
+            item_total = float(str(item_obj.subtotal)) if item_obj.subtotal else (float(str(item_obj.precio_unitario or 0)) * float(item_obj.cantidad or 0))
             item_qty = float(item_obj.cantidad)
             
             c_name = item_cat_display or "General"
