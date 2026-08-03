@@ -6,6 +6,9 @@ from app.domain.models.sucursal import Sucursal
 from app.domain.models.product import Product
 from app.domain.models.inventario import Inventario, InventoryLog
 from app.domain.models.pedido_interno import PedidoInterno
+from app.domain.models.role import Role
+from app.domain.models.web_collection import WebCollection
+from app.domain.models.web_config import WebConfig
 from app.domain.models.sale import Sale
 from app.domain.models.category import Category
 from app.domain.models.audit import AuditLog
@@ -33,7 +36,6 @@ from app.domain.models.meal_schedule import MealSchedule
 from app.domain.models.proveedor import Proveedor
 from app.domain.models.client_wallet import ClientWallet
 from app.domain.models.compra import PurchaseOrder, PurchaseReception
-from app.domain.models.web_collection import WebCollection
 
 from app.infrastructure.core.config import settings
 
@@ -122,7 +124,7 @@ async def init_db():
             ClientWallet,
             PurchaseOrder,
             PurchaseReception,
-            WebCollection
+            Sucursal, Role, WebCollection, WebConfig
         ],
         skip_indexes=True
     )

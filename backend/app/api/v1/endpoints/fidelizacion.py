@@ -64,6 +64,7 @@ from app.domain.models.product import Product
 from app.domain.models.category import Category
 from app.domain.models.inventario import Inventario
 from app.domain.models.web_collection import WebCollection
+from app.domain.models.web_config import WebConfig
 
 @router.get("/catalog")
 async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
@@ -151,8 +152,20 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
         "image_url": c.image_url
     } for c in collections]
 
+    # 5. Obtener configuración web
+    web_config = await WebConfig.find_one(WebConfig.tenant_id == tenant_id)
+    if not web_config:
+        web_config = WebConfig(tenant_id=tenant_id)
+
     return {
         "status": "success",
+        "web_config": {
+            "hero_subtitle": web_config.hero_subtitle,
+            "hero_title": web_config.hero_title,
+            "hero_description": web_config.hero_description,
+            "hero_bg_cba": web_config.hero_bg_cba,
+            "hero_bg_lpz": web_config.hero_bg_lpz,
+        },
         "colecciones": col_list,
         "categorias": cat_list,
         "productos": prod_list
