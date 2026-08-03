@@ -87,17 +87,23 @@ async def get_products(
                 if pr is not None:
                     price_map[str(i.get("producto_id"))] = float(str(pr))
                     
-        # Fallback map for products whose branch price is 0.0 or unmapped
+        # Fallback map for products whose branch price is 0.0 or unmapped (handles float, Decimal128, string)
         all_branch_prices = {}
         if p_ids:
             cursor_all = raw_db.inventario.find(
-                {"producto_id": {"$in": p_id_match}, "precio_sucursal": {"$gt": 0}},
+                {"producto_id": {"$in": p_id_match}},
                 {"producto_id": 1, "precio_sucursal": 1, "_id": 0}
             )
             async for i in cursor_all:
                 pid_str = str(i.get("producto_id"))
-                if pid_str not in all_branch_prices:
-                    all_branch_prices[pid_str] = float(str(i.get("precio_sucursal")))
+                pr_raw = i.get("precio_sucursal")
+                if pr_raw is not None:
+                    try:
+                        pr_val = float(str(pr_raw))
+                        if pr_val > 0 and pid_str not in all_branch_prices:
+                            all_branch_prices[pid_str] = pr_val
+                    except (ValueError, TypeError):
+                        pass
 
         for p in products:
             pid_str = str(p.id)
