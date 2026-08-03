@@ -61,14 +61,24 @@ async def get_products(
     products = await query.skip(skip).limit(limit).to_list()
         
     p_ids = [str(p.id) for p in products]
-    from app.db import get_raw_db
+    from bson import ObjectId
     raw_db = await get_raw_db()
+    
+    p_id_match = []
+    for pid in p_ids:
+        p_id_match.append(pid)
+        if ObjectId.is_valid(pid):
+            p_id_match.append(ObjectId(pid))
     
     if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
         price_map = {}
         if current_user.sucursal_id and p_ids:
+            suc_match = [current_user.sucursal_id]
+            if ObjectId.is_valid(current_user.sucursal_id):
+                suc_match.append(ObjectId(current_user.sucursal_id))
+                
             cursor = raw_db.inventarios.find(
-                {"producto_id": {"$in": p_ids}, "sucursal_id": current_user.sucursal_id},
+                {"producto_id": {"$in": p_id_match}, "sucursal_id": {"$in": suc_match}},
                 {"producto_id": 1, "precio_sucursal": 1, "_id": 0}
             )
             async for i in cursor:
@@ -84,7 +94,7 @@ async def get_products(
         p_map = {str(p.id): {} for p in products}
         if p_ids:
             cursor = raw_db.inventarios.find(
-                {"producto_id": {"$in": p_ids}},
+                {"producto_id": {"$in": p_id_match}},
                 {"producto_id": 1, "sucursal_id": 1, "precio_sucursal": 1, "_id": 0}
             )
             async for i in cursor:
