@@ -78,7 +78,7 @@ async def get_products(
             if ObjectId.is_valid(current_user.sucursal_id):
                 suc_match.append(ObjectId(current_user.sucursal_id))
                 
-            cursor = raw_db.inventarios.find(
+            cursor = raw_db.inventario.find(
                 {"producto_id": {"$in": p_id_match}, "sucursal_id": {"$in": suc_match}},
                 {"producto_id": 1, "precio_sucursal": 1, "_id": 0}
             )
@@ -94,7 +94,7 @@ async def get_products(
     else:
         p_map = {str(p.id): {} for p in products}
         if p_ids:
-            cursor = raw_db.inventarios.find(
+            cursor = raw_db.inventario.find(
                 {"producto_id": {"$in": p_id_match}},
                 {"producto_id": 1, "sucursal_id": 1, "precio_sucursal": 1, "_id": 0}
             )
