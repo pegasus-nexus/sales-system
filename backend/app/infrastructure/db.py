@@ -6,7 +6,6 @@ from app.domain.models.sucursal import Sucursal
 from app.domain.models.product import Product
 from app.domain.models.inventario import Inventario, InventoryLog
 from app.domain.models.pedido_interno import PedidoInterno
-from app.domain.models.role import Role
 from app.domain.models.web_collection import WebCollection
 from app.domain.models.web_config import WebConfig
 from app.domain.models.sale import Sale

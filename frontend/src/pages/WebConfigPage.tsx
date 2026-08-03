@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Save, Globe, Image as ImageIcon, Type, Sparkles } from 'lucide-react';
+import { Loader2, Save, Globe, Image as ImageIcon, Type } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface WebConfig {
@@ -25,8 +25,8 @@ export default function WebConfigPage() {
   const { data: config, isLoading } = useQuery({
     queryKey: ['web-config'],
     queryFn: async () => {
-      const response = await client.get('/web-config');
-      return response.data as WebConfig;
+      const response = await client<WebConfig>('/web-config');
+      return response;
     }
   });
 
@@ -44,8 +44,8 @@ export default function WebConfigPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: WebConfig) => {
-      const response = await client.put('/web-config', data);
-      return response.data;
+      const response = await client('/web-config', { body: data, method: 'PUT' });
+      return response;
     },
     onSuccess: () => {
       toast.success('Configuración web guardada exitosamente');

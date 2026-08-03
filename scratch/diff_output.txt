@@ -1,0 +1,446 @@
+--- DIFF FOR backend/app/services/analytics_v2_service.py ---
+--- C:\Users\rodri\Desktop\sales-system\backend/app/services/analytics_v2_service.py
++++ C:\Users\rodri\Desktop\SalesSystemSahian\SalesSystem\backend/app/services/analytics_v2_service.py
+@@ -193,16 +193,15 @@
+                     "coll": "sales",
+                     "pipeline": [
+                         {"$match": sales_match},
+-                        {"$unwind": {"path": "$items", "preserveNullAndEmptyArrays": False}},
+                         {"$project": {
+                             "_id": 0,
+                             "id_ticket": {"$toString": "$_id"},
+                             "fecha": "$created_at",
+-                            "monto": {"$toDouble": "$items.subtotal"},
+-                            "costo": {"$multiply": [{"$toDouble": "$items.costo_unitario"}, {"$toDouble": "$items.cantidad"}]},
++                            "monto": {"$toDouble": "$total"},
++                            "costo": {"$literal": 0},
+                             "sucursal": "$sucursal_id",
+-                            "producto": "$items.descripcion",
+-                            "cantidad": {"$toDouble": "$items.cantidad"},
++                            "producto": "GENERAL",
++                            "cantidad": 1,
+                             "cliente": {"$ifNull": ["$cliente.razon_social", "$cliente.nit", ""]},
+                             "estado": "$estado"
+                         }}
+@@ -395,11 +394,6 @@
+             sales_by_branch_map[n]["margen"] += safe_float(b.get("margen", 0))
+             sales_by_branch_map[n]["tickets_cliente"] += int(b.get("tickets_cliente", 0))
+             
+-        # Corregir `ventas_brutas` para que incluya las ventas históricas crudas
+-        total_unificado_sucursales = sum(d["ventas"] for d in sales_by_branch_map.values())
+-        if total_unificado_sucursales > 0:
+-            ventas_brutas = total_unificado_sucursales
+-            
+         sales_by_branch = []
+         desglose_sucursales = {}
+         for n, d in sales_by_branch_map.items():
+
+
+--- DIFF FOR backend/app/services/bcg_service.py ---
+--- C:\Users\rodri\Desktop\sales-system\backend/app/services/bcg_service.py
++++ C:\Users\rodri\Desktop\SalesSystemSahian\SalesSystem\backend/app/services/bcg_service.py
+@@ -1,10 +1,7 @@
+ import asyncio
+ from datetime import datetime, timezone
+ from typing import Optional, List, Dict, Any
+-from zoneinfo import ZoneInfo
+ from app.db import get_raw_db
+-
+-BOLIVIA_TZ = ZoneInfo("America/La_Paz")
+ 
+ async def get_bcg_matrix(
+     tenant_id: str,
+@@ -17,28 +14,16 @@
+     tenant_id = tenant_id or "69cd7f0a8f3f6866d4cfbb62"
+     db = await get_raw_db()
+     
+-    # 1. Definir fechas (Mes Actual y Mes Anterior) en hora local de Bolivia
+-    now_local = datetime.now(BOLIVIA_TZ)
++    # 1. Definir fechas (Mes Actual y Mes Anterior)
++    now = datetime.now(timezone.utc)
+     
+-    current_start_local = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+-    if now_local.month == 1:
+-        prev_start_local = now_local.replace(year=now_local.year-1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
++    current_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
++    if now.month == 1:
++        prev_start = now.replace(year=now.year-1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
+     else:
+-        prev_start_local = now_local.replace(month=now_local.month-1, day=1, hour=0, minute=0, second=0, microsecond=0)
++        prev_start = now.replace(month=now.month-1, day=1, hour=0, minute=0, second=0, microsecond=0)
+     
+-    prev_end_local = current_start_local
+-
+-    # Fechas para sales (UTC)
+-    current_start_utc = current_start_local.astimezone(timezone.utc)
+-    now_utc = now_local.astimezone(timezone.utc)
+-    prev_start_utc = prev_start_local.astimezone(timezone.utc)
+-    prev_end_utc = prev_end_local.astimezone(timezone.utc)
+-
+-    # Fechas para ventas históricas crudas (Naive Local)
+-    current_start_naive = current_start_local.replace(tzinfo=None)
+-    now_naive = now_local.replace(tzinfo=None)
+-    prev_start_naive = prev_start_local.replace(tzinfo=None)
+-    prev_end_naive = prev_end_local.replace(tzinfo=None)
++    prev_end = current_start
+ 
+     req_suc = (sucursal_id or "").strip().lower()
+     es_global = not req_suc or req_suc in ["todas", "global", "all"]
+@@ -95,10 +80,10 @@
+     coroutines = [
+         db["products"].find(product_query, {"descripcion": 1, "codigo_corto": 1, "categoria_id": 1}).to_list(length=3000),
+         db["categories"].find(product_query).to_list(length=500),
+-        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(current_start_naive, now_naive)).to_list(length=5000),
+-        db["sales"].aggregate(build_pos_pipeline(current_start_utc, now_utc)).to_list(length=5000),
+-        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(prev_start_naive, prev_end_naive)).to_list(length=5000),
+-        db["sales"].aggregate(build_pos_pipeline(prev_start_utc, prev_end_utc)).to_list(length=5000)
++        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(current_start, now)).to_list(length=5000),
++        db["sales"].aggregate(build_pos_pipeline(current_start, now)).to_list(length=5000),
++        db["ventas_historicas_crudas"].aggregate(build_hist_pipeline(prev_start, prev_end)).to_list(length=5000),
++        db["sales"].aggregate(build_pos_pipeline(prev_start, prev_end)).to_list(length=5000)
+     ]
+     
+     results = await asyncio.gather(*coroutines)
+
+
+--- DIFF FOR frontend/src/components/SalesMatrixView.tsx ---
+--- C:\Users\rodri\Desktop\sales-system\frontend/src/components/SalesMatrixView.tsx
++++ C:\Users\rodri\Desktop\SalesSystemSahian\SalesSystem\frontend/src/components/SalesMatrixView.tsx
+@@ -1,6 +1,6 @@
+ import { useState, useMemo } from 'react';
+ import { useQuery } from '@tanstack/react-query';
+-import { getSalesMatrix, getSucursales, getCategories, getProveedores } from '../api/api';
++import { getSalesMatrix, getSucursales } from '../api/api';
+ import { useAuthStore } from '../store/authStore';
+ import { Loader2, AlertTriangle, Calendar, Download, Search, FileDown } from 'lucide-react';
+ import { descargarPDFMatriz } from '../utils/reportPDF';
+@@ -20,8 +20,6 @@
+     const [endDate, setEndDate] = useState<string>(todayStr);
+     const [searchTerm, setSearchTerm] = useState('');
+     const [groupBy, setGroupBy] = useState<'day'|'week'|'month'>('day');
+-    const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
+-    const [selectedProveedor, setSelectedProveedor] = useState<string>('all');
+     
+     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
+     const defaultSucursal = esMatriz ? 'all' : (sucursal_id || 'CENTRAL');
+@@ -33,19 +31,9 @@
+         enabled: esMatriz
+     });
+ 
+-    const { data: categorias = [] } = useQuery({
+-        queryKey: ['categories'],
+-        queryFn: getCategories,
+-    });
+-
+-    const { data: proveedores = [] } = useQuery({
+-        queryKey: ['proveedores-list'],
+-        queryFn: () => getProveedores(1, 200),
+-    });
+-
+     const { data, isLoading, isError } = useQuery({
+-        queryKey: ['sales-matrix', startDate, endDate, selectedSucursal, selectedCategoria, selectedProveedor],
+-        queryFn: () => getSalesMatrix(startDate, endDate, selectedSucursal, selectedCategoria, selectedProveedor),
++        queryKey: ['sales-matrix', startDate, endDate, selectedSucursal],
++        queryFn: () => getSalesMatrix(startDate, endDate, selectedSucursal),
+     });
+ 
+     const columns = useMemo(() => {
+@@ -236,7 +224,7 @@
+                         <select
+                             value={selectedSucursal}
+                             onChange={(e) => setSelectedSucursal(e.target.value)}
+-                            className="flex-1 md:w-48 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
++                            className="flex-1 md:w-48 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+                         >
+                             <option value="all">Todas las Sucursales</option>
+                             <option value="CENTRAL">Central</option>
+@@ -245,28 +233,6 @@
+                             ))}
+                         </select>
+                     )}
+-
+-                    <select
+-                        value={selectedCategoria}
+-                        onChange={(e) => setSelectedCategoria(e.target.value)}
+-                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+-                    >
+-                        <option value="all">Todas las Categorías</option>
+-                        {categorias.map(c => (
+-                            <option key={c._id} value={c._id}>{c.name}</option>
+-                        ))}
+-                    </select>
+-
+-                    <select
+-                        value={selectedProveedor}
+-                        onChange={(e) => setSelectedProveedor(e.target.value)}
+-                        className="flex-1 md:w-44 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all cursor-pointer"
+-                    >
+-                        <option value="all">Todos los Proveedores</option>
+-                        {proveedores.map(p => (
+-                            <option key={p._id} value={p._id}>{p.nombre}</option>
+-                        ))}
+-                    </select>
+                 </div>
+             </div>
+ 
+
+
+--- DIFF FOR frontend/src/pages/AnaliticaAvanzada.tsx ---
+--- C:\Users\rodri\Desktop\sales-system\frontend/src/pages/AnaliticaAvanzada.tsx
++++ C:\Users\rodri\Desktop\SalesSystemSahian\SalesSystem\frontend/src/pages/AnaliticaAvanzada.tsx
+@@ -16,11 +16,11 @@
+   const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
+   const [searchTerm, setSearchTerm] = useState('');
+   const [vista, setVista] = useState<'grafico' | 'cuadrantes'>('grafico');
+-  
++
+   const [dataBCG, setDataBCG] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+-  
++
+   const [productoSeleccionado, setProductoSeleccionado] = useState<any>(null);
+ 
+   // 1. FETCH REPOSITORIO CON INYECCIÓN DEMO MODE DE SUCURSALES
+@@ -33,10 +33,10 @@
+         const bcgData = await client<any[]>(`/analytics/bcg`);
+ 
+         if (!bcgData || bcgData.length === 0) {
+-            setErrorMsg("No hay productos en el catálogo.");
+-            setDataBCG([]);
+-            setLoading(false);
+-            return;
++          setErrorMsg("No hay productos en el catálogo.");
++          setDataBCG([]);
++          setLoading(false);
++          return;
+         }
+ 
+         const productosRecibidos = Array.isArray(bcgData) ? bcgData : (bcgData as any).products || [];
+@@ -46,7 +46,7 @@
+           if (index % 3 === 0) sucs = ['Heroinas'];
+           if (index % 3 === 1) sucs = ['Recoleta', 'Calacoto'];
+           if (index % 5 === 0) sucs = ['Calacoto'];
+-          
++
+           return {
+             ...prod,
+             sucursales: prod.sucursales || sucs,
+@@ -121,7 +121,7 @@
+ 
+   return (
+     <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 w-full mb-10">
+-      
++
+       {/* ── CABECERA Y FILTROS PRINCIPALES ── */}
+       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 border-b border-slate-100 pb-5">
+         <div>
+@@ -132,7 +132,7 @@
+           </p>
+           {errorMsg && <p className="text-xs text-rose-500 font-bold mt-1">⚠️ {errorMsg}</p>}
+         </div>
+-        
++
+         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full xl:w-auto">
+           {/* Barra de Búsqueda Superior */}
+           <div className="relative w-full md:w-64 xl:w-72">
+@@ -147,7 +147,7 @@
+               className="w-full pl-10 pr-8 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white shadow-sm transition-all text-slate-700 placeholder-slate-400"
+             />
+             {searchTerm && (
+-              <button 
++              <button
+                 onClick={() => setSearchTerm('')}
+                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 font-bold"
+               >
+@@ -162,17 +162,15 @@
+           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+             <button
+               onClick={() => setVista('grafico')}
+-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+-                vista === 'grafico' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+-              }`}
++              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${vista === 'grafico' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
++                }`}
+             >
+               <BarChart2 size={16} /> Scatter
+             </button>
+             <button
+               onClick={() => setVista('cuadrantes')}
+-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+-                vista === 'cuadrantes' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+-              }`}
++              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${vista === 'cuadrantes' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
++                }`}
+             >
+               <LayoutGrid size={16} /> Grid 2x2
+             </button>
+@@ -189,11 +187,10 @@
+                   setSucursal(suc);
+                   setProductoSeleccionado(null);
+                 }}
+-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+-                  sucursal === suc 
+-                    ? 'bg-indigo-600 text-white shadow-md' 
++                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${sucursal === suc
++                    ? 'bg-indigo-600 text-white shadow-md'
+                     : 'text-slate-600 hover:bg-slate-200'
+-                }`}
++                  }`}
+               >
+                 {suc === 'todas' ? 'Global' : suc}
+               </button>
+@@ -210,9 +207,8 @@
+         </div>
+         <button
+           onClick={() => setCategoriaFiltro('todas')}
+-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+-            categoriaFiltro === 'todas' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+-          }`}
++          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${categoriaFiltro === 'todas' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
++            }`}
+         >
+           Todas ({productosFiltrados.length})
+         </button>
+@@ -222,9 +218,8 @@
+             <button
+               key={cat}
+               onClick={() => setCategoriaFiltro(cat)}
+-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+-                categoriaFiltro === cat ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+-              }`}
++              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${categoriaFiltro === cat ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
++                }`}
+             >
+               {cat} ({count})
+             </button>
+@@ -245,43 +240,43 @@
+               <ResponsiveContainer width="100%" height="100%">
+                 <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={true} stroke="#E2E8F0" />
+-                  
+-                  <XAxis 
+-                    type="number" 
+-                    dataKey="participacion" 
+-                    name="Participación Relativa" 
+-                    unit="%" 
+-                    domain={[0, 'auto']} 
+-                    tick={{fontSize: 12, fill: '#64748B', fontWeight: 600}}
+-                    axisLine={{stroke: '#94A3B8', strokeWidth: 2}}
++
++                  <XAxis
++                    type="number"
++                    dataKey="participacion"
++                    name="Participación Relativa"
++                    unit="%"
++                    domain={[0, 'auto']}
++                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 600 }}
++                    axisLine={{ stroke: '#94A3B8', strokeWidth: 2 }}
+                   />
+-                  <YAxis 
+-                    type="number" 
+-                    dataKey="crecimiento" 
+-                    name="Crecimiento de Mercado" 
+-                    unit="%" 
+-                    domain={['auto', 'auto']} 
+-                    tick={{fontSize: 12, fill: '#64748B', fontWeight: 600}}
+-                    axisLine={{stroke: '#94A3B8', strokeWidth: 2}}
++                  <YAxis
++                    type="number"
++                    dataKey="crecimiento"
++                    name="Crecimiento de Mercado"
++                    unit="%"
++                    domain={['auto', 'auto']}
++                    tick={{ fontSize: 12, fill: '#64748B', fontWeight: 600 }}
++                    axisLine={{ stroke: '#94A3B8', strokeWidth: 2 }}
+                   />
+                   {/* ZAxis Controla el tamaño de la burbuja en base al Margen Pct */}
+                   <ZAxis type="number" dataKey="margen" range={[50, 800]} name="Margen %" />
+-                  
+-                  <Tooltip 
+-                    cursor={{ strokeDasharray: '3 3', stroke: '#CBD5E1' }} 
++
++                  <Tooltip
++                    cursor={{ strokeDasharray: '3 3', stroke: '#CBD5E1' }}
+                     content={({ payload }) => {
+                       if (payload && payload.length) {
+                         const data = payload[0].payload;
+                         return (
+                           <div className="bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-slate-200 text-xs w-64 z-50">
+                             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+-                              <div className="w-3 h-3 rounded-full" style={{backgroundColor: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS]}}></div>
++                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS] }}></div>
+                               <p className="font-black text-slate-800 text-sm truncate" title={data.name}>{data.name}</p>
+                             </div>
+                             <div className="space-y-1.5 text-slate-600 font-medium">
+                               <p className="flex justify-between">Categoría: <span className="font-bold text-slate-900">{data.categoria}</span></p>
+                               <p className="flex justify-between">Sucursal: <span className="font-bold text-indigo-600">{data.sucursal}</span></p>
+-                              <p className="flex justify-between">Cuadrante: <span className="font-bold" style={{color: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS]}}>{data.cuadrante}</span></p>
++                              <p className="flex justify-between">Cuadrante: <span className="font-bold" style={{ color: QUADRANT_COLORS[data.cuadrante as keyof typeof QUADRANT_COLORS] }}>{data.cuadrante}</span></p>
+                               <p className="flex justify-between">Ventas Totales: <span className="font-bold text-slate-900">Bs. {data.ventas}</span></p>
+                               <p className="flex justify-between">Participación: <span className="font-bold text-slate-900">{data.participacion}%</span></p>
+                               <p className="flex justify-between">Crecimiento (MoM): <span className="font-bold text-slate-900">{data.crecimiento}%</span></p>
+@@ -290,9 +285,9 @@
+                                 <span className="font-black text-sm">{data.margen}%</span>
+                               </div>
+                               <p className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+-                                Variación Ventas: 
++                                Variación Ventas:
+                                 <span className={`flex items-center gap-1 font-black ${String(data.vsMesAnterior).startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}`}>
+-                                  {String(data.vsMesAnterior).startsWith('+') ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
++                                  {String(data.vsMesAnterior).startsWith('+') ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                   {data.vsMesAnterior}
+                                 </span>
+                               </p>
+@@ -303,13 +298,13 @@
+                       return null;
+                     }}
+                   />
+-                  
++
+                   <Scatter data={productosFiltrados} animationDuration={800} onClick={(data) => setProductoSeleccionado(data)}>
+                     {productosFiltrados.map((entry, index) => (
+-                      <Cell 
+-                        key={`cell-${index}`} 
+-                        fill={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]} 
+-                        fillOpacity={entry.ventas === 0 ? 0.3 : 0.80} 
++                      <Cell
++                        key={`cell-${index}`}
++                        fill={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]}
++                        fillOpacity={entry.ventas === 0 ? 0.3 : 0.80}
+                         stroke={QUADRANT_COLORS[entry.cuadrante as keyof typeof QUADRANT_COLORS]}
+                         strokeWidth={1}
+                         className="cursor-pointer hover:opacity-100 transition-opacity"
+@@ -327,7 +322,7 @@
+           {/* VISTA 2: CLASSIC GRID 2x2 (Con tarjetas aisladas por sucursal) */}
+           {vista === 'cuadrantes' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+-              
++
+               {/* ESTRELLA */}
+               <div className="bg-emerald-50/70 border-2 border-emerald-200 rounded-2xl p-4 shadow-sm flex flex-col h-[700px]">
+                 <div className="flex justify-between items-start mb-3 shrink-0">
+@@ -440,9 +435,9 @@
+             <span className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Inspección Táctica</span>
+             <h4 className="text-base font-bold leading-tight mt-0.5 truncate">{productoSeleccionado.name}</h4>
+             <p className="text-xs text-slate-400 mt-1">
+-              Cat: <span className="text-slate-200">{productoSeleccionado.categoria}</span> | 
+-              Sucursal: <span className="text-indigo-400 font-semibold">{productoSeleccionado.sucursal}</span> | 
+-              Clasificación: <span className="font-bold" style={{color: QUADRANT_COLORS[productoSeleccionado.cuadrante as keyof typeof QUADRANT_COLORS]}}> {productoSeleccionado.cuadrante}</span>
++              Cat: <span className="text-slate-200">{productoSeleccionado.categoria}</span> |
++              Sucursal: <span className="text-indigo-400 font-semibold">{productoSeleccionado.sucursal}</span> |
++              Clasificación: <span className="font-bold" style={{ color: QUADRANT_COLORS[productoSeleccionado.cuadrante as keyof typeof QUADRANT_COLORS] }}> {productoSeleccionado.cuadrante}</span>
+             </p>
+           </div>
+           <div className="flex gap-6 text-right items-center">
+@@ -458,7 +453,7 @@
+               <p className="text-[10px] text-slate-400 uppercase font-bold">Margen</p>
+               <p className="text-sm font-black text-amber-300">{productoSeleccionado.margen}%</p>
+             </div>
+-            <button 
++            <button
+               onClick={() => setProductoSeleccionado(null)}
+               className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 flex items-center justify-center rounded-full transition-colors ml-2"
+               title="Cerrar detalle"
+
+
