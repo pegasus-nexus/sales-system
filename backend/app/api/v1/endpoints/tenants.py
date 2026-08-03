@@ -210,12 +210,12 @@ async def get_tenant_stats(current_user: User = Depends(get_current_active_user)
         User.role == UserRole.USER
     ).count()
 
-    # Sum all sales totals for this tenant
+    # Sum all sales totals for this tenant safely as float
     sales = await Sale.find(Sale.tenant_id == tenant_id).to_list()
-    total_sales = sum(s.total for s in sales)
+    total_sales = sum(float(str(s.total or 0)) for s in sales)
 
     return {
-        "total_sales": total_sales,
+        "total_sales": round(total_sales, 2),
         "active_products": active_products,
         "active_employees": active_employees,
     }

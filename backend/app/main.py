@@ -49,10 +49,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     error_id = f"ERR-{uuid.uuid4().hex[:8].upper()}"
     print(f"[{error_id}] Unhandled Exception on {request.method} {request.url.path}")
     traceback.print_exc()
-    return JSONResponse(
+    origin = request.headers.get("origin", "*")
+    response = JSONResponse(
         status_code=500,
         content={"detail": "Tuvimos un problema procesando tu solicitud. Por favor intenta de nuevo más tarde.", "error_id": error_id}
     )
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 
 @app.get("/")
@@ -85,18 +91,16 @@ if not origins or settings.ENVIRONMENT != "production":
         if local_origin not in origins:
             origins.append(local_origin)
 
-# Permitir siempre la landing page de FEXCO
-
-if "https://chocolatestaboada.pro" not in origins:
-    origins.append("https://chocolatestaboada.pro")
-if "https://www.chocolatestaboada.pro" not in origins:
-    origins.append("https://www.chocolatestaboada.pro")
-
-if "https://taboada-fexco.vercel.app" not in origins:
-    origins.append("https://taboada-fexco.vercel.app")
-# Permitir localhost para pruebas de la landing
-if "http://localhost:4321" not in origins:
-    origins.append("http://localhost:4321")
+# Permitir siempre dominios de producción Pegasus y landing pages
+for extra_origin in [
+    "https://app.pegasus-nexus.com",
+    "https://chocolatestaboada.pro",
+    "https://www.chocolatestaboada.pro",
+    "https://taboada-fexco.vercel.app",
+    "http://localhost:4321"
+]:
+    if extra_origin not in origins:
+        origins.append(extra_origin)
 
 app.add_middleware(
     CORSMiddleware,
