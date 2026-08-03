@@ -175,27 +175,18 @@ async def get_general_reports(
         {
             "$match": {
                 "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
-                "sale_date": {"$gte": start_date}
+                "anulada": {"$ne": True},
+                "created_at": {"$gte": start_date}
             }
         },
-        {
-            "$lookup": {
-                "from": "sales",
-                "let": {"sid": "$sale_id"},
-                "pipeline": [
-                    {"$match": {"$expr": {"$eq": [{"$toString": "$_id"}, "$$sid"]}, "anulada": False}}
-                ],
-                "as": "sale_parent"
-            }
-        },
-        {"$match": {"sale_parent": {"$ne": []}}},
+        {"$unwind": "$items"},
         {
             "$group": {
-                "_id": "$descripcion",
-                "cantidad_vendida": {"$sum": "$cantidad"},
-                "total_ventas": {"$sum": "$subtotal"},
-                "costo_total": {"$sum": {"$multiply": ["$costo_unitario", "$cantidad"]}},
-                "ganancia_matriz": {"$sum": {"$multiply": ["$costo_unitario", "$cantidad", 0.15]}}
+                "_id": "$items.descripcion",
+                "cantidad_vendida": {"$sum": "$items.cantidad"},
+                "total_ventas": {"$sum": "$items.subtotal"},
+                "costo_total": {"$sum": {"$multiply": ["$items.costo_unitario", "$items.cantidad"]}},
+                "ganancia_matriz": {"$sum": {"$multiply": ["$items.costo_unitario", "$items.cantidad", 0.15]}}
             }
         },
         {
@@ -211,7 +202,7 @@ async def get_general_reports(
         {"$sort": {"cantidad_vendida": -1}},
         {"$limit": 10}
     ]
-    cursor = SaleItem.get_pymongo_collection().aggregate(top_products_pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(top_products_pipeline)
     top_productos = [normalize_bson(r) for r in await cursor.to_list(length=10)]
     
     # ─── 4. Evolucion Diaria ──────────────────────────────────────────────────────
@@ -219,26 +210,32 @@ async def get_general_reports(
         {
             "$match": {
                 "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
-                "sale_date": {"$gte": start_date}
+                "anulada": {"$ne": True},
+                "created_at": {"$gte": start_date}
             }
         },
-        {
-            "$lookup": {
-                "from": "sales",
-                "let": {"sid": "$sale_id"},
-                "pipeline": [
-                    {"$match": {"$expr": {"$eq": [{"$toString": "$_id"}, "$$sid"]}, "anulada": False}}
-                ],
-                "as": "sale_parent"
-            }
-        },
-        {"$match": {"sale_parent": {"$ne": []}}},
         {
             "$group": {
-                "_id": { "$dateToString": { "format": "%Y-%m-%d", "date": "$sale_date", "timezone": "-04:00" } },
-                "total_ventas": {"$sum": "$subtotal"},
-                "costo_total": {"$sum": {"$multiply": ["$costo_unitario", "$cantidad"]}},
-                "ganancia_matriz": {"$sum": {"$multiply": ["$costo_unitario", "$cantidad", 0.15]}}
+                "_id": { "$dateToString": { "format": "%Y-%m-%d", "date": "$created_at", "timezone": "-04:00" } },
+                "total_ventas": {"$sum": "$total"},
+                "costo_total": {
+                    "$sum": {
+                        "$reduce": {
+                            "input": "$items",
+                            "initialValue": 0,
+                            "in": {"$add": ["$$value", {"$multiply": ["$$this.costo_unitario", "$$this.cantidad"]}]}
+                        }
+                    }
+                },
+                "ganancia_matriz": {
+                    "$sum": {
+                        "$reduce": {
+                            "input": "$items",
+                            "initialValue": 0,
+                            "in": {"$add": ["$$value", {"$multiply": ["$$this.costo_unitario", "$$this.cantidad", 0.15]}]}
+                        }
+                    }
+                }
             }
         },
         {
@@ -252,7 +249,7 @@ async def get_general_reports(
         },
         {"$sort": {"fecha": 1}}
     ]
-    cursor = SaleItem.get_pymongo_collection().aggregate(diaria_pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(diaria_pipeline)
     evolucion_diaria = [normalize_bson(r) for r in await cursor.to_list(length=100)]
     
     return {
