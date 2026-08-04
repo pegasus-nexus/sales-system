@@ -40,12 +40,10 @@ async def get_cuentas_credito(
     is_global_admin = current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ]
     
     if not is_global_admin and current_user.sucursal_id:
-        # Recuperar deudas de la sucursal y extraer cuenta_ids (workaround para incompatibilidad de aggregate en Beanie/Motor)
-        deudas = await Deuda.find(Deuda.sucursal_id == current_user.sucursal_id).to_list()
-        cuentas_ids = list(set(d.cuenta_id for d in deudas))
+        cuentas_ids = await Deuda.get_motor_collection().distinct("cuenta_id", {"sucursal_id": current_user.sucursal_id})
         from bson import ObjectId
-        # Nota: Beanie maneja IDs como ObjectId internamente si se pasan así
-        filters.append({"_id": {"$in": [ObjectId(cid) for cid in cuentas_ids]}})
+        valid_obj_ids = [ObjectId(cid) for cid in cuentas_ids if ObjectId.is_valid(cid)]
+        filters.append({"_id": {"$in": valid_obj_ids}})
         
     query = CuentaCredito.find(*filters)
     total = await query.count()

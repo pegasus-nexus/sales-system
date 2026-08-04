@@ -599,24 +599,27 @@ async def exportar_movimientos(
     from datetime import datetime
     
     if producto_id:
-        # No limit for a specific product to ensure full history
-        movimientos = await InventoryLog.find(query).sort("-created_at").to_list()
+        cursor = InventoryLog.get_motor_collection().find(query).sort("created_at", -1)
     else:
-        # Capped for global export to avoid performance issues
-        movimientos = await InventoryLog.find(query).sort("-created_at").limit(20000).to_list()
+        cursor = InventoryLog.get_motor_collection().find(query).sort("created_at", -1).limit(5000)
+    
+    movimientos = await cursor.to_list(length=None)
     
     rows = []
     for mov in movimientos:
+        created_at = mov.get("created_at")
+        fecha_str = created_at.astimezone(BOLIVIA_TZ).strftime("%Y-%m-%d %H:%M:%S") if created_at and hasattr(created_at, "astimezone") else str(created_at or "")
+        tipo = str(mov.get("tipo_movimiento") or "").replace('_', ' ')
         rows.append({
-            "FECHA": mov.created_at.astimezone(BOLIVIA_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-            "PRODUCTO": mov.descripcion or "Producto Sin Nombre",
-            "TIPO MOVIMIENTO": mov.tipo_movimiento.replace('_', ' '),
-            "CANTIDAD": float(mov.cantidad_movida),
-            "STOCK RESULTANTE": float(mov.stock_resultante),
-            "COSTO UNIT.": float(mov.costo_unitario_momento or 0),
-            "PRECIO VENTA UNIT.": float(mov.precio_venta_momento or 0),
-            "USUARIO": mov.usuario_nombre,
-            "NOTAS": mov.notas or ""
+            "FECHA": fecha_str,
+            "PRODUCTO": mov.get("descripcion") or "Producto Sin Nombre",
+            "TIPO MOVIMIENTO": tipo,
+            "CANTIDAD": float(str(mov.get("cantidad_movida") or 0)),
+            "STOCK RESULTANTE": float(str(mov.get("stock_resultante") or 0)),
+            "COSTO UNIT.": float(str(mov.get("costo_unitario_momento") or 0)),
+            "PRECIO VENTA UNIT.": float(str(mov.get("precio_venta_momento") or 0)),
+            "USUARIO": mov.get("usuario_nombre") or "",
+            "NOTAS": mov.get("notas") or ""
         })
         
     df = pd.DataFrame(rows)
@@ -663,21 +666,27 @@ async def export_inventory_template(
         except Exception:
             pass  # Invalid ObjectId or not found — fall back to "CENTRAL"
 
-    products = await Product.find(Product.tenant_id == tenant_id, Product.is_active == True).to_list()
+    products = await Product.get_motor_collection().find(
+        {"tenant_id": tenant_id, "is_active": True},
+        {"codigo_largo": 1, "codigo_corto": 1, "descripcion": 1, "categoria_id": 1, "proveedores": 1}
+    ).to_list(length=None)
 
-    # Build category map once (DRY) to resolve IDs → names without N+1 queries
-    categories = await Category.find(Category.tenant_id == tenant_id).to_list()
-    cat_name_map: dict = {str(c.id): c.name for c in categories}
+    categories = await Category.get_motor_collection().find(
+        {"tenant_id": tenant_id},
+        {"name": 1}
+    ).to_list(length=None)
+    cat_name_map: dict = {str(c["_id"]): c.get("name", "") for c in categories}
 
     data = []
     for p in products:
+        cat_id = str(p.get("categoria_id", ""))
         data.append({
-            "CODIGO":        p.codigo_largo or "",
-            "CODIGO CORTO":  p.codigo_corto or "",
-            "DESCRIPCION":   p.descripcion,
-            "CATEGORIA":     cat_name_map.get(p.categoria_id, p.categoria_id),  # name, not raw ID
-            "PROVEEDOR":     ", ".join(getattr(p, "proveedores", []) or []),
-            f"INVENTARIO FISICO {suc_name}": ""  # User fills this in
+            "CODIGO":        p.get("codigo_largo") or "",
+            "CODIGO CORTO":  p.get("codigo_corto") or "",
+            "DESCRIPCION":   p.get("descripcion") or "",
+            "CATEGORIA":     cat_name_map.get(cat_id, cat_id),
+            "PROVEEDOR":     ", ".join(p.get("proveedores") or []),
+            f"INVENTARIO FISICO {suc_name}": ""
         })
 
     df = pd.DataFrame(data)

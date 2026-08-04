@@ -97,9 +97,12 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
     products = [p for p in all_products if str(p.categoria_id) in cat_ids]
     p_ids = [str(p.id) for p in products]
     
-    # 3. Obtener precios (Inventario)
-    from beanie.operators import In
-    invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
+    # 3. Obtener precios (Inventario) optimizado sin sobrecarga de Pydantic
+    invs_cursor = Inventario.get_motor_collection().find(
+        {"producto_id": {"$in": p_ids}},
+        {"producto_id": 1, "sucursal_id": 1, "precio_sucursal": 1, "cantidad": 1}
+    )
+    invs = await invs_cursor.to_list(length=None)
     
     # Mapeo de sucursales clave
     # Heroinas (Cochabamba) = 69cd80098f3f6866d4cfbb64
@@ -107,22 +110,24 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
     SUCURSAL_CBA = "69cd80098f3f6866d4cfbb64"
     SUCURSAL_LPZ = "69ce6b7e8a00124dac6ecc99"
     
-    # price_map[product_id] = {"cochabamba": price, "la_paz": price}
     price_map = {p_id: {} for p_id in p_ids}
     
     # Precompute product base prices
     prod_base_prices = {str(p.id): float(p.precio_venta) for p in products}
     
     for i in invs:
-        # Determine the price to use: branch specific or product default
-        precio = float(i.precio_sucursal) if i.precio_sucursal is not None else prod_base_prices.get(str(i.producto_id), 0.0)
+        p_suc = i.get("precio_sucursal")
+        p_id = str(i.get("producto_id", ""))
+        suc_id = str(i.get("sucursal_id", ""))
+        cantidad = float(str(i.get("cantidad") or 0))
         
-        # Only include if price is > 0 and stock is > 0
-        if precio > 0 and i.cantidad > 0:
-            if str(i.sucursal_id) == SUCURSAL_CBA:
-                price_map[str(i.producto_id)]["cochabamba"] = precio
-            elif str(i.sucursal_id) == SUCURSAL_LPZ:
-                price_map[str(i.producto_id)]["la_paz"] = precio
+        precio = float(str(p_suc)) if p_suc is not None else prod_base_prices.get(p_id, 0.0)
+        
+        if precio > 0 and cantidad > 0:
+            if suc_id == SUCURSAL_CBA:
+                price_map[p_id]["cochabamba"] = precio
+            elif suc_id == SUCURSAL_LPZ:
+                price_map[p_id]["la_paz"] = precio
                 
     prod_list = []
     for p in products:
