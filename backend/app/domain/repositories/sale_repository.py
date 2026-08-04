@@ -14,3 +14,9 @@ class ISaleRepository(BaseRepository[Sale], ABC):
     @abstractmethod
     async def find_last_by_sucursal(self, tenant_id: str, sucursal_id: str, session=None) -> Optional[Sale]:
         pass
+
+    @abstractmethod
+    async def find_recent_by_cashier(
+        self, tenant_id: str, cashier_id: str, since_time, session=None
+    ) -> List[Sale]:
+        pass

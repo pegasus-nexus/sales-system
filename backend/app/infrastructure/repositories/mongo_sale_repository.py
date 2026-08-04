@@ -27,3 +27,14 @@ class MongoSaleRepository(MongoBaseRepository[Sale], ISaleRepository):
             Sale.sucursal_id == sucursal_id,
             session=session
         ).sort(-Sale.created_at)
+
+    async def find_recent_by_cashier(
+        self, tenant_id: str, cashier_id: str, since_time, session=None
+    ) -> list[Sale]:
+        return await Sale.find(
+            Sale.tenant_id == tenant_id,
+            Sale.cashier_id == cashier_id,
+            Sale.created_at >= since_time,
+            Sale.anulada == False,
+            session=session
+        ).to_list()
