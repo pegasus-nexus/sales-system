@@ -57,27 +57,38 @@ class ProductService:
         from beanie.operators import In
         
         if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
-            invs = await Inventario.find(
-                In(Inventario.producto_id, p_ids), 
-                Inventario.sucursal_id == current_user.sucursal_id
-            ).to_list() if current_user.sucursal_id else []
+            if current_user.sucursal_id:
+                invs_cursor = Inventario.get_motor_collection().find({
+                    "producto_id": {"$in": p_ids},
+                    "sucursal_id": current_user.sucursal_id
+                }, {"producto_id": 1, "precio_sucursal": 1})
+                invs = await invs_cursor.to_list(length=None)
+            else:
+                invs = []
             
-            price_map = {
-                i.producto_id: float(i.precio_sucursal) 
-                for i in invs 
-                if i.precio_sucursal is not None and float(i.precio_sucursal) > 0
-            }
+            price_map = {}
+            for i in invs:
+                precio = i.get("precio_sucursal")
+                if precio is not None and float(str(precio)) > 0:
+                    price_map[str(i["producto_id"])] = float(str(precio))
+                    
             for p in products:
                 if str(p.id) in price_map:
                     p.precio_venta = price_map[str(p.id)]
                 p.precios_sucursales = {}
                 p.costo_producto = 0.0
         else:
-            invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
+            # OPTIMIZACIÓN: Evitar crear miles de modelos Pydantic usando motor crudo
+            invs_cursor = Inventario.get_motor_collection().find({
+                "producto_id": {"$in": p_ids}
+            }, {"producto_id": 1, "sucursal_id": 1, "precio_sucursal": 1})
+            invs = await invs_cursor.to_list(length=None)
+            
             p_map = {str(p.id): {} for p in products}
             for i in invs:
-                if i.precio_sucursal is not None:
-                    p_map[str(i.producto_id)][i.sucursal_id] = float(i.precio_sucursal)
+                precio = i.get("precio_sucursal")
+                if precio is not None:
+                    p_map[str(i["producto_id"])][str(i["sucursal_id"])] = float(str(precio))
             for p in products:
                 p.precios_sucursales = p_map.get(str(p.id), {})
 
