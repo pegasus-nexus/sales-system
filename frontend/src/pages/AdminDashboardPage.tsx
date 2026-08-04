@@ -116,8 +116,8 @@ export default function AdminDashboardPage() {
  {/* MRR Chart */}
  <div className="lg:col-span-2 bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-colors">
  <h3 className="text-base font-bold text-gray-900 mb-6">Crecimiento de MRR (Ingreso Recurrente)</h3>
- <div className="h-48 w-full">
- <ResponsiveContainer width="100%" height="100%">
+ <div className="h-48 w-full relative">
+ <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
  <AreaChart data={mrrTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
  <defs>
  <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
@@ -143,8 +143,8 @@ export default function AdminDashboardPage() {
  <h3 className="text-base font-bold text-gray-900 mb-2">Uso de Base de Datos (GB)</h3>
  <p className="text-xs text-gray-500 mb-4">Métricas simuladas por Tenant (Total Real: {totalDbGb.toFixed(2)} GB)</p>
  
- <div className="flex-1 min-h-[200px]">
- <ResponsiveContainer width="100%" height="100%">
+ <div className="h-52 w-full relative min-h-[200px]">
+ <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
  <PieChart>
  <Pie
  data={storageByTenant}
