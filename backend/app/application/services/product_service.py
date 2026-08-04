@@ -21,6 +21,22 @@ async def _enrich(product: Product) -> Product:
             product.categoria_nombre = cat.name
     return product
 
+async def _can_user_edit_prices(current_user: User) -> bool:
+    if current_user.role in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+        return True
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
+        from app.domain.models.sucursal import Sucursal
+        from beanie import PydanticObjectId
+        try:
+            suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+            if not suc:
+                suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+            if suc and any(h in (suc.nombre or "").lower() for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"]):
+                return True
+        except Exception:
+            pass
+    return False
+
 class ProductService:
     @staticmethod
     async def get_products_list(
@@ -165,8 +181,9 @@ class ProductService:
         if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="Not authorized")
 
-        if current_user.role == UserRole.ADMIN_SUCURSAL:
-            # ADMIN_SUCURSAL is restricted to updating product image_url and proveedores
+        can_edit_prices = await _can_user_edit_prices(current_user)
+        if current_user.role == UserRole.ADMIN_SUCURSAL and not can_edit_prices:
+            # Non-Heroínas ADMIN_SUCURSAL is restricted to updating product image_url and proveedores
             data = ProductUpdate(
                 image_url=data.image_url,
                 proveedores=data.proveedores,

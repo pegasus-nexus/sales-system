@@ -412,8 +412,18 @@ class ExcelImportService:
         if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
             raise HTTPException(status_code=403, detail="No autorizado para importar precios")
             
-        if current_user.role == UserRole.ADMIN_SUCURSAL and sucursal_id != current_user.sucursal_id:
-            raise HTTPException(status_code=403, detail="No tienes permisos para importar precios de otra sucursal")
+        if current_user.role == UserRole.ADMIN_SUCURSAL:
+            is_heroinas = False
+            if current_user.sucursal_id:
+                suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+                if not suc:
+                    suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+                if suc and any(h in (suc.nombre or "").lower() for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"]):
+                    is_heroinas = True
+            if not is_heroinas:
+                raise HTTPException(status_code=403, detail="Solo la administración general y el Admin de Heroínas pueden modificar o importar precios")
+            if sucursal_id != current_user.sucursal_id:
+                raise HTTPException(status_code=403, detail="No tienes permisos para importar precios de otra sucursal")
             
         if not filename.endswith((".xlsx", ".xls")):
             raise HTTPException(status_code=400, detail="Formato de archivo inválido. Solo se permite .xlsx o .xls")

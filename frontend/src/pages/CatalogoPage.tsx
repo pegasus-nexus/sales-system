@@ -68,14 +68,20 @@ export default function CatalogoPage() {
         return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
     }, [categories, categorySearch]);
     const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
-    const isBranchAdmin = user?.role === 'ADMIN_SUCURSAL';
-    const isEditor = isMatrizAdmin || isBranchAdmin;
+    const rawIsBranchAdmin = user?.role === 'ADMIN_SUCURSAL';
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ['sucursales'],
         queryFn: getSucursales,
-        enabled: isEditor
+        enabled: isMatrizAdmin || rawIsBranchAdmin
     });
+
+    const userSucName = (user?.sucursal_nombre || sucursales.find((s: any) => s.id === user?.sucursal_id)?.nombre || '').toLowerCase();
+    const isHeroinasAdmin = rawIsBranchAdmin && (userSucName.includes('heroina') || userSucName.includes('heroína') || userSucName.includes('hero'));
+    
+    // Only branch admins that are NOT Heroínas are restricted from editing prices
+    const isBranchAdmin = rawIsBranchAdmin && !isHeroinasAdmin;
+    const isEditor = isMatrizAdmin || rawIsBranchAdmin;
 
     const queryClient = useQueryClient();
 

@@ -7,6 +7,7 @@ export interface User {
     full_name?: string;
     tenant_id?: string;
     sucursal_id?: string;
+    sucursal_nombre?: string;
     is_active?: boolean;
     is_online?: boolean;
     last_active_text?: string;
