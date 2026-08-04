@@ -24,17 +24,21 @@ async def _enrich(product: Product) -> Product:
 async def _can_user_edit_prices(current_user: User) -> bool:
     if current_user.role in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
         return True
-    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
-        from app.domain.models.sucursal import Sucursal
-        from beanie import PydanticObjectId
-        try:
-            suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
-            if not suc:
-                suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
-            if suc and any(h in (suc.nombre or "").lower() for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"]):
-                return True
-        except Exception:
-            pass
+    if current_user.role == UserRole.ADMIN_SUCURSAL:
+        u_identifier = ((current_user.username or "") + " " + (current_user.full_name or "")).lower()
+        if any(h in u_identifier for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"]):
+            return True
+        if current_user.sucursal_id:
+            from app.domain.models.sucursal import Sucursal
+            from beanie import PydanticObjectId
+            try:
+                suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+                if not suc:
+                    suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+                if suc and any(h in (suc.nombre or "").lower() for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"]):
+                    return True
+            except Exception:
+                pass
     return False
 
 class ProductService:

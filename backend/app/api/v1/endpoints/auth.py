@@ -78,6 +78,18 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         user_dict["rubro"] = "RETAIL"
         user_dict["modulos_activos"] = ["INVENTARIO", "POS", "KARDEX"]
     
+    # Enrich sucursal_nombre if available
+    if current_user.sucursal_id:
+        from app.domain.models.sucursal import Sucursal
+        try:
+            suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+            if not suc:
+                suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+            if suc:
+                user_dict["sucursal_nombre"] = suc.nombre
+        except Exception:
+            pass
+
     # Asegurar que el ID sea string
     user_dict["id"] = str(current_user.id)
     user_dict["_id"] = str(current_user.id)

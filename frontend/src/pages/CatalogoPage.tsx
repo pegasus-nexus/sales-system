@@ -76,8 +76,19 @@ export default function CatalogoPage() {
         enabled: isMatrizAdmin || rawIsBranchAdmin
     });
 
-    const userSucName = (user?.sucursal_nombre || sucursales.find((s: any) => s.id === user?.sucursal_id)?.nombre || '').toLowerCase();
-    const isHeroinasAdmin = rawIsBranchAdmin && (userSucName.includes('heroina') || userSucName.includes('heroína') || userSucName.includes('hero'));
+    const userSucName = (
+        (user as any)?.sucursal_nombre ||
+        sucursales.find((s: any) => String(s.id || s._id) === String(user?.sucursal_id))?.nombre ||
+        (sucursales.find((s: any) => String(s.id || s._id) === String(user?.sucursal_id)) as any)?.name ||
+        ''
+    ).toLowerCase();
+    
+    const userIdentifier = ((user?.username || '') + ' ' + (user?.full_name || '')).toLowerCase();
+
+    const isHeroinasAdmin = rawIsBranchAdmin && (
+        userSucName.includes('heroina') || userSucName.includes('heroína') || userSucName.includes('hero') ||
+        userIdentifier.includes('heroina') || userIdentifier.includes('heroína') || userIdentifier.includes('hero')
+    );
     
     // Only branch admins that are NOT Heroínas are restricted from editing prices
     const isBranchAdmin = rawIsBranchAdmin && !isHeroinasAdmin;

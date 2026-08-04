@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from pymongo import UpdateOne
 from bson import ObjectId
 
+from beanie import PydanticObjectId
 from app.domain.models.product import Product
 from app.domain.models.category import Category
 from app.domain.models.user import User, UserRole
@@ -413,8 +414,9 @@ class ExcelImportService:
             raise HTTPException(status_code=403, detail="No autorizado para importar precios")
             
         if current_user.role == UserRole.ADMIN_SUCURSAL:
-            is_heroinas = False
-            if current_user.sucursal_id:
+            u_identifier = ((current_user.username or "") + " " + (current_user.full_name or "")).lower()
+            is_heroinas = any(h in u_identifier for h in ["heroina", "heroína", "heroinas", "heroínas", "hero"])
+            if not is_heroinas and current_user.sucursal_id:
                 suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
                 if not suc:
                     suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
