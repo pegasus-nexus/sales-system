@@ -32,74 +32,15 @@ async def get_products(
     categoria_id: Optional[str] = Query(default=None, description="Filtrar por categoría"),
     current_user: User = Depends(get_current_active_user)
 ):
-    from beanie.operators import RegEx
-    
-    skip = (page - 1) * limit
-    base_filter = []
-    
-    if current_user.role != UserRole.SUPERADMIN:
-        base_filter.append(Product.tenant_id == current_user.tenant_id)
-
-    if search and search.strip():
-        # Search by description or codigo_corto
-        import re
-        from beanie.operators import Or, RegEx
-        safe_search = re.escape(search.strip())
-        base_filter.append(
-            Or(
-                RegEx(Product.descripcion, safe_search, options="i"),
-                RegEx(Product.codigo_corto, safe_search, options="i")
-            )
-        )
-        
-    if categoria_id and categoria_id != "ALL":
-        base_filter.append(Product.categoria_id == categoria_id)
-
-    query = Product.find(*base_filter) if base_filter else Product.find_all()
-    
-    total = await query.count()
-    products = await query.skip(skip).limit(limit).to_list()
-        
-    p_ids = [str(p.id) for p in products]
-    from beanie.operators import In
-    
-    if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
-        invs = await Inventario.find(In(Inventario.producto_id, p_ids), Inventario.sucursal_id == current_user.sucursal_id).to_list() if current_user.sucursal_id else []
-        price_map = {i.producto_id: float(i.precio_sucursal) for i in invs if i.precio_sucursal is not None and float(i.precio_sucursal) > 0}
-        for p in products:
-            if str(p.id) in price_map:
-                p.precio_venta = price_map[str(p.id)]
-            p.precios_sucursales = {} # Hide prices of other branches
-            p.costo_producto = 0.0 # Hide product cost from branch users
-    else:
-        invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
-        p_map = {str(p.id): {} for p in products}
-        for i in invs:
-            if i.precio_sucursal is not None:
-                p_map[str(i.producto_id)][i.sucursal_id] = float(i.precio_sucursal)
-        for p in products:
-            p.precios_sucursales = p_map.get(str(p.id), {})
-
-    # Batch resolve category names in 1 query with ObjectId conversion
-    cat_ids = list(set([p.categoria_id for p in products if p.categoria_id]))
-    if cat_ids:
-        from bson import ObjectId
-        obj_ids = [ObjectId(cid) for cid in cat_ids if ObjectId.is_valid(cid)]
-        cats = await Category.find(In(Category.id, obj_ids)).to_list() if obj_ids else []
-        cat_map = {str(c.id): c.name for c in cats}
-        for p in products:
-            if p.categoria_id and str(p.categoria_id) in cat_map:
-                p.categoria_nombre = cat_map[str(p.categoria_id)]
-
-    items = products
-    
-    import math
-    return {
-        "items": items,
-        "total": total,
-        "page": page,
-        "pages": math.ceil(total / limit) if limit > 0 else 1
-    }
+    from app.application.services.product_service import ProductService
+    cat_id = categoria_id if categoria_id != "ALL" else None
+    return await ProductService.get_products_list(
+        current_user=current_user,
+        page=page,
+        limit=limit,
+        search=search,
+        category_id=cat_id
+    )
 
 
 @router.post("/products", response_model=Product)

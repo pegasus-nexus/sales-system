@@ -23,6 +23,81 @@ async def _enrich(product: Product) -> Product:
 
 class ProductService:
     @staticmethod
+    async def get_products_list(
+        current_user: User,
+        page: int = 1,
+        limit: int = 50,
+        search: Optional[str] = None,
+        category_id: Optional[str] = None,
+        active_only: bool = True
+    ) -> Dict[str, Any]:
+        tenant_id = current_user.tenant_id or "default"
+        skip = (page - 1) * limit if limit > 0 else 0
+        
+        query = Product.find(Product.tenant_id == tenant_id)
+        if active_only and current_user.role != UserRole.SUPERADMIN:
+            query = query.find(Product.is_active == True)
+            
+        if search:
+            query = query.find({
+                "$or": [
+                    {"descripcion": {"$regex": search, "$options": "i"}},
+                    {"codigo": {"$regex": search, "$options": "i"}},
+                    {"codigo_corto": {"$regex": search, "$options": "i"}}
+                ]
+            })
+            
+        if category_id:
+            query = query.find(Product.categoria_id == category_id)
+            
+        total = await query.count()
+        products = await query.skip(skip).limit(limit).to_list()
+        p_ids = [str(p.id) for p in products]
+        
+        from beanie.operators import In
+        
+        if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
+            invs = await Inventario.find(
+                In(Inventario.producto_id, p_ids), 
+                Inventario.sucursal_id == current_user.sucursal_id
+            ).to_list() if current_user.sucursal_id else []
+            
+            price_map = {
+                i.producto_id: float(i.precio_sucursal) 
+                for i in invs 
+                if i.precio_sucursal is not None and float(i.precio_sucursal) > 0
+            }
+            for p in products:
+                if str(p.id) in price_map:
+                    p.precio_venta = price_map[str(p.id)]
+                p.precios_sucursales = {}
+                p.costo_producto = 0.0
+        else:
+            invs = await Inventario.find(In(Inventario.producto_id, p_ids)).to_list()
+            p_map = {str(p.id): {} for p in products}
+            for i in invs:
+                if i.precio_sucursal is not None:
+                    p_map[str(i.producto_id)][i.sucursal_id] = float(i.precio_sucursal)
+            for p in products:
+                p.precios_sucursales = p_map.get(str(p.id), {})
+
+        cat_ids = list(set([p.categoria_id for p in products if p.categoria_id]))
+        if cat_ids:
+            obj_ids = [ObjectId(cid) for cid in cat_ids if ObjectId.is_valid(cid)]
+            cats = await Category.find(In(Category.id, obj_ids)).to_list() if obj_ids else []
+            cat_map = {str(c.id): c.name for c in cats}
+            for p in products:
+                if p.categoria_id and str(p.categoria_id) in cat_map:
+                    p.categoria_nombre = cat_map[str(p.categoria_id)]
+
+        return {
+            "items": products,
+            "total": total,
+            "page": page,
+            "pages": math.ceil(total / limit) if limit > 0 else 1
+        }
+
+    @staticmethod
     async def create_product(data: ProductCreate, current_user: User) -> Product:
         if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
             raise HTTPException(status_code=403, detail="Solo administradores de matriz pueden crear nuevos productos")
