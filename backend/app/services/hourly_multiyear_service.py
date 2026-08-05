@@ -188,7 +188,7 @@ async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filt
 
     res = await db.ventas_historicas_crudas.aggregate(pipeline).to_list(100)
     hourly_dict = {
-        f"{r['_id']:02d}:00": round(float(r["total"]), 2)
+        f"{r['_id']:02d}:00": round(float(str(r["total"])), 2)
         for r in res
         if r["_id"] is not None
     }
@@ -238,7 +238,7 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
     res = await db.sales.aggregate(pipeline).to_list(100)
     doc_count = len(res)
     hourly_dict = {
-        f"{r['_id']:02d}:00": round(float(r["total"]), 2)
+        f"{r['_id']:02d}:00": round(float(str(r["total"])), 2)
         for r in res
         if r["_id"] is not None
     }
