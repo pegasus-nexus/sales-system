@@ -161,6 +161,8 @@ export const getHourlyMultiyear = (fecha_referencia: string, sucursal?: string, 
     if (sucursal) params.append('sucursal', sucursal);
     if (fecha_anio1) params.append('fecha_anio1', fecha_anio1);
     if (fecha_anio2) params.append('fecha_anio2', fecha_anio2);
+    params.append('clear_cache', 'true');
+    params.append('_t', new Date().getTime().toString());
     return client<unknown>(`/analytics/hourly-multiyear?${params.toString()}`);
 };
 
