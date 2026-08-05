@@ -519,7 +519,7 @@ export function HourlyMultiyearChart({
                             <div className="flex items-baseline gap-2">
                                 <span className="text-2xl font-black">{formatBs(totalVendidoHoy)}</span>
                                 <span className="text-xs font-bold opacity-80">
-                                    {modo === 'festividad' ? 'Ventas Totales Festividad' : 'Ventas Totales del Día'}
+                                    {modo === 'festividad' ? 'Venta Neta Festividad' : 'Venta Neta del Día'}
                                 </span>
                             </div>
                         </div>

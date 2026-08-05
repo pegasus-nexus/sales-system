@@ -223,6 +223,27 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
     pipeline = [
         {"$match": match_stage},
         {
+            "$project": {
+                "created_at": 1,
+                "monto_neto": {
+                    "$cond": [
+                        {"$gt": [{"$ifNull": ["$descuento.valor", 0]}, 0]},
+                        {
+                            "$cond": [
+                                {"$eq": ["$descuento.tipo", "MONTO"]},
+                                {"$subtract": [{"$toDouble": "$total"}, {"$toDouble": "$descuento.valor"}]},
+                                {"$subtract": [
+                                    {"$toDouble": "$total"},
+                                    {"$multiply": [{"$toDouble": "$total"}, {"$divide": [{"$toDouble": "$descuento.valor"}, 100]}]}
+                                ]}
+                            ]
+                        },
+                        {"$toDouble": "$total"}
+                    ]
+                }
+            }
+        },
+        {
             "$group": {
                 "_id": {
                     "$hour": {
@@ -233,7 +254,7 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
                         }
                     }
                 },
-                "total": {"$sum": "$total"}
+                "total": {"$sum": "$monto_neto"}
             }
         }
     ]

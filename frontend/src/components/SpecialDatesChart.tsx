@@ -619,7 +619,7 @@ export default function SpecialDatesChart() {
                             {/* 5 TARJETAS KPIS CON CÁLCULO REAL */}
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {[
-                                    { title: "Ventas", val: formatBs(kpisMetrics.ventas.val), pctText: kpisMetrics.ventas.pctText, absText: kpisMetrics.ventas.absText, icon: DollarSign },
+                                    { title: "Venta Neta", val: formatBs(kpisMetrics.ventas.val), pctText: kpisMetrics.ventas.pctText, absText: kpisMetrics.ventas.absText, icon: DollarSign },
                                     { title: "Transacciones", val: kpisMetrics.transacciones.val.toLocaleString(), pctText: kpisMetrics.transacciones.pctText, absText: kpisMetrics.transacciones.absText, icon: Activity },
                                     { title: "Ticket Promedio", val: formatBs(kpisMetrics.ticketMedio.val), pctText: kpisMetrics.ticketMedio.pctText, absText: kpisMetrics.ticketMedio.absText, icon: Receipt },
                                     { title: "Margen Neto", val: formatBs(kpisMetrics.margen.val), pctText: kpisMetrics.margen.pctText, absText: kpisMetrics.margen.absText, icon: TrendingUp },
