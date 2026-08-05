@@ -31,6 +31,18 @@ const formatReadableDate = (dateStr: string) => {
     return dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 };
 
+const formatFullReadableDate = (dateStr?: string) => {
+    if (!dateStr || dateStr === "—") return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const dateObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    const dayName = dateObj.toLocaleDateString("es-ES", { weekday: 'short' });
+    const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1).replace('.', '');
+    const monthName = dateObj.toLocaleDateString("es-ES", { month: 'short' });
+    return `${capitalizedDay} ${parseInt(d)} ${monthName} ${y}`;
+};
+
 const getTodayDateString = () => {
     const d = new Date();
     const offset = d.getTimezoneOffset() * 60000;
@@ -411,7 +423,9 @@ export function HourlyMultiyearChart({
                             <span className="text-xs font-black text-indigo-700 block truncate">
                                 {modo === 'festividad' && fechasFestivas 
                                     ? `Actual: ${fechasFestivas.actual} • -1 Yr: ${fechasFestivas.past1} • -2 Yr: ${fechasFestivas.past2}`
-                                    : '2026 vs 2025 vs 2024'}
+                                    : meta?.f0_date && meta?.f1_date && meta?.f2_date
+                                        ? `${formatFullReadableDate(meta.f0_date)}  vs  ${formatFullReadableDate(meta.f1_date)}  vs  ${formatFullReadableDate(meta.f2_date)}`
+                                        : '2026 vs 2025 vs 2024'}
                             </span>
                         </div>
                     </div>

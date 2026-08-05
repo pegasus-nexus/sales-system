@@ -80,15 +80,13 @@ def get_holidays_for_year(year: int) -> Dict[date, str]:
 
 def _same_day_prev_year(ref: date, years_back: int) -> date:
     """
-    Devuelve exactamente el mismo día y mes del año anterior.
-    Maneja el caso especial del 29 de febrero.
+    Alineación por Día de la Semana (Miércoles vs Miércoles vs Miércoles):
+    - 1 año atrás (52 semanas): -364 días
+    - 2 años atrás (104 semanas): -728 días
+    Ejemplo:
+      Miércoles 05-Ago-2026 -> Miércoles 06-Ago-2025 -> Miércoles 07-Ago-2024
     """
-    target_year = ref.year - years_back
-    try:
-        return ref.replace(year=target_year)
-    except ValueError:
-        # 29-feb en año no bisiesto → 28-feb
-        return ref.replace(year=target_year, day=28)
+    return ref - timedelta(days=364 * years_back)
 
 
 async def _build_sucursal_filter(db, tenant_id: str, sucursal: str | None) -> Dict:
@@ -236,19 +234,51 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, f_date: date, suc_filters:
                 }
             },
         }},
-        {"$match": {"fecha_conv": {"$ne": None}, "monto": {"$gt": 0}}},
-        {"$project": {
-            "monto": 1,
-            "hora": {"$hour": {"date": "$fecha_conv", "timezone": "America/La_Paz"}},
-        }},
-        {"$group": {
-            "_id": "$hora",
-            "total": {"$sum": "$monto"},
-        }},
-        {"$sort": {"_id": 1}},
+    doc_count = sum(r["count"] for r in res if r["count"] is not None)
+    return hourly_dict, doc_count
+
+
+async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
+    """
+    Consulta sales (POS en vivo) para un día específico (08:00–23:00).
+    Aplica offset de timezone -04:00 (Bolivia) para convertir UTC created_at a Hora Local.
+    """
+    tz_offset_ms = -4 * 3600 * 1000
+
+    start_dt = datetime.combine(target_date, datetime.min.time())
+    end_dt = datetime.combine(target_date, datetime.max.time())
+
+    match_stage: Dict[str, Any] = {
+        "tenant_id": tenant_id,
+        "created_at": {"$gte": start_dt, "$lte": end_dt},
+        "estado": {"$ne": "anulado"},
+        "anulada": {"$ne": True}
+    }
+
+    suc_ids = suc_filters.get("suc_ids", [])
+    if suc_ids:
+        match_stage["sucursal_id"] = {"$in": suc_ids}
+
+    pipeline = [
+        {"$match": match_stage},
+        {
+            "$group": {
+                "_id": {
+                    "$hour": {
+                        "$dateAdd": {
+                            "startDate": "$created_at",
+                            "unit": "millisecond",
+                            "amount": tz_offset_ms
+                        }
+                    }
+                },
+                "total": {"$sum": "$total"}
+            }
+        }
     ]
 
     res = await db.sales.aggregate(pipeline).to_list(100)
+    doc_count = len(res)
     hourly_dict = {
         f"{r['_id']:02d}:00": round(float(r["total"]), 2)
         for r in res
@@ -269,7 +299,7 @@ async def get_hourly_multiyear(
             tenant_id = "69cd7f0a8f3f6866d4cfbb62"
         db = await get_raw_db()
 
-        # ── Fechas ──────────────────────────────────────────────────────────
+        # ── Fechas (Alineación por día de la semana: 364d / 728d) ────────────
         from datetime import date as date_type
         import pandas as pd
         f0 = pd.to_datetime(fecha_referencia).date() if not isinstance(fecha_referencia, date_type) else fecha_referencia
@@ -277,12 +307,12 @@ async def get_hourly_multiyear(
         if fecha_anio1:
             f1 = pd.to_datetime(fecha_anio1).date() if not isinstance(fecha_anio1, date_type) else fecha_anio1
         else:
-            f1 = _same_day_prev_year(f0, 1)
+            f1 = f0 - timedelta(days=364)  # 52 semanas exactas (ej: Miércoles vs Miércoles)
 
         if fecha_anio2:
             f2 = pd.to_datetime(fecha_anio2).date() if not isinstance(fecha_anio2, date_type) else fecha_anio2
         else:
-            f2 = _same_day_prev_year(f0, 2)
+            f2 = f0 - timedelta(days=728)  # 104 semanas exactas (ej: Miércoles vs Miércoles)
 
         # ── Feriados ─────────────────────────────────────────────────────────
         holidays_curr = get_holidays_for_year(f0.year)
