@@ -195,48 +195,6 @@ async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filt
     return hourly_dict, doc_count
 
 
-async def _fetch_day_hourly_sales(db, tenant_id: str, f_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
-    """
-    Obtiene el desglose horario REAL y el conteo de documentos desde sales (ventas POS en vivo, año actual).
-    """
-    from datetime import timezone as tz
-    import pandas as pd
-
-    start_local = pd.Timestamp(f_date, tz="America/La_Paz")
-    end_local = start_local + pd.Timedelta(days=1)
-    start_utc = start_local.tz_convert("UTC").to_pydatetime()
-    end_utc = end_local.tz_convert("UTC").to_pydatetime()
-
-    match: Dict = {
-        "tenant_id": tenant_id,
-        "created_at": {"$gte": start_utc, "$lt": end_utc},
-        "anulada": {"$ne": True},
-        "estado": {"$ne": "anulado"},
-    }
-
-    if suc_filters["sales_sucursal_id"]:
-        match["sucursal_id"] = suc_filters["sales_sucursal_id"]
-    else:
-        match["sucursal"] = suc_filters["sales_sucursal_text"]
-
-    doc_count = await db.sales.count_documents(match)
-
-    pipeline = [
-        {"$match": match},
-        {"$project": {
-            "monto": {"$toDouble": "$total"},
-            "fecha_conv": {
-                "$convert": {
-                    "input": "$created_at",
-                    "to": "date",
-                    "onError": None,
-                    "onNull": None,
-                }
-            },
-        }},
-    doc_count = sum(r["count"] for r in res if r["count"] is not None)
-    return hourly_dict, doc_count
-
 
 async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
     """
