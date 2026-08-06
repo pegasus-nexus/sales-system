@@ -321,6 +321,14 @@ export default function SpecialDatesChart() {
 
         const totalActualVentas = heroActualSales + recoActualSales + calaActualSales;
 
+        const docsA1 = meta?.docs_a1 ?? 0;
+        const transA1 = docsA1 > 0 ? docsA1 : (heroPast1Sales > 0 ? Math.round(heroPast1Sales / 48.20) : 0);
+        const ticketA1 = transA1 > 0 ? heroPast1Sales / transA1 : 0;
+
+        const docsA2 = meta?.docs_a2 ?? 0;
+        const transA2 = docsA2 > 0 ? docsA2 : (heroPast2Sales > 0 ? Math.round(heroPast2Sales / 42.10) : 0);
+        const ticketA2 = transA2 > 0 ? heroPast2Sales / transA2 : 0;
+
         return [
             { 
                 nombre: "Heroínas", 
@@ -334,17 +342,17 @@ export default function SpecialDatesChart() {
                 },
                 past1: heroPast1Sales > 0 ? { 
                     ventas: heroPast1Sales, 
-                    ticket: 48.20, 
+                    ticket: ticketA1, 
                     margen: heroPast1Sales * 0.15, 
-                    trans: Math.round(heroPast1Sales / 48.20) || 68, 
-                    clientes: Math.round((heroPast1Sales / 48.20) * 0.85) || 58 
+                    trans: transA1, 
+                    clientes: Math.round(transA1 * 0.85) 
                 } : null,
                 past2: heroPast2Sales > 0 ? { 
                     ventas: heroPast2Sales, 
-                    ticket: 42.10, 
+                    ticket: ticketA2, 
                     margen: heroPast2Sales * 0.15, 
-                    trans: Math.round(heroPast2Sales / 42.10) || 0, 
-                    clientes: Math.round((heroPast2Sales / 42.10) * 0.85) || 0 
+                    trans: transA2, 
+                    clientes: Math.round(transA2 * 0.85) 
                 } : null,
                 pctYoY: heroPast1Sales > 0 ? ((heroActualSales - heroPast1Sales) / heroPast1Sales) * 100 : 0,
             },
@@ -377,7 +385,7 @@ export default function SpecialDatesChart() {
                 pctYoY: 0,
             }
         ];
-    }, [totalReal, totalAnio1, totalAnio2, sucursal]);
+    }, [totalReal, totalAnio1, totalAnio2, sucursal, meta]);
 
     const SelectedIcon = ICON_MAP[selectedHoliday?.icon] || Calendar;
 
