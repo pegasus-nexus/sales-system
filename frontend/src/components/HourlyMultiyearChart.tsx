@@ -529,11 +529,14 @@ export function HourlyMultiyearChart({
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-wider opacity-75">2025 (Hace 1 Año)</p>
                             {totalVendidoAnio1 > 0 ? (
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-xl font-black text-slate-800">{formatBs(totalVendidoAnio1)}</span>
-                                    <span className={cn("text-xs font-black", (varAnio1 ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700")}>
-                                        {varAnio1 !== null ? `${varAnio1 >= 0 ? '▲ +' : '▼ '}${varAnio1.toFixed(1)}%` : '—'}
-                                    </span>
+                                <div className="flex flex-col">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-xl font-black text-slate-800">{formatBs(totalVendidoAnio1)}</span>
+                                        <span className={cn("text-xs font-black", (varAnio1 ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700")}>
+                                            {varAnio1 !== null ? `${varAnio1 >= 0 ? '▲ +' : '▼ '}${varAnio1.toFixed(1)}%` : '—'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] font-bold opacity-75">Venta Neta Histórica</span>
                                 </div>
                             ) : (
                                 <p className="text-xs font-bold text-slate-500 italic">Sin registros para esta festividad (2025)</p>
@@ -545,11 +548,14 @@ export function HourlyMultiyearChart({
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-wider opacity-75">2024 (Hace 2 Años)</p>
                             {totalVendidoAnio2 > 0 ? (
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-xl font-black text-slate-800">{formatBs(totalVendidoAnio2)}</span>
-                                    <span className={cn("text-xs font-black", (varAnio2 ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700")}>
-                                        {varAnio2 !== null ? `${varAnio2 >= 0 ? '▲ +' : '▼ '}${varAnio2.toFixed(1)}%` : '—'}
-                                    </span>
+                                <div className="flex flex-col">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-xl font-black text-slate-800">{formatBs(totalVendidoAnio2)}</span>
+                                        <span className={cn("text-xs font-black", (varAnio2 ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700")}>
+                                            {varAnio2 !== null ? `${varAnio2 >= 0 ? '▲ +' : '▼ '}${varAnio2.toFixed(1)}%` : '—'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] font-bold opacity-75">Venta Neta Histórica</span>
                                 </div>
                             ) : (
                                 <p className="text-xs font-bold text-slate-500 italic">Sin registros para esta festividad (2024)</p>
