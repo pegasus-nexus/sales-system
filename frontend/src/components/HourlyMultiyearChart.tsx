@@ -279,6 +279,20 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+const getBoliviaCurrentHourStr = () => {
+    try {
+        const options: Intl.DateTimeFormatOptions = {
+            timeZone: 'America/La_Paz',
+            hour: '2-digit',
+            hour12: false
+        };
+        const h = new Intl.DateTimeFormat('es-BO', options).format(new Date());
+        return `${String(h).padStart(2, '0')}:00`;
+    } catch (e) {
+        return `${String(new Date().getHours()).padStart(2, '0')}:00`;
+    }
+};
+
 // ───────────────────────────────────────────────────────────────────────────────
 // Componente principal ÚNICO REUTILIZABLE
 // ───────────────────────────────────────────────────────────────────────────────
@@ -398,7 +412,7 @@ export function HourlyMultiyearChart({
         document.body.removeChild(link);
     }, [renderedData, fechaRef]);
 
-    const currentHourStr = `${String(new Date().getHours()).padStart(2, '0')}:00`;
+    const currentHourStr = getBoliviaCurrentHourStr();
 
     return (
         <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-sm border border-gray-100 flex flex-col h-full space-y-5">

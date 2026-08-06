@@ -325,11 +325,17 @@ async def get_hourly_multiyear(
         is_today = (f0 == now_bo.date())
         current_hour = now_bo.hour
 
-        for hora_str, val in {**gr0_hist, **gr0_sales}.items():
+        for hora_str, val in gr0_hist.items():
             h_int = int(hora_str.split(":")[0])
             if is_today and h_int > current_hour:
-                continue  # Ignorar datos del futuro (ej. importados por error para hoy)
-            gr0[hora_str] = gr0.get(hora_str, 0.0) + val
+                continue
+            gr0[hora_str] = round(gr0.get(hora_str, 0.0) + val, 2)
+
+        for hora_str, val in gr0_sales.items():
+            h_int = int(hora_str.split(":")[0])
+            if is_today and h_int > current_hour:
+                continue
+            gr0[hora_str] = round(gr0.get(hora_str, 0.0) + val, 2)
 
         if es_reco or es_cala:
             # RECOLETA / CALACOTO:
