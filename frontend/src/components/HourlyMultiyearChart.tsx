@@ -610,7 +610,7 @@ export function HourlyMultiyearChart({
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <ComposedChart data={renderedData} margin={{ top: 25, right: 20, left: 35, bottom: 10 }}>
+                        <ComposedChart data={renderedData} barGap={1} barCategoryGap="20%" margin={{ top: 25, right: 20, left: 35, bottom: 10 }}>
                             <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
                             <XAxis
                                 dataKey="hora"
