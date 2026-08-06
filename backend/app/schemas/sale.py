@@ -48,6 +48,8 @@ class SaleCreate(BaseModel):
     cliente: Optional[ClienteIn] = None
     vendedor_id: Optional[str] = None
     vendedor_name: Optional[str] = None
+    idempotency_key: Optional[str] = None
+    confirm_duplicate: bool = False
 
 
 class SalesPaginated(BaseModel):

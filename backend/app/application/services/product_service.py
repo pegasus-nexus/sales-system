@@ -76,7 +76,8 @@ class ProductService:
         
         from beanie.operators import In
         
-        if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.USER] or current_user.sucursal_id:
+        can_edit_prices = await _can_user_edit_prices(current_user)
+        if not can_edit_prices:
             if current_user.sucursal_id:
                 invs_cursor = Inventario.get_motor_collection().find({
                     "producto_id": {"$in": p_ids},

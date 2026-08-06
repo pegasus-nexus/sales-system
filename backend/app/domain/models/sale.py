@@ -3,6 +3,7 @@ from enum import Enum
 from beanie import Document
 from pydantic import BaseModel, Field
 from datetime import datetime
+from pymongo import IndexModel
 from .base import DecimalMoney
 
 class EstadoPago(str, Enum):
@@ -71,6 +72,7 @@ class Sale(Document):
     anulada: bool = False
     estado_pago: EstadoPago = EstadoPago.PAGADO
     factura_emitida: bool = False
+    idempotency_key: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # ── Auditoría de anulación ────────────────────────────────────────────────
@@ -108,6 +110,7 @@ class Sale(Document):
         indexes = [
             "tenant_id", "created_at", "cliente_id", "cashier_id",
             [("tenant_id", 1), ("created_at", -1)],
-            [("tenant_id", 1), ("sucursal_id", 1), ("created_at", -1)]
+            [("tenant_id", 1), ("sucursal_id", 1), ("created_at", -1)],
+            IndexModel([("tenant_id", 1), ("idempotency_key", 1)], unique=True, partialFilterExpression={"idempotency_key": {"$type": "string"}})
         ]
 

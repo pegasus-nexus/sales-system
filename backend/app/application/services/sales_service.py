@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import HTTPException
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from decimal import Decimal
 
 from app.domain.models.sale import Sale, SaleItem, PagoItem, ClienteInfo, QRInfo, EstadoPago
@@ -37,25 +38,42 @@ class SalesService:
         tenant_id = current_user.tenant_id or "default"
         sucursal_id = current_user.sucursal_id or sale_in.sucursal_id or "CENTRAL"
 
-        # ── Lock Anti-Duplicado (Ventana de 4 segundos) ──────────────────────
-        four_sec_ago = datetime.utcnow() - timedelta(seconds=4)
+        # ── Lock Anti-Duplicado por Idempotency Key (Enterprise Standard) ─────
+        if sale_in.idempotency_key:
+            existing_sale = await Sale.find_one({
+                "tenant_id": tenant_id,
+                "idempotency_key": sale_in.idempotency_key
+            })
+            if existing_sale:
+                logger.warning(
+                    f"🔒 Anti-Duplicado: Venta duplicada interceptada pre-transacción por Idempotency Key. "
+                    f"Cajero={current_user.username}, IdempotencyKey={sale_in.idempotency_key}"
+                )
+                return existing_sale
+
+        # ── Lock Anti-Duplicado Secundario (Ventana de 5 segundos) ──────────────
+        five_sec_ago = datetime.utcnow() - timedelta(seconds=5)
         new_items_summary = sorted([(i.producto_id, i.cantidad) for i in sale_in.items])
 
-        recent_sales = await Sale.find(
-            Sale.tenant_id == tenant_id,
-            Sale.cashier_id == str(current_user.id),
-            Sale.created_at >= four_sec_ago,
-            Sale.anulada == False
-        ).to_list()
+        recent_sales = await Sale.find({
+            "tenant_id": tenant_id,
+            "cashier_id": str(current_user.id),
+            "created_at": {"$gte": five_sec_ago},
+            "anulada": False
+        }).to_list()
 
         for recent in recent_sales:
             recent_items_summary = sorted([(i.producto_id, i.cantidad) for i in recent.items])
             if recent_items_summary == new_items_summary:
-                logger.warning(
-                    f"🔒 Anti-Duplicado: Venta duplicada bloqueada por solicitud repetida en menos de 4s. "
-                    f"Cajero={current_user.username}, SaleID={recent.id}"
-                )
-                return recent
+                if not getattr(sale_in, "confirm_duplicate", False):
+                    logger.warning(
+                        f"🔒 Anti-Duplicado: Venta idéntica bloqueada en ventana de 5s sin confirmación. "
+                        f"Cajero={current_user.username}, SaleID={recent.id}"
+                    )
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Se detectó una venta idéntica realizada recientemente. Confirma si deseas registrar una nueva venta igual."
+                    )
 
         client = get_client()
 
@@ -256,6 +274,7 @@ class SalesService:
                         cashier_name=current_user.full_name or current_user.username,
                         vendedor_id=sale_in.vendedor_id,
                         vendedor_name=sale_in.vendedor_name,
+                        idempotency_key=sale_in.idempotency_key,
                     )
                     await SalesService._get_sale_repo().add(sale, session=session)
 
@@ -447,7 +466,21 @@ class SalesService:
                     return sale
 
         # ── Ejecutar con reintento automático ante WriteConflict ──────────────
-        sale = await retry_on_write_conflict(_run_transaction)
+        try:
+            sale = await retry_on_write_conflict(_run_transaction)
+        except DuplicateKeyError:
+            logger.warning(
+                f"🔒 Anti-Duplicado: Venta duplicada bloqueada por Idempotency Key (DuplicateKeyError). "
+                f"Cajero={current_user.username}, IdempotencyKey={sale_in.idempotency_key}"
+            )
+            existing_sale = await Sale.find_one({
+                "tenant_id": tenant_id,
+                "idempotency_key": sale_in.idempotency_key
+            })
+            if existing_sale:
+                return existing_sale
+            else:
+                raise HTTPException(status_code=409, detail="Venta duplicada detectada y bloqueada.")
 
         from app.application.services.sales_sync_service import SalesSyncService
         SalesSyncService.sync_sale_to_historical_background(sale)

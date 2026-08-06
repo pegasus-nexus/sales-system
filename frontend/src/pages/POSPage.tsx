@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
@@ -11,7 +11,7 @@ import {
     ShoppingCart, Search, Plus, Minus, Trash2,
     CreditCard, DollarSign, QrCode, X, CheckCircle2,
     Loader2, Tag, Package, ChevronUp, ChevronDown,
-    Lock, User as UserIcon,
+    Lock, User as UserIcon, AlertTriangle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocalStorage } from 'usehooks-ts';
@@ -243,6 +243,19 @@ export default function POSPage() {
         return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     }, [filtered, currentPage]);
 
+    const isSubmittingRef = useRef(false);
+    const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
+
+    const resetSaleState = () => {
+        idempotencyKeyRef.current = crypto.randomUUID();
+        isSubmittingRef.current = false;
+        setPendingConfirmDuplicate(false);
+        setShowDuplicateWarning(false);
+        reset();
+    };
+
     const saleMut = useMutation({
         mutationFn: () => client<Sale>('/ventas', {
             body: {
@@ -267,8 +280,13 @@ export default function POSPage() {
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
                 send_whatsapp: sendWhatsApp && (!!cliente.telefono || !!cliente.cliente_id),
+                idempotency_key: idempotencyKeyRef.current,
+                confirm_duplicate: pendingConfirmDuplicate,
             },
         }),
+        onSettled: () => {
+            isSubmittingRef.current = false;
+        },
         onSuccess: (data) => {
             // Invalidar todos los almacenes de la sucursal para actualizar stock
             almacenes.forEach(a => {
@@ -277,8 +295,32 @@ export default function POSPage() {
             qc.invalidateQueries({ queryKey: ['pos-stats'] });
             setLastSale(data);
             setSuccess(true);
+            setPendingConfirmDuplicate(false);
         },
     });
+
+    const executeSale = (confirmedDuplicate = false) => {
+        if (isSubmittingRef.current) return;
+
+        if (lastSale && !confirmedDuplicate) {
+            const lastTime = lastSale.created_at ? new Date(lastSale.created_at).getTime() : Date.now();
+            const timeDiff = Date.now() - lastTime;
+            if (timeDiff < 20000) {
+                const currentItemsSorted = items.map(i => `${i.product._id}:${i.quantity}`).sort().join(',');
+                const lastItemsSorted = lastSale.items.map(i => `${i.producto_id}:${i.cantidad}`).sort().join(',');
+                if (currentItemsSorted === lastItemsSorted && currentItemsSorted.length > 0) {
+                    setConfirmSale(false);
+                    setShowDuplicateWarning(true);
+                    return;
+                }
+            }
+        }
+
+        isSubmittingRef.current = true;
+        setConfirmSale(false);
+        setShowDuplicateWarning(false);
+        saleMut.mutate();
+    };
 
     const totalVal = total();
     const cubierto = totalCubierto();
@@ -589,7 +631,7 @@ export default function POSPage() {
                             <button onClick={() => parkTicket()} className="shrink-0 text-gray-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors text-[10px] font-bold border border-gray-200 hover:border-indigo-200 bg-white" title="Parquear ticket en espera">
                                 Parquear
                             </button>
-                            <button onClick={() => { reset(); }} className="shrink-0 text-gray-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors" title="Vaciar ticket">
+                            <button onClick={() => { resetSaleState(); }} className="shrink-0 text-gray-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors" title="Vaciar ticket">
                                 <X size={13} />
                             </button>
                         </>
@@ -1078,8 +1120,40 @@ export default function POSPage() {
 
                             <div className="flex gap-2 w-full">
                                 <button onClick={() => setConfirmSale(false)} className="flex-1 py-2 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
-                                <button onClick={() => { setConfirmSale(false); saleMut.mutate(); }} disabled={saleMut.isPending} className="flex-1 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2">
-                                    {saleMut.isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Confirmar
+                                <button onClick={() => executeSale(false)} disabled={saleMut.isPending || isSubmittingRef.current} className="flex-1 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2">
+                                    {saleMut.isPending || isSubmittingRef.current ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Confirmar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Modal de Advertencia de Venta Idéntica Consecutiva */}
+            <AnimatePresence>
+                {showDuplicateWarning && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-200">
+                            <div className="flex items-center gap-3 text-amber-600 mb-4">
+                                <AlertTriangle size={28} />
+                                <h3 className="text-lg font-bold text-gray-900">¿Registrar segunda venta idéntica?</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Acabas de cobrar un ticket con los <strong>mismos productos y cantidades</strong> hace unos instantes.
+                            </p>
+                            <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 mb-6 text-xs text-amber-800">
+                                Esta alerta evita cobros duplicados por error o escaneos repetidos. Si el cliente realmente lleva los mismos productos, confirma a continuación.
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setShowDuplicateWarning(false)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
+                                    Cancelar
+                                </button>
+                                <button onClick={() => {
+                                    setPendingConfirmDuplicate(true);
+                                    setShowDuplicateWarning(false);
+                                    executeSale(true);
+                                }} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-sm">
+                                    Sí, es otra venta
                                 </button>
                             </div>
                         </motion.div>
@@ -1142,7 +1216,7 @@ export default function POSPage() {
                                         saleMut.reset();
                                         setLastSale(null); 
                                         setSuccess(false); 
-                                        reset(); 
+                                        resetSaleState(); 
                                     }} 
                                     type="button"
                                     className="w-full py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
