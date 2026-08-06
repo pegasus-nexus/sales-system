@@ -260,7 +260,7 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
     ]
 
     res = await db.sales.aggregate(pipeline).to_list(100)
-    doc_count = len(res)
+    doc_count = await db.sales.count_documents(match_stage)
     hourly_dict = {
         f"{r['_id']:02d}:00": round(float(str(r["total"])), 2)
         for r in res

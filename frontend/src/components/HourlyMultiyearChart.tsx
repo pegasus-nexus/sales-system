@@ -44,9 +44,18 @@ const formatFullReadableDate = (dateStr?: string) => {
 };
 
 const getTodayDateString = () => {
-    const d = new Date();
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+    try {
+        const options: Intl.DateTimeFormatOptions = {
+            timeZone: 'America/La_Paz',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        };
+        return new Intl.DateTimeFormat('sv-SE', options).format(new Date());
+    } catch (e) {
+        const d = new Date();
+        return d.toISOString().split('T')[0];
+    }
 };
 
 const getEasterSunday = (year: number): Date => {
