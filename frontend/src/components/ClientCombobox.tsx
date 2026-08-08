@@ -48,6 +48,11 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                         <span className="text-xs font-bold text-indigo-900 truncate">{selectedClient.razon_social}</span>
                         {selectedClient.telefono && <span className="text-[10px] text-indigo-600 flex items-center gap-1"><Phone size={8}/> {selectedClient.telefono}</span>}
                     </div>
+                    {selectedClient.is_miembro_comunidad && (
+                        <div className="ml-2 px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-[9px] font-black uppercase rounded shadow-sm border border-yellow-500 whitespace-nowrap">
+                            MIEMBRO COMUNIDAD
+                        </div>
+                    )}
                 </div>
                 {!disabled && (
                     <button onClick={onClear} className="w-6 h-6 rounded flex items-center justify-center text-indigo-400 hover:text-red-500 hover:bg-indigo-100 transition-colors">
@@ -97,7 +102,8 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                             telefono: '',
                                             nit: '',
                                             email: '',
-                                            es_factura: false
+                                            es_factura: false,
+                                            is_miembro_comunidad: false
                                         });
                                         setOpen(false);
                                     }}
@@ -118,7 +124,8 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                                 telefono: c.telefono || '',
                                                 nit: c.nit_ci || '',
                                                 email: c.email || '',
-                                                es_factura: !!c.nit_ci
+                                                es_factura: !!c.nit_ci,
+                                                is_miembro_comunidad: !!c.is_miembro_comunidad
                                             });
                                             setOpen(false);
                                             setSearch('');
@@ -126,7 +133,14 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                         className="px-3 py-2 flex items-center justify-between hover:bg-gray-50 cursor-pointer group"
                                     >
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{c.nombre}</span>
+                                            <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                                {c.nombre}
+                                                {c.is_miembro_comunidad && (
+                                                    <span className="bg-yellow-100 text-yellow-800 text-[9px] px-1.5 py-0.5 rounded border border-yellow-200">
+                                                        COMUNIDAD
+                                                    </span>
+                                                )}
+                                            </span>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 {c.telefono && <span className="text-[10px] text-gray-500 flex items-center gap-0.5"><Phone size={8}/> {c.telefono}</span>}
                                                 {c.nit_ci && <span className="text-[10px] text-gray-500 border border-gray-200 rounded px-1">NIT: {c.nit_ci}</span>}

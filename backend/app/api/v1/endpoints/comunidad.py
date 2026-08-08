@@ -48,6 +48,31 @@ async def reclamar_premio(data: ReclamoInput, request: Request, tenant_id: str =
     user = await ComunidadService.reclamar_premio(tenant_id, data)
     return {"status": "success", "user": user}
 
+class MiembroWebInput(BaseModel):
+    nombre: str
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+
+@router.post("/register-web")
+async def register_web_member(data: MiembroWebInput, request: Request, tenant_id: str = "default"):
+    """
+    Registra un cliente directamente desde la página web (nueva comunidad unificada).
+    """
+    if not data.telefono and not data.email:
+        raise HTTPException(status_code=400, detail="Debe proporcionar un teléfono o email")
+        
+    ip = request.client.host if request.client else "Unknown"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    await ComunidadService.registrar_visita(tenant_id, ip, user_agent, "/register-web")
+    
+    cliente = await ComunidadService.registrar_miembro_web(tenant_id, data.dict())
+    return {
+        "status": "success", 
+        "cliente_id": str(cliente.id),
+        "numero_tarjeta": cliente.numero_tarjeta,
+        "nombre": cliente.nombre
+    }
+
 
 # --- Endpoints Privados (Para el Administrador en SalesSystem) ---
 
@@ -65,10 +90,21 @@ async def get_stats(current_user: User = Depends(get_current_active_user)):
 @router.get("/users")
 async def get_users(limit: int = 100, skip: int = 0, current_user: User = Depends(get_current_active_user)):
     """
-    Lista de usuarios registrados en la comunidad.
+    Lista de usuarios registrados en la comunidad (Antigua campaña FEXCO).
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
          raise HTTPException(status_code=403, detail="No tienes permisos para ver los usuarios de comunidad")
          
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_users(tenant_id, limit, skip)
+
+@router.get("/miembros")
+async def get_miembros(limit: int = 100, skip: int = 0, current_user: User = Depends(get_current_active_user)):
+    """
+    Lista de clientes oficiales etiquetados como miembros de la comunidad web.
+    """
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+         raise HTTPException(status_code=403, detail="No tienes permisos")
+         
+    tenant_id = current_user.tenant_id or "default"
+    return await ComunidadService.get_miembros_comunidad(tenant_id, limit, skip)

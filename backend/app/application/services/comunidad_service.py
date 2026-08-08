@@ -78,6 +78,46 @@ class ComunidadService:
         return user
 
     @staticmethod
+    async def registrar_miembro_web(tenant_id: str, data: dict):
+        """
+        Registra un cliente desde la página web y lo etiqueta como miembro de la comunidad
+        generando su número de tarjeta de fidelización.
+        """
+        from app.domain.models.cliente import Cliente
+        import random
+        import string
+
+        telefono = data.get("telefono")
+        email = data.get("email")
+        
+        # Buscar cliente existente por teléfono o email
+        cliente = None
+        if telefono:
+            cliente = await Cliente.find_one({"tenant_id": tenant_id, "telefono": telefono})
+        if not cliente and email:
+            cliente = await Cliente.find_one({"tenant_id": tenant_id, "email": email})
+
+        if not cliente:
+            cliente = Cliente(
+                tenant_id=tenant_id,
+                nombre=data.get("nombre", "Usuario Web"),
+                telefono=telefono,
+                email=email,
+                is_miembro_comunidad=True
+            )
+        else:
+            cliente.nombre = data.get("nombre", cliente.nombre)
+            cliente.is_miembro_comunidad = True
+            
+        # Generar número de tarjeta si no tiene
+        if not cliente.numero_tarjeta:
+            random_code = ''.join(random.choices(string.digits, k=6))
+            cliente.numero_tarjeta = f"TAB-{random_code}"
+
+        await cliente.save()
+        return cliente
+
+    @staticmethod
     async def get_stats(tenant_id: str):
         """
         Obtiene estadísticas para el administrador.
@@ -101,4 +141,12 @@ class ComunidadService:
     async def get_users(tenant_id: str, limit: int = 100, skip: int = 0) -> List[ComunidadUser]:
         return await ComunidadUser.find(
             ComunidadUser.tenant_id == tenant_id
+        ).sort("-created_at").skip(skip).limit(limit).to_list()
+
+    @staticmethod
+    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0):
+        from app.domain.models.cliente import Cliente
+        return await Cliente.find(
+            Cliente.tenant_id == tenant_id,
+            Cliente.is_miembro_comunidad == True
         ).sort("-created_at").skip(skip).limit(limit).to_list()

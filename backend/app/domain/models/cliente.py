@@ -26,6 +26,11 @@ class Cliente(Document):
     preferencias_alimenticias: List[str] = Field(default_factory=list)
     datos_crm: Dict[str, Any] = Field(default_factory=dict)
     
+    # Fidelización / Comunidad
+    is_miembro_comunidad: bool = False
+    numero_tarjeta: Optional[str] = None
+    puntos_fidelizacion: int = 0
+    
     total_compras: DecimalMoney = DecimalMoney("0.0")
     cantidad_compras: int = 0
     ultima_compra_at: Optional[datetime] = None

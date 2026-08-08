@@ -20,9 +20,18 @@ export default function ComunidadPage() {
         }
     });
 
+    const { data: miembros, isLoading: miembrosLoading, refetch: refetchMiembros } = useQuery({
+        queryKey: ['comunidad-miembros'],
+        queryFn: async () => {
+            const res = await client<any>('/comunidad/miembros?limit=50');
+            return res;
+        }
+    });
+
     const handleRefresh = () => {
         refetchStats();
         refetchUsers();
+        refetchMiembros();
     };
 
     return (
@@ -80,8 +89,58 @@ export default function ComunidadPage() {
 
             {/* Users Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
+                <div className="p-5 border-b border-gray-100 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900">Miembros de la Comunidad Web</h2>
+                    <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold">NUEVO</span>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-600">
+                        <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4">Cliente</th>
+                                <th className="px-6 py-4">Teléfono</th>
+                                <th className="px-6 py-4">Tarjeta Taboada</th>
+                                <th className="px-6 py-4">Puntos</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {miembrosLoading ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
+                                </tr>
+                            ) : miembros?.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
+                                </tr>
+                            ) : (
+                                miembros?.map((miembro: any) => (
+                                    <tr key={miembro._id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-3">
+                                            <div className="font-bold text-gray-900">{miembro.nombre}</div>
+                                            <div className="text-xs text-gray-400">{miembro.email || 'Sin correo'}</div>
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-700">{miembro.telefono}</td>
+                                        <td className="px-6 py-3">
+                                            <span className="font-mono bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg border border-blue-100 shadow-sm">
+                                                {miembro.numero_tarjeta || 'Sin Tarjeta'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-amber-500">
+                                            {miembro.puntos_fidelizacion} pts
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* FEXCO Users Table */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
                 <div className="p-5 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">Últimos Registros</h2>
+                    <h2 className="text-lg font-bold text-gray-900">Historial Campaña FEXCO</h2>
                 </div>
                 
                 <div className="overflow-x-auto">
