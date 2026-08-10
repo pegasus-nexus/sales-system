@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
 from app.application.services.comunidad_service import ComunidadService, ReclamoInput
 from app.domain.models.comunidad import ComunidadUser
 from app.infrastructure.auth import get_current_active_user
