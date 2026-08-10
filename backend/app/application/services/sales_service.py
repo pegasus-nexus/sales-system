@@ -3,6 +3,8 @@ from app.infrastructure.core.config import settings
 import math
 import logging
 import asyncio
+import random
+import string
 from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import HTTPException
@@ -301,6 +303,13 @@ class SalesService:
                         tiene_telefono = bool(sale.cliente.telefono)
                         tiene_email = bool(sale.cliente.email)
                         
+                        if sale.cliente.is_miembro_comunidad:
+                            if not tiene_telefono and not tiene_email:
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail="Se requiere un número de teléfono o correo electrónico para registrar un miembro de la comunidad."
+                                )
+
                         # Guardamos si hay cualquier tipo de intención o datos de contacto provistos
                         if es_credito or es_factura or tiene_nit or tiene_razon_social or tiene_telefono or tiene_email:
                             nombre = (sale.cliente.razon_social or "CONSUMIDOR FINAL").strip().upper()
@@ -342,17 +351,28 @@ class SalesService:
                                 }, session=session)
                                 
                             if not cliente_existente:
+                                random_code = ''.join(random.choices(string.digits, k=6))
+                                is_miembro = sale.cliente.is_miembro_comunidad
+                                num_tarj = f"TAB-{random_code}" if is_miembro else None
                                 cliente_existente = Cliente(
                                     tenant_id=sale.tenant_id,
                                     nombre=nombre,
                                     telefono=telf,
                                     nit_ci=nit_val,
-                                    email=sale.cliente.email
+                                    email=sale.cliente.email,
+                                    is_miembro_comunidad=is_miembro,
+                                    numero_tarjeta=num_tarj
                                 )
                                 await cliente_existente.insert(session=session)
                             else:
                                 # Actualizar datos si han cambiado y son válidos
                                 updated = False
+                                if sale.cliente.is_miembro_comunidad and not cliente_existente.is_miembro_comunidad:
+                                    cliente_existente.is_miembro_comunidad = True
+                                    random_code = ''.join(random.choices(string.digits, k=6))
+                                    cliente_existente.numero_tarjeta = f"TAB-{random_code}"
+                                    updated = True
+                                    
                                 if nit_val and cliente_existente.nit_ci != nit_val:
                                     cliente_existente.nit_ci = nit_val
                                     updated = True

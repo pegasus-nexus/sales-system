@@ -94,23 +94,40 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                         ) : displayClients.length === 0 ? (
                             <div className="p-4 text-center">
                                 <p className="text-xs text-gray-500 mb-2">No se encontró "{search}"</p>
-                                <button 
-                                    onClick={() => {
-                                        onSelect({
-                                            cliente_id: undefined,
-                                            razon_social: search.toUpperCase(),
-                                            telefono: '',
-                                            nit: '',
-                                            email: '',
-                                            es_factura: false,
-                                            is_miembro_comunidad: false
-                                        });
-                                        setOpen(false);
-                                    }}
-                                    className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100"
-                                >
-                                    + Continuar como "{search.toUpperCase()}" nuevo
-                                </button>
+                                    <button 
+                                        onClick={() => {
+                                            onSelect({
+                                                cliente_id: undefined,
+                                                razon_social: search.toUpperCase(),
+                                                telefono: '',
+                                                nit: '',
+                                                email: '',
+                                                es_factura: false,
+                                                is_miembro_comunidad: false
+                                            });
+                                            setOpen(false);
+                                        }}
+                                        className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 w-full mb-2"
+                                    >
+                                        + Continuar como "{search.toUpperCase()}" nuevo
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            onSelect({
+                                                cliente_id: undefined,
+                                                razon_social: search.toUpperCase(),
+                                                telefono: '',
+                                                nit: '',
+                                                email: '',
+                                                es_factura: false,
+                                                is_miembro_comunidad: true
+                                            });
+                                            setOpen(false);
+                                        }}
+                                        className="text-xs font-bold text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-lg hover:bg-yellow-100 w-full flex items-center justify-center gap-1"
+                                    >
+                                        + Registrar como Miembro Comunidad
+                                    </button>
                             </div>
                         ) : (
                             <ul className="max-h-60 overflow-auto divide-y divide-gray-100">
@@ -135,10 +152,30 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                         <div className="flex flex-col">
                                             <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
                                                 {c.nombre}
-                                                {c.is_miembro_comunidad && (
+                                                {c.is_miembro_comunidad ? (
                                                     <span className="bg-yellow-100 text-yellow-800 text-[9px] px-1.5 py-0.5 rounded border border-yellow-200">
                                                         COMUNIDAD
                                                     </span>
+                                                ) : (
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSelect({
+                                                                cliente_id: c._id,
+                                                                razon_social: c.nombre,
+                                                                telefono: c.telefono || '',
+                                                                nit: c.nit_ci || '',
+                                                                email: c.email || '',
+                                                                es_factura: !!c.nit_ci,
+                                                                is_miembro_comunidad: true
+                                                            });
+                                                            setOpen(false);
+                                                            setSearch('');
+                                                        }}
+                                                        className="text-[9px] font-bold px-1.5 py-0.5 bg-gray-100 text-gray-500 hover:bg-yellow-100 hover:text-yellow-700 hover:border-yellow-300 border border-transparent rounded transition-colors"
+                                                    >
+                                                        + Unir a Comunidad
+                                                    </button>
                                                 )}
                                             </span>
                                             <div className="flex items-center gap-2 mt-0.5">
