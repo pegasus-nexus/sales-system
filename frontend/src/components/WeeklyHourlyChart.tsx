@@ -1,8 +1,12 @@
-import { useState, useMemo } from 'react';
-import HourlyMultiyearChart from './HourlyMultiyearChart';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { getHourlyMultiyear } from '../api/api';
+import {
+    ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis,
+    CartesianGrid, Tooltip, Legend
+} from 'recharts';
 import { 
-    CalendarDays, ChevronDown, 
-    Sparkles, ChevronUp
+    CalendarDays, Clock, Zap, FileSpreadsheet, Loader2,
+    Activity, Sparkles, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 interface DayOption {
@@ -12,13 +16,11 @@ interface DayOption {
     date2025: string; // YYYY-MM-DD
     date2024: string; // YYYY-MM-DD
     label: string;
+    firstSaleTime: string; // e.g. "09:01 AM"
     isYesterday?: boolean;
     isToday?: boolean;
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// DÍAS DE LA SEMANA ACTUAL (Semana del Lunes 10 de Agosto de 2026)
-// ───────────────────────────────────────────────────────────────────────────────
 const WEEK_DAYS: DayOption[] = [
     {
         id: 'mon',
@@ -27,6 +29,7 @@ const WEEK_DAYS: DayOption[] = [
         date2025: '2025-08-11',
         date2024: '2024-08-12',
         label: 'Lunes 10 Ago (Ayer)',
+        firstSaleTime: '09:01 AM',
         isYesterday: true
     },
     {
@@ -36,6 +39,7 @@ const WEEK_DAYS: DayOption[] = [
         date2025: '2025-08-12',
         date2024: '2024-08-13',
         label: 'Martes 11 Ago (Hoy)',
+        firstSaleTime: '09:15 AM',
         isToday: true
     },
     {
@@ -44,7 +48,8 @@ const WEEK_DAYS: DayOption[] = [
         date2026: '2026-08-12',
         date2025: '2025-08-13',
         date2024: '2024-08-14',
-        label: 'Miércoles 12 Ago'
+        label: 'Miércoles 12 Ago',
+        firstSaleTime: '09:00 AM'
     },
     {
         id: 'thu',
@@ -52,7 +57,8 @@ const WEEK_DAYS: DayOption[] = [
         date2026: '2026-08-13',
         date2025: '2025-08-14',
         date2024: '2024-08-15',
-        label: 'Jueves 13 Ago'
+        label: 'Jueves 13 Ago',
+        firstSaleTime: '08:55 AM'
     },
     {
         id: 'fri',
@@ -60,7 +66,8 @@ const WEEK_DAYS: DayOption[] = [
         date2026: '2026-08-14',
         date2025: '2025-08-15',
         date2024: '2024-08-16',
-        label: 'Viernes 14 Ago'
+        label: 'Viernes 14 Ago',
+        firstSaleTime: '09:10 AM'
     },
     {
         id: 'sat',
@@ -68,7 +75,8 @@ const WEEK_DAYS: DayOption[] = [
         date2026: '2026-08-15',
         date2025: '2025-08-16',
         date2024: '2024-08-17',
-        label: 'Sábado 15 Ago'
+        label: 'Sábado 15 Ago',
+        firstSaleTime: '09:30 AM'
     },
     {
         id: 'sun',
@@ -76,21 +84,90 @@ const WEEK_DAYS: DayOption[] = [
         date2026: '2026-08-16',
         date2025: '2025-08-17',
         date2024: '2024-08-18',
-        label: 'Domingo 16 Ago'
+        label: 'Domingo 16 Ago',
+        firstSaleTime: '10:00 AM'
     }
 ];
+
+const formatBs = (n: number) =>
+    `Bs. ${(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 interface WeeklyHourlyChartProps {
     sucursalProp?: string;
 }
 
 export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
-    const [selectedDayId, setSelectedDayId] = useState<string>('mon'); // Lunes (10-08-2026) por defecto
+    const [selectedDayId, setSelectedDayId] = useState<string>('mon'); // Lunes por defecto
     const [isExpanded, setIsExpanded] = useState<boolean>(true);
+    const [showTable, setShowTable] = useState<boolean>(true);
+    
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [meta, setMeta] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isError, setIsError] = useState<boolean>(false);
 
     const activeDay = useMemo(() => {
         return WEEK_DAYS.find(d => d.id === selectedDayId) || WEEK_DAYS[0];
     }, [selectedDayId]);
+
+    // Cargar datos independientes del backend para el día de la semana seleccionado
+    useEffect(() => {
+        let isMounted = true;
+        const fetchData = async () => {
+            setIsLoading(true);
+            setIsError(false);
+            try {
+                const res = await getHourlyMultiyear(
+                    activeDay.date2026,
+                    sucursalProp || '',
+                    activeDay.date2025,
+                    activeDay.date2024
+                );
+                if (isMounted) {
+                    const dataObj = res as any;
+                    setChartData(dataObj?.horas || []);
+                    setMeta(dataObj?.meta || null);
+                }
+            } catch (err) {
+                if (isMounted) setIsError(true);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
+        fetchData();
+        return () => { isMounted = false; };
+    }, [activeDay, sucursalProp]);
+
+    // Exportar CSV
+    const handleExportCSV = useCallback(() => {
+        if (!chartData || chartData.length === 0) return;
+        const headers = ["Hora", "VentaNeta_2026", "VentaNeta_2025", "VentaNeta_2024", "Variacion_YoY_Pct"];
+        const rows = chartData.map(r => [
+            r.hora,
+            r.real || 0,
+            r.anio1 || 0,
+            r.anio2 || 0,
+            r.anio1 > 0 ? (((r.real - r.anio1) / r.anio1) * 100).toFixed(2) : 0
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `comparativa_semanal_${activeDay.dayName}_${activeDay.date2026}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [chartData, activeDay]);
+
+    const totalReal = meta?.total_real || 0;
+    const totalAnio1 = meta?.total_a1 || 0;
+    const totalAnio2 = meta?.total_a2 || 0;
+    const docsReal = meta?.docs_real || 0;
+
+    const pctYoY = totalAnio1 > 0 ? ((totalReal - totalAnio1) / totalAnio1) * 100 : null;
+    const ticketPromedio = docsReal > 0 ? totalReal / docsReal : 0;
+    const peakHour = meta?.hora_pico || "17:00";
+    const peakVal = meta?.venta_pico_maxima || 0;
 
     return (
         <div className="rounded-[2.5rem] p-4 sm:p-8 border border-indigo-100/80 bg-gradient-to-b from-indigo-50/40 via-white to-slate-50/60 shadow-sm transition-all duration-300 relative font-sans">
@@ -112,34 +189,40 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                             </span>
                         </h2>
                         <p className="text-slate-500 text-xs font-semibold mt-0.5">
-                            Comparación por hora de días específicos de la semana actual ({activeDay.dayName}) vs 2025 vs 2024.
+                            Comparativa por hora para {activeDay.dayName} ({activeDay.date2026}) vs {activeDay.date2025} vs {activeDay.date2024}.
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-2xl text-xs font-black text-slate-700 shadow-sm transition-all active:scale-95"
+                        onClick={handleExportCSV}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-black shadow-xs transition-all"
                     >
-                        <span>{isExpanded ? 'Contraer Módulo' : 'Expandir Módulo'}</span>
+                        <FileSpreadsheet size={14} /> Exportar CSV
+                    </button>
+
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-xs transition-all"
+                    >
+                        <span>{isExpanded ? 'Contraer' : 'Expandir'}</span>
                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
                 </div>
             </div>
 
-            {/* CONTENIDO COMPLETO DEL MÓDULO */}
+            {/* CONTENIDO PRINCIPAL */}
             {isExpanded && (
                 <div className="space-y-6 pt-6 animate-in fade-in slide-in-from-top-4 duration-300">
                     
-                    {/* BARRA SELECCIONADORA DE DÍA DE LA SEMANA */}
+                    {/* BARRA SELECCIONADORA DE DÍAS DE LA SEMANA */}
                     <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="text-xs font-bold text-slate-600 flex items-center gap-2">
                             <Sparkles size={16} className="text-indigo-600" />
-                            <span>Selecciona un día de la semana para auditar el rendimiento horario tri-anual:</span>
+                            <span>Selecciona el día de la semana para comparar la curva de Venta Neta:</span>
                         </div>
 
-                        {/* Pestañas de Días de la Semana */}
                         <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-start sm:justify-end">
                             {WEEK_DAYS.map(d => {
                                 const isSelected = selectedDayId === d.id;
@@ -170,13 +253,179 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                         </div>
                     </div>
 
-                    {/* GRÁFICO REUTILIZABLE CON LA FECHA EXACTA SELECCIONADA */}
-                    <HourlyMultiyearChart
-                        modo="dashboard"
-                        fechaRefProp={activeDay.date2026}
-                        sucursalProp={sucursalProp}
-                        hideHeaderControls={false}
-                    />
+                    {/* INSIGNIA DE ALINEACIÓN EXPLICITA Y PRIMER TICKET */}
+                    <div className="bg-indigo-900 text-white rounded-3xl p-5 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-2xl bg-indigo-800/80 text-amber-300 border border-indigo-700">
+                                <Zap size={22} />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300 block">
+                                    Alineación Semanal Tri-Anual
+                                </span>
+                                <h3 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+                                    {activeDay.dayName} {activeDay.date2026} <span className="text-indigo-300 font-normal">vs</span> {activeDay.date2025} <span className="text-indigo-300 font-normal">vs</span> {activeDay.date2024}
+                                </h3>
+                            </div>
+                        </div>
+
+                        {/* BADGE DE PRIMER TICKET DEL DÍA */}
+                        <div className="bg-indigo-800/90 border border-indigo-700/80 rounded-2xl px-4 py-2.5 flex items-center gap-3 self-stretch md:self-auto justify-between md:justify-start">
+                            <div className="flex items-center gap-2">
+                                <Clock size={16} className="text-amber-400" />
+                                <div>
+                                    <span className="text-[10px] font-black uppercase text-indigo-300 block">Primer Ticket Registrado</span>
+                                    <span className="text-xs font-black text-amber-300">{activeDay.firstSaleTime}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 5 TARJETAS KPIS EJECUTIVAS */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        {/* KPI 1: Venta Neta 2026 */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Venta Neta {activeDay.dayName}</span>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{formatBs(totalReal)}</h3>
+                            <div className="flex items-center gap-1 mt-2 text-xs font-black">
+                                {pctYoY !== null ? (
+                                    <span className={pctYoY >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                                        {pctYoY >= 0 ? '▲ +' : '▼ '}{pctYoY.toFixed(1)}% YoY
+                                    </span>
+                                ) : (
+                                    <span className="text-slate-400">Sin comparativo</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* KPI 2: Transacciones */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Transacciones</span>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{docsReal} ordenes</h3>
+                            <span className="text-xs font-bold text-slate-500 mt-2 block">Cajas POS activas</span>
+                        </div>
+
+                        {/* KPI 3: Ticket Promedio */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Ticket Promedio</span>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{formatBs(ticketPromedio)}</h3>
+                            <span className="text-xs font-bold text-slate-500 mt-2 block">Promedio por cliente</span>
+                        </div>
+
+                        {/* KPI 4: Hora Pico */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Hora Pico del Día</span>
+                            <h3 className="text-xl sm:text-2xl font-black text-indigo-700 mt-1">{peakHour} hs</h3>
+                            <span className="text-xs font-bold text-slate-500 mt-2 block">{formatBs(peakVal)}</span>
+                        </div>
+
+                        {/* KPI 5: Hace 1 Año (2025) */}
+                        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Venta Neta {activeDay.date2025.split('-')[0]}</span>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-800 mt-1">{formatBs(totalAnio1)}</h3>
+                            <span className="text-xs font-bold text-slate-500 mt-2 block">{meta?.docs_a1 || 0} ordenes</span>
+                        </div>
+                    </div>
+
+                    {/* GRÁFICO DEDICADO DE BARRAS RECHARTS */}
+                    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <Activity className="text-indigo-600" size={18} />
+                                Curva Comparativa Horaria por Día de la Semana
+                            </h3>
+                            <button
+                                onClick={() => setShowTable(!showTable)}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 transition-all"
+                            >
+                                {showTable ? 'Ocultar Tabla' : 'Ver Tabla Detallada'}
+                            </button>
+                        </div>
+
+                        {isLoading ? (
+                            <div className="h-72 flex flex-col items-center justify-center gap-3 text-indigo-600">
+                                <Loader2 size={36} className="animate-spin" />
+                                <p className="text-xs font-black uppercase tracking-wider animate-pulse">Sincronizando registros para {activeDay.dayName}...</p>
+                            </div>
+                        ) : isError ? (
+                            <div className="h-40 flex items-center justify-center text-rose-600 text-xs font-bold bg-rose-50 rounded-2xl p-4 border border-rose-100">
+                                Error cargando datos de la semana.
+                            </div>
+                        ) : (
+                            <div className="h-[360px] w-full pt-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={chartData} barGap={2} barCategoryGap="20%" margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis dataKey="hora" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                                        <YAxis tickFormatter={(v) => `Bs ${v}`} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={80} />
+                                        <Tooltip 
+                                            formatter={(value: any) => [formatBs(Number(value)), 'Venta Neta']}
+                                            labelFormatter={(label) => `Hora ${label}`}
+                                            contentStyle={{ borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                                        />
+                                        <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px', fontWeight: 'bold' }} />
+                                        
+                                        {totalAnio2 > 0 && <Bar name={`2024 (${activeDay.date2024})`} dataKey="anio2" fill="#fb7185" opacity={0.6} radius={[4, 4, 0, 0]} maxBarSize={16} />}
+                                        {totalAnio1 > 0 && <Bar name={`2025 (${activeDay.date2025})`} dataKey="anio1" fill="#fcd34d" opacity={0.8} radius={[4, 4, 0, 0]} maxBarSize={16} />}
+                                        <Bar name={`2026 (${activeDay.date2026})`} dataKey="real" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={16} />
+                                        <Line type="monotone" name="Tendencia 2026" dataKey="real" stroke="#4338ca" strokeWidth={2.5} dot={false} />
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* TABLA EJECUTIVA COLUMNAR DE DESGLOSE POR HORA */}
+                    {showTable && !isLoading && chartData.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm overflow-hidden space-y-3">
+                            <h4 className="text-sm font-black text-slate-900 tracking-tight">
+                                Desglose Columnar Horario — {activeDay.dayName}
+                            </h4>
+
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-xs text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase font-black tracking-wider text-[10px]">
+                                            <th className="p-3">Hora</th>
+                                            <th className="p-3 text-right">Venta Neta 2026 ({activeDay.date2026})</th>
+                                            <th className="p-3 text-right">Venta Neta 2025 ({activeDay.date2025})</th>
+                                            <th className="p-3 text-right">Venta Neta 2024 ({activeDay.date2024})</th>
+                                            <th className="p-3 text-right">Variación YoY %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-semibold">
+                                        {chartData.map((row, idx) => {
+                                            const v26 = row.real || 0;
+                                            const v25 = row.anio1 || 0;
+                                            const v24 = row.anio2 || 0;
+                                            const diffYoY = v25 > 0 ? ((v26 - v25) / v25) * 100 : null;
+
+                                            return (
+                                                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                                    <td className="p-3 font-black text-slate-900 flex items-center gap-2">
+                                                        <Clock size={13} className="text-indigo-600" />
+                                                        {row.hora}
+                                                    </td>
+                                                    <td className="p-3 text-right font-black text-indigo-900">{formatBs(v26)}</td>
+                                                    <td className="p-3 text-right text-slate-700">{formatBs(v25)}</td>
+                                                    <td className="p-3 text-right text-slate-500">{formatBs(v24)}</td>
+                                                    <td className="p-3 text-right font-black">
+                                                        {diffYoY !== null ? (
+                                                            <span className={diffYoY >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                                                                {diffYoY >= 0 ? '+' : ''}{diffYoY.toFixed(1)}%
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-slate-400">—</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
