@@ -244,12 +244,21 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
             }
         },
         {
+            "$project": {
+                "monto_neto": 1,
+                "created_at_local": {
+                    "$dateSubtract": {
+                        "startDate": "$created_at",
+                        "unit": "hour",
+                        "amount": 4
+                    }
+                }
+            }
+        },
+        {
             "$group": {
                 "_id": {
-                    "$hour": {
-                        "date": "$created_at",
-                        "timezone": "-04:00"
-                    }
+                    "$hour": "$created_at_local"
                 },
                 "total": {"$sum": "$monto_neto"}
             }
