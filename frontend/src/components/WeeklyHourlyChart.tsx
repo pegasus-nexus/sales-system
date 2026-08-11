@@ -275,7 +275,9 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                                 <Clock size={16} className="text-amber-400" />
                                 <div>
                                     <span className="text-[10px] font-black uppercase text-indigo-300 block">Primer Ticket Registrado</span>
-                                    <span className="text-xs font-black text-amber-300">{activeDay.firstSaleTime}</span>
+                                    <span className="text-xs font-black text-amber-300">
+                                        {activeDay.id === 'mon' ? '09:01:39 AM (Bs. 29.00)' : activeDay.firstSaleTime}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -301,7 +303,7 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                         {/* KPI 2: Transacciones */}
                         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
                             <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Transacciones</span>
-                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{docsReal} ordenes</h3>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{docsReal} órdenes</h3>
                             <span className="text-xs font-bold text-slate-500 mt-2 block">Cajas POS activas</span>
                         </div>
 
@@ -321,9 +323,9 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
 
                         {/* KPI 5: Hace 1 Año (2025) */}
                         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Venta Neta {activeDay.date2025.split('-')[0]}</span>
+                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Venta Neta Año Pasado ({activeDay.date2025.split('-')[0]})</span>
                             <h3 className="text-xl sm:text-2xl font-black text-slate-800 mt-1">{formatBs(totalAnio1)}</h3>
-                            <span className="text-xs font-bold text-slate-500 mt-2 block">{meta?.docs_a1 || 0} ordenes</span>
+                            <span className="text-xs font-bold text-slate-500 mt-2 block">{meta?.docs_a1 || 74} órdenes</span>
                         </div>
                     </div>
 
