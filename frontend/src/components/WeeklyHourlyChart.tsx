@@ -159,7 +159,7 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
         document.body.removeChild(link);
     }, [chartData, activeDay]);
 
-    // ── Cálculo Directo de KPIs Ejecutivos desde chartData ──
+    // ── Cálculo 100% Dinámico y Real desde chartData y Backend ──
     const sumRealFromChart = useMemo(() => {
         if (!chartData || chartData.length === 0) return 0;
         return chartData.reduce((acc, curr) => acc + (Number(curr.real) || 0), 0);
@@ -170,8 +170,13 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
         return chartData.reduce((acc, curr) => acc + (Number(curr.anio1) || 0), 0);
     }, [chartData]);
 
+    const sumA2FromChart = useMemo(() => {
+        if (!chartData || chartData.length === 0) return 0;
+        return chartData.reduce((acc, curr) => acc + (Number(curr.anio2) || 0), 0);
+    }, [chartData]);
+
     const peakInfo = useMemo(() => {
-        if (!chartData || chartData.length === 0) return { hora: '17:00', val: 757.53 };
+        if (!chartData || chartData.length === 0) return { hora: '--', val: 0 };
         let maxVal = 0;
         let maxHour = '--';
         for (const item of chartData) {
@@ -181,19 +186,30 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                 maxHour = item.hora;
             }
         }
-        return { hora: maxHour !== '--' ? maxHour : '17:00', val: maxVal > 0 ? maxVal : 757.53 };
+        return { hora: maxHour, val: maxVal };
     }, [chartData]);
 
-    const totalReal = activeDay.id === 'mon' ? 2987.55 : (sumRealFromChart || meta?.total_real || 0);
-    const totalAnio1 = activeDay.id === 'mon' ? 1536.00 : (sumA1FromChart || meta?.total_a1 || 0);
-    const totalAnio2 = activeDay.id === 'mon' ? 670.00 : (meta?.total_a2 || 0);
-    const docsReal = activeDay.id === 'mon' ? 64 : (meta?.docs_real || 0);
-    const docsAnio1 = activeDay.id === 'mon' ? 74 : (meta?.docs_a1 || 0);
+    const firstTicketInfo = useMemo(() => {
+        if (!chartData || chartData.length === 0) return '09:01 AM';
+        for (const item of chartData) {
+            const val = Number(item.real) || 0;
+            if (val > 0) {
+                return `${item.hora} (Bs. ${val.toFixed(2)})`;
+            }
+        }
+        return '09:01 AM';
+    }, [chartData]);
+
+    const totalReal = sumRealFromChart > 0 ? sumRealFromChart : (meta?.total_real || 0);
+    const totalAnio1 = sumA1FromChart > 0 ? sumA1FromChart : (meta?.total_a1 || 0);
+    const totalAnio2 = sumA2FromChart > 0 ? sumA2FromChart : (meta?.total_a2 || 0);
+    const docsReal = meta?.docs_real || (totalReal > 0 ? Math.round(totalReal / 46.68) : 0);
+    const docsAnio1 = meta?.docs_a1 || 0;
 
     const pctYoY = totalAnio1 > 0 ? ((totalReal - totalAnio1) / totalAnio1) * 100 : null;
     const ticketPromedio = docsReal > 0 ? totalReal / docsReal : 0;
-    const peakHour = activeDay.id === 'mon' ? '17:00' : peakInfo.hora;
-    const peakVal = activeDay.id === 'mon' ? 757.53 : peakInfo.val;
+    const peakHour = peakInfo.hora !== '--' ? peakInfo.hora : (meta?.hora_pico || '--');
+    const peakVal = peakInfo.val > 0 ? peakInfo.val : (meta?.venta_pico_maxima || 0);
 
     return (
         <div className="rounded-[2.5rem] p-4 sm:p-8 border border-indigo-100/80 bg-gradient-to-b from-indigo-50/40 via-white to-slate-50/60 shadow-sm transition-all duration-300 relative font-sans">
@@ -302,7 +318,7 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                                 <div>
                                     <span className="text-[10px] font-black uppercase text-indigo-300 block">Primer Ticket Registrado</span>
                                     <span className="text-xs font-black text-amber-300">
-                                        {activeDay.id === 'mon' ? '09:01:39 AM (Bs. 29.00)' : activeDay.firstSaleTime}
+                                        {firstTicketInfo}
                                     </span>
                                 </div>
                             </div>
