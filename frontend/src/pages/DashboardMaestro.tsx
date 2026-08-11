@@ -17,11 +17,13 @@ import HourlyMultiyearChartRaw from '../components/HourlyMultiyearChart';
 import SpecialDatesChartRaw from '../components/SpecialDatesChart';
 import RegionalAndProductMixRaw from '../components/RegionalAndProductMix';
 import SalesPercentileTrackerRaw from '../components/SalesPercentileTracker';
+import WeeklyHourlyChartRaw from '../components/WeeklyHourlyChart';
 
 const HourlyMultiyearChart = memo(HourlyMultiyearChartRaw);
 const SpecialDatesChart = memo(SpecialDatesChartRaw);
 const RegionalAndProductMix = memo(RegionalAndProductMixRaw);
 const SalesPercentileTracker = memo(SalesPercentileTrackerRaw);
+const WeeklyHourlyChart = memo(WeeklyHourlyChartRaw);
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -862,6 +864,11 @@ export default function DashboardMaestro() {
                             </h2>
                         </div>
                         <HourlyMultiyearChart />
+                    </div>
+
+                    {/* SECCIÓN 2.1: COMPARATIVA HORARIA SEMANAL MULTI-AÑO */}
+                    <div id="sec-semanal" className="space-y-4 pt-2">
+                        <WeeklyHourlyChart sucursalProp={selectedSucursal} />
                     </div>
 
                     {/* SECCIÓN 2.5: FECHAS ESPECIALES */}
