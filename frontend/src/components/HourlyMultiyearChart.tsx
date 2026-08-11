@@ -306,6 +306,7 @@ const getBoliviaCurrentHourStr = () => {
 // Componente principal ÚNICO REUTILIZABLE
 // ───────────────────────────────────────────────────────────────────────────────
 export interface HourlyMultiyearChartProps {
+    fechaRefProp?: string;
     modo?: 'dashboard' | 'festividad';
     festividadNombre?: string;
     fechasFestivas?: {
@@ -318,13 +319,14 @@ export interface HourlyMultiyearChartProps {
 }
 
 export function HourlyMultiyearChart({
+    fechaRefProp,
     modo = 'dashboard',
     festividadNombre,
     fechasFestivas,
     sucursalProp,
     hideHeaderControls = false
 }: HourlyMultiyearChartProps) {
-    const [fechaRef, setFechaRef] = useState<string>(fechasFestivas?.actual || getTodayDateString());
+    const [fechaRef, setFechaRef] = useState<string>(fechaRefProp || fechasFestivas?.actual || getTodayDateString());
     const [sucursal, setSucursal] = useState<string>(sucursalProp || ''); 
     const [chartData, setChartData] = useState<any[]>([]);
     const [meta, setMeta] = useState<any>(null);

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import HourlyMultiyearChart from './HourlyMultiyearChart';
 import { 
-    CalendarDays, Store, TrendingUp, ChevronDown, 
-    Sparkles, DollarSign, Activity, Receipt, ChevronUp, Clock
+    CalendarDays, ChevronDown, 
+    Sparkles, ChevronUp
 } from 'lucide-react';
 
 interface DayOption {
@@ -87,14 +87,10 @@ interface WeeklyHourlyChartProps {
 export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
     const [selectedDayId, setSelectedDayId] = useState<string>('mon'); // Lunes (10-08-2026) por defecto
     const [isExpanded, setIsExpanded] = useState<boolean>(true);
-    const [sucursal, setSucursal] = useState<string>(sucursalProp || '');
 
     const activeDay = useMemo(() => {
         return WEEK_DAYS.find(d => d.id === selectedDayId) || WEEK_DAYS[0];
     }, [selectedDayId]);
-
-    const formatBs = (n: number) =>
-        `Bs. ${(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     return (
         <div className="rounded-[2.5rem] p-4 sm:p-8 border border-indigo-100/80 bg-gradient-to-b from-indigo-50/40 via-white to-slate-50/60 shadow-sm transition-all duration-300 relative font-sans">
@@ -178,7 +174,7 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
                     <HourlyMultiyearChart
                         modo="dashboard"
                         fechaRefProp={activeDay.date2026}
-                        sucursalProp={sucursal}
+                        sucursalProp={sucursalProp}
                         hideHeaderControls={false}
                     />
                 </div>
