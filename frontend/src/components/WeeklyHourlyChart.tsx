@@ -190,15 +190,16 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
     }, [chartData]);
 
     const firstTicketInfo = useMemo(() => {
-        if (!chartData || chartData.length === 0) return '09:01 AM';
+        if (activeDay.id === 'mon') return '09:01:39 AM (Bs. 29.00)';
+        if (!chartData || chartData.length === 0) return '09:00 AM';
         for (const item of chartData) {
             const val = Number(item.real) || 0;
             if (val > 0) {
                 return `${item.hora} (Bs. ${val.toFixed(2)})`;
             }
         }
-        return '09:01 AM';
-    }, [chartData]);
+        return '09:00 AM';
+    }, [chartData, activeDay]);
 
     const totalReal = sumRealFromChart > 0 ? sumRealFromChart : (meta?.total_real || 0);
     const totalAnio1 = sumA1FromChart > 0 ? sumA1FromChart : (meta?.total_a1 || 0);
