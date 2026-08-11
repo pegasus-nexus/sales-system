@@ -866,8 +866,16 @@ export default function DashboardMaestro() {
                         <HourlyMultiyearChart />
                     </div>
 
-                    {/* SECCIÓN 2.1: COMPARATIVA HORARIA SEMANAL MULTI-AÑO */}
-                    <div id="sec-semanal" className="space-y-4 pt-2">
+                    {/* SECCIÓN 2.1: COMPARATIVA HORARIA SEMANAL MULTI-AÑO (NUEVA SECCIÓN) */}
+                    <div id="sec-semanal" className="space-y-4 pt-4">
+                        <div className="border-b border-indigo-100 pb-2 flex items-center justify-between">
+                            <h2 className="text-lg font-black text-indigo-900 flex items-center gap-2">
+                                <Clock className="text-indigo-600" size={18} /> Comparativa Horaria Semanal Multi-Año (Semana Actual / Día Equivalente)
+                            </h2>
+                            <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                                Nueva Sección Activa
+                            </span>
+                        </div>
                         <WeeklyHourlyChart sucursalProp={selectedSucursal} />
                     </div>
 
