@@ -18,6 +18,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List
 import asyncio
 from app.db import get_raw_db
+from app.utils.date_utils import get_day_range_bolivia, get_now_bolivia
 
 
 def clean_nans(obj):
@@ -201,24 +202,18 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
     Consulta sales (POS en vivo) para un día específico (08:00–23:00).
     Aplica offset de timezone -04:00 (Bolivia) para convertir UTC created_at a Hora Local.
     """
-    import pandas as pd
-    tz_offset_ms = -4 * 3600 * 1000
-
-    start_local = pd.Timestamp(target_date, tz="America/La_Paz")
-    end_local = start_local + pd.Timedelta(days=1)
-    start_utc = start_local.tz_convert("UTC").to_pydatetime()
-    end_utc = end_local.tz_convert("UTC").to_pydatetime()
+    start_utc, end_utc = get_day_range_bolivia(target_date.strftime("%Y-%m-%d"))
 
     match_stage: Dict[str, Any] = {
         "tenant_id": tenant_id,
-        "created_at": {"$gte": start_utc, "$lt": end_utc},
+        "created_at": {"$gte": start_utc, "$lte": end_utc},
         "estado": {"$ne": "anulado"},
         "anulada": {"$ne": True}
     }
 
-    suc_ids = suc_filters.get("suc_ids", [])
-    if suc_ids:
-        match_stage["sucursal_id"] = {"$in": suc_ids}
+    sales_suc_filter = suc_filters.get("sales_sucursal_id")
+    if sales_suc_filter:
+        match_stage["sucursal_id"] = sales_suc_filter
 
     pipeline = [
         {"$match": match_stage},
