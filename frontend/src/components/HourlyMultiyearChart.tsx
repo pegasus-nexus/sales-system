@@ -399,9 +399,9 @@ export function HourlyMultiyearChart({
 
     const renderedData = chartData;
 
-    const totalVendidoHoy   = meta?.total_real  ?? chartData.reduce((acc, curr) => acc + (curr.real  || 0), 0);
-    const totalVendidoAnio1 = meta?.total_a1    ?? chartData.reduce((acc, curr) => acc + (curr.anio1 || 0), 0);
-    const totalVendidoAnio2 = meta?.total_a2    ?? chartData.reduce((acc, curr) => acc + (curr.anio2 || 0), 0);
+    const totalVendidoHoy   = chartData.reduce((acc, curr) => acc + (curr.real  || 0), 0);
+    const totalVendidoAnio1 = chartData.reduce((acc, curr) => acc + (curr.anio1 || 0), 0);
+    const totalVendidoAnio2 = chartData.reduce((acc, curr) => acc + (curr.anio2 || 0), 0);
 
     const handleExportHourlyCSV = useCallback(() => {
         if (!renderedData || renderedData.length === 0) return;
