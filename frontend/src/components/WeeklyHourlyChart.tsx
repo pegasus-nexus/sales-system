@@ -21,73 +21,81 @@ interface DayOption {
     isToday?: boolean;
 }
 
-const WEEK_DAYS: DayOption[] = [
-    {
-        id: 'mon',
-        dayName: 'Lunes',
-        date2026: '2026-08-10',
-        date2025: '2025-08-11',
-        date2024: '2024-08-12',
-        label: 'Lunes 10 Ago (Ayer)',
-        firstSaleTime: '09:01 AM',
-        isYesterday: true
-    },
-    {
-        id: 'tue',
-        dayName: 'Martes',
-        date2026: '2026-08-11',
-        date2025: '2025-08-12',
-        date2024: '2024-08-13',
-        label: 'Martes 11 Ago (Hoy)',
-        firstSaleTime: '09:15 AM',
-        isToday: true
-    },
-    {
-        id: 'wed',
-        dayName: 'Miércoles',
-        date2026: '2026-08-12',
-        date2025: '2025-08-13',
-        date2024: '2024-08-14',
-        label: 'Miércoles 12 Ago',
-        firstSaleTime: '09:00 AM'
-    },
-    {
-        id: 'thu',
-        dayName: 'Jueves',
-        date2026: '2026-08-13',
-        date2025: '2025-08-14',
-        date2024: '2024-08-15',
-        label: 'Jueves 13 Ago',
-        firstSaleTime: '08:55 AM'
-    },
-    {
-        id: 'fri',
-        dayName: 'Viernes',
-        date2026: '2026-08-14',
-        date2025: '2025-08-15',
-        date2024: '2024-08-16',
-        label: 'Viernes 14 Ago',
-        firstSaleTime: '09:10 AM'
-    },
-    {
-        id: 'sat',
-        dayName: 'Sábado',
-        date2026: '2026-08-15',
-        date2025: '2025-08-16',
-        date2024: '2024-08-17',
-        label: 'Sábado 15 Ago',
-        firstSaleTime: '09:30 AM'
-    },
-    {
-        id: 'sun',
-        dayName: 'Domingo',
-        date2026: '2026-08-16',
-        date2025: '2025-08-17',
-        date2024: '2024-08-18',
-        label: 'Domingo 16 Ago',
-        firstSaleTime: '10:00 AM'
+function getBoliviaTodayDate(): Date {
+    try {
+        const options: Intl.DateTimeFormatOptions = {
+            timeZone: 'America/La_Paz',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        };
+        const parts = new Intl.DateTimeFormat('sv-SE', options).format(new Date()).split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    } catch (e) {
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
-];
+}
+
+function formatDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+export function getDynamicWeekDays(): DayOption[] {
+    const today = getBoliviaTodayDate();
+    const todayStr = formatDateStr(today);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = formatDateStr(yesterday);
+
+    const dayOfWeek = today.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+
+    const dayIds = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const monthNamesShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    return dayIds.map((id, index) => {
+        const d2026 = new Date(monday);
+        d2026.setDate(monday.getDate() + index);
+        const date2026Str = formatDateStr(d2026);
+
+        const d2025 = new Date(d2026);
+        d2025.setDate(d2026.getDate() - 364); // 52 semanas exactas
+        const date2025Str = formatDateStr(d2025);
+
+        const d2024 = new Date(d2026);
+        d2024.setDate(d2026.getDate() - 728); // 104 semanas exactas
+        const date2024Str = formatDateStr(d2024);
+
+        const isToday = (date2026Str === todayStr);
+        const isYesterday = (date2026Str === yesterdayStr);
+
+        const dayNum = d2026.getDate();
+        const monthShort = monthNamesShort[d2026.getMonth()];
+        const tag = isToday ? ' (Hoy)' : isYesterday ? ' (Ayer)' : '';
+        const label = `${dayNames[index]} ${dayNum} ${monthShort}${tag}`;
+
+        return {
+            id,
+            dayName: dayNames[index],
+            date2026: date2026Str,
+            date2025: date2025Str,
+            date2024: date2024Str,
+            label,
+            firstSaleTime: '09:00 AM',
+            isToday,
+            isYesterday
+        };
+    });
+}
 
 const formatBs = (n: number) =>
     `Bs. ${(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -97,7 +105,13 @@ interface WeeklyHourlyChartProps {
 }
 
 export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
-    const [selectedDayId, setSelectedDayId] = useState<string>('mon'); // Lunes por defecto
+    const WEEK_DAYS = useMemo(() => getDynamicWeekDays(), []);
+    const initialDayId = useMemo(() => {
+        const todayDay = WEEK_DAYS.find(d => d.isToday);
+        return todayDay ? todayDay.id : 'mon';
+    }, [WEEK_DAYS]);
+
+    const [selectedDayId, setSelectedDayId] = useState<string>(initialDayId);
     const [isExpanded, setIsExpanded] = useState<boolean>(true);
     const [showTable, setShowTable] = useState<boolean>(true);
     
@@ -108,7 +122,7 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
 
     const activeDay = useMemo(() => {
         return WEEK_DAYS.find(d => d.id === selectedDayId) || WEEK_DAYS[0];
-    }, [selectedDayId]);
+    }, [selectedDayId, WEEK_DAYS]);
 
     // Cargar datos independientes del backend para el día de la semana seleccionado
     useEffect(() => {
