@@ -259,6 +259,50 @@ export default function PedidosCompraPage() {
                             </div>
 
                             <div className="p-6 md:p-8 overflow-y-auto flex-1 space-y-8">
+                                {/* Detalle (Tabla de productos agregados) */}
+                                <div>
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b-2 border-gray-100">
+                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase">Producto</th>
+                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-center">Cant.</th>
+                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-right">Costo Est.</th>
+                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-right">Subtotal</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {detalles.map((item, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="py-4">
+                                                        <p className="font-bold text-gray-900">{item.nombre_producto}</p>
+                                                        <p className="text-xs text-gray-500">{item.codigo_producto}</p>
+                                                    </td>
+                                                    <td className="py-4 text-center font-bold text-gray-700">{item.cantidad_pedida}</td>
+                                                    <td className="py-4 text-right font-medium text-gray-700">Bs. {item.costo_unitario_estimado}</td>
+                                                    <td className="py-4 text-right font-black text-gray-900">Bs. {item.subtotal}</td>
+                                                    <td className="py-4 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveProduct(idx)}
+                                                            className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                                        >
+                                                            <X size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {detalles.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={5} className="py-8 text-center text-gray-400 font-medium">
+                                                        No hay productos en el pedido
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
                                 {/* Cabecera */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -354,50 +398,6 @@ export default function PedidosCompraPage() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Detalle */}
-                                <div>
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b-2 border-gray-100">
-                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase">Producto</th>
-                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-center">Cant.</th>
-                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-right">Costo Est.</th>
-                                                <th className="pb-3 text-sm font-bold text-gray-500 uppercase text-right">Subtotal</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {detalles.map((item, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="py-4">
-                                                        <p className="font-bold text-gray-900">{item.nombre_producto}</p>
-                                                        <p className="text-xs text-gray-500">{item.codigo_producto}</p>
-                                                    </td>
-                                                    <td className="py-4 text-center font-bold text-gray-700">{item.cantidad_pedida}</td>
-                                                    <td className="py-4 text-right font-medium text-gray-700">Bs. {item.costo_unitario_estimado}</td>
-                                                    <td className="py-4 text-right font-black text-gray-900">Bs. {item.subtotal}</td>
-                                                    <td className="py-4 text-right">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveProduct(idx)}
-                                                            className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                                        >
-                                                            <X size={18} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {detalles.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={5} className="py-8 text-center text-gray-400 font-medium">
-                                                        No hay productos en el pedido
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
 
