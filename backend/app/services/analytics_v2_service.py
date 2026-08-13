@@ -224,26 +224,17 @@ async def get_dashboard_metrics_v2(
             
         pipeline_current = get_base_pipeline(start_curr_dt, end_curr_dt) + [
             {"$addFields": {
-                "fecha_negocio": {
-                    "$dateSubtract": {
-                        "startDate": "$fecha",
-                        "unit": "hour",
-                        "amount": 4
-                    }
-                }
-            }},
-            {"$addFields": {
                 "fecha_str": {
                     "$dateToString": {
                         "format": "%Y-%m-%d",
-                        "date": "$fecha_negocio",
+                        "date": "$fecha",
                         "timezone": "-04:00"
                     }
                 },
                 "hora_str": {
                     "$dateToString": {
                         "format": "%H:00",
-                        "date": "$fecha_negocio",
+                        "date": "$fecha",
                         "timezone": "-04:00"
                     }
                 }
@@ -326,19 +317,10 @@ async def get_dashboard_metrics_v2(
         
         pipeline_yoy = get_base_pipeline(start_yoy_dt, end_yoy_dt) + [
             {"$addFields": {
-                "fecha_negocio": {
-                    "$dateSubtract": {
-                        "startDate": "$fecha",
-                        "unit": "hour",
-                        "amount": 4
-                    }
-                }
-            }},
-            {"$addFields": {
                 "hora_str": {
                     "$dateToString": {
                         "format": "%H:00",
-                        "date": "$fecha_negocio",
+                        "date": "$fecha",
                         "timezone": "-04:00"
                     }
                 }
