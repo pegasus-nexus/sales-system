@@ -302,14 +302,14 @@ export default function PedidosCompraPage() {
                                                 onChange={(e) => {
                                                     const prod = products.find((p: any) => (p._id || p.id) === e.target.value);
                                                     setSelectedProduct(prod || null);
-                                                    setCostoEstimado(prod ? prod.costo_producto : 0);
+                                                    setCostoEstimado(prod ? (prod.costo_producto || prod.precio_venta || 0) : 0);
                                                 }}
                                             >
                                                 {(proveedorNombre ? products.filter((p: any) => p.proveedores?.includes(proveedorNombre) || p.proveedor === proveedorNombre) : products)
                                                     .filter((p: any) => p.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) || p.codigo_corto?.toLowerCase().includes(searchQuery.toLowerCase()))
                                                     .map((p: any) => (
                                                         <option key={p._id || p.id} value={p._id || p.id} className="p-2 border-b border-gray-100 last:border-0 hover:bg-gray-100">
-                                                            {p.descripcion} ({p.codigo_corto}) - Costo: Bs.{p.costo_producto}
+                                                            {p.descripcion} ({p.codigo_corto}) - Costo Ref: Bs.{p.costo_producto || p.precio_venta || 0}
                                                         </option>
                                                     ))}
                                             </select>
