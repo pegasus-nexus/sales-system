@@ -42,4 +42,6 @@ class PurchaseReceptionCreate(BaseModel):
     numero_documento: str
     detalles: List[PurchaseReceptionItemCreate]
     total_real: DecimalMoney
+    metodo_pago: str = "CONTADO_EFECTIVO"
+    estado_pago: str = "PAGADO"
     notas: Optional[str] = None

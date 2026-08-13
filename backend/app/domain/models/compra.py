@@ -73,6 +73,11 @@ class PurchaseReception(Document):
     fecha_recepcion: datetime = Field(default_factory=datetime.utcnow)
     detalles: List[PurchaseReceptionItem] = []
     total_real: DecimalMoney = DecimalMoney("0.0")
+    
+    # Nuevos campos para Finanzas
+    metodo_pago: str = "CONTADO_EFECTIVO" # Ej: CONTADO_EFECTIVO, CREDITO, CONSIGNACION
+    estado_pago: str = "PAGADO" # Ej: PAGADO, PENDIENTE
+    
     notas: Optional[str] = None
     creado_por: str  # usuario_id
 

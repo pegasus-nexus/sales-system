@@ -41,6 +41,7 @@ const ConfiguracionPage = lazy(() => import('./pages/ConfiguracionPage'));
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 const PedidosCompraPage = lazy(() => import('./pages/PedidosCompraPage'));
 const IngresoMercaderiaPage = lazy(() => import('./pages/IngresoMercaderiaPage'));
+const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
@@ -300,6 +301,11 @@ function App() {
                       <Route path="/compras/recepciones" element={
                         <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
                           <IngresoMercaderiaPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/compras/historial" element={
+                        <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
+                          <RecepcionesCompraPage />
                         </ProtectedRoute>
                       } />
 

@@ -4,7 +4,7 @@ import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrderStatus, getP
 import { useAuthStore } from '../store/authStore';
 import { 
     ShoppingCart, Plus, PackageOpen, X, XCircle, 
-    Loader2
+    Loader2, Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -24,6 +24,11 @@ export default function PedidosCompraPage() {
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [cantidadPedida, setCantidadPedida] = useState(1);
     const [costoEstimado, setCostoEstimado] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filters for table
+    const [statusFilter, setStatusFilter] = useState('');
+    const [providerFilter, setProviderFilter] = useState('');
 
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['purchase_orders', sucursalId],
@@ -139,6 +144,32 @@ export default function PedidosCompraPage() {
                 </button>
             </div>
 
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <select
+                    className="p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                    <option value="">Todos los Estados</option>
+                    <option value="BORRADOR">Borrador</option>
+                    <option value="ENVIADO">Enviado</option>
+                    <option value="PARCIAL">Parcial</option>
+                    <option value="COMPLETADO">Completado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+                
+                <select
+                    className="p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                    value={providerFilter}
+                    onChange={(e) => setProviderFilter(e.target.value)}
+                >
+                    <option value="">Todos los Proveedores</option>
+                    {proveedores.map((p: any) => (
+                        <option key={p._id || p.id} value={p.nombre}>{p.nombre}</option>
+                    ))}
+                </select>
+            </div>
+
             {isLoading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
@@ -158,7 +189,10 @@ export default function PedidosCompraPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {orders.map((o: any) => (
+                                {orders
+                                    .filter((o: any) => (statusFilter ? o.estado === statusFilter : true))
+                                    .filter((o: any) => (providerFilter ? o.proveedor_nombre === providerFilter : true))
+                                    .map((o: any) => (
                                     <tr key={o._id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="p-5 font-bold text-gray-900">{o.numero_pedido}</td>
                                         <td className="p-5 font-medium text-gray-700">{o.proveedor_nombre}</td>
@@ -188,7 +222,7 @@ export default function PedidosCompraPage() {
                                     <tr>
                                         <td colSpan={6} className="p-12 text-center text-gray-500">
                                             <PackageOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                            <p className="font-medium text-gray-900">No hay pedidos registrados</p>
+                                            <p className="font-medium text-gray-900">No se encontraron pedidos de compra.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -251,8 +285,19 @@ export default function PedidosCompraPage() {
                                     <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Agregar Productos</h3>
                                     <div className="flex flex-col md:flex-row gap-4">
                                         <div className="flex-1">
+                                            <div className="relative mb-2">
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Buscar producto por nombre o código..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="w-full pl-12 p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                                                />
+                                            </div>
                                             <select
-                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                                                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 h-32"
+                                                size={4}
                                                 value={selectedProduct?._id || ''}
                                                 onChange={(e) => {
                                                     const prod = products.find((p: any) => (p._id || p.id) === e.target.value);
@@ -260,10 +305,13 @@ export default function PedidosCompraPage() {
                                                     setCostoEstimado(prod ? prod.costo_producto : 0);
                                                 }}
                                             >
-                                                <option value="">Buscar producto...</option>
-                                                {(proveedorNombre ? products.filter((p: any) => p.proveedores?.includes(proveedorNombre) || p.proveedor === proveedorNombre) : products).map((p: any) => (
-                                                    <option key={p._id || p.id} value={p._id || p.id}>{p.descripcion} ({p.codigo_corto})</option>
-                                                ))}
+                                                {(proveedorNombre ? products.filter((p: any) => p.proveedores?.includes(proveedorNombre) || p.proveedor === proveedorNombre) : products)
+                                                    .filter((p: any) => p.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) || p.codigo_corto?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                    .map((p: any) => (
+                                                        <option key={p._id || p.id} value={p._id || p.id} className="p-2 border-b border-gray-100 last:border-0 hover:bg-gray-100">
+                                                            {p.descripcion} ({p.codigo_corto}) - Costo: Bs.{p.costo_producto}
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </div>
                                         <div className="w-32">

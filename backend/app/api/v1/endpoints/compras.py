@@ -127,6 +127,8 @@ async def create_purchase_reception(
         numero_documento=reception_in.numero_documento,
         detalles=detalles,
         total_real=reception_in.total_real,
+        metodo_pago=reception_in.metodo_pago,
+        estado_pago=reception_in.estado_pago,
         notas=reception_in.notas,
         creado_por="" # será asignado en el servicio
     )

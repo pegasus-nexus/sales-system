@@ -4,9 +4,10 @@ import { getPurchaseOrders, getProveedores, getProducts, createPurchaseReception
 import { useAuthStore } from '../store/authStore';
 import { 
     Barcode, PackageCheck, AlertTriangle, Trash2, 
-    CheckCircle2, Loader2
+    CheckCircle2, Loader2, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ComprobanteCompraModal from '../components/inventario/ComprobanteCompraModal';
 
 export default function IngresoMercaderiaPage() {
     const { user } = useAuthStore();
@@ -18,11 +19,15 @@ export default function IngresoMercaderiaPage() {
     const [proveedorNombre, setProveedorNombre] = useState('');
     const [purchaseOrderId, setPurchaseOrderId] = useState('');
     const [numeroDocumento, setNumeroDocumento] = useState('');
+    const [metodoPago, setMetodoPago] = useState('CONTADO_EFECTIVO');
     
     // Scanner and Products
     const [scannerInput, setScannerInput] = useState('');
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const [detalles, setDetalles] = useState<any[]>([]);
+    
+    // Printable Voucher
+    const [lastReception, setLastReception] = useState<any>(null);
 
     // Data Fetching
     const { data: proveedores = [] } = useQuery({
@@ -45,9 +50,10 @@ export default function IngresoMercaderiaPage() {
     // Mutations
     const createMut = useMutation({
         mutationFn: createPurchaseReception,
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['purchase_receptions'] });
             toast.success('Ingreso registrado exitosamente. Precios y Kárdex actualizados.');
+            setLastReception(data);
             resetForm();
         },
         onError: (err: any) => {
@@ -163,6 +169,8 @@ export default function IngresoMercaderiaPage() {
             purchase_order_id: purchaseOrderId || null,
             numero_documento: numeroDocumento,
             total_real: totalReal,
+            metodo_pago: metodoPago,
+            estado_pago: ["CREDITO", "CONSIGNACION"].includes(metodoPago) ? "PENDIENTE" : "PAGADO",
             detalles: detalles.filter(d => d.cantidad_recibida > 0).map(d => ({
                 producto_id: d.producto_id,
                 nombre_producto: d.nombre_producto,
@@ -183,6 +191,7 @@ export default function IngresoMercaderiaPage() {
         setNumeroDocumento('');
         setDetalles([]);
         setScannerInput('');
+        setMetodoPago('CONTADO_EFECTIVO');
     };
 
     const pendingOrders = orders.filter((o: any) => o.estado === 'BORRADOR' || o.estado === 'ENVIADO' || o.estado === 'PARCIAL');
@@ -248,6 +257,20 @@ export default function IngresoMercaderiaPage() {
                                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Método de Pago</label>
+                                <select 
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                                    value={metodoPago}
+                                    onChange={(e) => setMetodoPago(e.target.value)}
+                                >
+                                    <option value="CONTADO_EFECTIVO">Al Contado (Efectivo/Caja)</option>
+                                    <option value="CONTADO_QR">Al Contado (QR)</option>
+                                    <option value="CONTADO_BANCO">Al Contado (Banco)</option>
+                                    <option value="CREDITO">A Crédito (Cuenta por Pagar)</option>
+                                    <option value="CONSIGNACION">En Consignación</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -265,9 +288,33 @@ export default function IngresoMercaderiaPage() {
                                 onChange={(e) => setScannerInput(e.target.value)}
                                 placeholder="Escanea el código de barras..."
                                 className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:bg-white focus:text-black transition-all font-medium placeholder:text-gray-500"
-                                autoFocus
                             />
                         </form>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Search className="w-5 h-5 text-gray-400" />
+                            <h2 className="text-lg font-bold">Buscador Manual</h2>
+                        </div>
+                        <select 
+                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                            onChange={(e) => {
+                                if(e.target.value) {
+                                    setScannerInput(e.target.value);
+                                    setTimeout(() => handleScannerSubmit({ preventDefault: () => {} } as any), 50);
+                                    e.target.value = '';
+                                }
+                            }}
+                            defaultValue=""
+                        >
+                            <option value="">Selecciona un producto para agregar...</option>
+                            {products.map((p: any) => (
+                                <option key={p._id || p.id} value={p.codigo_corto || p.codigo_sistema}>
+                                    {p.descripcion} (Stock: {p.inventario?.cantidad || 0})
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -373,6 +420,14 @@ export default function IngresoMercaderiaPage() {
                     </div>
                 </div>
             </div>
+            
+            {/* Modal de Comprobante */}
+            {lastReception && (
+                <ComprobanteCompraModal 
+                    reception={lastReception} 
+                    onClose={() => setLastReception(null)} 
+                />
+            )}
         </div>
     );
 }

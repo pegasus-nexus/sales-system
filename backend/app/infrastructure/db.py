@@ -35,6 +35,7 @@ from app.domain.models.meal_schedule import MealSchedule
 from app.domain.models.proveedor import Proveedor
 from app.domain.models.client_wallet import ClientWallet
 from app.domain.models.compra import PurchaseOrder, PurchaseReception
+from app.domain.models.cuenta_por_pagar import CuentaPorPagar
 
 from app.infrastructure.core.config import settings
 
@@ -123,6 +124,7 @@ async def init_db():
             ClientWallet,
             PurchaseOrder,
             PurchaseReception,
+            CuentaPorPagar,
             Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True

@@ -22,6 +22,7 @@ class SubtipoMovimiento(str, Enum):
     INGRESO_TARJETA = "INGRESO_TARJETA" # ingreso manual por Tarjeta
     CAMBIO          = "CAMBIO"          # cambio devuelto al cliente (egreso)
     GASTO           = "GASTO"           # gasto manual del cajero
+    EGRESO_COMPRA   = "EGRESO_COMPRA"   # pago por compra de mercadería
     AJUSTE          = "AJUSTE"          # corrección manual
 
 

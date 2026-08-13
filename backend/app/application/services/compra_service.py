@@ -9,6 +9,8 @@ from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimient
 from app.domain.models.product import Product
 from app.domain.models.base import DecimalMoney
 from app.infrastructure.db import get_client
+from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, SubtipoMovimiento
+from app.domain.models.cuenta_por_pagar import CuentaPorPagar, MetodoPagoCompra
 from app.infrastructure.repositories.compra import PurchaseOrderRepository, PurchaseReceptionRepository
 
 def _to_decimal(val) -> Decimal:
@@ -200,6 +202,46 @@ class CompraService:
                             
                             await producto.save(session=session)
 
+                # 4. Impacto Financiero
+                if reception.metodo_pago in ["CREDITO", "CONSIGNACION"]:
+                    # Crear Cuenta por Pagar
+                    cuenta = CuentaPorPagar(
+                        tenant_id=reception.tenant_id,
+                        sucursal_id=reception.sucursal_id,
+                        proveedor_id=reception.proveedor_id,
+                        proveedor_nombre=reception.proveedor_nombre,
+                        purchase_reception_id=str(reception.id),
+                        numero_documento=reception.numero_documento,
+                        monto_total=reception.total_real,
+                        saldo_pendiente=reception.total_real,
+                        notas=f"Generado automáticamente por ingreso {reception.numero_documento} ({reception.metodo_pago})"
+                    )
+                    await cuenta.insert(session=session)
+                    reception.estado_pago = "PENDIENTE"
+                else:
+                    # Descontar de la caja si es pago al contado
+                    sesion_abierta = await CajaSesion.find_one(
+                        CajaSesion.tenant_id == reception.tenant_id,
+                        CajaSesion.sucursal_id == reception.sucursal_id,
+                        CajaSesion.estado == EstadoSesion.ABIERTA,
+                        session=session
+                    )
+                    if sesion_abierta:
+                        movimiento = CajaMovimiento(
+                            tenant_id=reception.tenant_id,
+                            sucursal_id=reception.sucursal_id,
+                            sesion_id=str(sesion_abierta.id),
+                            cajero_id=usuario_id,
+                            cajero_name=usuario_nombre,
+                            subtipo=SubtipoMovimiento.EGRESO_COMPRA,
+                            tipo="EGRESO",
+                            monto=reception.total_real,
+                            descripcion=f"Pago por ingreso de mercadería a proveedor: {reception.proveedor_nombre}"
+                        )
+                        await movimiento.insert(session=session)
+                    reception.estado_pago = "PAGADO"
+                
+                await reception.save(session=session)
                 return reception
 
     async def list_purchase_orders(self, tenant_id: str, sucursal_id: str) -> List[PurchaseOrder]:
