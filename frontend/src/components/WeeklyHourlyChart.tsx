@@ -204,7 +204,6 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
     }, [chartData]);
 
     const firstTicketInfo = useMemo(() => {
-        if (meta?.primer_ticket_info) return meta.primer_ticket_info;
         if (!chartData || chartData.length === 0) return 'Sin ventas registradas';
         for (const item of chartData) {
             const val = Number(item.real) || 0;
@@ -213,12 +212,12 @@ export function WeeklyHourlyChart({ sucursalProp }: WeeklyHourlyChartProps) {
             }
         }
         return 'Sin ventas registradas';
-    }, [chartData, meta]);
+    }, [chartData]);
 
     const totalReal = sumRealFromChart;
     const totalAnio1 = sumA1FromChart;
     const totalAnio2 = sumA2FromChart;
-    const docsReal = meta?.docs_real ?? (totalReal > 0 ? Math.round(totalReal / 46.68) : 0);
+    const docsReal = meta?.docs_real ?? 0;
     const docsAnio1 = meta?.docs_a1 ?? 0;
 
     const pctYoY = totalAnio1 > 0 ? ((totalReal - totalAnio1) / totalAnio1) * 100 : null;
