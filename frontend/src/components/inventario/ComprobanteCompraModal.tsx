@@ -1,6 +1,8 @@
-import { Printer, X } from 'lucide-react';
+import { Printer, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Props {
     reception: any;
@@ -14,6 +16,30 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
         window.print();
     };
 
+    const handleDownloadPDF = async () => {
+        const element = document.getElementById('comprobante-impresion');
+        if (!element) return;
+
+        try {
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Comprobante_Ingreso_${reception.numero_documento}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF', error);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:p-0 print:block print:inset-auto">
             <div className="bg-white rounded-[32px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden print:shadow-none print:max-w-full print:h-auto print:max-h-none print:rounded-none print:overflow-visible">
@@ -22,6 +48,13 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 print:hidden">
                     <h2 className="text-xl font-bold text-gray-900">Comprobante de Ingreso</h2>
                     <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleDownloadPDF}
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+                        >
+                            <Download size={18} />
+                            Descargar PDF
+                        </button>
                         <button 
                             onClick={handlePrint}
                             className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-xl font-medium hover:bg-gray-800 transition-colors"
@@ -69,6 +102,14 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">ID Recepción</p>
                             <p className="font-mono text-sm text-gray-900">{reception._id || reception.id}</p>
                         </div>
+                        {reception.fecha_vencimiento_credito && (
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Vencimiento</p>
+                                <p className="font-bold text-gray-900">
+                                    {format(new Date(reception.fecha_vencimiento_credito), "dd 'de' MMMM, yyyy", { locale: es })}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mb-8">

@@ -214,6 +214,7 @@ class CompraService:
                         numero_documento=reception.numero_documento,
                         monto_total=reception.total_real,
                         saldo_pendiente=reception.total_real,
+                        fecha_vencimiento=reception.fecha_vencimiento_credito,
                         notas=f"Generado automáticamente por ingreso {reception.numero_documento} ({reception.metodo_pago})"
                     )
                     await cuenta.insert(session=session)

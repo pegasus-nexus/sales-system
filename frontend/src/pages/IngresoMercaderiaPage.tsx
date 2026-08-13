@@ -20,6 +20,8 @@ export default function IngresoMercaderiaPage() {
     const [purchaseOrderId, setPurchaseOrderId] = useState('');
     const [numeroDocumento, setNumeroDocumento] = useState('');
     const [metodoPago, setMetodoPago] = useState('CONTADO_EFECTIVO');
+    const [notas, setNotas] = useState('');
+    const [fechaVencimientoCredito, setFechaVencimientoCredito] = useState('');
     
     // Scanner and Products
     const [scannerInput, setScannerInput] = useState('');
@@ -76,15 +78,18 @@ export default function IngresoMercaderiaPage() {
                     producto_id: item.producto_id,
                     nombre_producto: item.nombre_producto,
                     codigo_producto: item.codigo_producto,
-                    // By default, received is 0, user scans to increment
-                    cantidad_recibida: 0, 
-                    cantidad_pedida: item.cantidad_pedida - item.cantidad_recibida, // Remaining
-                    costo_unitario_real: item.costo_unitario_estimado,
-                    costo_historico: product ? product.costo_producto : 0,
+                    cantidad_recibida: 0,
+                    cantidad_pedida: item.cantidad_pedida,
+                    costo_unitario_real: product ? (product.costo_producto || product.precio_venta || 0) : 0,
+                    costo_historico: product ? (product.costo_producto || product.precio_venta || 0) : 0,
                     subtotal: 0
                 };
             });
             setDetalles(newDetalles);
+        } else {
+            setProveedorId('');
+            setProveedorNombre('');
+            setDetalles([]);
         }
     };
 
@@ -163,6 +168,11 @@ export default function IngresoMercaderiaPage() {
             toast.error('Faltan datos obligatorios');
             return;
         }
+        
+        if (metodoPago === 'CREDITO' && !fechaVencimientoCredito) {
+            toast.error('Debes seleccionar una fecha de vencimiento para compras a crédito');
+            return;
+        }
 
         const payload = {
             sucursal_id: sucursalId,
@@ -173,6 +183,8 @@ export default function IngresoMercaderiaPage() {
             total_real: totalReal,
             metodo_pago: metodoPago,
             estado_pago: ["CREDITO", "CONSIGNACION"].includes(metodoPago) ? "PENDIENTE" : "PAGADO",
+            fecha_vencimiento_credito: metodoPago === 'CREDITO' ? new Date(fechaVencimientoCredito).toISOString() : null,
+            notas: notas || null,
             detalles: detalles.filter(d => d.cantidad_recibida > 0).map(d => ({
                 producto_id: d.producto_id,
                 nombre_producto: d.nombre_producto,
@@ -194,6 +206,8 @@ export default function IngresoMercaderiaPage() {
         setDetalles([]);
         setScannerInput('');
         setMetodoPago('CONTADO_EFECTIVO');
+        setNotas('');
+        setFechaVencimientoCredito('');
     };
 
     const pendingOrders = orders.filter((o: any) => o.estado === 'BORRADOR' || o.estado === 'ENVIADO' || o.estado === 'PARCIAL');
@@ -272,6 +286,30 @@ export default function IngresoMercaderiaPage() {
                                     <option value="CREDITO">A Crédito (Cuenta por Pagar)</option>
                                     <option value="CONSIGNACION">En Consignación</option>
                                 </select>
+                            </div>
+                            
+                            {metodoPago === 'CREDITO' && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Vencimiento del Crédito</label>
+                                    <input 
+                                        type="date"
+                                        required
+                                        value={fechaVencimientoCredito}
+                                        onChange={(e) => setFechaVencimientoCredito(e.target.value)}
+                                        className="w-full p-4 bg-orange-50 border border-orange-200 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 font-medium text-gray-900"
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Detalles / Observaciones</label>
+                                <textarea 
+                                    rows={2}
+                                    value={notas}
+                                    onChange={(e) => setNotas(e.target.value)}
+                                    placeholder="Opcional. Notas adicionales..."
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 resize-none"
+                                />
                             </div>
                         </div>
                     </div>

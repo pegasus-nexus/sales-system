@@ -77,6 +77,7 @@ class PurchaseReception(Document):
     # Nuevos campos para Finanzas
     metodo_pago: str = "CONTADO_EFECTIVO" # Ej: CONTADO_EFECTIVO, CREDITO, CONSIGNACION
     estado_pago: str = "PAGADO" # Ej: PAGADO, PENDIENTE
+    fecha_vencimiento_credito: Optional[datetime] = None
     
     notas: Optional[str] = None
     creado_por: str  # usuario_id
