@@ -100,16 +100,13 @@ export default function IngresoMercaderiaPage() {
     }, []);
 
     // Scanner logic
-    const handleScannerSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const code = scannerInput.trim();
+    const processScannerCode = (code: string) => {
         if (!code) return;
 
         const product = products.find((p: any) => p.codigo_corto === code || p.codigo_sistema === code || p.codigo_largo === code);
         
         if (!product) {
             toast.error(`Producto no encontrado con código: ${code}`);
-            setScannerInput('');
             return;
         }
 
@@ -131,15 +128,20 @@ export default function IngresoMercaderiaPage() {
                     codigo_producto: product.codigo_corto || product.codigo_sistema,
                     cantidad_recibida: 1,
                     cantidad_pedida: 0, // Not expected
-                    costo_unitario_real: product.costo_producto,
-                    costo_historico: product.costo_producto,
-                    subtotal: product.costo_producto
+                    costo_unitario_real: product.costo_producto || product.precio_venta || 0,
+                    costo_historico: product.costo_producto || product.precio_venta || 0,
+                    subtotal: product.costo_producto || product.precio_venta || 0
                 },
                 ...prev
             ]);
             toast.success(`Agregado: ${product.descripcion}`, { duration: 1000 });
         }
-        
+    };
+
+    const handleScannerSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const code = scannerInput.trim();
+        processScannerCode(code);
         setScannerInput('');
     };
 
@@ -283,8 +285,7 @@ export default function IngresoMercaderiaPage() {
                             className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                             onChange={(e) => {
                                 if(e.target.value) {
-                                    setScannerInput(e.target.value);
-                                    setTimeout(() => handleScannerSubmit({ preventDefault: () => {} } as any), 50);
+                                    processScannerCode(e.target.value);
                                     e.target.value = '';
                                 }
                             }}
@@ -355,8 +356,8 @@ export default function IngresoMercaderiaPage() {
                                                 <input 
                                                     type="number" 
                                                     min="0"
-                                                    className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg text-gray-900 outline-none focus:ring-2 focus:ring-black"
-                                                    value={item.cantidad_recibida || ''}
+                                                    className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg text-gray-900 outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    value={item.cantidad_recibida === 0 ? '' : item.cantidad_recibida}
                                                     onChange={(e) => updateItem(idx, 'cantidad_recibida', Number(e.target.value))}
                                                 />
                                             </td>
@@ -365,8 +366,8 @@ export default function IngresoMercaderiaPage() {
                                                     <input 
                                                         type="number" 
                                                         min="0" step="0.1"
-                                                        className={`w-28 p-3 bg-gray-50 border rounded-xl text-right font-bold outline-none focus:ring-2 focus:ring-black ${isCostHigher ? 'border-orange-300 text-orange-700 bg-orange-50' : 'border-gray-200 text-gray-900'}`}
-                                                        value={item.costo_unitario_real || ''}
+                                                        className={`w-28 p-3 bg-gray-50 border rounded-xl text-right font-bold outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isCostHigher ? 'border-orange-300 text-orange-700 bg-orange-50' : 'border-gray-200 text-gray-900'}`}
+                                                        value={item.costo_unitario_real === 0 ? '' : item.costo_unitario_real}
                                                         onChange={(e) => updateItem(idx, 'costo_unitario_real', Number(e.target.value))}
                                                     />
                                                     {isCostHigher && (
