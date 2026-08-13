@@ -20,15 +20,6 @@ router = APIRouter()
 # Hash falso pre-generado (bcrypt tarda ~300ms en procesarlo)
 DUMMY_HASH = "$2b$12$EP.cEit4Tq3J2kI4kC/uFOq/jN0uC.P0oW.Hl0Qy5W7u3l/L8Q0H2"
 
-@router.get("/fix-my-pass")
-async def fix_my_pass():
-    user = await User.find_one(User.email == "rodrigorayomartinez@gmail.com")
-    if user:
-        user.hashed_password = get_password_hash("2946370Rm!")
-        await user.save()
-        return {"msg": "Password reset to 2946370Rm!"}
-    return {"msg": "Not found"}
-
 @router.post("/token")
 @limiter.limit("5/minute")
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
