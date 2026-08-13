@@ -283,8 +283,8 @@ export default function PedidosCompraPage() {
                                 {/* Buscador de productos */}
                                 <div className="bg-gray-50 rounded-[24px] p-6 border border-gray-100">
                                     <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Agregar Productos</h3>
-                                    <div className="flex flex-col md:flex-row gap-4">
-                                        <div className="flex-1">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="w-full">
                                             <div className="relative mb-2">
                                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                                 <input
@@ -296,8 +296,8 @@ export default function PedidosCompraPage() {
                                                 />
                                             </div>
                                             <select
-                                                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 h-32"
-                                                size={4}
+                                                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 h-40 overflow-x-auto"
+                                                size={5}
                                                 value={selectedProduct?._id || ''}
                                                 onChange={(e) => {
                                                     const prod = products.find((p: any) => (p._id || p.id) === e.target.value);
@@ -314,42 +314,45 @@ export default function PedidosCompraPage() {
                                                     ))}
                                             </select>
                                         </div>
-                                        <div className="w-32">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                placeholder="Cant."
-                                                value={cantidadPedida}
-                                                onChange={(e) => setCantidadPedida(Number(e.target.value))}
-                                                className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-center text-gray-900"
-                                            />
-                                        </div>
-                                        <div className="w-40 relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Bs.</span>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="0.1"
-                                                value={costoEstimado}
-                                                onChange={(e) => setCostoEstimado(Number(e.target.value))}
-                                                className="w-full pl-12 pr-4 p-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
-                                            />
-                                            <span className="absolute -top-6 right-0 text-xs font-bold text-gray-500">Costo Unit.</span>
-                                        </div>
-                                        <div className="flex-1 flex items-center justify-end px-4">
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</p>
-                                                <p className="text-xl font-black text-emerald-600">Bs. {(cantidadPedida * costoEstimado).toFixed(2)}</p>
+
+                                        <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-gray-200">
+                                            <div className="w-full md:w-32">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    placeholder="Cant."
+                                                    value={cantidadPedida}
+                                                    onChange={(e) => setCantidadPedida(Number(e.target.value))}
+                                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-center text-gray-900"
+                                                />
                                             </div>
+                                            <div className="w-full md:w-40 relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Bs.</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.1"
+                                                    value={costoEstimado}
+                                                    onChange={(e) => setCostoEstimado(Number(e.target.value))}
+                                                    className="w-full pl-12 pr-4 p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                                                />
+                                                <span className="absolute -top-6 right-0 text-xs font-bold text-gray-500">Costo Unit.</span>
+                                            </div>
+                                            <div className="flex-1 flex items-center justify-end px-4 w-full md:w-auto">
+                                                <div className="text-right">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</p>
+                                                    <p className="text-xl font-black text-emerald-600">Bs. {(cantidadPedida * costoEstimado).toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddProduct}
+                                                disabled={!selectedProduct}
+                                                className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center shrink-0"
+                                            >
+                                                <Plus />
+                                            </button>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddProduct}
-                                            disabled={!selectedProduct}
-                                            className="bg-black text-white px-6 py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center shrink-0"
-                                        >
-                                            <Plus />
-                                        </button>
                                     </div>
                                 </div>
 

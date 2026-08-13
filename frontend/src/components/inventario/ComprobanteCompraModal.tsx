@@ -29,8 +29,8 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
                             <Printer size={18} />
                             Imprimir
                         </button>
-                        <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                            <X size={20} />
+                        <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-full transition-colors" title="Cerrar">
+                            <X size={24} />
                         </button>
                     </div>
                 </div>
