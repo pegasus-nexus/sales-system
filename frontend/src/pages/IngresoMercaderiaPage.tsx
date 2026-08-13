@@ -274,24 +274,6 @@ export default function IngresoMercaderiaPage() {
                         </div>
                     </div>
 
-                    <div className="bg-black p-6 rounded-[32px] shadow-xl text-white">
-                        <div className="flex items-center gap-3 mb-2">
-                            <Barcode className="w-6 h-6 text-emerald-400" />
-                            <h2 className="text-lg font-bold">Escáner Activo</h2>
-                        </div>
-                        <p className="text-gray-400 text-sm mb-4">El lector está listo. Escanea los productos para agregarlos o sumar cantidades.</p>
-                        <form onSubmit={handleScannerSubmit}>
-                            <input
-                                ref={scannerInputRef}
-                                type="text"
-                                value={scannerInput}
-                                onChange={(e) => setScannerInput(e.target.value)}
-                                placeholder="Escanea el código de barras..."
-                                className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:bg-white focus:text-black transition-all font-medium placeholder:text-gray-500"
-                            />
-                        </form>
-                    </div>
-
                     <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
                         <div className="flex items-center gap-3 mb-4">
                             <Search className="w-5 h-5 text-gray-400" />
@@ -315,6 +297,24 @@ export default function IngresoMercaderiaPage() {
                                 </option>
                             ))}
                         </select>
+                    </div>
+
+                    <div className="bg-black p-6 rounded-[32px] shadow-xl text-white">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Barcode className="w-6 h-6 text-emerald-400" />
+                            <h2 className="text-lg font-bold">Escáner Activo</h2>
+                        </div>
+                        <p className="text-gray-400 text-sm mb-4">El lector está listo. Escanea los productos para agregarlos o sumar cantidades.</p>
+                        <form onSubmit={handleScannerSubmit}>
+                            <input
+                                ref={scannerInputRef}
+                                type="text"
+                                value={scannerInput}
+                                onChange={(e) => setScannerInput(e.target.value)}
+                                placeholder="Escanea el código de barras..."
+                                className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl outline-none focus:bg-white focus:text-black transition-all font-medium placeholder:text-gray-500"
+                            />
+                        </form>
                     </div>
                 </div>
 
@@ -355,7 +355,7 @@ export default function IngresoMercaderiaPage() {
                                                 <input 
                                                     type="number" 
                                                     min="0"
-                                                    className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg outline-none focus:ring-2 focus:ring-black"
+                                                    className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg text-gray-900 outline-none focus:ring-2 focus:ring-black"
                                                     value={item.cantidad_recibida || ''}
                                                     onChange={(e) => updateItem(idx, 'cantidad_recibida', Number(e.target.value))}
                                                 />
