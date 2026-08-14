@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
 import { uploadImage } from '../api/api';
-import { Loader2, Save, Globe, Image as ImageIcon, Type, Upload } from 'lucide-react';
+import { Loader2, Save, Globe, Image as ImageIcon, Type, Upload, Star, Gift } from 'lucide-react';
 import { toast } from 'sonner';
+import { Product } from '../types/product';
 
 interface WebConfig {
   hero_subtitle: string;
@@ -11,6 +12,11 @@ interface WebConfig {
   hero_description: string;
   hero_bg_cba: string;
   hero_bg_lpz: string;
+  featured_products: string[];
+  club_benefit_product_id: string | null;
+  club_benefit_description: string;
+  club_benefit_branch: string;
+  club_benefit_valid_until: string;
 }
 
 export default function WebConfigPage() {
@@ -20,17 +26,33 @@ export default function WebConfigPage() {
     hero_title: '',
     hero_description: '',
     hero_bg_cba: '',
-    hero_bg_lpz: ''
+    hero_bg_lpz: '',
+    featured_products: [],
+    club_benefit_product_id: null,
+    club_benefit_description: '',
+    club_benefit_branch: '',
+    club_benefit_valid_until: ''
   });
 
   const [isUploadingCba, setIsUploadingCba] = useState(false);
   const [isUploadingLpz, setIsUploadingLpz] = useState(false);
 
+  // Fetch web config
   const { data: config, isLoading } = useQuery({
     queryKey: ['web-config'],
     queryFn: async () => {
       const response = await client<WebConfig>('/web-config');
       return response;
+    }
+  });
+
+  // Fetch catalog (only web visible)
+  const { data: catalogProducts = [], isLoading: isLoadingCatalog } = useQuery({
+    queryKey: ['fidelizacion-catalog-raw'],
+    queryFn: async () => {
+      // Usar endpoint de admin products con filtro
+      const response = await client<{items: Product[]}>('/products?limit=500');
+      return response.items.filter(p => p.show_on_web);
     }
   });
 
@@ -41,7 +63,12 @@ export default function WebConfigPage() {
         hero_title: config.hero_title || '',
         hero_description: config.hero_description || '',
         hero_bg_cba: config.hero_bg_cba || '',
-        hero_bg_lpz: config.hero_bg_lpz || ''
+        hero_bg_lpz: config.hero_bg_lpz || '',
+        featured_products: config.featured_products || [],
+        club_benefit_product_id: config.club_benefit_product_id || null,
+        club_benefit_description: config.club_benefit_description || '',
+        club_benefit_branch: config.club_benefit_branch || '',
+        club_benefit_valid_until: config.club_benefit_valid_until || ''
       });
     }
   }, [config]);
@@ -60,9 +87,21 @@ export default function WebConfigPage() {
     }
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFeaturedChange = (index: number, productId: string) => {
+    setFormData(prev => {
+      const newFeatured = [...prev.featured_products];
+      if (productId) {
+        newFeatured[index] = productId;
+      } else {
+        newFeatured.splice(index, 1);
+      }
+      return { ...prev, featured_products: newFeatured };
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, city: 'cba' | 'lpz') => {
@@ -79,7 +118,7 @@ export default function WebConfigPage() {
           ...prev,
           [city === 'cba' ? 'hero_bg_cba' : 'hero_bg_lpz']: res.url
         }));
-        toast.success(`Imagen para ${city === 'cba' ? 'Cochabamba' : 'La Paz'} subida correctamente`);
+        toast.success(Imagen para \ subida correctamente);
       }
     } catch (err: any) {
       toast.error(err.message || 'Error al subir la imagen');
@@ -94,7 +133,7 @@ export default function WebConfigPage() {
     updateMutation.mutate(formData);
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingCatalog) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-pegasus-500" />
@@ -111,7 +150,7 @@ export default function WebConfigPage() {
             Configuración Web
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Personaliza los textos y portadas que los clientes ven en la tienda online.
+            Personaliza los textos, portadas, destacados y beneficios del club en la tienda online.
           </p>
         </div>
         <button
@@ -222,7 +261,7 @@ export default function WebConfigPage() {
               <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative shadow-inner">
                 {formData.hero_bg_cba ? (
                   <img
-                    src={formData.hero_bg_cba.startsWith('/') ? `https://chocolatestaboada.com${formData.hero_bg_cba}` : formData.hero_bg_cba}
+                    src={formData.hero_bg_cba.startsWith('/') ? \https://chocolatestaboada.com\\ : formData.hero_bg_cba}
                     alt="Portada Cochabamba"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -270,7 +309,7 @@ export default function WebConfigPage() {
               <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative shadow-inner">
                 {formData.hero_bg_lpz ? (
                   <img
-                    src={formData.hero_bg_lpz.startsWith('/') ? `https://chocolatestaboada.com${formData.hero_bg_lpz}` : formData.hero_bg_lpz}
+                    src={formData.hero_bg_lpz.startsWith('/') ? \https://chocolatestaboada.com\\ : formData.hero_bg_lpz}
                     alt="Portada La Paz"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -286,7 +325,125 @@ export default function WebConfigPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* DESTACADOS DE TEMPORADA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+            <Star className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-bold text-gray-900">Destacados de Temporada</h2>
+          </div>
+          
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[0, 1].map((index) => (
+              <div key={index} className="space-y-2">
+                <label className="block text-sm font-bold text-gray-900">
+                  Producto Destacado {index + 1}
+                </label>
+                <select
+                  value={formData.featured_products[index] || ''}
+                  onChange={(e) => handleFeaturedChange(index, e.target.value)}
+                  className="w-full rounded-xl border-gray-300 border px-4 py-2.5 bg-white text-gray-900 font-medium focus:ring-2 focus:ring-pegasus-500 focus:border-pegasus-500 outline-none"
+                >
+                  <option value="">-- Ninguno (Oculto) --</option>
+                  {catalogProducts.map(p => (
+                    <option key={p.id} value={p.id}>{p.descripcion}</option>
+                  ))}
+                </select>
+                {formData.featured_products[index] && (
+                  <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    {catalogProducts.find(p => p.id === formData.featured_products[index])?.image_url ? (
+                      <img 
+                        src={catalogProducts.find(p => p.id === formData.featured_products[index])?.image_url} 
+                        className="w-12 h-12 rounded object-cover border border-gray-200 bg-white" 
+                        alt=""
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-gray-400" />
+                      </div>
+                    )}
+                    <span className="text-sm font-semibold text-gray-700 line-clamp-2">
+                      {catalogProducts.find(p => p.id === formData.featured_products[index])?.descripcion}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* BENEFICIO COMUNIDAD TABOADA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-bold text-gray-900">Beneficio Club Taboada</h2>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1.5">
+                Producto del Beneficio (Regalo o Descuento Especial)
+              </label>
+              <select
+                name="club_benefit_product_id"
+                value={formData.club_benefit_product_id || ''}
+                onChange={handleChange}
+                className="w-full rounded-xl border-gray-300 border px-4 py-2.5 bg-white text-gray-900 font-medium focus:ring-2 focus:ring-pegasus-500 focus:border-pegasus-500 outline-none"
+              >
+                <option value="">-- Sin Beneficio Activo --</option>
+                {catalogProducts.map(p => (
+                  <option key={p.id} value={p.id}>{p.descripcion}</option>
+                ))}
+              </select>
+            </div>
+
+            {formData.club_benefit_product_id && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-pegasus-50/50 p-5 rounded-xl border border-pegasus-100">
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-900 mb-1.5">
+                    Descripción Corta / Atributo
+                  </label>
+                  <input
+                    type="text"
+                    name="club_benefit_description"
+                    value={formData.club_benefit_description}
+                    onChange={handleChange}
+                    placeholder="Ej. 70% cacao amazónico"
+                    className="w-full rounded-xl border-gray-300 border px-4 py-2 bg-white text-gray-900 placeholder-gray-400 font-medium focus:ring-2 focus:ring-pegasus-500 focus:border-pegasus-500 outline-none"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-1.5">
+                    Sucursal Válida
+                  </label>
+                  <input
+                    type="text"
+                    name="club_benefit_branch"
+                    value={formData.club_benefit_branch}
+                    onChange={handleChange}
+                    placeholder="Ej. Solo válido para la sucursal Recoleta"
+                    className="w-full rounded-xl border-gray-300 border px-4 py-2 bg-white text-gray-900 placeholder-gray-400 font-medium focus:ring-2 focus:ring-pegasus-500 focus:border-pegasus-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-1.5">
+                    Fecha Límite / Validez
+                  </label>
+                  <input
+                    type="text"
+                    name="club_benefit_valid_until"
+                    value={formData.club_benefit_valid_until}
+                    onChange={handleChange}
+                    placeholder="Ej. Válido para recoger hasta: Jueves, 6 de agosto de 2026"
+                    className="w-full rounded-xl border-gray-300 border px-4 py-2 bg-white text-gray-900 placeholder-gray-400 font-medium focus:ring-2 focus:ring-pegasus-500 focus:border-pegasus-500 outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

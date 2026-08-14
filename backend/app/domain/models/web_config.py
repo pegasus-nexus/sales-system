@@ -15,6 +15,15 @@ class WebConfig(Document):
     hero_bg_cba: str = "/img/portadataboada.png"
     hero_bg_lpz: str = "/img/portadalapaz.png"
     
+    # Featured Products
+    featured_products: list[str] = Field(default_factory=list)
+    
+    # Club Taboada Benefit
+    club_benefit_product_id: Optional[str] = None
+    club_benefit_description: Optional[str] = None
+    club_benefit_branch: Optional[str] = None
+    club_benefit_valid_until: Optional[str] = None
+    
     # Metadata
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

@@ -14,6 +14,11 @@ class WebConfigUpdate(BaseModel):
     hero_description: Optional[str] = None
     hero_bg_cba: Optional[str] = None
     hero_bg_lpz: Optional[str] = None
+    featured_products: Optional[list[str]] = None
+    club_benefit_product_id: Optional[str] = None
+    club_benefit_description: Optional[str] = None
+    club_benefit_branch: Optional[str] = None
+    club_benefit_valid_until: Optional[str] = None
 
 @router.get("/web-config", response_model=WebConfig)
 async def get_web_config(current_user: User = Depends(get_current_active_user)):
