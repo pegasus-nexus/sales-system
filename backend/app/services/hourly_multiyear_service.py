@@ -175,20 +175,9 @@ async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filt
                 }
             },
         }},
-        {"$match": {"fecha_conv": {"$ne": None}, "monto": {"$gt": 0}}},
         {"$project": {
             "monto": 1,
-            "fecha_local": {
-                "$dateSubtract": {
-                    "startDate": "$fecha_conv",
-                    "unit": "hour",
-                    "amount": 4
-                }
-            }
-        }},
-        {"$project": {
-            "monto": 1,
-            "hora": {"$hour": "$fecha_local"},
+            "hora": {"$hour": "$fecha_conv"},
         }},
         {"$group": {
             "_id": "$hora",
