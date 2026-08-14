@@ -1,10 +1,10 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
 import { uploadImage } from '../api/api';
 import { Loader2, Save, Globe, Image as ImageIcon, Type, Upload, Star, Gift } from 'lucide-react';
 import { toast } from 'sonner';
-import { Product } from '../types/product';
+import type { Product } from '../api/types';
 
 interface WebConfig {
   hero_subtitle: string;
@@ -118,7 +118,7 @@ export default function WebConfigPage() {
           ...prev,
           [city === 'cba' ? 'hero_bg_cba' : 'hero_bg_lpz']: res.url
         }));
-        toast.success(Imagen para \ subida correctamente);
+        toast.success(`Imagen subida correctamente`);
       }
     } catch (err: any) {
       toast.error(err.message || 'Error al subir la imagen');
@@ -261,7 +261,7 @@ export default function WebConfigPage() {
               <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative shadow-inner">
                 {formData.hero_bg_cba ? (
                   <img
-                    src={formData.hero_bg_cba.startsWith('/') ? \https://chocolatestaboada.com\\ : formData.hero_bg_cba}
+                    src={formData.hero_bg_cba.startsWith('/') ? `https://chocolatestaboada.com${formData.hero_bg_cba}` : formData.hero_bg_cba}
                     alt="Portada Cochabamba"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -309,7 +309,7 @@ export default function WebConfigPage() {
               <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center relative shadow-inner">
                 {formData.hero_bg_lpz ? (
                   <img
-                    src={formData.hero_bg_lpz.startsWith('/') ? \https://chocolatestaboada.com\\ : formData.hero_bg_lpz}
+                    src={formData.hero_bg_lpz.startsWith('/') ? `https://chocolatestaboada.com${formData.hero_bg_lpz}` : formData.hero_bg_lpz}
                     alt="Portada La Paz"
                     className="w-full h-full object-cover"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -348,14 +348,14 @@ export default function WebConfigPage() {
                 >
                   <option value="">-- Ninguno (Oculto) --</option>
                   {catalogProducts.map(p => (
-                    <option key={p.id} value={p.id}>{p.descripcion}</option>
+                    <option key={p._id} value={p._id}>{p.descripcion}</option>
                   ))}
                 </select>
                 {formData.featured_products[index] && (
                   <div className="mt-2 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    {catalogProducts.find(p => p.id === formData.featured_products[index])?.image_url ? (
+                    {catalogProducts.find(p => p._id === formData.featured_products[index])?.image_url ? (
                       <img 
-                        src={catalogProducts.find(p => p.id === formData.featured_products[index])?.image_url} 
+                        src={catalogProducts.find(p => p._id === formData.featured_products[index])?.image_url} 
                         className="w-12 h-12 rounded object-cover border border-gray-200 bg-white" 
                         alt=""
                       />
@@ -365,7 +365,7 @@ export default function WebConfigPage() {
                       </div>
                     )}
                     <span className="text-sm font-semibold text-gray-700 line-clamp-2">
-                      {catalogProducts.find(p => p.id === formData.featured_products[index])?.descripcion}
+                      {catalogProducts.find(p => p._id === formData.featured_products[index])?.descripcion}
                     </span>
                   </div>
                 )}
@@ -394,7 +394,7 @@ export default function WebConfigPage() {
               >
                 <option value="">-- Sin Beneficio Activo --</option>
                 {catalogProducts.map(p => (
-                  <option key={p.id} value={p.id}>{p.descripcion}</option>
+                  <option key={p._id} value={p._id}>{p.descripcion}</option>
                 ))}
               </select>
             </div>
