@@ -24,6 +24,9 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
     if not telefono:
         raise HTTPException(status_code=400, detail="El teléfono es obligatorio")
         
+    import random
+    import string
+    
     # Buscar si existe el cliente
     existing_cliente = await Cliente.find_one(
         Cliente.tenant_id == tenant_id,
@@ -31,6 +34,20 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
     )
     
     if existing_cliente:
+        # Asegurar que tenga código de miembro
+        updated = False
+        if not existing_cliente.numero_tarjeta:
+            random_code = ''.join(random.choices(string.digits, k=6))
+            existing_cliente.numero_tarjeta = f"TAB-{random_code}"
+            updated = True
+            
+        if not existing_cliente.is_miembro_comunidad:
+            existing_cliente.is_miembro_comunidad = True
+            updated = True
+            
+        if updated:
+            await existing_cliente.save()
+            
         # Ya existe, actúa como login
         return {
             "status": "success",
@@ -38,15 +55,21 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
             "cliente_id": str(existing_cliente.id),
             "nombre": existing_cliente.nombre,
             "telefono": existing_cliente.telefono,
+            "codigo_miembro": existing_cliente.numero_tarjeta,
             "is_new": False
         }
         
     # Crear nuevo cliente
+    random_code = ''.join(random.choices(string.digits, k=6))
+    numero_tarjeta = f"TAB-{random_code}"
+    
     nuevo_cliente = Cliente(
         tenant_id=tenant_id,
         nombre=nombre_completo,
         telefono=telefono,
         tipo_cliente=TipoCliente.ACTIVO,
+        is_miembro_comunidad=True,
+        numero_tarjeta=numero_tarjeta,
         datos_crm={"origen": "landing_page_fidelizacion"}
     )
     await nuevo_cliente.create()
@@ -57,6 +80,7 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
         "cliente_id": str(nuevo_cliente.id),
         "nombre": nuevo_cliente.nombre,
         "telefono": nuevo_cliente.telefono,
+        "codigo_miembro": nuevo_cliente.numero_tarjeta,
         "is_new": True
     }
 
