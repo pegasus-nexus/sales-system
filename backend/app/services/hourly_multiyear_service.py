@@ -199,13 +199,15 @@ async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filt
 async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_filters: Dict) -> tuple[Dict[str, float], int]:
     """
     Consulta sales (POS en vivo) para un día específico (08:00–23:00).
-    Aplica offset de timezone -04:00 (Bolivia) para convertir UTC created_at a Hora Local.
+    Como se demostró en producción, created_at se está guardando como hora local,
+    por lo que filtramos directamente sin convertir a UTC y extraemos la hora cruda.
     """
-    start_utc, end_utc = get_day_range_bolivia(target_date.strftime("%Y-%m-%d"))
+    start = datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0)
+    end = datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59, 999999)
 
     match_stage: Dict[str, Any] = {
         "tenant_id": tenant_id,
-        "created_at": {"$gte": start_utc, "$lte": end_utc},
+        "created_at": {"$gte": start, "$lte": end},
         "estado": {"$ne": "anulado"},
         "anulada": {"$ne": True}
     }
@@ -219,7 +221,7 @@ async def _fetch_day_hourly_sales(db, tenant_id: str, target_date: date, suc_fil
         {
             "$project": {
                 "monto_neto": {"$toDouble": "$total"},
-                "hour": {"$hour": {"date": "$created_at", "timezone": "-04:00"}}
+                "hour": {"$hour": "$created_at"}
             }
         },
         {
