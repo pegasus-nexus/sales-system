@@ -177,7 +177,7 @@ async def _fetch_day_hourly_historico(db, tenant_id: str, f_date: date, suc_filt
         }},
         {"$project": {
             "monto": 1,
-            "hora": {"$hour": "$fecha_conv"},
+            "hora": {"$hour": {"date": "$fecha_conv", "timezone": "-04:00"}},
         }},
         {"$group": {
             "_id": "$hora",
