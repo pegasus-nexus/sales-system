@@ -30,6 +30,15 @@ export default function AnalyticsDashboard() {
     const [bcg, setBcg] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
+    
+    // Reloj Bolivia
+    const [boliviaTime, setBoliviaTime] = useState(new Date().toLocaleTimeString('es-BO', { timeZone: 'America/La_Paz', hour: '2-digit', minute:'2-digit', second:'2-digit' }));
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setBoliviaTime(new Date().toLocaleTimeString('es-BO', { timeZone: 'America/La_Paz', hour: '2-digit', minute:'2-digit', second:'2-digit' }));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -99,6 +108,10 @@ export default function AnalyticsDashboard() {
                         <div className="p-2 bg-amber-100 text-amber-700 rounded-xl"><Activity size={26} /></div>
                         Inteligencia de Negocios
                     </h1>
+                    <div className="inline-flex items-center gap-2 mt-3 mb-1 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-sm font-bold border border-indigo-100 shadow-sm">
+                        <Clock size={16} />
+                        <span>Hora Oficial (Bolivia): {boliviaTime}</span>
+                    </div>
                     <p className="text-gray-500 mt-2 text-sm font-medium">Panel Gerencial de Rendimiento — Datos en tiempo real de MongoDB.</p>
                 </div>
                 
