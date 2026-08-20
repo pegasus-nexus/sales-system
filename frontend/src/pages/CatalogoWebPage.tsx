@@ -8,15 +8,16 @@ import { toast } from 'sonner';
 
 function ManageCategoriesDropdown({ collection, activeCategories, onApply }: { collection: WebCollection, activeCategories: Category[], onApply: (collection: WebCollection, newIds: string[]) => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<string[]>(collection.categories_ids || []);
+
+    // Sincronizamos con las prop si cambian desde afuera
+    const selectedIds = collection.categories_ids || [];
 
     const toggleId = (id: string) => {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    };
-
-    const handleApply = () => {
-        onApply(collection, selectedIds);
-        setIsOpen(false);
+        const newIds = selectedIds.includes(id) 
+            ? selectedIds.filter(x => x !== id) 
+            : [...selectedIds, id];
+        
+        onApply(collection, newIds);
     };
 
     return (
@@ -47,14 +48,6 @@ function ManageCategoriesDropdown({ collection, activeCategories, onApply }: { c
                                 </label>
                             );
                         })}
-                    </div>
-                    <div className="p-2 border-t border-gray-100 mt-2">
-                        <button 
-                            onClick={handleApply}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition-colors text-sm"
-                        >
-                            Aplicar Cambios
-                        </button>
                     </div>
                 </div>
             )}
