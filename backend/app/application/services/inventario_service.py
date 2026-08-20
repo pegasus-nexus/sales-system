@@ -88,10 +88,10 @@ class InventarioService:
 
     @staticmethod
     async def importar_inventario(sucursal_id: str, file_bytes: bytes, filename: str, current_user: User) -> Dict[str, Any]:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.SUPERADMIN]:
-            raise HTTPException(status_code=403, detail="No autorizado")
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN]:
+            raise HTTPException(status_code=403, detail="No autorizado. Solo los administradores pueden importar inventario de forma masiva.")
             
-        if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR] and sucursal_id != current_user.sucursal_id:
+        if current_user.role == UserRole.ADMIN_SUCURSAL and sucursal_id != current_user.sucursal_id:
             raise HTTPException(status_code=403, detail="Solo puedes importar a tu propia sucursal")
             
         tenant_id = current_user.tenant_id or "default"
@@ -243,8 +243,8 @@ class InventarioService:
 
     @staticmethod
     async def sincronizar_sucursal(sucursal_id_req: Optional[str], file_bytes: bytes, filename: str, current_user: User) -> Dict[str, Any]:
-        if current_user.role not in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO, UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
-            raise HTTPException(status_code=403, detail=InventarioErrors.SIN_PERMISO)
+        if current_user.role not in [UserRole.ADMIN_SUCURSAL, UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+            raise HTTPException(status_code=403, detail="No autorizado. Solo los administradores pueden realizar una actualizaciA3n masiva.")
 
         sucursal_id_user = current_user.sucursal_id
         if current_user.role in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
