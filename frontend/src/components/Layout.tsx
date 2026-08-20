@@ -118,7 +118,7 @@ export default function Layout({ children }: LayoutProps) {
         if (itemPath.includes('?')) {
             return fullPath === itemPath;
         }
-        return location.pathname === itemPath || (itemPath !== '/' && location.pathname.startsWith(itemPath) && !location.search);
+        return location.pathname === itemPath || (itemPath !== '/' && location.pathname.startsWith(itemPath + '/') && !location.search);
     };
 
     const getNavGroups = (): NavGroup[] => {
@@ -513,7 +513,7 @@ export default function Layout({ children }: LayoutProps) {
             {/* ── Mobile Bottom Nav Bar ── */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex items-stretch">
                 {mobileBottomItems.map((item) => {
-                    const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
+                    const isActive = item.path === '/' ? location.pathname === '/' : (location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
                     return (
                         <Link
                             key={item.path}
@@ -582,7 +582,7 @@ export default function Layout({ children }: LayoutProps) {
                             {/* All Nav Items */}
                             <div className="flex flex-col gap-1 flex-1">
                                 {allFlatNavItems.map((item: NavSubItem) => {
-                                    const isActive = item.path !== '/' && location.pathname.startsWith(item.path);
+                                    const isActive = item.path === '/' ? location.pathname === '/' : (location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
                                     return (
                                         <Link
                                             key={item.path}
