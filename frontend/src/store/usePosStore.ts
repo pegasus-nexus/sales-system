@@ -28,6 +28,7 @@ export interface ClienteData {
     email: string;
     telefono: string;
     es_factura: boolean;
+    is_miembro_comunidad?: boolean;
 }
 
 export interface VendedorData {

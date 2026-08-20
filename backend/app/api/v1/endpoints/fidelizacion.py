@@ -213,3 +213,28 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
         "categorias": cat_list,
         "productos": prod_list
     }
+
+class ReclamoCuponInput(BaseModel):
+    telefono: str
+    premio_id: str
+
+@router.post("/reclamar_cupon")
+async def reclamar_cupon(data: ReclamoCuponInput, tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+    existing_cliente = await Cliente.find_one(
+        Cliente.tenant_id == tenant_id,
+        Cliente.telefono == data.telefono
+    )
+    if existing_cliente:
+        if not existing_cliente.datos_crm:
+            existing_cliente.datos_crm = {}
+        
+        # Add to list of claimed prizes
+        if "premios_canjeados" not in existing_cliente.datos_crm:
+            existing_cliente.datos_crm["premios_canjeados"] = []
+            
+        # Avoid duplicates
+        if data.premio_id not in existing_cliente.datos_crm["premios_canjeados"]:
+            existing_cliente.datos_crm["premios_canjeados"].append(data.premio_id)
+            await existing_cliente.save()
+            
+    return {"status": "success"}

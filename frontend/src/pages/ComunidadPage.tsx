@@ -144,17 +144,18 @@ export default function ComunidadPage() {
                                 <th className="px-6 py-4">Estado</th>
                                 <th className="px-6 py-4">Última Compra</th>
                                 <th className="px-6 py-4">Total Compras</th>
+                                <th className="px-6 py-4">Premios Canjeados</th>
                                 <th className="px-6 py-4">Tarjeta Taboada</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {miembrosLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
                                 </tr>
                             ) : miembros?.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
                                 </tr>
                             ) : (
                                 miembros?.map((miembro: any) => (
@@ -180,6 +181,19 @@ export default function ComunidadPage() {
                                         </td>
                                         <td className="px-6 py-3 font-medium text-gray-900">
                                             {miembro.total_compras || 0}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {miembro.premios_canjeados?.length > 0 ? (
+                                                <div className="flex flex-col gap-1">
+                                                    {miembro.premios_canjeados.map((p: string, i: number) => (
+                                                        <span key={i} className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded text-[10px] font-bold w-fit whitespace-nowrap">
+                                                            {p === 'trufa' ? 'CHOCOLATE AMARGO' : p === 'choco' ? 'TRUFAS DE CHOCOLATE' : p === 'cupon2' ? 'GESTO 2%' : p === 'choco3' ? 'GESTO 3%' : p === 'cupon4' ? 'GESTO 4%' : p.toUpperCase()}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs italic">Ninguno</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-3">
                                             <span className="font-mono bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-lg border border-blue-100 shadow-sm">

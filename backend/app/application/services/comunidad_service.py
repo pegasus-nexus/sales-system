@@ -191,6 +191,10 @@ class ComunidadService:
                 m_dict["ultima_compra_fecha"] = None
                 m_dict["estado_visita"] = "Solo Visitó"
                 
+            # Extraer premios_canjeados de datos_crm
+            datos_crm = getattr(m, 'datos_crm', {}) or {}
+            m_dict["premios_canjeados"] = datos_crm.get("premios_canjeados", [])
+            
             result.append(m_dict)
             
         return result

@@ -276,6 +276,7 @@ export default function POSPage() {
                     email: cliente.email || undefined,
                     telefono: cliente.telefono || undefined,
                     es_factura: cliente.es_factura,
+                    is_miembro_comunidad: cliente.is_miembro_comunidad || false,
                 } : undefined,
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
