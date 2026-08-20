@@ -45,4 +45,5 @@ class PurchaseReceptionCreate(BaseModel):
     metodo_pago: str = "CONTADO_EFECTIVO"
     estado_pago: str = "PAGADO"
     fecha_vencimiento_credito: Optional[datetime] = None
+    fecha_recepcion: Optional[datetime] = None
     notas: Optional[str] = None

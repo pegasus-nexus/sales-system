@@ -59,3 +59,8 @@ Este documento define las directrices y normas que todos los agentes de IA (incl
 2. **Formateo y Linting:**
    - Ejecutar `ruff check .` en el backend antes de dar por completado un cambio.
    - Ejecutar `npm run lint` en el frontend para validar que se cumplen las directrices de TypeScript y React Hooks.
+
+
+## 🛑 PREVENCIÓN DE PÉRDIDA DE DATOS (REGLA DE ORO)
+1. **PROHIBIDO ELIMINAR DATOS MASIVOS:** Nunca crees, sugieras, ni ejecutes scripts que usen .delete_all(), .delete_many(), .drop() o similares en colecciones principales (ventas, inventario, productos).
+2. Los datos nunca se borran. Si un dato es inválido o se debe ocultar, se debe **inactivar** o **cambiar su estado** (soft delete), pero jamás borrar el registro de la base de datos.

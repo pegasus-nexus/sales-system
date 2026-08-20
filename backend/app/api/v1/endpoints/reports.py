@@ -1946,6 +1946,11 @@ async def get_monthly_evolution(
     all_period_keys = sorted(list(monthly_data.keys()))
     latest_month_key = all_period_keys[-1] if all_period_keys else f"{now.year:04d}-{now.month:02d}"
     prev_month_key = all_period_keys[-2] if len(all_period_keys) >= 2 else None
+    
+    # HARDCODED PATCH: Debido a la pérdida de datos en junio y julio de 2026,
+    # si el mes actual es agosto de 2026, lo comparamos directamente con mayo de 2026.
+    if latest_month_key == "2026-08" and "2026-05" in all_period_keys:
+        prev_month_key = "2026-05"
 
     sucursal_totals_latest_month: Dict[str, Dict[str, Any]] = {}
     sucursal_totals_prev_month: Dict[str, Dict[str, Any]] = {}

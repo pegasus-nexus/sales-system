@@ -39,6 +39,7 @@ class ClienteIn(BaseModel):
     email: Optional[str] = None
     telefono: Optional[str] = None
     es_factura: bool = False
+    is_miembro_comunidad: bool = False
 
 
 class SaleCreate(BaseModel):

@@ -12,8 +12,15 @@ import {
     Tooltip, PieChart, Pie, Cell 
 } from 'recharts';
 import type { Category, Product } from '../api/types';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+
+const MESES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -251,7 +258,7 @@ export default function MonthlyEvolutionView() {
                             {isIngresosPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                             <span>{isIngresosPositive ? '+' : ''}{resumen_mom.diferencia_pct}% MoM</span>
                         </div>
-                        <span className="text-indigo-200">({isIngresosPositive ? '+' : ''}{formatBs(resumen_mom.diferencia_abs)} vs mes ant.)</span>
+                        <span className="text-indigo-200">({isIngresosPositive ? '+' : ''}{formatBs(resumen_mom.diferencia_abs)} vs {resumen_mom.periodo_anterior ? MESES[parseInt(resumen_mom.periodo_anterior.split('-')[1]) - 1] : 'mes ant.'})</span>
                     </div>
                 </div>
 
@@ -271,7 +278,7 @@ export default function MonthlyEvolutionView() {
                             {isTxPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                             <span>{isTxPositive ? '+' : ''}{resumen_mom.diferencia_tx_pct}%</span>
                         </div>
-                        <span className="text-gray-400">vs {resumen_mom.transacciones_anterior.toLocaleString()} mes anterior</span>
+                        <span className="text-gray-400">vs {resumen_mom.transacciones_anterior.toLocaleString()} {resumen_mom.periodo_anterior ? MESES[parseInt(resumen_mom.periodo_anterior.split('-')[1]) - 1] : 'mes ant.'}</span>
                     </div>
                 </div>
 
@@ -291,7 +298,7 @@ export default function MonthlyEvolutionView() {
                             {isTktPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                             <span>{isTktPositive ? '+' : ''}{resumen_mom.diferencia_tkt_pct}%</span>
                         </div>
-                        <span className="text-gray-400">vs {formatBs(resumen_mom.ticket_promedio_anterior)} ant.</span>
+                        <span className="text-gray-400">vs {formatBs(resumen_mom.ticket_promedio_anterior)} {resumen_mom.periodo_anterior ? MESES[parseInt(resumen_mom.periodo_anterior.split('-')[1]) - 1] : 'ant.'}</span>
                     </div>
                 </div>
             </div>

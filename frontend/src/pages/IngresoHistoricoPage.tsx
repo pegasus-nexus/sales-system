@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPurchaseOrders, getProveedores, getProducts, createPurchaseReception, getInventario } from '../api/api';
+import { getPurchaseOrders, getProveedores, getProducts, createPurchaseReception, getSucursales, getInventario } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     Barcode, PackageCheck, AlertTriangle, Trash2, 
-    CheckCircle2, Loader2, Search
+    CheckCircle2, Loader2, Search, History
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ComprobanteCompraModal from '../components/inventario/ComprobanteCompraModal';
 
-export default function IngresoMercaderiaPage() {
+export default function IngresoHistoricoPage() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
-    const sucursalId = user?.sucursal_id || 'CENTRAL';
+    const esAdmin = ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(user?.role || '');
+    const [selectedSucursalId, setSelectedSucursalId] = useState(user?.sucursal_id || 'CENTRAL');
+    const sucursalId = esAdmin ? selectedSucursalId : (user?.sucursal_id || 'CENTRAL');
+
+    const { data: sucursales = [] } = useQuery({
+        queryKey: ['sucursales_historico'],
+        queryFn: () => getSucursales(true),
+        enabled: esAdmin
+    });
 
     // State
     const [proveedorId, setProveedorId] = useState('');
@@ -22,6 +30,7 @@ export default function IngresoMercaderiaPage() {
     const [metodoPago, setMetodoPago] = useState('CONTADO_EFECTIVO');
     const [notas, setNotas] = useState('');
     const [fechaVencimientoCredito, setFechaVencimientoCredito] = useState('');
+    const [fechaRecepcion, setFechaRecepcion] = useState('');
     
     // Scanner and Products
     const [scannerInput, setScannerInput] = useState('');
@@ -115,8 +124,8 @@ export default function IngresoMercaderiaPage() {
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-            // Ignore if clicking on input, select, textarea, or button elements
-            if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'BUTTON' || target.tagName === 'TEXTAREA') {
+            // No robar el foco si el usuario está haciendo click en un input, select o textarea
+            if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) {
                 return;
             }
             if (scannerInputRef.current) {
@@ -207,6 +216,7 @@ export default function IngresoMercaderiaPage() {
             metodo_pago: metodoPago,
             estado_pago: ["CREDITO", "CONSIGNACION"].includes(metodoPago) ? "PENDIENTE" : "PAGADO",
             fecha_vencimiento_credito: metodoPago === 'CREDITO' ? new Date(fechaVencimientoCredito).toISOString() : null,
+            fecha_recepcion: fechaRecepcion ? new Date(fechaRecepcion).toISOString() : null,
             notas: notas || null,
             detalles: detalles.filter(d => d.cantidad_recibida > 0).map(d => ({
                 producto_id: d.producto_id,
@@ -226,23 +236,30 @@ export default function IngresoMercaderiaPage() {
         setProveedorNombre('');
         setPurchaseOrderId('');
         setNumeroDocumento('');
+        setMetodoPago('CONTADO_EFECTIVO');
+        setFechaVencimientoCredito('');
+        setFechaRecepcion('');
+        setNotas('');
         setDetalles([]);
         setScannerInput('');
-        setMetodoPago('CONTADO_EFECTIVO');
-        setNotas('');
-        setFechaVencimientoCredito('');
     };
 
     const pendingOrders = orders.filter((o: any) => o.estado === 'BORRADOR' || o.estado === 'ENVIADO' || o.estado === 'PARCIAL');
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto min-h-screen flex flex-col">
-            <div className="mb-8">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                    <PackageCheck className="w-8 h-8 text-black" />
-                    Ingreso de Mercadería
-                </h1>
-                <p className="text-gray-500 mt-2 font-medium">Recepción y escaneo de productos de compras</p>
+            <div className="mb-8 border-b-4 border-red-500 pb-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-4xl font-black text-gray-900 flex items-center gap-4 tracking-tight">
+                            <History className="text-red-500" size={40} />
+                            Ingreso Histórico de Compras (Temporal)
+                        </h1>
+                        <p className="text-red-600 font-bold mt-2 flex items-center gap-2">
+                            <AlertTriangle size={16} /> Módulo Temporal: Usa este panel SOLO para ingresar compras con fechas pasadas (Ej. datos que faltaban).
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
@@ -285,6 +302,22 @@ export default function IngresoMercaderiaPage() {
                                 </select>
                             </div>
 
+                            {esAdmin && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Sucursal de Ingreso</label>
+                                    <select
+                                        value={selectedSucursalId}
+                                        onChange={(e) => setSelectedSucursalId(e.target.value)}
+                                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 appearance-none"
+                                    >
+                                        <option value="CENTRAL">CENTRAL</option>
+                                        {sucursales.map(s => (
+                                            <option key={s.id || s._id} value={s.nombre}>{s.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Nro. Documento (Factura/Recibo)</label>
                                 <input 
@@ -295,6 +328,18 @@ export default function IngresoMercaderiaPage() {
                                     placeholder="Ej. FAC-00123"
                                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Fecha de Compra (Opcional)</label>
+                                <input 
+                                    type="date"
+                                    value={fechaRecepcion}
+                                    onChange={(e) => setFechaRecepcion(e.target.value)}
+                                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900"
+                                    title="Dejar vacío para usar la fecha actual"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-1 ml-2">Útil para registrar compras históricas.</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Método de Pago</label>

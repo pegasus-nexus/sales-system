@@ -133,6 +133,10 @@ async def create_purchase_reception(
         notas=reception_in.notas,
         creado_por="" # será asignado en el servicio
     )
+    
+    if reception_in.fecha_recepcion:
+        reception.fecha_recepcion = reception_in.fecha_recepcion
+        reception.created_at = reception_in.fecha_recepcion
 
     try:
         return await service.confirm_purchase_reception(

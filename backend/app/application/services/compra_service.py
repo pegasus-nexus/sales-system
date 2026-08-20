@@ -178,7 +178,8 @@ class CompraService:
                             usuario_id=usuario_id,
                             usuario_nombre=usuario_nombre,
                             referencia_id=str(reception.id),
-                            notas=f"Ingreso por compra. Doc: {reception.numero_documento}"
+                            notas=f"Ingreso por compra. Doc: {reception.numero_documento}",
+                            created_at=reception.created_at
                         )
                         await log.insert(session=session)
                         

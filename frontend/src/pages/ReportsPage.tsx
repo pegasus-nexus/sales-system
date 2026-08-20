@@ -16,6 +16,8 @@ import ProductStatsView from '../components/ProductStatsView';
 import PurchasesByClientView from '../components/PurchasesByClientView';
 import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import PortfolioAnalysisView from '../components/PortfolioAnalysisView';
+import DashboardMaestro from './DashboardMaestro';
+import RegionalAndProductMix from '../components/RegionalAndProductMix';
 
 
 type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg';
@@ -40,8 +42,12 @@ export default function ReportsPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
-            {(activeTab === 'evolucion_mensual' || activeTab === 'general' || activeTab === 'sucursales') ? (
+            {activeTab === 'evolucion_mensual' ? (
                 <MonthlyEvolutionView />
+            ) : activeTab === 'general' ? (
+                <DashboardMaestro />
+            ) : activeTab === 'sucursales' ? (
+                <RegionalAndProductMix />
             ) : activeTab === 'matriz_bcg' ? (
                 <PortfolioAnalysisView />
             ) : activeTab === 'daily' ? (
