@@ -31,7 +31,7 @@ export default function PremiosWebPage() {
         mutationFn: async (newConfig: any) => {
             return await client('/web-config', {
                 method: 'PUT',
-                body: JSON.stringify(newConfig)
+                body: newConfig
             });
         },
         onSuccess: () => {
