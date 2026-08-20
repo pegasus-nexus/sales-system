@@ -1,5 +1,8 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { ClientCombobox } from '../components/ClientCombobox';
+import { toast } from 'sonner';
 import { Users, Gift, MousePointerClick, RefreshCcw } from 'lucide-react';
 import { client } from '../api/api';
 
@@ -28,6 +31,24 @@ export default function ComunidadPage() {
         }
     });
 
+    
+    const [selectedClient, setSelectedClient] = useState<any>(null);
+    const afiliarMutation = useMutation({
+        mutationFn: async (clienteId: string) => client(`/comunidad/afiliar/${clienteId}`, { method: 'POST' }),
+        onSuccess: () => {
+            toast.success("Cliente afiliado exitosamente");
+            setSelectedClient(null);
+            refetchMiembros();
+            refetchStats();
+        },
+        onError: () => toast.error("Error al afiliar cliente")
+    });
+
+    const handleAfiliar = () => {
+        if (!selectedClient) return;
+        afiliarMutation.mutate(selectedClient._id);
+    };
+
     const handleRefresh = () => {
         refetchStats();
         refetchUsers();
@@ -47,6 +68,26 @@ export default function ComunidadPage() {
                 >
                     <RefreshCcw size={16} />
                     Actualizar
+                </button>
+            </div>
+
+            
+            {/* Afiliar Cliente Box */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-end gap-4">
+                <div className="flex-1 max-w-md">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Afiliar Cliente Existente</label>
+                    <ClientCombobox 
+                        selectedClient={selectedClient}
+                        onSelect={setSelectedClient}
+                        onClear={() => setSelectedClient(null)}
+                    />
+                </div>
+                <button 
+                    onClick={handleAfiliar}
+                    disabled={!selectedClient || afiliarMutation.isPending}
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl transition-colors h-[42px]"
+                >
+                    {afiliarMutation.isPending ? 'Afiliando...' : '+ Afiliar a Comunidad'}
                 </button>
             </div>
 
@@ -95,7 +136,8 @@ export default function ComunidadPage() {
                 </div>
                 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-600">                        <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
+                    <table className="w-full text-left text-sm text-gray-600">
+                        <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
                             <tr>
                                 <th className="px-6 py-4">Cliente</th>
                                 <th className="px-6 py-4">Teléfono</th>

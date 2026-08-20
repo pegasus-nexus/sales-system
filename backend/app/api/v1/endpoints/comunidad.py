@@ -86,7 +86,7 @@ async def get_stats(current_user: User = Depends(get_current_active_user)):
     """
     Estadísticas del módulo de comunidad. Solo para administradores.
     """
-    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos para ver estadísticas de comunidad")
          
     tenant_id = current_user.tenant_id or "default"
@@ -97,7 +97,7 @@ async def get_users(limit: int = 100, skip: int = 0, current_user: User = Depend
     """
     Lista de usuarios registrados en la comunidad (Antigua campaña FEXCO).
     """
-    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos para ver los usuarios de comunidad")
          
     tenant_id = current_user.tenant_id or "default"
@@ -108,8 +108,38 @@ async def get_miembros(limit: int = 100, skip: int = 0, current_user: User = Dep
     """
     Lista de clientes oficiales etiquetados como miembros de la comunidad web.
     """
-    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos")
          
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_miembros_comunidad(tenant_id, limit, skip)
+
+
+@router.post("/afiliar/{cliente_id}")
+async def afiliar_cliente(cliente_id: str, current_user: User = Depends(get_current_active_user)):
+    """
+    Afiliar un cliente existente a la comunidad.
+    """
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
+         raise HTTPException(status_code=403, detail="No tienes permisos")
+         
+    tenant_id = current_user.tenant_id or "default"
+    from app.domain.models.cliente import Cliente
+    from bson import ObjectId
+    import random
+    import string
+    
+    cliente = await Cliente.get(ObjectId(cliente_id))
+    if not cliente or cliente.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        
+    if cliente.is_miembro_comunidad:
+        return {"status": "success", "message": "El cliente ya es miembro de la comunidad"}
+        
+    cliente.is_miembro_comunidad = True
+    if not cliente.numero_tarjeta:
+        random_code = ''.join(random.choices(string.digits, k=6))
+        cliente.numero_tarjeta = f"TAB-{random_code}"
+        
+    await cliente.save()
+    return {"status": "success", "message": "Cliente afiliado exitosamente", "numero_tarjeta": cliente.numero_tarjeta}

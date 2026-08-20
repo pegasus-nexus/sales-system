@@ -229,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
                 title: 'Sistema & Auditoría',
                 icon: Settings,
                 items: [
-                    { icon: Users, label: 'Comunidad', path: '/comunidad', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
+                    { icon: Users, label: 'Comunidad', path: '/comunidad', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'CAJERO', 'VENDEDOR', 'SUPERVISOR'] },
                     { icon: Settings, label: 'Configuración', path: '/configuracion', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                     { icon: Shield, label: 'Auditoría', path: '/auditoria', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                 ]
