@@ -311,7 +311,7 @@ export default function IngresoHistoricoPage() {
                                         className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black font-medium text-gray-900 appearance-none"
                                     >
                                         <option value="CENTRAL">CENTRAL</option>
-                                        {sucursales.map(s => (
+                                        {sucursales.map((s: any) => (
                                             <option key={s.id || s._id} value={s.nombre}>{s.nombre}</option>
                                         ))}
                                     </select>

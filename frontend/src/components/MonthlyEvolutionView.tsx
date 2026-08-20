@@ -12,8 +12,6 @@ import {
     Tooltip, PieChart, Pie, Cell 
 } from 'recharts';
 import type { Category, Product } from '../api/types';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
