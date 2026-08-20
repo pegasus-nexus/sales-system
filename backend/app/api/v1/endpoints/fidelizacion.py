@@ -19,10 +19,18 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
     Si el teléfono ya existe, devuelve el cliente (funciona como login passwordless).
     """
     telefono = data.telefono.strip()
-    nombre_completo = f"{data.nombre.strip()} {data.apellido.strip()}".strip()
+    nombre_str = data.nombre.strip()
+    apellido_str = data.apellido.strip()
+    nombre_completo = f"{nombre_str} {apellido_str}".strip()
     
     if not telefono:
         raise HTTPException(status_code=400, detail="El teléfono es obligatorio")
+        
+    import re
+    if not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", nombre_str):
+        raise HTTPException(status_code=400, detail="El nombre solo puede contener letras y espacios")
+    if not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", apellido_str):
+        raise HTTPException(status_code=400, detail="El apellido solo puede contener letras y espacios")
         
     import random
     import string

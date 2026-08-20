@@ -6,6 +6,61 @@ import type { Category, Product, ProductUpdate, WebCollection, WebCollectionCrea
 import { uploadImage } from '../api/api';
 import { toast } from 'sonner';
 
+function ManageCategoriesDropdown({ collection, activeCategories, onApply }: { collection: WebCollection, activeCategories: Category[], onApply: (collection: WebCollection, newIds: string[]) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>(collection.categories_ids || []);
+
+    const toggleId = (id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const handleApply = () => {
+        onApply(collection, selectedIds);
+        setIsOpen(false);
+    };
+
+    return (
+        <div className="relative group">
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="px-4 py-2 bg-white border border-indigo-200 text-indigo-700 font-bold rounded-xl shadow-sm hover:bg-indigo-50 transition-colors flex items-center gap-2"
+            >
+                <Plus size={18} />
+                Gestionar Categorías
+            </button>
+            
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-40">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Selecciona categorías</p>
+                    <div className="max-h-72 overflow-y-auto">
+                        {activeCategories.map(cat => {
+                            const isChecked = selectedIds.includes(cat._id);
+                            return (
+                                <label key={cat._id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                    <span className="font-medium text-sm text-gray-700">{cat.name}</span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={isChecked}
+                                        onChange={() => toggleId(cat._id)}
+                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                    />
+                                </label>
+                            );
+                        })}
+                    </div>
+                    <div className="p-2 border-t border-gray-100 mt-2">
+                        <button 
+                            onClick={handleApply}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition-colors text-sm"
+                        >
+                            Aplicar Cambios
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function CatalogoWebPage() {
     const queryClient = useQueryClient();
@@ -92,14 +147,11 @@ export default function CatalogoWebPage() {
         }
     };
 
-    const toggleCategoryInCollection = async (collection: WebCollection, categoryId: string) => {
-        const currentIds = collection.categories_ids || [];
-        const isIncluded = currentIds.includes(categoryId);
-        const newIds = isIncluded ? currentIds.filter(id => id !== categoryId) : [...currentIds, categoryId];
-        
+    const updateCategoriesInCollection = async (collection: WebCollection, newIds: string[]) => {
         try {
             await updateCollectionMutation.mutateAsync({ id: collection._id, categories_ids: newIds });
             queryClient.invalidateQueries({ queryKey: ['web_collections'] });
+            toast.success("Categorías actualizadas exitosamente");
         } catch (e) {
             toast.error("Error actualizando colección");
         }
@@ -384,29 +436,11 @@ export default function CatalogoWebPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 {/* Agregar / Quitar categorias selector */}
-                                <div className="relative group">
-                                    <button className="px-4 py-2 bg-white border border-indigo-200 text-indigo-700 font-bold rounded-xl shadow-sm hover:bg-indigo-50 transition-colors flex items-center gap-2">
-                                        <Plus size={18} />
-                                        Gestionar Categorías
-                                    </button>
-                                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40 max-h-96 overflow-y-auto">
-                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Selecciona categorías</p>
-                                        {activeCategories.map(cat => {
-                                            const isChecked = collection.categories_ids.includes(cat._id);
-                                            return (
-                                                <label key={cat._id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-xl cursor-pointer">
-                                                    <span className="font-medium text-sm text-gray-700">{cat.name}</span>
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={isChecked}
-                                                        onChange={() => toggleCategoryInCollection(collection, cat._id)}
-                                                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                                    />
-                                                </label>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
+                                <ManageCategoriesDropdown 
+                                    collection={collection} 
+                                    activeCategories={activeCategories} 
+                                    onApply={updateCategoriesInCollection} 
+                                />
                                 <button onClick={() => handleDeleteCollection(collection._id)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors">
                                     <Trash2 size={20} />
                                 </button>

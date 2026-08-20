@@ -192,8 +192,6 @@ export default function Layout({ children }: LayoutProps) {
                 items: [
                     { icon: Package, label: 'Catálogo', path: '/catalogo', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
                     { icon: Warehouse, label: 'Inventario', path: '/inventario', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
-                    { icon: Globe, label: 'Catálogo Web', path: '/catalogo-web', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
-                    { icon: Globe, label: 'Configuración Web', path: '/web-config', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                     { icon: Tag, label: 'Categorías', path: '/categories', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Truck, label: 'Traslados', path: '/traslados', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
@@ -202,6 +200,16 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ClipboardList, label: 'Historial Ingresos', path: '/compras/historial', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
                     { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                ]
+            },
+            {
+                groupKey: 'pagina_web',
+                title: 'Página Web',
+                icon: Globe,
+                items: [
+                    { icon: Globe, label: 'Configuración Web', path: '/web-config', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: Globe, label: 'Catálogo Web', path: '/catalogo-web', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
+                    { icon: Globe, label: 'Premios Web', path: '/premios-web', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                 ]
             },
             {

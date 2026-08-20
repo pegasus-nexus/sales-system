@@ -62,6 +62,10 @@ async def register_web_member(data: MiembroWebInput, request: Request, tenant_id
     if not data.telefono and not data.email:
         raise HTTPException(status_code=400, detail="Debe proporcionar un teléfono o email")
         
+    import re
+    if not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", data.nombre.strip()):
+        raise HTTPException(status_code=400, detail="El nombre solo puede contener letras y espacios")
+        
     ip = request.client.host if request.client else "Unknown"
     user_agent = request.headers.get("user-agent", "Unknown")
     await ComunidadService.registrar_visita(tenant_id, ip, user_agent, "/register-web")

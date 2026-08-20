@@ -2,6 +2,7 @@ from typing import Optional, List
 from datetime import datetime
 from fastapi import HTTPException
 from pydantic import BaseModel
+from beanie.operators import In
 
 from app.domain.models.comunidad import ComunidadUser, PremioComunidad, VisitaRegistro
 
@@ -146,7 +147,50 @@ class ComunidadService:
     @staticmethod
     async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0):
         from app.domain.models.cliente import Cliente
-        return await Cliente.find(
+        from app.domain.models.sale import Sale
+        
+        miembros = await Cliente.find(
             Cliente.tenant_id == tenant_id,
             Cliente.is_miembro_comunidad == True
         ).sort("-created_at").skip(skip).limit(limit).to_list()
+        
+        # Manual Join for CRM metrics
+        if not miembros:
+            return []
+            
+        cliente_ids = [str(m.id) for m in miembros]
+        
+        # Fetch matching sales
+        sales = await Sale.find(
+            Sale.tenant_id == tenant_id,
+            In(Sale.cliente_id, cliente_ids)
+        ).to_list()
+        
+        # Group by cliente_id
+        from collections import defaultdict
+        sales_by_client = defaultdict(list)
+        for sale in sales:
+            if sale.cliente_id:
+                sales_by_client[sale.cliente_id].append(sale)
+                
+        # Build enriched results
+        result = []
+        for m in miembros:
+            m_dict = m.dict(exclude={"id"})
+            m_dict["_id"] = str(m.id)
+            m_dict["id"] = str(m.id)
+            
+            client_sales = sales_by_client.get(str(m.id), [])
+            client_sales.sort(key=lambda x: x.created_at, reverse=True)
+            
+            m_dict["total_compras"] = len(client_sales)
+            if client_sales:
+                m_dict["ultima_compra_fecha"] = client_sales[0].created_at
+                m_dict["estado_visita"] = "Comprador"
+            else:
+                m_dict["ultima_compra_fecha"] = None
+                m_dict["estado_visita"] = "Solo Visitó"
+                
+            result.append(m_dict)
+            
+        return result
