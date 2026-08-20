@@ -1,12 +1,13 @@
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
-async def test():
+async def list_dbs():
     uri = 'mongodb+srv://admin_prod:VigKJWIIMV6CXKsH@sales-system.hh277gd.mongodb.net/?retryWrites=true&w=majority'
-    db = AsyncIOMotorClient(uri)['sales_system_prod']
-    cols = await db.web_collections.find().to_list(None)
-    for c in cols:
-        print(c)
+    client = AsyncIOMotorClient(uri)
+    dbs = await client.list_database_names()
+    print("Bases de datos:")
+    for db in dbs:
+        print(f" - {db}")
 
 if __name__ == '__main__':
-    asyncio.run(test())
+    asyncio.run(list_dbs())

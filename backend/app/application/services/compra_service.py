@@ -107,6 +107,8 @@ class CompraService:
 
                 # 3. Procesar cada ítem recibido (Inventario, Kárdex, Precios)
                 for item in reception.detalles:
+                    if reception.es_historico:
+                        continue
                     almacen_id = "default"
                     
                     inventario = await Inventario.find_one(

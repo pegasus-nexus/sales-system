@@ -31,6 +31,7 @@ export default function IngresoHistoricoPage() {
     const [notas, setNotas] = useState('');
     const [fechaVencimientoCredito, setFechaVencimientoCredito] = useState('');
     const [fechaRecepcion, setFechaRecepcion] = useState('');
+    const [montoManual, setMontoManual] = useState<number | ''>('');
     
     // Scanner and Products
     const [scannerInput, setScannerInput] = useState('');
@@ -193,11 +194,13 @@ export default function IngresoHistoricoPage() {
         setDetalles(prev => prev.filter((_, i) => i !== index));
     };
 
-    const totalReal = detalles.reduce((acc, item) => acc + item.subtotal, 0);
+    const totalReal = detalles.length > 0 
+        ? detalles.reduce((acc, item) => acc + item.subtotal, 0)
+        : Number(montoManual || 0);
 
     const handleSubmit = () => {
-        if (!proveedorId || !numeroDocumento || detalles.length === 0) {
-            toast.error('Faltan datos obligatorios');
+        if (!proveedorId || !numeroDocumento || (detalles.length === 0 && !montoManual)) {
+            toast.error('Faltan datos obligatorios (Seleccione productos o ingrese un monto total)');
             return;
         }
         
@@ -218,6 +221,7 @@ export default function IngresoHistoricoPage() {
             fecha_vencimiento_credito: metodoPago === 'CREDITO' ? new Date(fechaVencimientoCredito).toISOString() : null,
             fecha_recepcion: fechaRecepcion ? new Date(fechaRecepcion).toISOString() : null,
             notas: notas || null,
+            es_historico: true,
             detalles: detalles.filter(d => d.cantidad_recibida > 0).map(d => ({
                 producto_id: d.producto_id,
                 nombre_producto: d.nombre_producto,
@@ -312,7 +316,7 @@ export default function IngresoHistoricoPage() {
                                     >
                                         <option value="CENTRAL">CENTRAL</option>
                                         {sucursales.map((s: any) => (
-                                            <option key={s.id || s._id} value={s.nombre}>{s.nombre}</option>
+                                            <option key={s.id || s._id} value={s.id || s._id}>{s.nombre}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -341,6 +345,25 @@ export default function IngresoHistoricoPage() {
                                 />
                                 <p className="text-[10px] text-gray-500 mt-1 ml-2">Útil para registrar compras históricas.</p>
                             </div>
+
+                            {detalles.length === 0 && (
+                                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                                    <label className="block text-sm font-bold text-indigo-900 mb-2">Monto Total de Compra (Bs.)</label>
+                                    <input 
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={montoManual}
+                                        onChange={(e) => setMontoManual(e.target.value ? Number(e.target.value) : '')}
+                                        placeholder="Ej. 1500.50"
+                                        className="w-full p-4 bg-white border border-indigo-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-900 text-lg"
+                                    />
+                                    <p className="text-[10px] text-indigo-700 mt-2 ml-1 leading-tight">
+                                        Como no agregaste productos individuales, ingresa el monto total. Este ingreso <b>no afectará el stock</b> de ningún producto, sólo se registrará como gasto de compra en los reportes financieros.
+                                    </p>
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Método de Pago</label>
                                 <select 

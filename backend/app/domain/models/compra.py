@@ -80,6 +80,7 @@ class PurchaseReception(Document):
     fecha_vencimiento_credito: Optional[datetime] = None
     
     notas: Optional[str] = None
+    es_historico: bool = False
     creado_por: str  # usuario_id
 
     created_at: datetime = Field(default_factory=datetime.utcnow)

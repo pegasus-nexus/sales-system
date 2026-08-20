@@ -1,0 +1,1490 @@
+FECHA,PRODUCTO,TIPO MOVIMIENTO,CANTIDAD,STOCK RESULTANTE,COSTO UNIT.,PRECIO VENTA UNIT.,USUARIO,NOTAS
+2026-08-17 20:44:18,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-4,148,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 20:35:07,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,152,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 20:32:42,PALETA CORAZÓN GRANDE,VENTA,-1,20,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 20:21:09,TABLETA SABOR MENTA 50 gr taboada,VENTA,-2,37,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 19:05:13,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,39,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 19:05:13,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,12,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 19:05:12,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,40,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 19:05:11,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,39,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:43:04,SUBMARINO,VENTA,-2,80,"5,5","6,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:34:59,GRANEL 3.0 BS,VENTA,-2,334,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:24:52,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,18,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:24:51,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-2,46,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:06:13,TABLETA BLANCO SIN AZÚCAR 50 gr taboada,VENTA,-1,25,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 18:06:12,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,8,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:55:08,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,40,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:53:17,BLISTER PASTILLAS DE GOMA P,VENTA,-1,3,15,18,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:53:17,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,45,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:43:27,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,14,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:40:21,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,15,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:40:21,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,40,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:30:08,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,TRASLADO,-1,12,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:30:08,TABLETA INFANTIL 12 MODELOS 50 gr taboada,TRASLADO,-3,26,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:30:07,TABLETAS SABORIZADAS 50 gr taboada,TRASLADO,-10,21,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:30:07,TABLETA SABOR MENTA 50 gr taboada,TRASLADO,-3,41,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:30:07,TABLETA DE CHOC. C/LECHE 50 gr taboada,TRASLADO,-5,35,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:30:06,TABLETA DE CHOC. AMARGO 50 gr taboada,TRASLADO,-5,41,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:29:10,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,TRASLADO,-2,63,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:29:10,COCOA PURA 500 gr taboada,TRASLADO,-2,108,0,0,sucursal.heroinas.taboada@gmail.com,Despacho Interno hacia 69cede638cef3f8b0b725c5f
+2026-08-17 17:23:07,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,31,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:22:36,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,41,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:18:47,BOTELLA CON LICOR DE TRUFA,VENTA,-1,12,17,19,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:18:46,BOMBONES DE FRUTAS 150 gr taboada,VENTA,-4,35,29,34,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 17:18:45,BOMBONES DE MENTA 150 gr taboada,VENTA,-6,29,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:47:18,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,27,45,53,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:43:01,CAJA COCOA 200 gr taboada,VENTA,-1,38,20,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:40:48,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,48,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:40:47,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,32,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:38:44,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,41,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:38:43,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,33,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:38:42,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,41,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:34:48,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,48,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:19:52,GRANEL 3.5 BS,VENTA,-2,47,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:19:51,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,153,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:18:21,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-2,29,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:18:21,TABLETA SABOR NARANJA 100 gr taboada,VENTA,-1,94,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:16:52,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,154,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:16:37,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-2,155,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:14:42,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,46,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:14:10,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-2,49,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:14:09,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-3,3,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 16:11:11,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-4,6,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:49,TABLETA DE CHOC. CON FRUTAS DESHIDRATADAS,VENTA,-1,18,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:48,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-2,28,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:47,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,44,20,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:47,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,30,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:46,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,29,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:54:45,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,19,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:34:44,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,46,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 15:17:41,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,22,37,"42,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-17 14:31:15,Articulo Promocional G - Submarino,ENTRADA MANUAL,23,23,0,0,admin.general.taboada@taboada.bo,[Entrada Manual: 0.0 u. -> 23.0 u. (+23.0 u.)] - Por Promocion compras Mayores a Bs 80
+2026-08-17 14:30:54,SUBMARINO,SALIDA MANUAL,-23,82,0,0,admin.general.taboada@taboada.bo,[Salida Manual: 105.0 u. -> 82.0 u. (-23.0 u.)] - Por traspaso a COD promocional submarino
+2026-08-17 14:28:26,TABLETA DE CHOC/ AMARANTO - 50 G,SALIDA MANUAL,-2,0,0,0,admin.general.taboada@taboada.bo,"[Salida Masiva: 2 u. -> 0.0 u. (-2.0 u.)] - Por promocion  PATRiA Amaranto 100g + Quinua 50g o al reves, deposito del dia jueves 13/08/2026, qr , ingreso miércoles 12/08/2026, cada venta Bs 40"
+2026-08-17 14:28:26,TABLETA DE CHOC/ QUINUA - 50 G,SALIDA MANUAL,-1,14,0,0,admin.general.taboada@taboada.bo,"[Salida Masiva: 15 u. -> 14.0 u. (-1.0 u.)] - Por promocion  PATRiA Amaranto 100g + Quinua 50g o al reves, deposito del dia jueves 13/08/2026, qr , ingreso miércoles 12/08/2026, cada venta Bs 40"
+2026-08-17 14:28:26,Articulo Promocional H - Tableta de Quinua de 100g,SALIDA MANUAL,-2,4,0,0,admin.general.taboada@taboada.bo,"[Salida Masiva: 6.0 u. -> 4.0 u. (-2.0 u.)] - Por promocion  PATRiA Amaranto 100g + Quinua 50g o al reves, deposito del dia jueves 13/08/2026, qr , ingreso miércoles 12/08/2026, cada venta Bs 40"
+2026-08-17 14:28:26,Articulo Promocional H - Tableta de Amaranto de 100g,SALIDA MANUAL,-1,5,0,0,admin.general.taboada@taboada.bo,"[Salida Masiva: 6.0 u. -> 5.0 u. (-1.0 u.)] - Por promocion  PATRiA Amaranto 100g + Quinua 50g o al reves, deposito del dia jueves 13/08/2026, qr , ingreso miércoles 12/08/2026, cada venta Bs 40"
+2026-08-17 14:22:19,Articulo Promocional H - Tableta de Quinua de 100g,ENTRADA MANUAL,6,6,0,0,admin.general.taboada@taboada.bo,[Entrada Manual: 0 u. -> 6.0 u. (+6.0 u.)] - Por promocion PATRiA Amaranto 100g + Quinua 50g o al reves
+2026-08-17 14:21:53,TABLETA DE CHOC. C/ QUINUA,SALIDA MANUAL,-6,20,0,0,admin.general.taboada@taboada.bo,[Salida Manual: 26.0 u. -> 20.0 u. (-6.0 u.)] - Por traslado a COD 10008
+2026-08-17 14:21:26,Articulo Promocional H - Tableta de Amaranto de 100g,ENTRADA MANUAL,6,6,0,0,admin.general.taboada@taboada.bo,[Entrada Manual: 0 u. -> 6.0 u. (+6.0 u.)] - Por promocion PATRiA Amaranto 100g + Quinua 50g o al reves
+2026-08-17 14:20:56,TABLETA DE CHOC. C/AMARANTO,SALIDA MANUAL,-6,5,0,0,admin.general.taboada@taboada.bo,[Salida Manual: 11 u. -> 5.0 u. (-6.0 u.)] - Por traslado a COD 10009 Articulo promocional
+2026-08-17 14:14:28,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,52,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 14:14:28,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,49,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 14:14:27,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,44,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 13:48:01,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,45,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 13:48:01,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,34,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 13:07:44,GRANEL 3.0 BS,VENTA,-1,336,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 11:47:38,GRANEL 3.5 BS,VENTA,-2,18,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 11:30:57,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,157,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 11:18:06,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,75,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 11:14:53,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,47,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 11:14:53,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-2,13,68,78,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 10:33:33,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,35,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 09:57:28,CHOC. MONEDA MENTOLADA,VENTA,-10,75,3,3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 09:53:05,TABLETA CON FRASES,VENTA,-1,5,9,11,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-17 09:50:16,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,13,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 20:05:46,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,35,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 20:05:46,GRANEL 4.5 BS,VENTA,-2,76,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 20:05:16,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,17,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 20:04:33,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,158,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:17:56,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-2,51,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:10:56,BOLSAS DORADAS,VENTA,-1,35,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:10:55,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,22,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:10:55,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,7,99,"111,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:04:26,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,27,36,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 19:02:40,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,57,10,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 18:54:28,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,0,18,20,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 18:24:06,COFRE MADERA 122 gr taboada,VENTA,-1,17,44,50,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 18:24:05,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,22,56,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 18:04:56,GRANEL 3.5 BS,VENTA,-1,20,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 18:04:55,GRANEL 3.0 BS,VENTA,-2,337,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:59:01,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,159,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:53:45,GRANEL 3.5 BS,VENTA,-1,21,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:53:44,GRANEL 4.5 BS,VENTA,-2,78,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:53:43,GRANEL 3.5 BS,VENTA,-2,49,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:52:49,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,36,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:39:47,PALETA CORAZÓN GRANDE,VENTA,-1,21,12,14,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:29:34,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,76,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:23:12,BOTELLA CON LICOR DE TRUFA,VENTA,-2,13,17,19,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 17:23:12,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,23,56,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:56:03,GRANEL 4.5 BS,VENTA,-1,80,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:33:42,GRANEL 3.5 BS,VENTA,-2,51,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:33:42,GRANEL 4.5 BS,VENTA,-2,81,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:33:41,GRANEL 3.0 BS,VENTA,-4,339,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:20:27,BOLSAS DORADAS,VENTA,-1,36,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 16:20:26,CAJA MADERA CHICA 110 gr taboada,VENTA,-1,8,72,"81,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 15:42:00,CAJA ROJA CORAZÓN RECTANGULAR 180 gr taboada,VENTA,-1,11,70,81,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 15:36:31,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,53,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 15:36:30,ROSE SEMI DULCE,VENTA,-1,11,25,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 15:34:03,GRANEL 3.0 BS,VENTA,-3,343,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 15:34:03,GRANEL 4.5 BS,VENTA,-1,83,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:53:13,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,160,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:39:18,BOMBONES DE MARSHMALLOWS 50 G,VENTA,-1,14,15,17,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:39:17,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-2,47,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:35:23,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,65,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:35:22,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,40,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:24:44,MARROX (PERSIPAN DE MANÍ),VENTA,-6,57,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:00:09,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,52,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:00:08,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,41,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:00:08,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,42,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:00:07,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,35,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 14:00:06,GRANEL 3.0 BS,VENTA,-3,346,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 13:43:42,GRANEL 4.5 BS,VENTA,-1,84,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 13:43:42,GRANEL 3.5 BS,VENTA,-2,22,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 13:43:41,GRANEL 3.5 BS,VENTA,-1,53,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 13:43:40,GRANEL 3.0 BS,VENTA,-3,349,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 13:26:53,GRANEL 4.5 BS,VENTA,-1,85,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:56:46,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,42,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:56:45,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,30,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:46:30,GRANEL 3.5 BS,VENTA,-1,24,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:46:29,GRANEL 3.0 BS,VENTA,-2,352,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:20:23,CAJA MADERA CHICA 110 gr taboada,VENTA,-1,9,72,"81,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:19:02,CAJA CORAZÓN MADERA 100 gr taboada,VENTA,-1,21,74,"83,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:16:58,CAJA MADERA CHICA 110 gr taboada,VENTA,-1,10,72,"81,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:15:10,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,9,19,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:10:39,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,161,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 12:10:39,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,VENTA,-1,22,19,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:59:26,GRANEL 4.5 BS,VENTA,-1,86,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:59:25,GRANEL 3.0 BS,VENTA,-2,354,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:59:25,GRANEL 3.5 BS,VENTA,-2,54,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:52:56,GRANEL 4.5 BS,VENTA,-2,87,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:39:21,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-2,23,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 11:16:20,CANASTA REDONDA CON TAPA,VENTA,-1,8,65,73,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:26,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,31,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:25,BLISTER PASTILLAS DE GOMA P,VENTA,-1,4,15,18,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:25,GRANEL 3.5 BS,VENTA,-3,56,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:24,GRANEL 4.5 BS,VENTA,-2,89,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:23,GRANEL 3.5 BS,VENTA,-2,25,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:55:23,GRANEL 3.0 BS,VENTA,-5,356,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-16 10:44:18,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,45,20,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 21:58:47,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,57,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:36:14,GRANEL 3.5 BS,VENTA,-1,59,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:35:43,GRANEL 3.5 BS,VENTA,-3,60,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:09:53,GRANEL 3.0 BS,VENTA,-2,361,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:07:45,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,58,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:07:45,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,53,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 21:07:44,BLISTER TRUFAS AL RON P,VENTA,-1,7,24,30,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:58:37,BOLSAS DORADAS,VENTA,-1,37,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:58:36,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,25,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:58:35,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,49,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:58:34,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,64,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:51:32,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,48,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:29:29,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,54,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:15:57,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-2,46,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:15:57,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,43,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:10:32,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,50,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:10:31,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,55,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:04:27,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,41,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 20:04:27,CAJA MADERA CORAZÓN CAFÉ 100 gr taboada,VENTA,-1,6,79,89,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 19:53:35,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,13,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 19:31:55,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,162,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 19:31:24,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,28,36,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 19:13:34,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-2,8,99,"111,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 18:46:31,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,58,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 18:46:30,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-1,31,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 17:57:09,GRANEL 3.0 BS,VENTA,-1,363,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 17:57:09,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,14,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 17:53:31,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,54,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 17:21:10,BOMBONES ESPECIALES 200 gr taboada,VENTA,-1,17,37,"43,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 16:32:24,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,55,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 16:19:41,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,37,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-15 14:12:02,MARROX (PERSIPAN DE MANÍ),VENTA,-1,63,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 13:18:17,BOLSAS DORADAS,VENTA,-1,38,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 13:18:16,MARACUYA SEMIDULCE,VENTA,-1,3,25,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 13:18:14,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,49,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 13:16:53,Crema de limpieza 55 gr.,VENTA,-1,5,"40,6",65,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 13:16:53,Crema La Reina,VENTA,-1,0,42,67,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:51:20,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,29,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:51:19,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,26,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:39:06,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-2,30,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:33:23,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,50,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:33:22,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,32,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 12:33:22,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,42,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:54:22,BLUEBERRY BLANCO SEMI DULCE,VENTA,-1,15,25,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:54:21,Vino Frizzante rose 220 ml,VENTA,-1,12,10,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:54:21,Vino Frizzante blue 220 ml,VENTA,-1,12,10,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:52:08,COCOA PURA 500 gr taboada,VENTA,-1,110,50,"56,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:45:27,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,15,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:20:40,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,37,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:18:14,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,56,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 11:16:15,PALOMITAS DE MAÍZ CON CHOCOLATE 100 gr taboada,VENTA,-1,7,22,24,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:39:51,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,59,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:39:36,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,48,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:48,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,VENTA,-1,23,19,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:17,GRANEL 4.5 BS,VENTA,-1,91,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:17,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-2,33,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:16,BOTELLA CON LICOR DE TRUFA,VENTA,-6,15,17,19,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:15,GRANEL 3.0 BS,VENTA,-1,364,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 10:31:14,BOLSAS DE REGALO MEDIANA,VENTA,-1,15,5,10,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 09:48:02,GRANEL 3.0 BS,VENTA,-1,365,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 09:27:23,BOMBONES ESPECIALES 150 gr taboada,COMPRA,20,42,30,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:22,TABLETA 21 DE SEPTIEMBRE,COMPRA,20,29,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:22,TABLETA CHOC. SEMI AMARGO 100 gr taboada,COMPRA,40,77,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:21,TABLETA CHOC. AMARGO 100 gr taboada,COMPRA,120,163,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:20,TABLETA DE CHOC. C/MANÍ 100 gr taboada,COMPRA,25,65,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:20,TABLETA DE CHOC. C/LECHE 100 gr taboada,COMPRA,25,72,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:19,TABLETA SABOR FRUTILLA 100 gr taboada,COMPRA,25,60,25,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:18,CAJA ROSADA CON CORAZONES 280 gr taboada,COMPRA,15,17,66,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:17,CAJA CORAZÓN DE CARTON 100 gr taboada,COMPRA,10,11,70,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:17,SUBMARINO,COMPRA,80,105,"5,5",0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:16,DINOSAURIO MEDIANO,COMPRA,5,8,19,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:15,DINOSAURIO PEQUEÑO,COMPRA,10,10,9,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:15,CHOC. PALETA DE ARROZ O MANÍ,COMPRA,20,27,"8,5",0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:14,BLISTER GOMITAS CON CHOCOLATE,COMPRA,5,5,57,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:13,BLISTER PASTILLAS DE GOMA P,COMPRA,5,5,15,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:12,COCOA PURA 500 gr taboada,COMPRA,80,111,50,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:12,AGRANEL TRUFA AL RON CON COCO G,COMPRA,500,500,"0,22",0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:11,TRUFA AL RON G,COMPRA,500,500,"0,22",0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:10,LATA SURTIDA CON BOM Y CHOC,COMPRA,5,5,110,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:10,CANASTA CORAZÓN 200 gr taboada,COMPRA,20,28,45,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:09,CAJA SURTIDA CON RELLENOS 122 gr taboada,COMPRA,20,24,56,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:08,CAJA MADERA PIROGRABADA 200 gr taboada,COMPRA,15,17,77,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:08,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,COMPRA,30,46,20,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:07,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,COMPRA,20,38,18,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:06,TABLETA DE CHOCOLATE,COMPRA,20,25,9,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:05,TABLETA SABOR MENTA 50 gr taboada,COMPRA,30,44,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:05,TABLETA DE CHOC. C/COCO 50 gr taboada,COMPRA,35,43,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:04,TABLETA DE CHOC. C/MANÍ 50 gr taboada,COMPRA,35,53,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:03,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,COMPRA,20,24,19,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:03,TABLETA DE CHOC. AMARGO 50 gr taboada,COMPRA,40,51,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:02,TABLETA DE CHOC. C/LECHE 50 gr taboada,COMPRA,40,44,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:01,TABLETAS SABORIZADAS 50 gr taboada,COMPRA,30,38,14,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:00,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,COMPRA,50,66,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 09:27:00,TABLETA DE CHOC. CON FRUTAS DESHIDRATADAS,COMPRA,15,19,28,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso 12/08/2026 NOTA N°0046038
+2026-08-15 08:38:36,ALFAJOR ALELU DULCE DE LECHE 100G,VENTA,-1,5,12,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 08:37:50,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,47,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-15 08:37:49,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,35,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-14 19:47:06,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,51,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:12:54,CAJA CORAZÓN DE CARTON 100 gr taboada,VENTA,-1,1,70,77,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:06:09,CHOC. PALETA DE ARROZ O MANÍ,VENTA,-1,7,"8,5",10,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:03:34,TABLETA CON FRASES,VENTA,-1,6,9,11,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:02:39,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,35,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:02:38,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,49,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 19:02:38,DINOSAURIO PEQUEÑO,VENTA,-1,0,9,11,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:53:53,ROSE SEMI DULCE,VENTA,-1,12,25,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:42:37,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-2,36,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:42:36,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,18,"9,5","11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:42:36,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-3,43,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:35:36,Vino Tinto Semidulce 700 cc,VENTA,-1,41,21,35,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:22:37,TABLETA BLANCO SIN AZÚCAR 50 gr taboada,VENTA,-1,26,19,"22,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:22:37,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,10,19,"22,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:22:36,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,VENTA,-1,4,19,"22,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:19:17,Vino Tinto Semidulce 700 cc,VENTA,-1,42,21,35,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:17:55,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,16,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:17:55,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,11,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:09:25,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,4,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:06:08,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,49,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 18:04:12,ROSE SEMI DULCE,VENTA,-1,13,25,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:49:02,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,1,18,20,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:48:43,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,2,18,20,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:48:03,GRANEL 4.5 BS,VENTA,-2,92,"4,5",5,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:33:50,BOMBONES DE MENTA 150 gr taboada,VENTA,-2,36,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:23:52,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-1,2,25,29,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 17:17:24,GRANEL 3.0 BS,VENTA,-3,366,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 16:51:47,Vino Blanco Aspero 700 cc,VENTA,-1,12,17,35,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 16:29:16,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,23,37,"42,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 16:21:47,GRANEL 3.0 BS,VENTA,-1,369,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 16:01:09,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-2,17,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 15:41:08,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,14,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 14:55:38,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,27,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 14:15:03,CHOC. MONEDA MENTOLADA,VENTA,-1,85,3,3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 14:12:17,MARACUYA SEMIDULCE,VENTA,-1,4,25,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 14:12:17,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,15,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 14:12:16,CHOC. MONEDA MENTOLADA,VENTA,-1,86,3,3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:43:58,BOLSAS DORADAS,VENTA,-1,39,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:43:57,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,29,24,27,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:41:55,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,20,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:41:54,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,16,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:04:35,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,19,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:04:34,GRANEL 2.5BS,VENTA,-2,370,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:04:34,GRANEL 4.5 BS,VENTA,-1,94,"4,5",5,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:02:47,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,38,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 13:01:19,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,57,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:54:55,GRANEL 3.5 BS,VENTA,-1,63,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:35:27,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,11,19,"22,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:21:54,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,3,18,20,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:21:53,TABLETA DE CHOC. C/AMARANTO,VENTA,-1,11,25,25,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:21:53,TABLETA DE CHOC. C/ QUINUA,VENTA,-1,26,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:15:20,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,59,10,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:12:34,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,48,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:06:11,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,48,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:14,ALFAJOR ALELU DULCE DE LECHE 100G,VENTA,-4,6,12,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:13,MARACUYA SEMIDULCE,VENTA,-1,5,25,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:12,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,50,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:11,BOMBONES ESPECIALES 200 gr taboada,VENTA,-1,18,37,"43,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:11,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,32,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:10,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,VENTA,-1,7,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:09,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,18,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:08,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,36,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:08,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,16,20,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 12:02:07,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,31,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:53:21,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,52,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:51:09,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-1,32,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:42:18,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,19,"9,5","11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:27:35,GRANEL 3.0 BS,VENTA,-1,27,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:27:34,GRANEL 4.5 BS,VENTA,-1,95,"4,5",5,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:27:33,GRANEL 3.5 BS,VENTA,-2,64,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:20:05,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,18,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:19:12,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,8,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:19:11,BOLSAS DORADAS,VENTA,-1,40,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-14 11:19:10,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,30,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-13 19:18:13,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,37,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 19:18:13,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,33,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 19:18:12,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,22,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 19:15:31,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,49,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:43:40,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,56,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:35:13,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,50,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:35:12,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-2,19,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:35:12,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,8,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:30:42,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,51,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:21:31,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,58,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:21:30,BLISTER GOMITAS CON CHOCOLATE P,VENTA,-1,2,34,40,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 18:18:38,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,46,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:54:32,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,10,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:47:49,GRANEL 2.5BS,VENTA,-1,372,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:47:48,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,14,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:46:41,GRANEL 2.5BS,VENTA,-2,373,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:34:14,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,60,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 17:34:13,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,25,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:45:46,CHOC. PALETA DE ARROZ O MANÍ,VENTA,-1,8,"8,5",10,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:42:52,GRANEL 2.5BS,VENTA,-1,375,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:42:51,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-2,39,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:42:50,TABLETA DE CHOC/ QUINUA - 50 G,VENTA,-2,15,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:39:06,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,4,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:39:06,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-5,41,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:37:03,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,20,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:30:07,BOTELLA CON LICOR DE TRUFA,VENTA,-2,21,17,19,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:30:06,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,9,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:30:05,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,52,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:21:06,CHOC. MONEDA MENTOLADA,VENTA,-3,87,3,3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 16:10:24,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,12,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-13 14:54:30,GRANEL 4.5 BS,VENTA,-1,96,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:52:56,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,ANULACION,1,51,35,"39,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #2e5bc4 — Motivo: VENTA_DUPLICADA
+2026-08-13 14:50:09,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,50,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:49:51,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,51,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:41:01,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-2,37,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:11:08,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,17,20,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:04:46,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-2,3,25,29,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 14:04:46,TABLETA BLANCO SIN AZÚCAR 50 gr taboada,VENTA,-1,27,19,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 13:47:09,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,53,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 12:28:50,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,32,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 12:23:17,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,19,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 12:23:16,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,50,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 12:23:16,GRAGEAS DE MANI CON CHOCOLATE BLANCO 50 gr taboada,VENTA,-1,35,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 12:10:27,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,46,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:37:00,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,18,20,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:59,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,38,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:58,BOLSAS DE REGALO MEDIANA,VENTA,-1,16,5,10,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:58,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,31,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:57,BLISTER MARROX 12 UNID.P,VENTA,-2,2,30,36,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:56,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,9,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:56,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-2,26,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:36:55,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-2,20,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:25:11,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-1,33,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:10:44,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,53,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:03:20,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,39,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:03:19,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,VENTA,-1,8,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 11:03:19,PALETA FLOR MARGARITA 26G(COLORES VARIADOS),VENTA,-1,8,9,11,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 10:49:19,BOLSAS DORADAS,VENTA,-1,41,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 10:49:18,ROSE SEMI DULCE,VENTA,-1,14,25,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 10:32:03,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-2,13,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 09:53:52,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,5,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-13 08:52:59,CAJA COCOA 200 gr taboada,VENTA,-1,39,20,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 20:23:25,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,39,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 20:05:59,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,11,14,16,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:58,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,23,30,"35,5",ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:57,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,47,13,15,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:57,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,10,13,15,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:56,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,16,13,15,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:55,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,28,13,15,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #8ED162)
+2026-08-12 20:05:54,TABLETAS SABORIZADAS 50 gr taboada,ANULACION,1,12,14,16,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 20:05:53,BOMBONES ESPECIALES 150 gr taboada,ANULACION,1,24,30,"35,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 20:05:53,TABLETA INFANTIL 12 MODELOS 50 gr taboada,ANULACION,1,48,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 20:05:52,TABLETA DE CHOC. C/COCO 50 gr taboada,ANULACION,1,11,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 20:05:52,TABLETA SABOR NARANJA 50 gr taboada,ANULACION,1,17,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 20:05:51,TABLETA SABOR FRUTILLA 50 gr taboada,ANULACION,1,29,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed162 — Motivo: ERROR_COBRO
+2026-08-12 19:57:41,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,21,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 19:33:49,CHOC. CORAZÓN HINCHADO,VENTA,-4,87,7,"8,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 19:26:46,GRANEL 2.5BS,VENTA,-4,376,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 19:24:26,COCOA PURA 500 gr taboada,VENTA,-1,31,50,"56,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 19:18:01,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,28,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:28:20,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,51,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:17:59,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,9,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:12:39,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,23,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:12:38,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,38,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:12:37,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,29,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:09:56,GRANEL 3.5 BS,VENTA,-1,66,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:09:55,GRANEL 2.5BS,VENTA,-1,380,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 18:09:54,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-10,5,25,29,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 17:56:01,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-2,50,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 17:41:45,BOMBONES ESPECIALES 200 gr taboada,VENTA,-2,19,37,"43,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 17:16:48,GRANEL 4.5 BS,VENTA,-1,97,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:32:39,CHOCOLATE POPULAR 250 gr taboada,VENTA,-1,19,28,"30,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:28:32,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,8,45,53,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:28:31,GRANEL 4.5 BS,VENTA,-5,98,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:28:31,GRANEL 3.5 BS,VENTA,-5,67,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:26:45,Vino Tinto Semidulce 700 cc,VENTA,-1,43,21,35,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:05,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,11,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:05,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,24,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:04,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,47,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:03,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,10,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:03,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,16,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:24:02,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,28,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:18:54,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,54,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 16:12:46,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,59,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-12 15:33:06,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,12,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:33:06,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,15,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:33:05,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,15,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:17:54,CAJA MADERA GRANDE 215 gr taboada,VENTA,-1,8,118,133,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:07:39,GRANEL 3.5 BS,VENTA,-1,72,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:06:11,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,43,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:06:10,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,22,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:06:10,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,55,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 15:02:22,GRANEL 3.5 BS,ANULACION,1,73,"3,5",4,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8ed10b — Motivo: OTRO
+2026-08-12 14:52:08,GRANEL 2.5BS,VENTA,-1,381,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:50:54,GRANEL 3.5 BS,VENTA,-1,72,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:39:11,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,44,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:37:24,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,49,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:51,BOLSAS DORADAS,VENTA,-1,42,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:50,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,45,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:49,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,29,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:49,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,6,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:48,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,17,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 14:14:47,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,39,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 12:33:59,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,4,56,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 12:30:05,TABLETA DE CHOC. C/LECHE 100 gr taboada,TRASLADO,12,50,25,25,ADMIN_SUCURSAL Suc. Heroinas,Devolución por cancelación de traslado hacia Central Sucre
+2026-08-12 12:30:05,BOMBONES DE MENTA 150 gr taboada,TRASLADO,12,40,28,28,ADMIN_SUCURSAL Suc. Heroinas,Devolución por cancelación de traslado hacia Central Sucre
+2026-08-12 12:10:52,PALOMITAS DE MAÍZ CON CHOCOLATE 100 gr taboada,ENTRADA MANUAL,1,8,0,0,sucursal.heroinas.taboada@gmail.com,[Entrada Manual: 7.0 u. -> 8.0 u. (+1.0 u.)] - Se encontró una palomita al hacer la limpieza
+2026-08-12 12:10:15,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,11,69,79,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 12:00:56,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,13,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 12:00:30,TABLETA DE CHOC. C/AMARANTO,TRASLADO,-7,12,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 12:00:29,TABLETA DE CHOC. C/ QUINUA,TRASLADO,-7,27,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 12:00:09,TABLETA DE CHOC C/AJI 50 G,VENTA,-1,16,13,"14,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 11:40:26,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,56,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 11:07:46,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,60,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 11:07:46,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,57,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:55:34,GRANEL 2.5BS,VENTA,-2,382,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:52:54,BLISTER GOMITAS CON CHOCOLATE P,VENTA,-1,3,34,40,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:52:53,GRANEL 4.5 BS,VENTA,-1,103,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:52:52,BOMBONES ESPECIALES 200 gr taboada,VENTA,-1,21,37,"43,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:45:13,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,24,37,"42,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:38:27,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,57,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 10:08:18,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,TRASLADO,1,52,35,35,ADMIN_SUCURSAL Suc. Heroinas,Devolución por cancelación de traslado hacia Central Sucre
+2026-08-12 10:01:41,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,15,68,78,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-12 09:56:37,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,TRASLADO,-2,40,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:55:38,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,TRASLADO,-1,51,35,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:51:29,CAJA MADERA MEDIANA 150 gr taboada,TRASLADO,-1,10,99,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:51:29,CAJA SURTIDA CON RELLENOS 122 gr taboada,TRASLADO,-1,5,56,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:51:28,CAJA FELICIDADES NEGRA 200 gr taboada,TRASLADO,-1,27,55,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:51:28,CAJA MADERA CORAZÓN CAFÉ 100 gr taboada,TRASLADO,-1,7,79,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 09:51:27,CHOC. LABIAL XXX,TRASLADO,-2,25,9,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-12 08:36:33,CAJA MADERA GRANDE 215 gr taboada,VENTA,-1,9,118,133,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 20:27:36,BOMBONES DE COCO 150 gr taboada,VENTA,-1,35,31,36,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:27:36,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,30,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:27:35,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,28,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:25:15,SUBMARINO,VENTA,-1,25,"5,5","6,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:15:48,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,21,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:15:47,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-2,20,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 20:10:33,MARACUYA SEMIDULCE,VENTA,-1,6,25,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 19:52:10,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,40,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 19:49:54,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,32,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 19:42:39,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,42,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 19:01:00,GRANEL 3.5 BS,VENTA,-1,73,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 19:00:36,GRANEL 3.5 BS,VENTA,-9,74,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:50:02,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,48,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:42:12,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,5,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:42:11,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,61,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:42:11,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,23,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:38:46,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,47,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:37:48,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,52,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:48,CANASTA CORAZÓN 200 gr taboada,VENTA,-2,9,45,53,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:47,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-2,41,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:46,TABLETA SABOR MENTA 100 gr taboada,VENTA,-4,43,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:46,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-4,15,25,29,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:45,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-4,48,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:44,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-4,52,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:43,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-4,36,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:43,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-16,49,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:42,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-4,30,24,27,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:41,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-2,22,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:40,TABLETA SABOR MENTA 50 gr taboada,VENTA,-2,18,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:40,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-2,24,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:39,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-2,11,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:38,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-2,17,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:37,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-2,22,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:37,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-2,16,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:36,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-2,30,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:35,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-2,46,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:36:34,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-2,7,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:20:38,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,12,89,99,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:08:24,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,29,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:08:23,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,32,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 18:08:23,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,14,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:40:02,GRANEL 3.5 BS,VENTA,-2,83,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:40:02,GRANEL 2.5BS,VENTA,-2,384,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:36:34,CHOC. MONEDA MENTOLADA,VENTA,-4,90,3,3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:27:00,GRANEL 3.0 BS,VENTA,-2,28,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:10:07,GRAGEAS DE MANI CON CHOCOLATE BLANCO 50 gr taboada,VENTA,-1,36,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:10:06,BOLSAS DORADAS,VENTA,-1,43,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:10:05,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,11,99,"111,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 17:06:34,GRANEL 2.5BS,VENTA,-4,386,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:54:04,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,33,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:51:45,CAJA GRAGEA DE ALMENDRA CON CHOCOLATE 150 gr taboada,VENTA,-1,5,30,33,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:41:21,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,VENTA,-1,12,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:41:20,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,53,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:33:11,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-3,29,36,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:18:30,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,58,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:18:29,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-2,16,68,78,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:18:28,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,13,89,99,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:09:16,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,18,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 16:06:51,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,52,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:59:28,GRANEL 3.5 BS,VENTA,-1,85,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:58:02,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,19,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:56:00,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,18,68,78,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:43:37,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,12,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:43:36,ALFAJOR ALELU FRAMUBUESA 100G,VENTA,-2,2,12,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:40:19,CAJA ROJA CORAZÓN RECTANGULAR 180 gr taboada,VENTA,-1,12,70,81,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:31:23,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,15,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:31:22,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,54,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-11 15:17:50,GRANEL 2.5BS,VENTA,-1,390,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 15:08:58,CAJA GRAGEA DE ALMENDRA CON CHOCOLATE 150 gr taboada,VENTA,-1,6,30,33,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 15:08:57,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-2,61,10,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 15:08:56,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,19,20,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 14:51:52,CHOCOLATE POPULAR 250 gr taboada,VENTA,-1,20,28,"30,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 14:50:47,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,40,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 14:45:35,TABLETA SABOR MENTA 50 gr taboada,VENTA,-2,20,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 14:09:33,GRANEL 2.5BS,ENTRADA MANUAL,23,391,0,0,admin.general.taboada@taboada.bo,[Entrada Manual: 368.0 u. -> 391.0 u. (+23.0 u.)] - Por fracc. 1 CANASTA REDONDA CON TAPA 200G
+2026-08-11 14:08:42,CANASTA REDONDA CON TAPA,SALIDA MANUAL,-1,9,0,0,admin.general.taboada@taboada.bo,[Salida Manual: 10 u. -> 9.0 u. (-1.0 u.)] - Por fracc. a cod. 2002
+2026-08-11 13:52:18,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,65,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 13:26:47,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,33,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 13:26:46,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,32,36,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 13:01:52,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,66,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 13:00:54,CAJA FELICIDADES NEGRA 200 gr taboada,VENTA,-1,28,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 12:22:18,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,13,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 12:22:18,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,34,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 12:22:17,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,31,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 12:22:16,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-1,34,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 12:22:16,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,38,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:57:51,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,20,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:29:12,GRANEL 2.5BS,VENTA,-1,368,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:25:47,GRANEL 2.5BS,VENTA,-4,369,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:25:46,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,24,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:25:45,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,35,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:19:49,GRANEL 4.5 BS,VENTA,-1,104,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:19:48,GRANEL 3.5 BS,VENTA,-1,86,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:17:41,GRANEL 3.5 BS,VENTA,-10,87,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:17:41,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-2,6,18,20,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:17:40,TABLETA SABOR MENTA 100 gr taboada,VENTA,-2,47,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 11:17:39,CAJA PEQUEÑA CON VISOR - 12 UNID.,VENTA,-1,11,"9,5","13,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 10:45:23,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,19,68,78,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 10:43:20,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,9,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 10:32:43,TABLETA SABOR MENTA 50 gr taboada,SALIDA MANUAL,-1,22,0,0,sucursal.heroinas.taboada@gmail.com,[Salida Manual: 23.0 u. -> 22.0 u. (-1.0 u.)] - ERROR DE VENTA SE INGRESO COMO UNA TABLETA AMARGA 50GR EN LUGAR DE MENTA 50GR
+2026-08-11 10:31:59,TABLETA DE CHOC. AMARGO 50 gr taboada,ENTRADA MANUAL,1,21,0,0,sucursal.heroinas.taboada@gmail.com,"[Entrada Manual: 20.0 u. -> 21.0 u. (+1.0 u.)] - ERROR DE VENTA, EN SU LUGAR ERA UNA TABLETA DE MENTA DE 50 GR."
+2026-08-11 10:30:36,CAJA CAFÉ CON DORADO 200 gr taboada,SALIDA MANUAL,-1,16,0,0,sucursal.heroinas.taboada@gmail.com,[Salida Manual: 17.0 u. -> 16.0 u. (-1.0 u.)] - MAL INGRESO EN VENTAS SE INGRESO COMO UNA CAJA TUMBO EN SISTEMA PERO EN FISICO SE DIO UNA CAFE CON DORADO
+2026-08-11 10:29:06,CAJA TUMBO CON RELLENOS 200 gr taboada,ENTRADA MANUAL,1,34,0,0,sucursal.heroinas.taboada@gmail.com,"[Entrada Manual: 33 u. -> 34.0 u. (+1.0 u.)] - MAL INGRESO EN VENTA POR PARTE DEL PERSONAL DE LA MAÑANA, ERA UNA CAJA DE RELLENOS CAFE CON DORADO"
+2026-08-11 10:26:38,CAJA CORAZÓN MADERA 100 gr taboada,ENTRADA MANUAL,1,22,0,0,sucursal.heroinas.taboada@gmail.com,[Entrada Manual: 21.0 u. -> 22.0 u. (+1.0 u.)] - MAL PEDIDO DE COMPRA ERA 5 DE ESTOS E INGRESO 4
+2026-08-11 10:25:21,COFRE MADERA 122 gr taboada,SALIDA MANUAL,-1,18,0,0,sucursal.heroinas.taboada@gmail.com,[Salida Manual: 19.0 u. -> 18.0 u. (-1.0 u.)] - MAL INGRESO EN PEDIDO DE COMPRA ERAN 5 CAJAS DE MADERA Y 4 COFRES
+2026-08-11 10:21:35,CAJA CORAZÓN MADERA 100 gr taboada,COMPRA,4,21,74,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: Nº 32 envio de producto de sucre por cambio a ic norte hipopdromo
+2026-08-11 10:21:34,BOMBONES ESPECIALES 200 gr taboada,COMPRA,11,22,37,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: Nº 32 envio de producto de sucre por cambio a ic norte hipopdromo
+2026-08-11 10:21:34,COFRE MADERA 122 gr taboada,COMPRA,5,19,44,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: Nº 32 envio de producto de sucre por cambio a ic norte hipopdromo
+2026-08-11 10:02:07,TABLETA DE CHOC. C/LECHE 100 gr taboada,TRASLADO,-12,39,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-11 10:02:06,BOMBONES DE MENTA 150 gr taboada,TRASLADO,-12,30,28,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-11 10:00:24,TABLETA CHOC. AMARGO 100 gr taboada,TRASLADO,-5,53,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:23,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,TRASLADO,-2,33,36,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:23,CAJA ROJA CORAZÓN RECTANGULAR 180 gr taboada,TRASLADO,-1,13,70,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:22,CAJA MADERA MEDIANA 150 gr taboada,TRASLADO,-1,12,99,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:22,CAJA MADERA GRANDE 215 gr taboada,TRASLADO,-2,10,118,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:21,CAJA CORAZÓN MADERA 100 gr taboada,TRASLADO,-1,17,74,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:21,CAJA VERDE CON RELLENOS 300 gr taboada,TRASLADO,-2,14,89,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:20,CAJA ROSADA CON CORAZONES 280 gr taboada,TRASLADO,-2,2,66,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 10:00:20,CAJA LUJO ROJA O AZUL 230 gr taboada,TRASLADO,-2,12,69,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Vendedor: Rodrigo.heroinas
+2026-08-11 09:45:43,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,25,37,"42,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 09:12:55,Locion Hidratante,VENTA,-1,9,"47,6",72,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 09:01:37,GRANEL 4.5 BS,VENTA,-1,105,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 09:01:36,GRANEL 3.5 BS,VENTA,-1,97,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-11 09:01:36,GRANEL 2.5BS,VENTA,-3,373,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 20:28:08,GRANEL 2.5BS,VENTA,-2,376,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:28:08,GRANEL 3.5 BS,VENTA,-1,98,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:28:07,GRANEL 4.5 BS,VENTA,-2,106,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:28:06,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,63,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:24:34,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-2,22,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:24:34,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,54,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:24:33,GRANEL 2.5BS,VENTA,-4,378,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 20:18:42,TABLETA BLANCA C/FRUTILLAS DESHIDRATADAS- 100G,VENTA,-1,8,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 19:42:26,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,14,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 19:17:52,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,55,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 19:17:51,BLISTER TRUFAS AL RON P,VENTA,-1,8,24,30,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 18:36:56,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,67,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 18:33:28,ALFAJOR ALELU FRAMUBUESA 100G,VENTA,-1,4,12,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 17:53:06,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,VENTA,-1,9,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 17:11:33,COCOA PURA 500 gr taboada,VENTA,-1,32,50,"56,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 16:40:59,GRANEL 3.0 BS,VENTA,-1,30,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 16:40:58,GRANEL 2.5BS,VENTA,-1,382,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 16:29:38,BOLSAS DORADAS,VENTA,-1,44,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 16:29:37,CAJA CORAZÓN MADERA 100 gr taboada,VENTA,-1,18,74,"83,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 16:07:18,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-2,24,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:58:01,ALFAJOR ALELU FRAMUBUESA 100G,VENTA,-1,5,12,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:58:01,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,26,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:58:00,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,43,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:46:17,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,34,24,27,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:33:52,BOLSAS DORADAS,VENTA,-1,45,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:33:51,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,33,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:16:13,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,20,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:16:12,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,42,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:16:11,BOLSAS DE REGALO MEDIANA,VENTA,-1,17,5,10,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 15:16:10,PALETA DOBLE CORAZON COLORES 30 GR,VENTA,-1,26,10,12,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-10 14:04:41,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,58,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 12:44:14,Locion Astringente 2media 150 ml.,VENTA,-1,1,"47,6",77,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 12:43:58,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,10,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:58:02,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-2,55,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:58:01,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,49,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:58:00,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,36,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:58:00,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-3,26,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:57:59,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-3,15,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:57:58,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,25,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:55:16,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,59,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:28:58,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,VENTA,-1,10,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:27:26,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,62,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:23:23,BOMBONES DE FRUTAS 400 gr taboada,VENTA,-1,8,68,"71,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:23:23,ALFAJOR ALELU FRAMUBUESA 100G,VENTA,-1,6,12,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:23:22,GRANEL 4.5 BS,VENTA,-1,108,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:23:21,GRANEL 3.5 BS,VENTA,-2,99,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 11:04:08,PALETA CORAZÓN GRANDE,VENTA,-1,22,12,14,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:50:22,GRANEL 3.5 BS,VENTA,-1,101,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:44:16,COFRE MADERA 122 gr taboada,VENTA,-1,14,44,50,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:29:50,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,56,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:29:49,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,27,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:29:48,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,64,10,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 10:04:14,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,60,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 09:50:23,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,63,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 09:37:05,BOMBONES ESPECIALES 200 gr taboada,VENTA,-1,11,37,"43,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 09:19:54,GRANEL 2.5BS,VENTA,-1,383,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 09:01:38,TARJETAS,VENTA,-1,53,1,2,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-10 09:01:37,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,35,24,27,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-09 19:40:02,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,23,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 19:40:02,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,VENTA,-1,5,19,"22,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 19:40:01,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,32,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 19:39:46,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,24,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 19:39:46,CAJA CORAZÓN MADERA 100 gr taboada,VENTA,-1,19,74,"83,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 19:16:26,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,10,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:54:27,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-2,20,20,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:54:26,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-2,42,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:50:41,PALETA DOBLE CORAZON PINTADO 30 G,VENTA,-1,16,10,12,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:50:40,TARJETAS,VENTA,-1,54,1,2,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:50:39,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,17,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:50:39,BOLSAS DE REGALO MEDIANA,VENTA,-1,18,5,10,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:36:52,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,40,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:31:28,GRANEL 2.5BS,VENTA,-1,384,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #989FE5)
+2026-08-09 18:31:26,GRANEL 2.5BS,ANULACION,1,385,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #989fe5 — Motivo: ERROR_COBRO
+2026-08-09 18:30:25,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-2,21,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:14:08,GRANEL 2.5BS,VENTA,-1,384,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 18:03:25,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,41,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 17:45:44,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,11,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 17:19:20,GRANEL 2.5BS,VENTA,-5,385,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:54:41,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,50,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:45:34,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,57,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:26:18,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,12,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:16:39,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,13,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:16:38,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,33,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:10:35,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,64,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:10:34,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,26,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:10:33,PALETA CORAZÓN GRANDE,VENTA,-1,23,12,14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:10:33,CAJA ROJA CORAZÓN RECTANGULAR 180 gr taboada,VENTA,-1,14,70,81,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:07:27,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,58,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:07:26,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,16,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:07:25,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,8,18,20,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 16:07:25,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,65,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 15:23:51,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,27,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:59:48,GRANEL 2.5BS,VENTA,-1,390,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:59:47,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,23,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:58:04,Vino Blanco Semidulce 700 cc,VENTA,-1,16,21,35,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:55:18,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,22,20,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:55:03,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,29,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:51:49,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,23,20,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:49:54,CAJA CORAZÓN DE CARTON 100 gr taboada,VENTA,-1,2,70,77,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 14:00:55,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,14,69,79,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 13:45:45,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,34,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 13:41:10,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,33,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 13:24:12,BOLSAS DORADAS,VENTA,-1,46,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 13:24:12,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,35,36,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 13:03:41,GRANEL 2.5BS,VENTA,-1,391,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 12:38:29,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,37,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 12:16:22,TABLETA DE CHOC. C/ QUINUA,VENTA,-1,34,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:43:34,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,16,89,99,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:40:11,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,24,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:34:50,BOLSAS DORADAS,VENTA,-1,47,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:34:50,GRANEL 3.0 BS,VENTA,-3,31,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:34:49,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,36,24,27,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:17:27,GRANEL 3.5 BS,VENTA,-2,102,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:17:26,CAJA FELICIDADES NEGRA 200 gr taboada,VENTA,-1,29,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 11:17:11,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,43,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:59:38,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,56,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:57:37,GRANEL 3.5 BS,VENTA,-4,104,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:57:36,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,34,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:18,GRANEL 4.5 BS,VENTA,-1,109,"4,5",5,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:17,GRANEL 2.5BS,VENTA,-2,392,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:16,GRANEL 3.5 BS,VENTA,-3,108,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:16,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,17,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:15,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,44,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:14,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,11,45,53,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:14,BOLSAS DORADAS,VENTA,-1,48,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:39:13,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,34,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:27:21,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,25,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:27:20,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,44,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:27:19,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,37,24,27,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:27:18,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,11,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:27:18,BOLSAS DORADAS,VENTA,-1,49,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:18:32,BOLSAS DORADAS,VENTA,-1,50,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-09 10:18:31,CAJA MADERA POSTAL,VENTA,-1,2,74,"83,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-08 22:23:32,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,28,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 22:19:35,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-2,57,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 22:19:34,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-2,59,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 22:19:34,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,29,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 21:53:31,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,15,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 21:52:03,TABLETA DE CHOC. C/COCO 100 gr taboada,VENTA,-1,55,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 21:50:09,BOLSAS DORADAS,VENTA,-3,51,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 21:50:09,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-3,36,36,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 20:58:52,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-2,19,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 20:52:23,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-3,68,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 20:48:31,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,61,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 20:48:30,PALETA CORAZÓN GRANDE,VENTA,-1,24,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 20:21:54,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,38,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:57:01,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,45,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:42:48,GRANEL 2.5BS,VENTA,-1,394,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:42:30,GRANEL 2.5BS,VENTA,-4,395,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:32:17,PALETA CORAZÓN GRANDE,VENTA,-1,25,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:32:16,GRANEL 3.5 BS,VENTA,-3,111,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:32:16,GRANEL 2.5BS,VENTA,-8,399,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:32:15,CHOC. MONEDA MENTOLADA,VENTA,-2,94,3,3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 19:23:45,CAJA COCOA 200 gr taboada,VENTA,-1,40,20,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:56:46,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,13,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:48:48,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,35,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:48:47,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,46,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:48:46,BOMBONES DE COCO 150 gr taboada,VENTA,-1,36,31,36,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:47:17,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,16,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:46:24,GRANEL 4.5 BS,VENTA,-1,110,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:46:23,GRANEL 3.5 BS,VENTA,-3,114,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:46:23,GRANEL 2.5BS,VENTA,-2,407,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:27:58,CAJA MADERA PIROGRABADA 200 gr taboada,VENTA,-1,2,77,87,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:09:18,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,9,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 18:09:17,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-4,19,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:59:42,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,62,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:59:41,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,59,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:33:33,CAJA COCOA 200 gr taboada,VENTA,-1,41,20,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:29:08,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,35,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:29:08,CHOCOLATINES CON FRUTAS 150 gr taboada,VENTA,-1,27,36,41,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:29:07,BOMBONES DE COCO 150 gr taboada,VENTA,-1,37,31,36,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:22:39,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-5,71,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 17:05:30,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,63,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:46:57,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,45,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:19:55,GRANEL 2.5BS,VENTA,-1,409,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:19:37,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,51,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:18:21,CAJA ROJA CORAZÓN RECTANGULAR 180 gr taboada,VENTA,-2,15,70,81,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:18:20,CAJA ROSADA CON CORAZONES 280 gr taboada,VENTA,-2,4,66,74,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:18:19,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-2,35,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 16:18:19,CAJA CORAZÓN DE CARTON 100 gr taboada,VENTA,-2,3,70,77,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:49:13,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,25,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:48:37,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,ANULACION,1,24,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #a95055 — Motivo: OTRO
+2026-08-08 15:43:41,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,30,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:33:57,PALETA CORAZÓN GRANDE,VENTA,-1,26,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:29:34,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,20,68,78,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:29:33,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,64,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 15:18:34,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,23,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-08 14:39:18,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,39,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:38:50,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,40,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:38:49,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,28,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:36:55,GRANEL 3.5 BS,VENTA,-1,117,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:36:55,GRANEL 2.5BS,VENTA,-1,410,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:28:52,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,65,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:28:52,CAJA COCOA 200 gr taboada,VENTA,-1,42,20,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:28:51,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-2,14,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:23:20,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-2,16,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:23:19,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-2,76,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:23:18,TABLETA DINOSAURIO 100 gr taboada,VENTA,-1,15,25,27,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 14:09:42,GRANEL 2.5BS,VENTA,-2,411,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #A94FE8)
+2026-08-08 14:09:41,MARROX (PERSIPAN DE MANÍ),VENTA,-1,64,3,"3,5",ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #A94FE8)
+2026-08-08 14:09:41,COCOA PURA 500 gr taboada,VENTA,-1,33,50,"56,5",ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #A94FE8)
+2026-08-08 14:09:39,GRANEL 2.5BS,ANULACION,2,413,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #a94fe8 — Motivo: ERROR_COBRO
+2026-08-08 14:09:38,MARROX (PERSIPAN DE MANÍ),ANULACION,1,65,3,"3,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #a94fe8 — Motivo: ERROR_COBRO
+2026-08-08 14:09:38,COCOA PURA 500 gr taboada,ANULACION,1,34,50,"56,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #a94fe8 — Motivo: ERROR_COBRO
+2026-08-08 13:20:10,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,26,37,"42,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 13:12:40,GRANEL 2.5BS,VENTA,-2,411,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 13:12:40,MARROX (PERSIPAN DE MANÍ),VENTA,-1,64,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 13:12:39,COCOA PURA 500 gr taboada,VENTA,-1,33,50,"56,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 12:58:04,GRANEL 3.5 BS,VENTA,-1,118,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 11:51:01,BOLSAS DORADAS,VENTA,-1,54,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 11:51:01,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,37,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 11:21:34,GRANEL 3.5 BS,VENTA,-1,119,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 11:21:34,GRANEL 2.5BS,VENTA,-11,413,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 11:07:29,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-2,29,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 10:57:51,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,18,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 10:57:50,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,21,68,78,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 10:20:57,CHOC. MONEDA MENTOLADA,VENTA,-1,96,3,3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 10:18:59,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,52,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 10:18:58,GRAGEAS DE MANI CON CHOCOLATE BLANCO 50 gr taboada,VENTA,-1,37,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:46:09,GRANEL 2.5BS,VENTA,-2,424,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:46:08,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,61,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:46:08,COCOA PURA 500 gr taboada,VENTA,-1,34,50,"56,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:40:04,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,23,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:02:55,ALFAJOR ALELU DULCE DE LECHE 100G,VENTA,-1,10,12,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 09:02:32,GRANEL 3.5 BS,VENTA,-1,120,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 08:55:54,GRANEL 2.5BS,VENTA,-2,426,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-08 08:54:59,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,13,99,"111,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-07 20:48:24,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,21,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:33:04,GRANEL 3.0 BS,VENTA,-1,34,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:33:03,GRANEL 2.5BS,VENTA,-4,428,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:30:58,GRANEL 3.5 BS,VENTA,-4,121,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:13:12,PALETA CORAZÓN GRANDE,VENTA,-2,27,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:07:53,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,VENTA,-1,13,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:07:52,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,52,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:07:51,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,60,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:04:55,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,66,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 20:04:55,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,26,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:59:21,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,10,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:59:20,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,25,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:56:28,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,59,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:53:28,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,67,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:52:33,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,14,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 19:35:35,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,24,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 18:13:19,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,36,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:58:44,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,68,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:46:59,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,69,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:10:43,GRANEL 2.5BS,VENTA,-5,432,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:09:35,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,17,89,99,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:04:12,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,42,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 17:02:22,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,57,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:59:20,PALETA DOBLE CORAZON COLORES 30 GR,VENTA,-1,27,10,12,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:59:19,CHOCOLATINES CON FRUTAS 150 gr taboada,VENTA,-1,28,36,41,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:58:59,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,62,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:58:19,GRANEL 3.5 BS,VENTA,-12,125,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:58:18,MARROX (PERSIPAN DE MANÍ),VENTA,-12,65,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:25:12,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-2,58,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:12:33,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,63,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:12:32,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,23,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:11:30,GRANEL 3.5 BS,VENTA,-4,137,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:11:30,GRANEL 2.5BS,VENTA,-4,437,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:08:15,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,22,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:08:15,GRANEL 2.5BS,VENTA,-4,441,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:05:01,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,VENTA,-1,14,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 16:05:01,CAJA GRAGEA DE MANÍ CON CHOCOLATE 150 gr taboada,VENTA,-1,9,27,31,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:59:35,TABLETA LECHE SIN AZÚCAR 50 gr taboada,VENTA,-1,15,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:59:34,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,58,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:59:34,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,26,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:59:33,BOLSAS DORADAS,VENTA,-1,55,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:59:32,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,17,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:43:34,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,51,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:40:44,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,46,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:40:44,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,24,20,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:38:42,GRANEL 4.5 BS,VENTA,-1,111,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:38:41,GRANEL 3.5 BS,VENTA,-1,141,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:38:40,GRANEL 3.0 BS,VENTA,-1,35,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:38:39,GRANEL 2.5BS,VENTA,-2,445,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:28:47,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,25,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-07 15:05:33,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,38,55,63,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:52:15,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,27,14,16,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:51:13,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,66,18,21,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:51:12,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,44,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:19:16,Articulo Promocional E - Trufa,VENTA,-1,7,"1,8","0,01",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:19:15,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,41,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 14:17:26,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-1,19,25,29,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:46:46,GRANEL 2.5BS,VENTA,-3,447,"2,5",3,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:46:45,GRANEL 3.5 BS,VENTA,-1,142,"3,5",4,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:42:22,TABLETA SABOR MENTA 50 gr taboada,VENTA,-2,27,13,15,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:08:38,PASTILLAS DE GOMA VARIOS SABORES,VENTA,-1,4,8,"9,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:46,Articulo Promocional E - Trufa,VENTA,-1,8,"1,8","0,01",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:45,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,52,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:44,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,28,14,16,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:44,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,11,18,20,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:43,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,43,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:42,TABLETA SABOR NARANJA 100 gr taboada,VENTA,-1,95,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:42,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,42,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 13:00:41,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,53,25,"29,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:51:44,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,12,18,20,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:51:43,TABLETA DE CHOC/ AMARANTO - 50 G,VENTA,-1,2,13,15,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:41:20,GRANEL 2.5BS,VENTA,-1,450,"2,5",3,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:39:32,Articulo Promocional G - Submarino,VENTA,-1,0,"5,5",0,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:39:31,DINOSAURIO MEDIANO,VENTA,-2,3,19,21,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:39:30,BLISTER TRUFAS AL RON,VENTA,-1,5,44,55,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:36:54,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,60,35,"39,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:35:05,Articulo Promocional G - Submarino,VENTA,-1,1,"5,5",0,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:34:00,PALETA DOBLE CORAZON PINTADO 30 G,VENTA,-1,17,10,12,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:33:59,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,53,9,"11,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:33:58,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,65,10,"11,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:33:57,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,36,27,31,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:11:07,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,12,45,53,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 12:00:37,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,22,68,78,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 11:13:41,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,39,36,42,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 10:50:22,TABLETA CHOC. AMARGO 100 gr taboada,ANULACION,2,70,25,"29,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #aec853 — Motivo: VENTA_DUPLICADA
+2026-08-07 10:20:35,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,61,35,"39,5",Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 10:01:46,Articulo Promocional G - Submarino,SALIDA MANUAL,-1,2,0,0,sucursal.heroinas.taboada@gmail.com,[Salida Manual: 3.0 u. -> 2.0 u. (-1.0 u.)] - se olvido registar con la venta Ticket #4BB011
+2026-08-07 09:59:00,Articulo Promocional G - Submarino,VENTA,-1,3,"5,5",0,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 09:58:59,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-3,30,14,16,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 09:58:59,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,25,20,22,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 09:58:58,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,39,55,63,Leydi Caceres Tola,Salida por Venta POS
+2026-08-07 09:58:06,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,40,55,63,Leydi Caceres Tola,Salida por Venta POS
+2026-08-06 19:38:21,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-2,45,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:24:56,TABLETA DE CHOC. AMARGO 50 gr taboada,ANULACION,1,26,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #992ba4 — Motivo: VENTA_DUPLICADA
+2026-08-06 19:20:53,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,25,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:20:50,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,26,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:15:40,Articulo Promocional E - Trufa,VENTA,-1,9,"1,8","0,01",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:15:39,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,12,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:14:52,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,ANULACION,2,67,18,21,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bb0b0 — Motivo: VENTA_DUPLICADA
+2026-08-06 19:14:51,BOLSAS DORADAS grande,ANULACION,1,80,8,12,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bb0b0 — Motivo: VENTA_DUPLICADA
+2026-08-06 19:14:51,CAJA VERDE CON RELLENOS 300 gr taboada,ANULACION,1,18,89,99,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bb0b0 — Motivo: VENTA_DUPLICADA
+2026-08-06 19:08:15,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-2,65,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:08:15,BOLSAS DORADAS grande,VENTA,-1,79,8,12,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:08:14,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,17,89,99,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:08:10,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-2,67,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:08:09,BOLSAS DORADAS grande,VENTA,-1,80,8,12,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:08:09,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,18,89,99,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:03:57,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,21,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:03:56,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,23,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 19:03:55,PALETA CORAZÓN GRANDE,VENTA,-1,29,12,14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:41:58,Articulo Promocional E - Trufa,VENTA,-1,10,"1,8","0,01",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:41:57,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,13,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:39:33,BLISTER GOMITAS CON CHOCOLATE,VENTA,-1,0,57,68,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:35:50,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,60,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:24:51,CAJA FELICIDADES NEGRA 200 gr taboada,VENTA,-1,30,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:23:08,GRANEL 2.5BS,VENTA,-3,451,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:18:33,CHOC. MONEDA MENTOLADA,VENTA,-1,97,3,3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:18:32,GRANEL 2.5BS,VENTA,-1,454,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:14:11,TABLETA DE CHOC. C/COCO 50 gr taboada,ANULACION,1,18,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bb04c — Motivo: VENTA_DUPLICADA
+2026-08-06 18:05:29,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,17,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:05:26,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,18,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 18:02:17,CAJA VERDE CON RELLENOS 300 gr taboada,ANULACION,1,19,89,99,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bb028 — Motivo: VENTA_DUPLICADA
+2026-08-06 18:01:55,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,ANULACION,1,69,18,21,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bafda — Motivo: VENTA_DUPLICADA
+2026-08-06 18:01:54,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,ANULACION,1,62,35,"39,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4bafda — Motivo: VENTA_DUPLICADA
+2026-08-06 18:01:32,TABLETA INFANTIL 12 MODELOS 50 gr taboada,ANULACION,1,78,13,15,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf4e — Motivo: VENTA_DUPLICADA
+2026-08-06 18:01:01,CAJA MADERA GRANDE 215 gr taboada,ANULACION,1,12,118,133,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf81 — Motivo: VENTA_DUPLICADA
+2026-08-06 18:00:40,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,ANULACION,1,30,"9,5","11,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf75 — Motivo: VENTA_DUPLICADA
+2026-08-06 18:00:18,TABLETA CHOC. SEMI AMARGO 100 gr taboada,ANULACION,1,47,25,"29,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf61 — Motivo: VENTA_DUPLICADA
+2026-08-06 18:00:17,TABLETA CHOC. AMARGO 100 gr taboada,ANULACION,1,68,25,"29,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf61 — Motivo: VENTA_DUPLICADA
+2026-08-06 17:16:23,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,18,89,99,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:16:20,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,19,89,99,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:11:17,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-2,19,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:12,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,19,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:12,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-2,26,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:11,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,31,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:10,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,29,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:10,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,18,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:09,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,21,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:09:08,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,41,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 17:08:15,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-5,28,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 16:37:39,GRANEL 3.5 BS,VENTA,-2,143,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 16:36:47,GRANEL 2.5BS,VENTA,-3,455,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 16:36:06,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,37,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 16:12:13,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,41,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:53:20,ALFAJOR ALELU FRAMUBUESA 100G,VENTA,-1,7,12,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:53:19,BOLSAS DORADAS,VENTA,-1,56,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:53:19,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,38,24,27,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:51:18,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,68,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:51:17,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,61,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:51:15,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,69,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:51:14,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,62,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:38:24,GRANEL 2.5BS,VENTA,-3,458,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:38:24,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,54,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:38:23,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,VENTA,-1,15,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:27:04,GRANEL 2.5BS,VENTA,-4,461,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:23:18,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,24,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 15:04:06,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-2,47,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:50:04,GRANEL 2.5BS,VENTA,-1,465,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:48:25,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,59,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:39:57,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,33,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:24:06,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,33,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:12:10,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,63,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:09:25,GRANEL 2.5BS,VENTA,-2,466,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 14:09:24,MARROX (PERSIPAN DE MANÍ),VENTA,-2,77,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:57:44,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,61,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:40:59,CAJA MADERA GRANDE 215 gr taboada,VENTA,-1,11,118,133,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:40:56,CAJA MADERA GRANDE 215 gr taboada,VENTA,-1,12,118,133,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:36:43,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,29,"9,5","11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:36:40,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,30,"9,5","11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:17:01,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,46,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:17:01,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,67,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:16:56,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,47,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:16:55,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,68,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:12:47,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,77,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:12:36,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,78,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 13:12:30,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,79,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:35:56,CAJA MADERA PIROGRABADA 200 gr taboada,VENTA,-1,3,77,87,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:23:41,BOLSAS DORADAS,ANULACION,1,57,6,8,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf2b — Motivo: VENTA_DUPLICADA
+2026-08-06 12:23:40,CAJA MADERA MEDIANA 150 gr taboada,ANULACION,1,14,99,"111,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf2b — Motivo: VENTA_DUPLICADA
+2026-08-06 12:23:40,COFRE MADERA 122 gr taboada,ANULACION,1,15,44,50,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf2b — Motivo: VENTA_DUPLICADA
+2026-08-06 12:15:56,BOLSAS DE REGALO MEDIANA,VENTA,-1,19,5,10,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:15:56,PALETA CORAZÓN GRANDE,VENTA,-1,30,12,14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:15:55,CAJA BLANCA MEDIANA,VENTA,-1,26,10,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:15:54,GRANEL 2.5BS,VENTA,-15,468,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:13,BOLSAS DORADAS,VENTA,-1,56,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:12,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,13,99,"111,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:11,COFRE MADERA 122 gr taboada,VENTA,-1,14,44,50,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:07,BOLSAS DORADAS,VENTA,-1,57,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:07,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,14,99,"111,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:11:06,COFRE MADERA 122 gr taboada,VENTA,-1,15,44,50,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:00:18,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,64,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:00:17,Articulo Promocional E - Trufa,VENTA,-1,11,"1,8","0,01",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 12:00:16,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,54,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:56:48,TABLETA CHOC. SEMI AMARGO 100 gr taboada,ANULACION,1,48,25,"29,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #4baf00 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:49:21,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,47,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:49:18,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,48,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:47:09,Articulo Promocional G - Submarino,ANULACION,1,4,"5,5",0,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #873210 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:47:09,CAJA SURTIDA CON RELLENOS 122 gr taboada,ANULACION,1,6,56,63,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #873210 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:47:08,COFRE MADERA 122 gr taboada,ANULACION,1,16,44,50,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #873210 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:46:55,GRANEL 2.5BS,ANULACION,4,483,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8731f3 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:46:55,GRANEL 3.0 BS,ANULACION,2,36,3,"3,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #8731f3 — Motivo: VENTA_DUPLICADA
+2026-08-06 11:45:34,Articulo Promocional G - Submarino,VENTA,-1,3,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:45:33,TABETA POSTAL 7 MODELOS 100 gr taboada,VENTA,-3,20,25,29,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:34:38,GRANEL 3.5 BS,VENTA,-1,145,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:34:35,GRANEL 3.5 BS,VENTA,-1,146,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:26:36,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,64,9,"11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 11:26:35,TABLETA DE CHOC. CON FRUTAS DESHIDRATADAS,VENTA,-1,4,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:48:49,Articulo Promocional G - Submarino,VENTA,-1,4,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:48:48,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,5,56,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:48:47,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,42,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:48:36,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,27,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:37:32,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,80,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:27,Articulo Promocional G - Submarino,VENTA,-1,5,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:26,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,6,56,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:25,COFRE MADERA 122 gr taboada,VENTA,-1,15,44,50,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:23,Articulo Promocional G - Submarino,VENTA,-1,6,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:23,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,7,56,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:35:22,COFRE MADERA 122 gr taboada,VENTA,-1,16,44,50,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:22:32,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,34,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 10:22:31,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,47,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 09:57:07,GRANEL 2.5BS,VENTA,-4,479,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 09:57:06,GRANEL 3.0 BS,VENTA,-2,34,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 09:57:04,GRANEL 2.5BS,VENTA,-4,483,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-06 09:57:03,GRANEL 3.0 BS,VENTA,-2,36,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-05 20:28:56,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,31,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:36:14,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,61,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:19:41,COCOA PURA 500 gr taboada,VENTA,-1,35,50,"56,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:17:36,COCOA PURA 500 gr taboada,VENTA,-1,36,50,"56,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:03:12,BOLSAS DORADAS,VENTA,-1,58,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:03:11,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,20,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 19:00:17,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,42,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:55:30,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,62,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:49:49,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,28,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:26:44,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,70,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:23:16,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,71,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:23:15,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,48,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 18:09:37,GRANEL 2.5BS,VENTA,-10,487,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:41:57,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,16,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:40:32,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,VENTA,-1,60,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:40:31,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,66,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:38:09,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,43,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:38:08,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,25,30,"35,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:00:12,GRANEL 2.5BS,VENTA,-1,497,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:00:11,TABLETA DINOSAURIO 100 gr taboada,VENTA,-2,16,25,27,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 17:00:10,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,44,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 16:57:29,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,18,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 16:16:20,GRANEL 2.5BS,VENTA,-3,498,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:39:18,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,22,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:38:34,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,43,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:38:34,TABLETA DE CHOC. C/COCO 100 gr taboada,VENTA,-1,56,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:37:14,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,13,45,53,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:23:38,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,32,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:23:38,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,31,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 15:23:37,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,19,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-05 14:39:11,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-2,69,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 14:39:08,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-2,71,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 14:24:42,GRANEL 2.5BS,VENTA,-1,501,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 14:24:41,GRANEL 2.0 BS,VENTA,-3,0,2,"2,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:36:34,CAJA COCOA 200 gr taboada,VENTA,-1,43,20,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:34:39,CAJA COCOA 200 gr taboada,VENTA,-1,44,20,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:27:01,COCOA PURA 500 gr taboada,VENTA,-1,37,50,"56,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:08:14,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,49,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:04:09,GRANEL 2.5BS,VENTA,-1,502,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 13:01:48,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,34,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 12:44:35,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,81,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 12:36:29,GRANEL 3.5 BS,VENTA,-2,147,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:49:29,Vino Blanco Aspero 700 cc,VENTA,-1,13,17,35,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:48:25,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,20,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:48:24,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,30,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:48:23,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,33,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:22:07,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-2,73,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 11:09:37,GRANEL 3.5 BS,VENTA,-4,149,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 10:00:06,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,34,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 09:59:05,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,35,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 09:59:05,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,13,18,20,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 09:58:11,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,38,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 09:51:41,TABLETA DE CHOC. C/LECHE 100 gr taboada,TRASLADO,-3,55,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-05 09:27:04,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,ANULACION,1,55,"9,5","11,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #7e9153 — Motivo: VENTA_DUPLICADA
+2026-08-05 09:27:04,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,ANULACION,1,67,10,"11,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #7e9153 — Motivo: VENTA_DUPLICADA
+2026-08-05 09:25:38,GRANEL 2.5BS,ANULACION,1,503,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #7e916e — Motivo: VENTA_DUPLICADA
+2026-08-05 09:25:38,CHOC. CORAZÓN HINCHADO,ANULACION,3,91,7,"8,5",ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #7e916e — Motivo: VENTA_DUPLICADA
+2026-08-05 09:17:17,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,72,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 09:17:16,TABLETA SABOR NARANJA 50 gr taboada,VENTA,-1,23,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-05 08:37:51,TABLETA INFANTIL 12 MODELOS 50 gr taboada,COMPRA,40,82,13,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:50,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,COMPRA,15,16,27,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:50,CAJA MADERA GRANDE 215 gr taboada,COMPRA,10,13,118,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:49,PALETA CORAZÓN GRANDE,COMPRA,25,31,12,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:48,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,COMPRA,45,66,10,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:48,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,COMPRA,35,50,18,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:47,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,COMPRA,45,54,9,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:46,GRAGEAS DE MACARRONES CON CHOC. 50 gr taboada,COMPRA,35,61,9,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:45,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,COMPRA,40,65,9,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:45,CHOC. CORAZÓN HINCHADO,COMPRA,80,88,7,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:44,CANASTA CORAZÓN 200 gr taboada,COMPRA,10,14,45,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:43,CAJA MADERA MEDIANA 150 gr taboada,COMPRA,8,15,99,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:42,CAJA CORAZÓN MADERA 100 gr taboada,COMPRA,20,20,74,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:42,CAJA LUJO ROJA O AZUL 230 gr taboada,COMPRA,15,19,69,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:41,COFRE MADERA 122 gr taboada,COMPRA,10,17,44,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:40,BOMBONES DE FRUTAS 150 gr taboada,COMPRA,25,39,29,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:40,BOMBONES ESPECIALES 200 gr taboada,COMPRA,8,12,37,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:39,BOMBONES DE MENTA 150 gr taboada,COMPRA,40,49,28,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:38,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,COMPRA,50,73,18,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-05 08:37:37,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,COMPRA,35,65,35,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: fecha de traspaso: 31/07/2026 Nota de traspaso n° 0045946
+2026-08-04 20:34:14,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,21,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:34:14,TABLETA DE CHOC. CON FRUTAS DESHIDRATADAS,VENTA,-1,5,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:33:15,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,45,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:38,TABLETA CON FRASES,VENTA,-1,7,9,11,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:37,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,31,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:36,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,42,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:36,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,32,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:35,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,36,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:34,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,14,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:30:14,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,63,37,42,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 20:21:29,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,29,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:58:16,TABLETA SABOR MENTA 50 gr taboada,VENTA,-2,32,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:53:40,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,53,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:43:28,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,25,9,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:43:27,BOMBONES DE MARSHMALLOWS 50 G,VENTA,-1,15,15,17,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:43:26,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,39,24,27,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:43:26,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,15,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:15:29,GRANEL 3.5 BS,VENTA,-3,153,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 19:15:28,GRANEL 2.5BS,VENTA,-9,502,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:58:37,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,32,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:52:39,TABLETA DE CHOC C/AJI 50 G,VENTA,-1,17,13,"14,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:32:16,Articulo Promocional E - Trufa,VENTA,-1,12,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:32:15,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,35,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:32:15,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,75,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:28:49,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,37,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:27:36,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,24,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:27:35,BOLSAS DORADAS,VENTA,-1,59,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 18:07:06,GRANEL 2.5BS,VENTA,-1,511,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:47:36,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,14,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:47:35,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,39,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:44:59,GRANEL 2.5BS,VENTA,-1,512,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:44:58,CHOC. CORAZÓN HINCHADO,VENTA,-3,8,7,"8,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:44:56,GRANEL 2.5BS,VENTA,-1,513,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:44:55,CHOC. CORAZÓN HINCHADO,VENTA,-3,11,7,"8,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:21:20,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,9,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:21:19,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,21,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:21:17,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,10,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:21:16,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,22,10,"11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:20:05,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,39,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:15:02,COFRE MADERA 122 gr taboada,VENTA,-1,7,44,50,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:09:57,Articulo Promocional G - Submarino,VENTA,-1,7,"5,5",0,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:09:56,BOLSAS DORADAS,VENTA,-1,60,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:09:56,CAJA MADERA PIROGRABADA 200 gr taboada,VENTA,-1,4,77,87,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:07:56,GRANEL 3.0 BS,VENTA,-1,38,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 17:07:55,GRANEL 2.5BS,VENTA,-3,514,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:56:49,Articulo Promocional G - Submarino,VENTA,-1,8,"5,5",0,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:56:49,TABLETA SABOR MENTA 100 gr taboada,VENTA,-2,54,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:56:48,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-2,58,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:51:50,Articulo Promocional G - Submarino,VENTA,-1,9,"5,5",0,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:51:49,CHOCOLATE POPULAR 250 gr taboada,VENTA,-3,21,28,"30,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:51:48,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-5,44,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:47:49,PACAMARA MOLIDO 250G,VENTA,-1,1,65,95,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:45:06,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,49,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:10:35,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,41,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 16:00:32,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,23,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:59:57,Articulo Promocional G - Submarino,VENTA,-1,10,"5,5",0,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:59:57,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,22,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:59:56,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,15,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:56:58,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,42,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:32:24,TABLETA DE CHOC. CON ACHACHAIRU DESHIDRATADO 50G,VENTA,-1,16,18,20,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:32:24,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,44,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:32:23,Vino Frizzante blue 220 ml,VENTA,-1,13,10,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:30:40,GRANEL 4.5 BS,VENTA,-1,112,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:25:35,GRANEL 3.0 BS,VENTA,-1,39,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-04 15:00:18,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,43,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:46:40,GRANEL 2.5BS,VENTA,-4,517,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:46:39,TABLETA SABOR FRUTILLA 50 gr taboada,VENTA,-1,44,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:46:39,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,21,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:46:38,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,33,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:39:34,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,22,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:39:33,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,48,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:38:39,CHOCOLATE COCINERO 250 gr taboada,VENTA,-1,34,30,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:04:41,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,76,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:04:11,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,26,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 14:03:32,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,30,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 13:52:35,GRAGEAS DE ARROZ CON CHOCOLATE 100 gr taboada,VENTA,-1,25,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 13:38:09,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,27,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 13:34:52,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,45,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 13:34:52,GRANEL 2.5BS,VENTA,-1,521,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 13:16:26,CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada,VENTA,-1,40,36,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 12:51:13,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,23,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 12:51:10,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,24,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 12:28:48,TABLETA LECHE SIN AZÚCAR 100 gr taboada,VENTA,-1,35,37,"42,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:58:28,Articulo Promocional G - Submarino,VENTA,-1,11,"5,5",0,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:58:28,CHOCOLATE POPULAR 250 gr taboada,VENTA,-1,24,28,"30,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:52:41,Vino Frizzante rose 220 ml,VENTA,-1,13,10,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:52:40,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,46,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:52:40,BOLSAS DORADAS,VENTA,-1,61,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:51:39,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,77,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:51:38,CAJA COCOA 200 gr taboada,VENTA,-1,45,20,"22,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:51:37,COCOA PURA 500 gr taboada,VENTA,-1,38,50,"56,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:51:37,TABLETA SABOR NARANJA 100 gr taboada,VENTA,-1,96,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:14:31,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,31,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:07:39,TABLETA CHOC. SEMI AMARGO SC/SAL - 50 gr taboada,VENTA,-1,17,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:07:38,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-3,46,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:06:13,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,25,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 11:01:52,GRANEL 4.5 BS,VENTA,-1,113,"4,5",5,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS
+2026-08-04 11:00:58,GRANEL 2.5BS,VENTA,-2,522,"2,5",3,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS
+2026-08-04 11:00:57,GRANEL 4.5 BS,VENTA,-1,114,"4,5",5,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS
+2026-08-04 09:46:24,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-2,30,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:37:33,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,32,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:35:47,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,24,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:35:47,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,32,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:35:46,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,25,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:35:45,GRAGEAS DE ARROZ CON CHOCOLATE 50 gr taboada,VENTA,-1,28,9,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:35:45,GRAGEAS DE ALMENDRA CON CHOCOLATE 100 gr taboada,VENTA,-1,26,20,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 09:30:17,TABLETA DE CHOC. C/NARANJAS DESHIDRATADAS,VENTA,-1,14,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 08:59:50,BOLSAS DORADAS,VENTA,-1,62,6,8,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 08:59:49,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,26,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-04 08:57:25,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,49,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 20:13:21,GRANEL 2.5BS,VENTA,-3,524,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 19:16:18,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,34,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 19:16:17,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,11,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 19:11:30,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,78,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 19:11:12,BOLSAS DORADAS grande,VENTA,-1,81,8,12,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 19:11:11,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,20,89,99,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:48:53,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,50,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:48:52,CHOCOLATINES CON FRUTAS 150 gr taboada,VENTA,-1,29,36,41,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:42:27,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,34,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:41:52,GRANEL 3.5 BS,VENTA,-3,156,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:41:52,GRANEL 3.0 BS,VENTA,-3,40,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:41:51,GRANEL 2.5BS,VENTA,-8,527,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:41:50,GRANEL 2.0 BS,VENTA,-3,3,2,"2,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:12:20,Vino Frizzante blue 220 ml,VENTA,-4,14,10,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 18:12:19,Vino Frizzante rose 220 ml,VENTA,-2,14,10,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:42:41,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,VENTA,-1,36,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:42:40,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,9,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:32:10,COCOA PURA 500 gr taboada,VENTA,-1,39,50,"56,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:25:46,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,49,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:13:22,BOMBONES ESPECIALES 200 gr taboada,VENTA,-1,4,37,"43,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 17:13:22,BOMBONES DE COCO 150 gr taboada,VENTA,-1,38,31,36,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:29:35,PALETA CORAZÓN GRANDE,VENTA,-1,6,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:29:34,CHOC. PALETA DE ARROZ O MANÍ,VENTA,-2,9,"8,5",10,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:11:01,CHOC. MONEDA MENTOLADA,VENTA,-1,98,3,3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:10:34,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,34,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:10:33,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,10,28,"32,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:10:10,Articulo Promocional E - Trufa,VENTA,-1,13,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 16:10:09,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,79,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 15:18:57,GRANEL 3.5 BS,VENTA,-1,159,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 15:14:02,TABLETA DINOSAURIO 100 gr taboada,VENTA,-1,18,25,27,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-03 14:43:36,Locion Hidratante,COMPRA,7,10,68,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:43:35,Crema Blanqueadora,COMPRA,2,5,60,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:43:34,Crema Nutritiva 2 oz.,COMPRA,7,10,66,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:43:33,Crema para Parpados 2 oz.,COMPRA,7,10,72,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:43:32,Crema de Placenta 2 oz.,COMPRA,5,9,78,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:43:31,Crema Humectante 55 gr.,COMPRA,12,12,62,0,ADMIN_SUCURSAL Suc. Heroinas,Ingreso por compra. Doc: PEDIDO 7 FECHA : 01/08/2026
+2026-08-03 14:16:11,GRANEL 2.5BS,VENTA,-1,535,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 14:15:54,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,33,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 14:06:34,GRANEL 3.0 BS,VENTA,-1,43,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:54:53,GRANEL 2.5BS,VENTA,-5,536,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:25:03,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,15,18,22,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:24:34,CAJA CORAZÓN MADERA 100 gr taboada,VENTA,-1,0,74,"83,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:24:11,Articulo Promocional G - Submarino,VENTA,-1,12,"5,5",0,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:24:10,CAJA MADERA CORAZÓN CAFÉ 100 gr taboada,VENTA,-1,8,79,89,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:20,Articulo Promocional G - Submarino,VENTA,-1,13,"5,5",0,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:19,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,8,56,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:19,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,47,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:18,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,11,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:17,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,26,30,"35,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:17,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,37,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:16,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,80,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:15,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,50,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:23:14,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,56,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:21:47,GRANEL 2.5BS,VENTA,-1,541,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:21:30,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,25,18,21,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:21:12,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,12,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:46,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,33,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:27,GRANEL 2.5BS,VENTA,-30,542,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:26,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,38,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:25,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,44,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:25,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,60,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:20:24,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,51,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:18:17,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,27,30,"35,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:18:17,BOMBONES DE COCO 150 gr taboada,VENTA,-1,39,31,36,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:18:16,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,39,27,31,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:18:15,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,12,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-03 13:06:37,TABLETA DE CHOC. C/NARANJAS DESHIDRATADAS,VENTA,-1,15,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-02 19:38:02,GRANEL 2.0 BS,VENTA,-4,6,2,"2,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:22:27,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,43,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:22:26,GRANEL 2.0 BS,VENTA,-1,10,2,"2,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:22:25,GRANEL 2.5BS,VENTA,-3,572,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:22:13,GRANEL 2.0 BS,VENTA,-4,11,2,"2,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:20:07,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,35,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:15:06,BOLSAS DORADAS,VENTA,-1,63,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:15:05,CAJA MADERA MEDIANA 150 gr taboada,VENTA,-1,7,99,"111,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 19:07:19,ROSE SEMI DULCE,VENTA,-1,15,25,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 18:12:16,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,52,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:35:10,Vino Frizzante rose 220 ml,VENTA,-1,16,10,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:35:09,Vino Frizzante blue 220 ml,VENTA,-1,18,10,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:35:08,GRANEL 3.0 BS,VENTA,-4,44,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:35:08,GRANEL 2.5BS,VENTA,-14,575,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:35:07,GRANEL 3.5 BS,VENTA,-6,160,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:21:18,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,26,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 17:21:18,GRANEL 3.0 BS,VENTA,-2,48,3,"3,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:55:37,BOLSAS DORADAS,VENTA,-1,64,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:55:37,CAJA MADERA PIROGRABADA 200 gr taboada,VENTA,-1,5,77,87,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:53:37,CHOCOLATE POPULAR 250 gr taboada,VENTA,-1,25,28,"30,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:40:57,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,35,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:40:33,BOLSAS DE REGALO MEDIANA,VENTA,-1,20,5,10,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:40:33,BOMBONES DE FRUTAS 400 gr taboada,VENTA,-1,9,68,"71,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:40:32,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,23,68,78,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:34:29,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,35,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:33:11,Articulo Promocional G - Submarino,VENTA,-1,14,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:33:10,BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada,VENTA,-1,40,27,31,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:33:10,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,28,30,"35,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:33:09,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,16,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:32:48,PALETA CORAZÓN GRANDE,VENTA,-2,7,12,14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:32:47,DINOSAURIO PEQUEÑO,VENTA,-2,1,9,11,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:32:47,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,40,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:32:46,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,4,45,53,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 16:13:28,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,27,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:49:21,BOLSAS DORADAS,VENTA,-1,65,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:48:47,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,34,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:39:24,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,VENTA,-1,16,18,22,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:39:24,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,81,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:38:28,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,82,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:37:01,CAJA MADERA CORAZÓN CAFÉ 100 gr taboada,VENTA,-1,9,79,89,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:37:00,CANASTA CORAZÓN 200 gr taboada,VENTA,-3,5,45,53,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:16:40,CANASTA CORAZÓN 200 gr taboada,VENTA,-1,8,45,53,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:09:43,Articulo Promocional E - Trufa,VENTA,-1,14,"1,8","0,01",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:09:42,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,45,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 15:03:09,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,35,35,"39,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 14:43:32,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,64,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 14:43:32,CAJA ROSADA CON CORAZONES 280 gr taboada,VENTA,-1,6,66,74,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 14:43:31,BOLSAS DE REGALO,VENTA,-1,5,"6,7",14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 14:27:19,TABLETA DE CHOC. C/UVAS PASAS 50 gr taboada,VENTA,-1,49,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 14:18:18,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-2,34,"9,5","11,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:49:54,GRANEL 2.5BS,VENTA,-1,589,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:43:30,TABLETA LECHE SIN AZÚCAR 100 gr taboada,VENTA,-1,36,37,"42,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:43:29,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,27,37,"42,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:43:28,TABLETA BLANCO SIN AZÚCAR 100 gr taboada,VENTA,-1,38,37,"42,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:43:28,BOLSAS DE REGALO MEDIANA,VENTA,-1,21,5,10,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:40:20,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,36,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:35:00,CAJA SURTIDA CON RELLENOS 122 gr taboada,VENTA,-1,9,56,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:29:59,TABLETA DE CHOC. C/COCO 50 gr taboada,VENTA,-1,22,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:24:30,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,26,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:24:30,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,52,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:24:29,TABLETA DE CHOC. C/UVAS PASAS 100 gr taboada,VENTA,-1,35,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:21:37,CAJA FELICIDADES NEGRA 200 gr taboada,VENTA,-1,31,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:21:36,BOLSAS DORADAS,VENTA,-1,66,6,8,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:16:24,Articulo Promocional E - Trufa,VENTA,-1,15,"1,8","0,01",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:16:23,TABLETA DE CHOC. C/LECHE 100 gr taboada,VENTA,-1,61,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 13:08:16,BOMBONES DE MENTA 150 gr taboada,VENTA,-1,13,28,"32,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 12:55:43,GRANEL 2.5BS,VENTA,-3,590,"2,5",3,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 12:55:42,GRANEL 3.5 BS,VENTA,-8,166,"3,5",4,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 11:42:08,PALETA CORAZÓN GRANDE,VENTA,-1,9,12,14,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 11:08:05,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,53,14,16,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 11:08:04,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,65,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 11:05:13,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,66,37,42,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 11:03:40,CAJA TUMBO CON RELLENOS 200 gr taboada,VENTA,-1,48,55,63,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:05,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,44,13,15,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:05,TABLETA DE CHOC. C/MANÍ 100 gr taboada,VENTA,-1,46,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:04,Articulo Promocional G - Submarino,VENTA,-1,15,"5,5",0,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:03,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,50,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:03,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,83,25,"29,5",Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:48:02,ALFAJOR ALELU PAQUETE SURTIDO 252G,VENTA,-1,0,32,40,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-02 10:31:19,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,27,18,21,Nicole Romina Heredia Urey,Salida por Venta POS
+2026-08-01 21:53:17,Articulo Promocional G - Submarino,VENTA,-1,16,"5,5",0,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:53:16,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,45,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:53:15,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,28,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:53:15,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-2,55,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:53:14,Vino Frizzante rose 220 ml,VENTA,-1,17,10,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:53:13,Vino Frizzante blue 220 ml,VENTA,-1,19,10,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:52:27,TABLETA INFANTIL 12 MODELOS 50 gr taboada,VENTA,-1,46,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:52:26,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,36,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:39:11,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,41,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:37:42,GRANEL 2.5BS,VENTA,-6,593,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:37:41,GRANEL 3.0 BS,VENTA,-2,50,3,"3,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:37:41,GRANEL 3.5 BS,VENTA,-4,174,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:37:17,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,23,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:37:16,BOLSAS DORADAS,VENTA,-1,67,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:27:19,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,VENTA,-1,42,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:24:42,CAJA LUJO ROJA O AZUL 230 gr taboada,VENTA,-1,4,69,79,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 21:24:41,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,17,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:55:38,BOLSAS DORADAS,VENTA,-1,68,6,8,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:55:37,GRANEL 3.5 BS,VENTA,-1,178,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:55:36,GRANEL 4.5 BS,VENTA,-1,115,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:55:35,CAJA CAFÉ CON DORADO 200 gr taboada,VENTA,-1,24,55,63,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:43:40,TABLETA SEMI AMARGO SIN AZÚCAR 100 gr taboada,VENTA,-1,28,37,"42,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:33:04,Articulo Promocional E - Trufa,VENTA,-1,16,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:33:03,TABLETA DE CHOC. BLANCO 100 gr taboada,VENTA,-1,62,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:33:02,GRANEL 2.5BS,VENTA,-5,599,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:08:02,GRANEL 2.5BS,VENTA,-3,604,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:08:01,GRANEL 3.5 BS,VENTA,-1,179,"3,5",4,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:04:29,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,36,35,"39,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 20:04:28,PALOMITAS DE MAÍZ CON CHOCOLATE 100 gr taboada,VENTA,-2,7,22,24,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 19:36:51,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,36,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 19:08:54,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,53,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 19:08:54,TABLETA SABOR MENTA 100 gr taboada,VENTA,-1,57,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 19:05:14,GRANEL 2.5BS,VENTA,-8,607,"2,5",3,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 18:58:42,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,57,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 18:39:50,TABLETA SEMI AMARGO SIN AZÚCAR 50 gr taboada,VENTA,-1,6,19,"22,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 18:19:47,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,VENTA,-1,11,18,22,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:30:41,BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada,VENTA,-1,29,18,21,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:30:40,Articulo Promocional E - Trufa,VENTA,-1,17,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:30:40,TABLETA 21 DE SEPTIEMBRE,VENTA,-1,18,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:28:23,TABLETA DE CHOC. SEMI AMARGO 50 grtaboada,VENTA,-1,35,13,15,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:13:52,Articulo Promocional E - Trufa,VENTA,-1,18,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:13:51,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,54,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:12:19,TABLETA CHOC. SEMI AMARGO 100 gr taboada,VENTA,-1,51,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 17:04:37,GRAGEAS DE UVA CON CHOCOLATE 50 gr taboada,VENTA,-1,37,"9,5","11,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 16:58:07,Articulo Promocional E - Trufa,VENTA,-1,19,"1,8","0,01",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 16:58:06,TABLETA CHOC. AMARGO 100 gr taboada,VENTA,-1,84,25,"29,5",Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 16:51:14,CAJA VERDE CON RELLENOS 300 gr taboada,VENTA,-1,21,89,99,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 16:34:47,PALETA CORAZÓN GRANDE,VENTA,-1,10,12,14,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 16:04:42,GRANEL 4.5 BS,VENTA,-2,116,"4,5",5,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 15:32:09,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,58,14,16,Jhesica Selena Bohorquez Peredo,Salida por Venta POS
+2026-08-01 14:43:31,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,67,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:42:48,GRANEL 3.5 BS,VENTA,-1,180,"3,5",4,ADMIN_SUCURSAL Suc. Heroinas,Salida por Venta POS (Corrección de Ticket #873ED3)
+2026-08-01 14:42:47,GRANEL 3.5 BS,ANULACION,1,181,"3,5",4,ADMIN_SUCURSAL Suc. Heroinas,Anulación de Venta #873ed3 — Motivo: ERROR_COBRO
+2026-08-01 14:35:38,CAJA FELICIDADES LILA 200 gr taboada,VENTA,-1,28,55,63,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:33:12,GRANEL 3.5 BS,VENTA,-12,180,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:30:27,GRANEL 3.5 BS,VENTA,-1,192,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:11:06,TABLETA DE CHOC C/AJI 50 G,VENTA,-1,18,13,"14,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:11:05,BOTELLAS DE VINO SABOR A CHOCOLATE,VENTA,-1,68,37,42,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:09:22,Crema de Placenta 2 oz.,VENTA,-1,4,"54,6",82,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:08:35,TABLETA DE CHOC. CON FRUTAS DESHIDRATADAS,VENTA,-1,6,28,"32,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:05:14,Articulo Promocional E - Trufa,VENTA,-1,20,"1,8","0,01",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 14:05:13,TABLETA SABOR FRUTILLA 100 gr taboada,VENTA,-1,55,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 13:58:22,GRAGEAS DE MANÍ CON CHOCOLATE 50 gr taboada,VENTA,-1,13,"9,5","11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 12:18:41,GRANEL 3.0 BS,VENTA,-1,52,3,"3,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 12:01:50,BOLSAS DORADAS grande,VENTA,-1,82,8,12,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 12:01:49,CAJA ROSADA CON CORAZONES 280 gr taboada,VENTA,-1,7,66,74,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 12:01:49,CAJA PALETAS ROSAS 40 gr taboada,VENTA,-1,40,24,27,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 11:59:05,GRAGEAS DE ALMENDRA CON CHOCOLATE 50 gr taboada,VENTA,-1,23,10,"11,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 11:58:08,CAJA GRAGEA DE UVA CON CHOCOLATE 150 gr taboada,TRASLADO,-7,1,27,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:58:08,TABLETA DE CHOC. C/MANÍ 100 gr taboada,TRASLADO,-1,47,25,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:54:41,CAJA FELICIDADES NEGRA 200 gr taboada,TRASLADO,-1,32,55,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:54:41,CANASTA REDONDA CON TAPA,TRASLADO,-5,10,65,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:54:40,BLSITER PASTILLAS DE GOMA,TRASLADO,-1,0,30,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:54:40,GRAGEAS DE MANI CON CHOCOLATE BLANCO 100 gr taboada,TRASLADO,-5,12,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:54:39,CHOCOLATE COCINERO 250 gr taboada,TRASLADO,-2,35,30,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:47:08,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,TRASLADO,-1,37,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:45:29,BOMBONES ESPECIALES 200 gr taboada,TRASLADO,-2,5,37,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:42:10,GRAGEAS DE MANÍ CON CHOCOLATE 100 gr taboada,TRASLADO,-2,17,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:42:09,GRAGEAS DE UVA CON CHOCOLATE 100 gr taboada,TRASLADO,-4,43,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:42:09,GRAGEAS DE MACARRONES CON CHOC. 100 gr taboada,TRASLADO,-1,38,18,0,ADMIN_SUCURSAL Suc. Heroinas,Traslado hacia Central Sucre
+2026-08-01 11:15:58,GRANEL 3.5 BS,VENTA,-1,193,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 11:00:39,BOMBONES ESPECIALES 150 gr taboada,VENTA,-1,29,30,"35,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:55:57,TABLETA DE CHOC. C/COCO 100 gr taboada,VENTA,-1,57,25,"29,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:52:42,GRANEL 2.5BS,VENTA,-1,615,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:40:59,GRANEL 2.5BS,VENTA,-1,616,"2,5",3,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:26:21,TABLETA DE CHOC. BLANCO 50 gr taboada,VENTA,-1,36,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:04:41,TABLETA DE CHOC. C/LECHE 50 gr taboada,VENTA,-1,27,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 10:04:40,TABLETA DE CHOC. C/MANÍ 50 gr taboada,VENTA,-1,37,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:54:37,GRANEL 3.5 BS,VENTA,-2,194,"3,5",4,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:54:37,GRANEL 4.5 BS,VENTA,-1,118,"4,5",5,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:47:37,Articulo Promocional G - Submarino,VENTA,-1,17,"5,5",0,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:47:36,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,33,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:47:35,BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada,VENTA,-1,37,35,"39,5",Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 09:47:34,BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada,VENTA,-1,24,68,78,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 08:47:00,TABLETA DE CHOC. AMARGO 50 gr taboada,VENTA,-1,34,13,15,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 08:47:00,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,59,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 08:21:48,TABLETAS SABORIZADAS 50 gr taboada,VENTA,-1,60,14,16,Sara Lazarte Ramirez,Salida por Venta POS
+2026-08-01 08:20:09,TABLETA SABOR MENTA 50 gr taboada,VENTA,-1,37,13,15,Sara Lazarte Ramirez,Salida por Venta POS

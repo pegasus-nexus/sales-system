@@ -47,3 +47,4 @@ class PurchaseReceptionCreate(BaseModel):
     fecha_vencimiento_credito: Optional[datetime] = None
     fecha_recepcion: Optional[datetime] = None
     notas: Optional[str] = None
+    es_historico: Optional[bool] = False
