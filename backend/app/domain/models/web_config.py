@@ -1,7 +1,16 @@
 from datetime import datetime, timezone
 from typing import Optional
 from beanie import Document
-from pydantic import Field
+from pydantic import Field, BaseModel
+
+class WebReward(BaseModel):
+    id: str
+    title: str
+    tag: str
+    desc: str
+    img: str
+    validity: str
+    is_active: bool = True
 
 class WebConfig(Document):
     tenant_id: str = Field(..., index=True)
@@ -17,6 +26,12 @@ class WebConfig(Document):
     
     # Featured Products
     featured_products: list[str] = Field(default_factory=list)
+    
+    # Dynamic Rewards for Comunidad
+    rewards: list[WebReward] = Field(default_factory=list)
+    
+    # Dynamic Rewards for Comunidad
+    rewards: list[WebReward] = Field(default_factory=list)
     
     # Club Taboada Benefit
     club_benefit_product_id: Optional[str] = None

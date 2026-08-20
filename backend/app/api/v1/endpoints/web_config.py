@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
-from app.domain.models.web_config import WebConfig
+from app.domain.models.web_config import WebConfig, WebReward
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import get_current_active_user
 
@@ -19,6 +19,7 @@ class WebConfigUpdate(BaseModel):
     club_benefit_description: Optional[str] = None
     club_benefit_branch: Optional[str] = None
     club_benefit_valid_until: Optional[str] = None
+    rewards: Optional[list[WebReward]] = None
 
 @router.get("/web-config", response_model=WebConfig)
 async def get_web_config(current_user: User = Depends(get_current_active_user)):
