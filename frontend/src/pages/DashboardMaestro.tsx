@@ -861,7 +861,10 @@ export default function DashboardMaestro() {
                                 <Activity className="text-purple-600" size={18} /> Comparativa Horaria Multi-Año
                             </h2>
                         </div>
-                        <HourlyMultiyearChart />
+                        <HourlyMultiyearChart 
+                            fechaRefProp={dates.start ? dates.start.split('T')[0] : undefined}
+                            sucursalProp={selectedSucursal}
+                        />
                     </div>
 
                     {/* SECCIÓN 2.1: COMPARATIVA HORARIA SEMANAL MULTI-AÑO (NUEVA SECCIÓN) */}

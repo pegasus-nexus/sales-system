@@ -335,9 +335,15 @@ export function HourlyMultiyearChart({
 
     useEffect(() => {
         if (sucursalProp !== undefined) {
-            setSucursal(sucursalProp);
+            setSucursal(sucursalProp === 'all' ? '' : sucursalProp);
         }
     }, [sucursalProp]);
+
+    useEffect(() => {
+        if (fechaRefProp) {
+            setFechaRef(fechaRefProp);
+        }
+    }, [fechaRefProp]);
 
     useEffect(() => {
         if (modo === 'festividad' && fechasFestivas?.actual) {
