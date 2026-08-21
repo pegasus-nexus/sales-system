@@ -4,13 +4,14 @@ from bson import ObjectId
 
 from app.domain.repositories.analytics_repository import AnalyticsRepository
 from app.db import get_raw_db
+from app.utils.date_utils import get_range_bolivia
 
 DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
 
 class MongoAnalyticsRepository(AnalyticsRepository):
     """
     Implementación de AnalyticsRepository usando PyMongo directamente (raw_db).
-    Aísla las consultas complejas y la resolución flexible de sucursales por ID y Nombre.
+    Garantiza cobertura 100% de la zona horaria de Bolivia (-04:00) para no recortar ventas nocturnas.
     """
 
     async def _get_db(self):
@@ -20,6 +21,18 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", ""]:
             return DEFAULT_TENANT_ID
         return tenant_id
+
+    def _sanitize_dates(self, start_date: datetime, end_date: datetime) -> tuple[datetime, datetime]:
+        """
+        Ajusta las fechas para cubrir el día completo en hora local de Bolivia (UTC-4).
+        Cubre desde las 00:00:00 Bolivia (04:00:00 UTC) hasta las 23:59:59.999 Bolivia (03:59:59 UTC del día siguiente).
+        """
+        try:
+            s_str = start_date.strftime("%Y-%m-%d")
+            e_str = end_date.strftime("%Y-%m-%d")
+            return get_range_bolivia(s_str, e_str)
+        except Exception:
+            return (start_date, end_date)
 
     def _build_sucursal_match(self, sucursal_id: Optional[str]) -> Optional[Dict[str, Any]]:
         if not sucursal_id or sucursal_id.lower() in ["all", "todas", "global", ""]:
@@ -57,9 +70,11 @@ class MongoAnalyticsRepository(AnalyticsRepository):
     ) -> Dict[str, Any]:
         db = await self._get_db()
         t_id = self._resolve_tenant_id(tenant_id)
+        s_dt, e_dt = self._sanitize_dates(start_date, end_date)
+
         match_stage: Dict[str, Any] = {
             "tenant_id": t_id,
-            "created_at": {"$gte": start_date, "$lte": end_date},
+            "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
         
@@ -93,9 +108,11 @@ class MongoAnalyticsRepository(AnalyticsRepository):
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
         t_id = self._resolve_tenant_id(tenant_id)
+        s_dt, e_dt = self._sanitize_dates(start_date, end_date)
+
         match_stage: Dict[str, Any] = {
             "tenant_id": t_id,
-            "created_at": {"$gte": start_date, "$lte": end_date},
+            "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
         
@@ -127,9 +144,11 @@ class MongoAnalyticsRepository(AnalyticsRepository):
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
         t_id = self._resolve_tenant_id(tenant_id)
+        s_dt, e_dt = self._sanitize_dates(start_date, end_date)
+
         match_stage: Dict[str, Any] = {
             "tenant_id": t_id,
-            "created_at": {"$gte": start_date, "$lte": end_date},
+            "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
         
@@ -158,9 +177,11 @@ class MongoAnalyticsRepository(AnalyticsRepository):
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
         t_id = self._resolve_tenant_id(tenant_id)
+        s_dt, e_dt = self._sanitize_dates(start_date, end_date)
+
         match_stage: Dict[str, Any] = {
             "tenant_id": t_id,
-            "created_at": {"$gte": start_date, "$lte": end_date},
+            "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
         
