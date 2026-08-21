@@ -20,53 +20,53 @@ def _same_day_prev_year(ref: date, years_back: int) -> date:
     return ref - timedelta(days=364 * years_back)
 
 async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) -> Dict[int, float]:
-    repo = MongoAnalyticsRepository()
-    start_dt, end_dt = get_day_range_bolivia(d.strftime("%Y-%m-%d"))
+    # 1. Si el año es 2026 o superior, consultar ventas en vivo de POS (db.sales)
+    if d.year >= 2026:
+        repo = MongoAnalyticsRepository()
+        start_dt, end_dt = get_day_range_bolivia(d.strftime("%Y-%m-%d"))
+        dist = await repo.get_hourly_sales_distribution(tenant_id, start_dt, end_dt, sucursal)
+        return {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
 
-    # 1. Intentar obtener de sales (POS en vivo / 2026)
-    dist = await repo.get_hourly_sales_distribution(tenant_id, start_dt, end_dt, sucursal)
-    hours_dict = {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
-    
-    total_sales = sum(hours_dict.values())
-    if total_sales > 0:
-        return hours_dict
-
-    # 2. Si no hay registros en sales (ej. años históricos 2025 o 2024), consultar ventas_historicas_crudas
+    # 2. Para años anteriores (2025, 2024, etc.), consultar siempre la colección histórica real (db.ventas_historicas_crudas)
     db = await get_raw_db()
     start_hist = datetime(d.year, d.month, d.day, 0, 0, 0)
     end_hist = datetime(d.year, d.month, d.day, 23, 59, 59)
 
-    suc_pattern = sucursal if sucursal and sucursal.lower() not in ["all", "todas", "global"] else "Hero"
-    if "hero" in suc_pattern.lower(): suc_pattern = "Hero"
+    match_stage: Dict[str, Any] = {
+        "fecha_transaccion": {"$gte": start_hist, "$lte": end_hist},
+        "estado": {"$ne": "anulado"}
+    }
+
+    if sucursal and sucursal.lower() not in ["all", "todas", "global", ""]:
+        if "hero" in sucursal.lower():
+            match_stage["sucursal"] = {"$regex": "Hero", "$options": "i"}
+        elif "recoleta" in sucursal.lower():
+            match_stage["sucursal"] = {"$regex": "^Recoleta$", "$options": "i"}
+        elif "calacoto" in sucursal.lower():
+            match_stage["sucursal"] = {"$regex": "^Calacoto$", "$options": "i"}
+        else:
+            match_stage["sucursal"] = {"$regex": sucursal, "$options": "i"}
 
     pipeline = [
-        {
-            "$match": {
-                "fecha_transaccion": {"$gte": start_hist, "$lte": end_hist},
-                "sucursal": {"$regex": suc_pattern, "$options": "i"},
-                "estado": {"$ne": "anulado"}
-            }
-        },
+        {"$match": match_stage},
         {
             "$project": {
                 "monto": {"$toDouble": "$monto_total_bs"},
-                "hour": {"$hour": "$fecha_transaccion"}
+                "hour": {"$hour": {"date": "$fecha_transaccion", "timezone": "-04:00"}}
             }
         },
-        {
-            "$match": {"monto": {"$gt": 0}}
-        },
+        {"$match": {"monto": {"$gt": 0}}},
         {
             "$group": {
                 "_id": "$hour",
                 "total": {"$sum": "$monto"}
             }
-        }
+        },
+        {"$sort": {"_id": 1}}
     ]
 
     res = await db.ventas_historicas_crudas.aggregate(pipeline).to_list(100)
-    hist_dict = {r["_id"]: float(r["total"]) for r in res if r["_id"] is not None}
-    return hist_dict
+    return {r["_id"]: float(r["total"]) for r in res if r["_id"] is not None}
 
 async def get_hourly_multiyear(
     tenant_id: str,
