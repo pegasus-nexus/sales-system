@@ -121,7 +121,7 @@ const MargenCard = memo(({ comisionMatriz, margenRetail, margenLiquido, revenueG
     const totalRetail     = hasBranches ? entries.reduce((a, d) => a + d.margenRetail, 0) : margenRetail;
     const totalMargen     = hasBranches ? entries.reduce((a, d) => a + d.margenNeto,   0) : margenLiquido;
     const totalVentas     = hasBranches ? entries.reduce((a, d) => a + d.ingresos,     0) : 0;
-    const margenPct       = totalVentas > 0 ? (totalMargen / totalVentas) * 100 : revenueGrowth;
+    const margenPct       = totalVentas > 0 ? (totalMargen / totalVentas) * 100 : (revenueGrowth || 0);
 
     return (
         <div className="bg-[#fbfafd] rounded-3xl p-6 shadow-md border border-slate-200/80 flex flex-col justify-between h-full min-h-[295px] select-none transition-all hover:shadow-lg">
@@ -132,7 +132,7 @@ const MargenCard = memo(({ comisionMatriz, margenRetail, margenLiquido, revenueG
                     <span className="text-xs font-semibold text-slate-400 mt-0.5 block">Ganancia Neta</span>
                 </div>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
-                    +{margenPct.toFixed(1)}%
+                    +{(margenPct || 0).toFixed(1)}%
                 </span>
             </div>
             
@@ -316,7 +316,7 @@ const AiCard = memo(({ ventasBrutas, climaEvento, formatBs }: AiCardProps) => {
                         />
                     </div>
                     <div className="flex justify-between text-xs text-indigo-200 font-bold pt-0.5">
-                        <span>Progreso: {porcentaje.toFixed(1)}%</span>
+                        <span>Progreso: {(porcentaje || 0).toFixed(1)}%</span>
                         <span>Objetivo: {formatBs(meta)}</span>
                     </div>
                 </div>
