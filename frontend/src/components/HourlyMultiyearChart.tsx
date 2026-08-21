@@ -371,10 +371,11 @@ export function HourlyMultiyearChart({
         setIsError(false);
         try {
             let res: any;
+            const targetFecha = (fecha && fecha !== 'undefined') ? fecha : (fechaRef || getTodayDateString());
             if (modo === 'festividad' && fechasFestivas) {
                 res = await getHourlyMultiyear(fechasFestivas.actual, suc || undefined, fechasFestivas.past1, fechasFestivas.past2);
             } else {
-                res = await getHourlyMultiyear(fecha, suc || undefined);
+                res = await getHourlyMultiyear(targetFecha, suc || undefined);
             }
 
             const rawHoras: any[] = res?.horas || [];

@@ -862,8 +862,8 @@ export default function DashboardMaestro() {
                             </h2>
                         </div>
                         <HourlyMultiyearChart 
-                            fechaRefProp={dates.start ? dates.start.split('T')[0] : undefined}
-                            sucursalProp={selectedSucursal}
+                            fechaRefProp={startDate ? startDate.toLocaleDateString('sv-SE') : (dates.start ? dates.start.split('T')[0] : undefined)}
+                            sucursalProp={selectedSucursal === 'all' ? '' : selectedSucursal}
                         />
                     </div>
 
