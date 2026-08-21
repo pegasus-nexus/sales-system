@@ -5,6 +5,8 @@ from bson import ObjectId
 from app.domain.repositories.analytics_repository import AnalyticsRepository
 from app.db import get_raw_db
 
+DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
+
 class MongoAnalyticsRepository(AnalyticsRepository):
     """
     Implementación de AnalyticsRepository usando PyMongo directamente (raw_db).
@@ -13,6 +15,11 @@ class MongoAnalyticsRepository(AnalyticsRepository):
 
     async def _get_db(self):
         return await get_raw_db()
+
+    def _resolve_tenant_id(self, tenant_id: Optional[str]) -> str:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", ""]:
+            return DEFAULT_TENANT_ID
+        return tenant_id
 
     def _build_sucursal_match(self, sucursal_id: Optional[str]) -> Optional[Dict[str, Any]]:
         if not sucursal_id or sucursal_id.lower() in ["all", "todas", "global", ""]:
@@ -49,8 +56,9 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         sucursal_id: Optional[str] = None
     ) -> Dict[str, Any]:
         db = await self._get_db()
+        t_id = self._resolve_tenant_id(tenant_id)
         match_stage: Dict[str, Any] = {
-            "tenant_id": tenant_id,
+            "tenant_id": t_id,
             "created_at": {"$gte": start_date, "$lte": end_date},
             "anulada": {"$ne": True}
         }
@@ -84,8 +92,9 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
+        t_id = self._resolve_tenant_id(tenant_id)
         match_stage: Dict[str, Any] = {
-            "tenant_id": tenant_id,
+            "tenant_id": t_id,
             "created_at": {"$gte": start_date, "$lte": end_date},
             "anulada": {"$ne": True}
         }
@@ -117,8 +126,9 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
+        t_id = self._resolve_tenant_id(tenant_id)
         match_stage: Dict[str, Any] = {
-            "tenant_id": tenant_id,
+            "tenant_id": t_id,
             "created_at": {"$gte": start_date, "$lte": end_date},
             "anulada": {"$ne": True}
         }
@@ -147,8 +157,9 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
+        t_id = self._resolve_tenant_id(tenant_id)
         match_stage: Dict[str, Any] = {
-            "tenant_id": tenant_id,
+            "tenant_id": t_id,
             "created_at": {"$gte": start_date, "$lte": end_date},
             "anulada": {"$ne": True}
         }

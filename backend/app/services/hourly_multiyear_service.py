@@ -5,6 +5,8 @@ from app.infrastructure.repositories.mongo_analytics_repository import MongoAnal
 from app.utils.date_utils import get_day_range_bolivia
 from app.db import get_raw_db
 
+DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
+
 def clean_nans(obj):
     if isinstance(obj, dict):
         return {k: clean_nans(v) for k, v in obj.items()}
@@ -20,11 +22,13 @@ def _same_day_prev_year(ref: date, years_back: int) -> date:
     return ref - timedelta(days=364 * years_back)
 
 async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) -> Dict[int, float]:
+    real_tenant_id = tenant_id if tenant_id and str(tenant_id).lower() not in ["none", "null", "undefined", ""] else DEFAULT_TENANT_ID
+
     # 1. Si el año es 2026 o superior, consultar ventas en vivo de POS (db.sales)
     if d.year >= 2026:
         repo = MongoAnalyticsRepository()
         start_dt, end_dt = get_day_range_bolivia(d.strftime("%Y-%m-%d"))
-        dist = await repo.get_hourly_sales_distribution(tenant_id, start_dt, end_dt, sucursal)
+        dist = await repo.get_hourly_sales_distribution(real_tenant_id, start_dt, end_dt, sucursal)
         return {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
 
     # 2. Para años anteriores (2025, 2024, etc.), consultar siempre la colección histórica real (db.ventas_historicas_crudas)
