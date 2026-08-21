@@ -140,6 +140,12 @@ export const getAnalyticsDashboard = (start_date: string, end_date: string, sucu
     return client<unknown>(`/analytics/dashboard?${params.toString()}`);
 };
 
+export const getAnalyticsDashboardV3 = (start_date: string, end_date: string, sucursal_id?: string) => {
+    const params = new URLSearchParams({ start_date, end_date });
+    if (sucursal_id) params.append('sucursal_id', sucursal_id);
+    return client<any>(`/analytics/dashboard-v3?${params.toString()}`);
+};
+
 export const getAnalyticsBcg = (start_date: string, end_date: string, sucursal_id?: string) => {
     const params = new URLSearchParams({ start_date, end_date });
     if (sucursal_id) params.append('sucursal_id', sucursal_id);

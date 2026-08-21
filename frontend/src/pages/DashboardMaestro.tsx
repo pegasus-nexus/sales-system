@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
-import { getAnalyticsDashboard, getSucursales } from '../api/api';
+import { getAnalyticsDashboardV3, getSucursales } from '../api/api';
 import {
     LayoutDashboard, DollarSign,
     Package, AlertTriangle, Loader2,
@@ -499,12 +499,10 @@ export default function DashboardMaestro() {
                     timeRange: 'custom',
                     now: new Date().toISOString()
                 });
-                const res = await getAnalyticsDashboard(
+                const res = await getAnalyticsDashboardV3(
                     dates.start,
                     dates.end,
-                    selectedSucursal === 'all' ? undefined : selectedSucursal,
-                    'custom',
-                    climaEvento
+                    selectedSucursal === 'all' ? undefined : selectedSucursal
                 );
                 if (isMounted) {
                     console.log("RESPONSE DASHBOARD", {

@@ -13,7 +13,29 @@ from app.services.percentile_service import get_sales_percentiles
 from app.services.rentabilidad_service import get_rentabilidad_real
 from app.services.bcg_service import get_bcg_matrix
 
+from app.services.analytics_v3_service import AnalyticsV3Service
+from app.infrastructure.repositories.mongo_analytics_repository import MongoAnalyticsRepository
+
 router = APIRouter()
+
+@router.get("/dashboard-v3")
+async def get_dashboard_v3(
+    start_date: datetime = Query(..., description="Fecha inicial"),
+    end_date: datetime = Query(..., description="Fecha final"),
+    sucursal_id: Optional[str] = Query(None, description="Id de la sucursal"),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Nuevo endpoint V3: Arquitectura Limpia y Cero Errores de Timezone.
+    """
+    repo = MongoAnalyticsRepository()
+    service = AnalyticsV3Service(repo)
+    return await service.get_dashboard_summary(
+        tenant_id=current_user.tenant_id,
+        start_date=start_date,
+        end_date=end_date,
+        sucursal_id=sucursal_id
+    )
 
 @router.get("/portfolio", response_model=PortfolioResponse)
 async def get_portfolio(
