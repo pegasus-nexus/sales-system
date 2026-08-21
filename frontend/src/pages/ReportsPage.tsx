@@ -18,9 +18,9 @@ import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import PortfolioAnalysisView from '../components/PortfolioAnalysisView';
 import DashboardMaestro from './DashboardMaestro';
 import RegionalAndProductMix from '../components/RegionalAndProductMix';
+import BIView from '../components/BIView';
 
-
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg';
+type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg' | 'bi';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
@@ -76,6 +76,8 @@ export default function ReportsPage() {
                 <AnulacionesReportView />
             ) : activeTab === 'compras_cliente' ? (
                 <PurchasesByClientView />
+            ) : activeTab === 'bi' ? (
+                <BIView />
             ) : (
                 <MonthlyEvolutionView />
             )}
