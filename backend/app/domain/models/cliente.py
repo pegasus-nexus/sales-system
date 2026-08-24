@@ -28,6 +28,7 @@ class Cliente(Document):
     
     # Fidelización / Comunidad
     is_miembro_comunidad: bool = False
+    fecha_afiliacion: Optional[datetime] = None
     numero_tarjeta: Optional[str] = None
     puntos_fidelizacion: int = 0
     
