@@ -20,12 +20,12 @@ import DashboardMaestro from './DashboardMaestro';
 import RegionalAndProductMix from '../components/RegionalAndProductMix';
 import BIView from '../components/BIView';
 
-type TabType = 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg' | 'bi';
+type TabType = 'bi' | 'general' | 'sucursales' | 'finanzas' | 'canales' | 'fuerza_ventas' | 'daily' | 'hourly' | 'staff' | 'inventario_valorado' | 'matrix' | 'tendencias' | 'product_stats' | 'conciliacion' | 'gastos' | 'caja_ventas' | 'anulaciones' | 'compras_cliente' | 'evolucion_mensual' | 'matriz_bcg';
 
 export default function ReportsPage() {
     const { role } = useAuthStore();
     const [searchParams] = useSearchParams();
-    const activeTab = (searchParams.get('tab') as TabType) || 'evolucion_mensual';
+    const activeTab = (searchParams.get('tab') as TabType) || 'bi';
 
     const esMatriz = ['SUPERADMIN', 'ADMIN', 'ADMIN_MATRIZ'].includes(role || '');
     const esSucursal = role === 'ADMIN_SUCURSAL';
@@ -42,7 +42,9 @@ export default function ReportsPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
-            {activeTab === 'evolucion_mensual' ? (
+            {activeTab === 'bi' ? (
+                <BIView />
+            ) : activeTab === 'evolucion_mensual' ? (
                 <MonthlyEvolutionView />
             ) : activeTab === 'general' ? (
                 <DashboardMaestro />
@@ -76,8 +78,6 @@ export default function ReportsPage() {
                 <AnulacionesReportView />
             ) : activeTab === 'compras_cliente' ? (
                 <PurchasesByClientView />
-            ) : activeTab === 'bi' ? (
-                <BIView />
             ) : (
                 <MonthlyEvolutionView />
             )}

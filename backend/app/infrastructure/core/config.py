@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     GEMINI_API_KEY: str = ""
     
+    # Business Timezone Config
+    BUSINESS_TIMEZONE: str = "America/La_Paz"
+    
     # Cloudinary Integration
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""

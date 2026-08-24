@@ -18,6 +18,7 @@ import SpecialDatesChartRaw from '../components/SpecialDatesChart';
 import RegionalAndProductMixRaw from '../components/RegionalAndProductMix';
 import SalesPercentileTrackerRaw from '../components/SalesPercentileTracker';
 import WeeklyHourlyChartRaw from '../components/WeeklyHourlyChart';
+import { BIPanelGeneralView } from '../components/bi/BIPanelGeneralView';
 
 const HourlyMultiyearChart = memo(HourlyMultiyearChartRaw);
 const SpecialDatesChart = memo(SpecialDatesChartRaw);
@@ -755,42 +756,8 @@ export default function DashboardMaestro() {
                 </div>
             </div>
 
-            {/* Header Ejecutivo - Barra Superior Horizontal (5 Columnas de Igual Ancho, Texto Centrado, Líneas Verticales Sutiles) */}
-            <div className="w-full bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-sm mb-4 min-h-[64px] flex items-center overflow-hidden">
-                <div className="w-full grid grid-cols-1 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 text-center py-2.5">
-                    {/* Columna 1: FECHA */}
-                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">FECHA</span>
-                        <span className="text-xs font-black text-slate-800 block truncate">{getDynamicPeriodText(startDate, endDate)}</span>
-                    </div>
-
-                    {/* Columna 2: ESTADO */}
-                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">ESTADO</span>
-                        <span className="text-xs font-black text-emerald-700 block truncate">Datos sincronizados con POS</span>
-                    </div>
-
-                    {/* Columna 3: ÚLTIMA ACTUALIZACIÓN */}
-                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">ÚLTIMA ACTUALIZACIÓN</span>
-                        <span className="text-xs font-black text-slate-800 block truncate">{lastSyncTime || new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                    </div>
-
-                    {/* Columna 4: MODO */}
-                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">MODO</span>
-                        <span className="text-xs font-black text-indigo-700 block truncate">Comparativa Multi-Año activa</span>
-                    </div>
-
-                    {/* Columna 5: SUCURSALES */}
-                    <div className="px-3 py-1 flex flex-col items-center justify-center min-w-0">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">SUCURSALES</span>
-                        <span className="text-xs font-black text-slate-800 block truncate">
-                            {selectedSucursal !== 'all' ? (sucursales.find(s => s.id === selectedSucursal)?.nombre || selectedSucursal) : 'Heroínas • Recoleta • Calacoto'}
-                        </span>
-                    </div>
-                </div>
-            </div>
+            {/* NUEVA CAPA DE BI REESTRUCTURADA — FASE 1 (VENTAS BASE Y PANEL GENERAL) */}
+            <BIPanelGeneralView />
 
             {isLoading && !data ? (
                 <div className="flex flex-col justify-center items-center py-32 space-y-4">
