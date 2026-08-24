@@ -142,6 +142,7 @@ export default function ComunidadPage() {
                                 <th className="px-6 py-4">Cliente</th>
                                 <th className="px-6 py-4">Teléfono</th>
                                 <th className="px-6 py-4">Estado</th>
+                                <th className="px-6 py-4">Ingreso</th>
                                 <th className="px-6 py-4">Última Compra</th>
                                 <th className="px-6 py-4">Total Compras</th>
                                 <th className="px-6 py-4">Premios Canjeados</th>
@@ -151,11 +152,11 @@ export default function ComunidadPage() {
                         <tbody className="divide-y divide-gray-100">
                             {miembrosLoading ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
+                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
                                 </tr>
                             ) : miembros?.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
+                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
                                 </tr>
                             ) : (
                                 miembros?.map((miembro: any) => (
@@ -175,6 +176,9 @@ export default function ComunidadPage() {
                                                     Solo Visitó
                                                 </span>
                                             )}
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-700">
+                                            {miembro.fecha_afiliacion ? new Date(miembro.fecha_afiliacion).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-3 font-medium text-gray-700">
                                             {miembro.ultima_compra_fecha ? new Date(miembro.ultima_compra_fecha).toLocaleDateString() : '-'}

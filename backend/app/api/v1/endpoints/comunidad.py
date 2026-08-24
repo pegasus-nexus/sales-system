@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 from app.application.services.comunidad_service import ComunidadService, ReclamoInput
 from app.domain.models.comunidad import ComunidadUser
 from app.infrastructure.auth import get_current_active_user
@@ -137,6 +138,7 @@ async def afiliar_cliente(cliente_id: str, current_user: User = Depends(get_curr
         return {"status": "success", "message": "El cliente ya es miembro de la comunidad"}
         
     cliente.is_miembro_comunidad = True
+    cliente.fecha_afiliacion = datetime.utcnow()
     if not cliente.numero_tarjeta:
         random_code = ''.join(random.choices(string.digits, k=6))
         cliente.numero_tarjeta = f"TAB-{random_code}"
