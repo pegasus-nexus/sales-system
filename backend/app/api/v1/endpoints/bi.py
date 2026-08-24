@@ -19,15 +19,28 @@ def get_bi_service() -> BIService:
     return BIService(repository=repository)
 
 
+@router.get("/health")
+async def bi_health_check():
+    """
+    Endpoint de salud del módulo de BI para diagnóstico de conectividad y despliegue.
+    """
+    return {
+        "status": "ok",
+        "module": "business_intelligence",
+        "timezone": BUSINESS_TIMEZONE,
+        "timestamp": datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+
 @router.get("/panel-general", response_model=BIPanelGeneralResponse)
 async def get_bi_panel_general(
     start_date: Optional[str] = Query(
         None,
-        description="Fecha de inicio YYYY-MM-DD en hora de Bolivia. Por defecto el día de hoy."
+        description="Fecha de inicio YYYY-MM-DD o 'historial'. Por defecto el día de hoy en hora de Bolivia."
     ),
     end_date: Optional[str] = Query(
         None,
-        description="Fecha de fin YYYY-MM-DD en hora de Bolivia. Por defecto el día de hoy."
+        description="Fecha de fin YYYY-MM-DD o 'historial'. Por defecto el día de hoy en hora de Bolivia."
     ),
     sucursal_id: Optional[str] = Query(
         None,

@@ -6,6 +6,7 @@ export interface DesgloseSucursalBI {
     ingresos: number;
     ordenes: number;
     ticket_medio: number;
+    participacion_pct: number;
 }
 
 export interface HourlyDistributionItemBI {
@@ -15,17 +16,46 @@ export interface HourlyDistributionItemBI {
     ordenes: number;
 }
 
+export interface VentaRecienteBI {
+    ticket_id: string;
+    numero_ticket: string;
+    hora_bolivia: string;
+    nombre_sucursal: string;
+    total_neto: number;
+    estado_pago: string;
+}
+
+export interface ResumenOperativoBI {
+    sucursal_lider: string;
+    mejor_hora: string;
+    promedio_por_hora: number;
+    ultima_venta_hora: string;
+}
+
+export interface AlertaOperativaBI {
+    tipo: 'info' | 'warning' | 'error';
+    titulo: string;
+    mensaje: string;
+}
+
 export interface BIPanelGeneralResponse {
     fecha_inicio_bolivia: string;
     fecha_fin_bolivia: string;
     timezone: string;
     estado_sincronizacion: string;
     ultima_actualizacion: string;
+    modo: string;
+
     ingresos_totales: number;
     cantidad_ordenes: number;
     ticket_medio: number;
+
     desglose_sucursales: DesgloseSucursalBI[];
     ventas_por_hora: HourlyDistributionItemBI[];
+    ventas_recientes: VentaRecienteBI[];
+    resumen_operativo: ResumenOperativoBI;
+    alertas_operativas: AlertaOperativaBI[];
+
     trazabilidad: Record<string, unknown>;
 }
 
@@ -52,4 +82,8 @@ export const getBIPanelGeneral = async (
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
     return client<BISucursalOption[]>('/bi/sucursales');
+};
+
+export const checkBIHealth = async (): Promise<{ status: string; module: string; timezone: string }> => {
+    return client<{ status: string; module: string; timezone: string }>('/bi/health');
 };
