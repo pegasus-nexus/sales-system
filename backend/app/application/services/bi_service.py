@@ -21,23 +21,23 @@ class BIService:
         self.repository = repository
         self.pandas_service = pandas_service or BIPandasService()
 
-    def _convert_bolivia_dates_to_utc_range(self, start_date_str: str, end_date_str: str) -> tuple[datetime, datetime]:
-        """
-        Convierte cadenas 'YYYY-MM-DD' de la fecha oficial de Bolivia a su correspondiente
-        rango de timestamps UTC para consulta en MongoDB.
-        00:00:00.000000 America/La_Paz (-04:00) -> 04:00:00 UTC
-        23:59:59.999999 America/La_Paz (-04:00) -> 03:59:59.999999 UTC del día siguiente
-        """
-        s_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        e_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    def _convert_bolivia_dates_to_utc_range(self, start_date_str: str, end_date_str: str) -> tuple[Optional[datetime], Optional[datetime]]:
+        if start_date_str.lower() in ["all", "historial", "todo", ""]:
+            return None, None
 
-        start_local = datetime.combine(s_date, time.min, tzinfo=BOLIVIA_TZ)
-        end_local = datetime.combine(e_date, time.max, tzinfo=BOLIVIA_TZ)
+        try:
+            s_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            e_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-        start_utc = start_local.astimezone(ZoneInfo("UTC"))
-        end_utc = end_local.astimezone(ZoneInfo("UTC"))
+            start_local = datetime.combine(s_date, time.min, tzinfo=BOLIVIA_TZ)
+            end_local = datetime.combine(e_date, time.max, tzinfo=BOLIVIA_TZ)
 
-        return start_utc, end_utc
+            start_utc = start_local.astimezone(ZoneInfo("UTC"))
+            end_utc = end_local.astimezone(ZoneInfo("UTC"))
+
+            return start_utc, end_utc
+        except Exception:
+            return None, None
 
     async def get_panel_general(
         self,

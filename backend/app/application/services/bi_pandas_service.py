@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from datetime import datetime, date
+from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 
@@ -77,21 +77,24 @@ class BIPandasService:
         df_sales = pd.DataFrame(raw_sales)
 
         # Garantizar que las columnas esperadas existan
-        for col in ["_id", "tenant_id", "sucursal_id", "total", "estado_pago", "idempotency_key"]:
+        for col in ["_id", "tenant_id", "sucursal_id", "total", "estado_pago", "idempotency_key", "created_at"]:
             if col not in df_sales.columns:
-                df_sales[col] = "PAGADO" if col == "estado_pago" else ""
+                df_sales[col] = "PAGADO" if col == "estado_pago" else ("CENTRAL" if col == "sucursal_id" else "")
+
+        df_sales["sucursal_id"] = df_sales["sucursal_id"].fillna("CENTRAL").astype(str)
 
         # 3. Clean & Deduplicate por idempotency_key o _id
         if "idempotency_key" in df_sales.columns:
-            # Deduplicar preservando el primer registro válido cuando idempotency_key esté presente
             valid_idemp = df_sales[df_sales["idempotency_key"].notna() & (df_sales["idempotency_key"] != "")]
             if not valid_idemp.empty:
                 dup_keys = valid_idemp[valid_idemp.duplicated("idempotency_key")]["_id"]
                 df_sales = df_sales[~df_sales["_id"].isin(dup_keys)]
         df_sales = df_sales.drop_duplicates(subset=["_id"], keep="first")
 
-        # 4. Normalizar timestamps a UTC y luego a America/La_Paz
-        df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True)
+        # 4. Normalizar timestamps a UTC y luego a America/La_Paz con seguridad
+        df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True, errors="coerce")
+        # Rellenar fechas inválidas si existieran
+        df_sales["created_at_utc"] = df_sales["created_at_utc"].fillna(pd.Timestamp.now(tz="UTC"))
         df_sales["fecha_hora_bolivia"] = df_sales["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
 
         # 5. Derivar Atributos Temporales en hora de Bolivia
@@ -125,8 +128,8 @@ class BIPandasService:
             # Merge con Dimensión Sucursales para incluir nombres reales
             if not df_dim_sucursal.empty and "sucursal_id" in df_dim_sucursal.columns:
                 merged_suc = pd.merge(
-                    df_dim_sucursal,
                     suc_group,
+                    df_dim_sucursal,
                     on="sucursal_id",
                     how="left"
                 )
@@ -141,10 +144,16 @@ class BIPandasService:
                 ing = round(float(row["ingresos"]), 2)
                 ord_count = int(row["ordenes"])
                 tm = round(ing / ord_count, 2) if ord_count > 0 else 0.0
+                nombre_raw = row.get("nombre")
+                if pd.isna(nombre_raw) or not str(nombre_raw).strip():
+                    nombre_suc = "Central / Principal" if str(row["sucursal_id"]) == "CENTRAL" else f"Sucursal ({row['sucursal_id'][:8]})"
+                else:
+                    nombre_suc = str(nombre_raw)
+
                 desglose_list.append(
                     DesgloseSucursalBI(
                         sucursal_id=str(row["sucursal_id"]),
-                        nombre_sucursal=str(row.get("nombre", row["sucursal_id"])),
+                        nombre_sucursal=nombre_suc,
                         ingresos=ing,
                         ordenes=ord_count,
                         ticket_medio=tm

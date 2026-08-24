@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Layers, Clock, AlertCircle,
-    TrendingUp, ShoppingBag, Receipt, CheckCircle2, ChevronDown, Filter, Info, Search
+    TrendingUp, ShoppingBag, Receipt, CheckCircle2, ChevronDown, Filter, Info, Search, Database
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -19,16 +19,16 @@ export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Controles de Fecha y Sucursal (inicialización inmediata)
-    const [preset, setPreset] = useState<'hoy' | 'ayer' | '30dias' | 'custom'>('hoy');
-    const [startDate, setStartDate] = useState<string>(() => getFormattedDate(0));
+    // Controles de Fecha y Sucursal (preset por defecto 30 días o Historial Completo)
+    const [preset, setPreset] = useState<'hoy' | 'ayer' | '30dias' | 'historial' | 'custom'>('30dias');
+    const [startDate, setStartDate] = useState<string>(() => getFormattedDate(-30));
     const [endDate, setEndDate] = useState<string>(() => getFormattedDate(0));
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
     // Datos del BI Backend
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
-    const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
+    const [showBreakdown, setShowBreakdown] = useState<boolean>(true);
 
     const loadSucursales = async () => {
         try {
@@ -55,7 +55,6 @@ export const BIPanelGeneralView: React.FC = () => {
         }
     }, []);
 
-    // Cargar datos al montar y al cambiar filtros
     useEffect(() => {
         loadSucursales();
     }, []);
@@ -66,7 +65,7 @@ export const BIPanelGeneralView: React.FC = () => {
         }
     }, [startDate, endDate, selectedSucursal, fetchBIData]);
 
-    const handlePresetChange = (newPreset: 'hoy' | 'ayer' | '30dias') => {
+    const handlePresetChange = (newPreset: 'hoy' | 'ayer' | '30dias' | 'historial') => {
         setPreset(newPreset);
         const today = getFormattedDate(0);
         if (newPreset === 'hoy') {
@@ -80,6 +79,9 @@ export const BIPanelGeneralView: React.FC = () => {
             const d30 = getFormattedDate(-30);
             setStartDate(d30);
             setEndDate(today);
+        } else if (newPreset === 'historial') {
+            setStartDate('historial');
+            setEndDate('historial');
         }
     };
 
@@ -94,7 +96,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         <Layers size={14} />
                         <span>BI Analítico — Modelo Estrella (Star Schema)</span>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white">Panel General — Día a Día</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black text-white">Panel General — Desglose Histórico por Sucursal</h1>
                     <p className="text-xs text-slate-400 mt-1">
                         Fuente de verdad: POS MongoDB (`sales`) • Zona Horaria: <span className="text-emerald-400 font-bold">America/La_Paz</span>
                     </p>
@@ -115,7 +117,7 @@ export const BIPanelGeneralView: React.FC = () => {
             {/* BARRA DE CONTROLES Y FILTROS */}
             <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
                 {/* Presets Rápidos */}
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl">
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
                     <button
                         onClick={() => handlePresetChange('hoy')}
                         className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
@@ -140,6 +142,15 @@ export const BIPanelGeneralView: React.FC = () => {
                     >
                         30 Días
                     </button>
+                    <button
+                        onClick={() => handlePresetChange('historial')}
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+                            preset === 'historial' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100'
+                        }`}
+                    >
+                        <Database size={13} />
+                        <span>Historial Completo</span>
+                    </button>
                 </div>
 
                 {/* Selectores de Fechas Personalizadas y Sucursal */}
@@ -148,7 +159,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         <Calendar size={14} className="text-slate-400" />
                         <input
                             type="date"
-                            value={startDate}
+                            value={startDate === 'historial' ? '' : startDate}
                             onChange={(e) => {
                                 setPreset('custom');
                                 setStartDate(e.target.value);
@@ -158,7 +169,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         <span className="text-slate-400 font-bold text-xs">a</span>
                         <input
                             type="date"
-                            value={endDate}
+                            value={endDate === 'historial' ? '' : endDate}
                             onChange={(e) => {
                                 setPreset('custom');
                                 setEndDate(e.target.value);
@@ -193,17 +204,17 @@ export const BIPanelGeneralView: React.FC = () => {
                             <Search size={22} />
                         </div>
                         <div>
-                            <h4 className="font-extrabold text-sm">Sin ventas registradas en el período ({startDate} a {endDate})</h4>
+                            <h4 className="font-extrabold text-sm">Sin ventas registradas en el período seleccionado</h4>
                             <p className="text-xs text-amber-700 mt-0.5">
-                                No se encontraron tickets en el POS para este rango. Prueba seleccionando un período más amplio como los últimos 30 días.
+                                Puedes presionar "Historial Completo" para ver todas las ventas registradas por sucursal en el POS.
                             </p>
                         </div>
                     </div>
                     <button
-                        onClick={() => handlePresetChange('30dias')}
-                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-2xl transition-all whitespace-nowrap shadow-sm"
+                        onClick={() => handlePresetChange('historial')}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl transition-all whitespace-nowrap shadow-sm"
                     >
-                        Ver Últimos 30 Días
+                        Cargar Historial Completo
                     </button>
                 </div>
             )}
@@ -214,7 +225,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <CheckCircle2 size={16} className="text-emerald-600" />
                         <span>
-                            <b>FECHA SELECCIONADA:</b> {data.fecha_inicio_bolivia} a {data.fecha_fin_bolivia} (Bolivia)
+                            <b>FECHA SELECCIONADA:</b> {data.fecha_inicio_bolivia === 'historial' ? 'Historial Completo acumulado' : `${data.fecha_inicio_bolivia} a ${data.fecha_fin_bolivia}`} (America/La_Paz)
                         </span>
                     </div>
                     <div className="flex items-center gap-4 text-slate-600">
@@ -255,23 +266,12 @@ export const BIPanelGeneralView: React.FC = () => {
                         </p>
                     </div>
 
-                    {showBreakdown && data?.desglose_sucursales && (
-                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 mb-3 border border-white/15 space-y-1.5">
-                            {data.desglose_sucursales.map((suc) => (
-                                <div key={suc.sucursal_id} className="flex justify-between text-xs text-white/90">
-                                    <span className="font-semibold truncate max-w-[150px]">{suc.nombre_sucursal}:</span>
-                                    <span className="font-bold">{formatBs(suc.ingresos)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
                     <div className="pt-3 border-t border-white/20 flex justify-between items-center">
                         <button
                             onClick={() => setShowBreakdown(!showBreakdown)}
                             className="flex items-center gap-1 uppercase tracking-wider text-[11px] font-extrabold text-white/90 hover:text-white"
                         >
-                            <span>Desglose por Sucursal</span>
+                            <span>Desglose por Sucursal ({data?.desglose_sucursales?.length || 0})</span>
                             <ChevronDown size={14} className={`transition-transform ${showBreakdown ? 'rotate-180' : ''}`} />
                         </button>
                     </div>
@@ -327,6 +327,57 @@ export const BIPanelGeneralView: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* TABLA DE DESGLOSE COMPLETO POR SUCURSAL */}
+            {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                            <h3 className="text-base font-black text-slate-900">Desglose Consolidado por Sucursal</h3>
+                            <p className="text-xs font-bold text-slate-400">
+                                Ventas netas, cantidad de órdenes y ticket promedio por cada tienda registrada
+                            </p>
+                        </div>
+                        <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
+                            {data.desglose_sucursales.length} Sucursales Activas
+                        </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead>
+                                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase font-black tracking-wider">
+                                    <th className="p-3.5 rounded-l-xl">Sucursal</th>
+                                    <th className="p-3.5 text-right">Ventas Totales (Bs.)</th>
+                                    <th className="p-3.5 text-center">Órdenes</th>
+                                    <th className="p-3.5 text-right rounded-r-xl">Ticket Medio</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                                {data.desglose_sucursales.map((suc) => (
+                                    <tr key={suc.sucursal_id} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="p-3.5">
+                                            <span className="font-extrabold text-slate-900 block">{suc.nombre_sucursal}</span>
+                                            <span className="text-[10px] text-slate-400 font-medium">ID: {suc.sucursal_id}</span>
+                                        </td>
+                                        <td className="p-3.5 text-right font-black text-indigo-950 text-sm">
+                                            {formatBs(suc.ingresos)}
+                                        </td>
+                                        <td className="p-3.5 text-center">
+                                            <span className="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-800 font-extrabold">
+                                                {suc.ordenes} ord.
+                                            </span>
+                                        </td>
+                                        <td className="p-3.5 text-right text-emerald-700 font-extrabold">
+                                            {formatBs(suc.ticket_medio)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* DISTRIBUCIÓN HORARIA DE VENTAS EN HORA DE BOLIVIA */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80">
