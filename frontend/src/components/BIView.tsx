@@ -1,4 +1,3 @@
-import React from 'react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 
 export default function BIView() {

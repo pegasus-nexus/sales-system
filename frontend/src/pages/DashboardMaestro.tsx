@@ -338,19 +338,6 @@ AiCard.displayName = 'AiCard';
 
 
 
-const getDynamicPeriodText = (customStart: Date | null, customEnd: Date | null) => {
-    const formatDate = (date: Date) => date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-    if (customStart) {
-        if (customEnd && customEnd.getTime() !== customStart.getTime()) {
-            return `del ${formatDate(customStart)} al ${formatDate(customEnd)}`;
-        }
-        return `el ${formatDate(customStart)}`;
-    }
-    
-    return 'RANGO DE FECHAS';
-};
-
 export default function DashboardMaestro() {
     const { role } = useAuthStore();
     const [isLoading, setIsLoading] = useState(true);
@@ -359,7 +346,7 @@ export default function DashboardMaestro() {
     const [climaEvento, setClimaEvento] = useState('');
     const [isBackendOffline, setIsBackendOffline] = useState(false);
     const [selectedSucursal] = useState('all');
-    const [sucursales, setSucursales] = useState<any[]>([]);
+    const [_sucursales, setSucursales] = useState<any[]>([]);
     const [showRevenueBreakdown, setShowRevenueBreakdown] = useState(false);
     const [showMargenDetails, setShowMargenDetails] = useState(false);
     const [showTicketMedioDetails, setShowTicketMedioDetails] = useState(false);

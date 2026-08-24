@@ -3,7 +3,8 @@ import {
     Calendar, RefreshCw, Layers, Clock, AlertCircle,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, ChevronDown, Filter, Info, Search
 } from 'lucide-react';
-import { getBIPanelGeneral, getBISucursales, BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
+import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
+import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -291,7 +292,7 @@ export const BIPanelGeneralView: React.FC = () => {
                             {loading ? '...' : data?.cantidad_ordenes || 0}
                         </h2>
                         <p className="text-xs font-bold text-slate-500 mt-2">
-                            Excluye tickets anulados ({data?.trazabilidad?.filtro_anuladas})
+                            Excluye tickets anulados ({String(data?.trazabilidad?.filtro_anuladas || '')})
                         </p>
                     </div>
 

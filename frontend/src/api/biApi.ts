@@ -1,4 +1,4 @@
-import client from './client';
+import { client } from './client';
 
 export interface DesgloseSucursalBI {
     sucursal_id: string;
@@ -41,16 +41,15 @@ export const getBIPanelGeneral = async (
     endDate?: string,
     sucursalId?: string
 ): Promise<BIPanelGeneralResponse> => {
-    const params: Record<string, string> = {};
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
-    if (sucursalId && sucursalId !== 'all') params.sucursal_id = sucursalId;
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
 
-    const response = await client.get<BIPanelGeneralResponse>('/bi/panel-general', { params });
-    return response.data;
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIPanelGeneralResponse>(`/bi/panel-general${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
-    const response = await client.get<BISucursalOption[]>('/bi/sucursales');
-    return response.data;
+    return client<BISucursalOption[]>('/bi/sucursales');
 };
