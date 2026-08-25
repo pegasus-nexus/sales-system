@@ -11,19 +11,23 @@ import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// Formatear la fecha local YYYY-MM-DD respetando la zona horaria local (sin salto a UTC)
 const getFormattedDate = (daysOffset: number = 0): string => {
     const d = new Date();
     d.setDate(d.getDate() + daysOffset);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Controles de Fecha y Sucursal
-    const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('30dias');
-    const [startDate, setStartDate] = useState<string>(() => getFormattedDate(-30));
+    // Controles de Fecha y Sucursal (preset 'hoy' por defecto con la fecha exacta del día)
+    const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
+    const [startDate, setStartDate] = useState<string>(() => getFormattedDate(0));
     const [endDate, setEndDate] = useState<string>(() => getFormattedDate(0));
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
@@ -56,7 +60,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     ? 'HTTP 404: El endpoint /api/v1/bi/panel-general no fue encontrado en el servidor. Verifica el despliegue del backend en Render.'
                     : 'Error al obtener datos del servidor BI. Comprueba la conexión.');
             setError(msg);
-            setData(null); // Garantizar que no se muestre Bs. 0.00 en caso de error
+            setData(null);
         } finally {
             setLoading(false);
         }
@@ -97,8 +101,8 @@ export const BIPanelGeneralView: React.FC = () => {
     };
 
     const handleReset = () => {
-        setPreset('30dias');
-        setStartDate(getFormattedDate(-30));
+        setPreset('hoy');
+        setStartDate(getFormattedDate(0));
         setEndDate(getFormattedDate(0));
         setSelectedSucursal('all');
     };
@@ -129,7 +133,6 @@ export const BIPanelGeneralView: React.FC = () => {
             document.documentElement.requestFullscreen();
             setIsFullscreen(true);
         } else {
-
             if (document.exitFullscreen) {
                 document.exitFullscreen();
                 setIsFullscreen(false);
@@ -137,7 +140,6 @@ export const BIPanelGeneralView: React.FC = () => {
         }
     };
 
-    // REGLA DE ORO DE ERROR HANDLING: Si hay un error de conexión/backend, NO mostrar Bs 0.00
     if (error && !loading) {
         return (
             <div className="bg-rose-50 border-2 border-rose-200 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8">
@@ -378,7 +380,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 2. MARGEN LÍQUIDO (Disponible Próximamente) */}
+                {/* 2. MARGEN LÍQUIDO */}
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
                     <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                         <div>
@@ -427,7 +429,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 4. TOTAL DE ÓRDENES (Visitas/Tickets POS) */}
+                {/* 4. TOTAL DE ÓRDENES */}
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
                     <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                         <div>
@@ -451,7 +453,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 5. IMPACTO IA (Disponible Próximamente) */}
+                {/* 5. IMPACTO IA */}
                 <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
                     <div className="flex justify-between items-center pb-2 border-b border-slate-100">
                         <div>
