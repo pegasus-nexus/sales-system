@@ -13,9 +13,9 @@ BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 class MongoBIRepository(BIRepository):
     """
     Implementación del repositorio analítico de BI utilizando PyMongo raw_db.
-    Reutiliza la lógica del Historial de Ventas de Pegasus, garantizando
-    aislamiento estricto por tenant_id (ObjectId y str) y rango semiabierto
-    [start_utc, end_utc) en zona horaria America/La_Paz.
+    Reutiliza la exactitud de consulta del Historial de Ventas (GET /sales),
+    garantizando que tanto SUPERADMIN como usuarios de Tenant consulten
+    MongoDB sales en la zona horaria oficial America/La_Paz.
     """
 
     async def _get_db(self):
@@ -30,25 +30,24 @@ class MongoBIRepository(BIRepository):
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
 
-        # 1. Aislamiento por tenant_id (soporta tanto String como ObjectId BSON)
-        tenant_conditions = [str(tenant_id)]
-        if ObjectId.is_valid(tenant_id):
-            tenant_conditions.append(ObjectId(tenant_id))
-
         match_stage: Dict[str, Any] = {
-            "tenant_id": {"$in": tenant_conditions},
             "anulada": {"$ne": True}
         }
 
-        # 2. Rango de Fechas Semiabierto [start_utc, end_utc) derivado de Bolivia America/La_Paz
+        # Aislamiento por tenant_id (si tenant_id no es 'all', 'test-taboada' o vacío para SUPERADMIN)
+        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
+            tenant_conditions = [str(tenant_id)]
+            if ObjectId.is_valid(tenant_id):
+                tenant_conditions.append(ObjectId(tenant_id))
+            match_stage["tenant_id"] = {"$in": tenant_conditions}
+
+        # Rango de Fechas en UTC derivado de America/La_Paz (coincide con Historial get_range_bolivia)
         if start_utc and end_utc:
-            # Si el inicio y el fin recibidos son idénticos o marcan un rango diario,
-            # aseguramos que el límite superior sea semiabierto ($lt end_utc)
             if start_utc == end_utc or (end_utc - start_utc).total_seconds() < 86400:
                 end_utc = start_utc + timedelta(days=1)
             match_stage["created_at"] = {"$gte": start_utc, "$lt": end_utc}
 
-        # 3. Filtro por Sucursal
+        # Filtro por Sucursal
         if sucursal_id and sucursal_id.lower() not in ["all", "todas", "global", ""]:
             if ObjectId.is_valid(sucursal_id):
                 match_stage["$or"] = [
@@ -104,11 +103,15 @@ class MongoBIRepository(BIRepository):
 
     async def get_sucursales(self, tenant_id: str) -> List[Dict[str, Any]]:
         db = await self._get_db()
-        tenant_conditions = [str(tenant_id)]
-        if ObjectId.is_valid(tenant_id):
-            tenant_conditions.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {"is_deleted": {"$ne": True}}
 
-        cursor = db.sucursales.find({"tenant_id": {"$in": tenant_conditions}, "is_deleted": {"$ne": True}})
+        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
+            tenant_conditions = [str(tenant_id)]
+            if ObjectId.is_valid(tenant_id):
+                tenant_conditions.append(ObjectId(tenant_id))
+            filter_query["tenant_id"] = {"$in": tenant_conditions}
+
+        cursor = db.sucursales.find(filter_query)
         docs = await cursor.to_list(length=None)
 
         result = []
