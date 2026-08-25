@@ -1,11 +1,12 @@
 from typing import Optional, List, Dict, Any
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from app.core.config import BUSINESS_TIMEZONE
 from app.domain.repositories.bi_repository import BIRepository
 from app.application.services.bi_pandas_service import BIPandasService
 from app.schemas.bi import BIPanelGeneralResponse
+from app.utils.date_utils import get_range_bolivia
 
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
@@ -15,6 +16,7 @@ class BIService:
     Servicio de aplicación para Business Intelligence.
     Desacopla los endpoints de la infraestructura y coordina la extracción
     de datos con la transformación en Modelo Estrella usando Pandas.
+    Reutiliza centralizadamente get_range_bolivia para conversiones de fechas.
     """
 
     def __init__(self, repository: BIRepository, pandas_service: Optional[BIPandasService] = None):
@@ -26,16 +28,7 @@ class BIService:
             return None, None
 
         try:
-            s_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            e_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
-            start_local = datetime.combine(s_date, time.min, tzinfo=BOLIVIA_TZ)
-            end_local = datetime.combine(e_date, time.max, tzinfo=BOLIVIA_TZ)
-
-            start_utc = start_local.astimezone(ZoneInfo("UTC"))
-            end_utc = end_local.astimezone(ZoneInfo("UTC"))
-
-            return start_utc, end_utc
+            return get_range_bolivia(start_date_str, end_date_str)
         except Exception:
             return None, None
 
@@ -48,7 +41,7 @@ class BIService:
     ) -> BIPanelGeneralResponse:
         start_utc, end_utc = self._convert_bolivia_dates_to_utc_range(start_date, end_date)
 
-        # 1. Extracción de Ventas
+        # 1. Extracción de Ventas (fuente unificada MongoDB.sales)
         raw_sales = await self.repository.get_raw_sales(
             tenant_id=tenant_id,
             start_utc=start_utc,

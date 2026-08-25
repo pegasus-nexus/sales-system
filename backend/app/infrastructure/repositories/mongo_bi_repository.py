@@ -4,12 +4,14 @@ from bson import ObjectId
 
 from app.domain.repositories.bi_repository import BIRepository
 from app.db import get_raw_db
+from app.utils.date_utils import get_range_bolivia
 
 
 class MongoBIRepository(BIRepository):
     """
     Implementación del repositorio analítico de BI utilizando PyMongo raw_db.
-    Garantiza aislamiento por tenant_id soportando ObjectId y str, y extracción sin mutaciones.
+    Reutiliza la lógica del Historial de Ventas de Pegasus, garantizando
+    aislamiento estricto por tenant_id (ObjectId y str) y zona horaria America/La_Paz.
     """
 
     async def _get_db(self):
@@ -23,8 +25,8 @@ class MongoBIRepository(BIRepository):
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         db = await self._get_db()
-        
-        # Soportar tenant_id tanto en formato String como ObjectId
+
+        # 1. Aislamiento por tenant_id (soporta tanto String como ObjectId BSON)
         tenant_conditions = [str(tenant_id)]
         if ObjectId.is_valid(tenant_id):
             tenant_conditions.append(ObjectId(tenant_id))
@@ -34,9 +36,11 @@ class MongoBIRepository(BIRepository):
             "anulada": {"$ne": True}
         }
 
+        # 2. Rango de Fechas en UTC (derivado de Bolivia America/La_Paz)
         if start_utc and end_utc:
             match_stage["created_at"] = {"$gte": start_utc, "$lte": end_utc}
 
+        # 3. Filtro por Sucursal
         if sucursal_id and sucursal_id.lower() not in ["all", "todas", "global", ""]:
             if ObjectId.is_valid(sucursal_id):
                 match_stage["$or"] = [
