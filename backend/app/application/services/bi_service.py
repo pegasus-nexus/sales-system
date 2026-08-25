@@ -1,12 +1,11 @@
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
 
 from app.core.config import BUSINESS_TIMEZONE
 from app.domain.repositories.bi_repository import BIRepository
 from app.application.services.bi_pandas_service import BIPandasService
 from app.schemas.bi import BIPanelGeneralResponse
-from app.utils.date_utils import get_range_bolivia
 
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
@@ -16,7 +15,8 @@ class BIService:
     Servicio de aplicación para Business Intelligence.
     Desacopla los endpoints de la infraestructura y coordina la extracción
     de datos con la transformación en Modelo Estrella usando Pandas.
-    Reutiliza centralizadamente get_range_bolivia para conversiones de fechas.
+    Calcula con precisión matemática el rango semiabierto [start_utc, end_utc)
+    para la zona horaria oficial America/La_Paz.
     """
 
     def __init__(self, repository: BIRepository, pandas_service: Optional[BIPandasService] = None):
@@ -28,8 +28,19 @@ class BIService:
             return None, None
 
         try:
-            return get_range_bolivia(start_date_str, end_date_str)
-        except Exception:
+            s_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            e_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            start_local = datetime.combine(s_dt, time.min, tzinfo=BOLIVIA_TZ)
+            # Rango semiabierto: sumar +1 día a e_dt para abarcar hasta 00:00:00 del día siguiente
+            end_local = datetime.combine(e_dt + timedelta(days=1), time.min, tzinfo=BOLIVIA_TZ)
+
+            start_utc = start_local.astimezone(ZoneInfo("UTC"))
+            end_utc = end_local.astimezone(ZoneInfo("UTC"))
+
+            return start_utc, end_utc
+        except Exception as err:
+            print(f"⚠️ Error parseando rango de fechas BI '{start_date_str}' a '{end_date_str}': {err}")
             return None, None
 
     async def get_panel_general(

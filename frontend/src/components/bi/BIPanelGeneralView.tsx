@@ -3,7 +3,7 @@ import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     Download, Maximize2, RotateCcw, AlertTriangle, Store, Award,
-    Activity, Cpu, Bell, Sparkles
+    Activity, Cpu, Bell, Sparkles, Info
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -11,7 +11,8 @@ import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const getFormattedDate = (daysOffset: number = 0): string => {
+// FUNCIÓN ÚNICA CENTRALIZADA DE FECHAS EN EL FRONTEND (Formato YYYY-MM-DD sin UTC drift)
+const getFormattedLocalDate = (daysOffset: number = 0): string => {
     const d = new Date();
     d.setDate(d.getDate() + daysOffset);
     const year = d.getFullYear();
@@ -26,8 +27,8 @@ export const BIPanelGeneralView: React.FC = () => {
 
     // Controles de Fecha y Sucursal
     const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
-    const [startDate, setStartDate] = useState<string>(() => getFormattedDate(0));
-    const [endDate, setEndDate] = useState<string>(() => getFormattedDate(0));
+    const [startDate, setStartDate] = useState<string>(() => getFormattedLocalDate(0));
+    const [endDate, setEndDate] = useState<string>(() => getFormattedLocalDate(0));
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
@@ -57,7 +58,7 @@ export const BIPanelGeneralView: React.FC = () => {
             const msg = axiosErr?.response?.data?.detail
                 || (status === 404
                     ? 'HTTP 404: El endpoint /api/v1/bi/panel-general no fue encontrado en el servidor. Verifica el despliegue del backend en Render.'
-                    : 'Error al obtener datos del servidor BI. Comprueba la conexión.');
+                    : 'No fue posible obtener los datos del BI. Error de conexión con el servidor.');
             setError(msg);
             setData(null);
         } finally {
@@ -77,22 +78,22 @@ export const BIPanelGeneralView: React.FC = () => {
 
     const handlePresetChange = (newPreset: 'hoy' | 'ayer' | '7dias' | '30dias' | 'historial') => {
         setPreset(newPreset);
-        const today = getFormattedDate(0);
+        const todayStr = getFormattedLocalDate(0);
         if (newPreset === 'hoy') {
-            setStartDate(today);
-            setEndDate(today);
+            setStartDate(todayStr);
+            setEndDate(todayStr);
         } else if (newPreset === 'ayer') {
-            const meyer = getFormattedDate(-1);
-            setStartDate(meyer);
-            setEndDate(meyer);
+            const yesterdayStr = getFormattedLocalDate(-1);
+            setStartDate(yesterdayStr);
+            setEndDate(yesterdayStr);
         } else if (newPreset === '7dias') {
-            const d7 = getFormattedDate(-7);
-            setStartDate(d7);
-            setEndDate(today);
+            const d7Str = getFormattedLocalDate(-6);
+            setStartDate(d7Str);
+            setEndDate(todayStr);
         } else if (newPreset === '30dias') {
-            const d30 = getFormattedDate(-30);
-            setStartDate(d30);
-            setEndDate(today);
+            const d30Str = getFormattedLocalDate(-29);
+            setStartDate(d30Str);
+            setEndDate(todayStr);
         } else if (newPreset === 'historial') {
             setStartDate('historial');
             setEndDate('historial');
@@ -101,8 +102,9 @@ export const BIPanelGeneralView: React.FC = () => {
 
     const handleReset = () => {
         setPreset('hoy');
-        setStartDate(getFormattedDate(0));
-        setEndDate(getFormattedDate(0));
+        const todayStr = getFormattedLocalDate(0);
+        setStartDate(todayStr);
+        setEndDate(todayStr);
         setSelectedSucursal('all');
     };
 
@@ -139,6 +141,7 @@ export const BIPanelGeneralView: React.FC = () => {
         }
     };
 
+    // SI HAY ERROR DE RED/HTTP (DIFERENCIAR ERROR DE CONEXIÓN DE SIN VENTAS)
     if (error && !loading) {
         return (
             <div className="bg-rose-50/90 border-2 border-rose-200/80 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8 shadow-sm">
@@ -147,7 +150,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         <AlertTriangle size={32} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-rose-900">No se pudo conectar con el servicio de BI</h2>
+                        <h2 className="text-xl font-black text-rose-900">No se pudo obtener los datos del BI</h2>
                         <p className="text-xs font-bold text-rose-700 mt-1">
                             Error de Comunicación HTTP / Servidor Backend
                         </p>
@@ -172,6 +175,8 @@ export const BIPanelGeneralView: React.FC = () => {
             </div>
         );
     }
+
+    const hasNoSales = data && data.cantidad_ordenes === 0;
 
     return (
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
@@ -326,16 +331,20 @@ export const BIPanelGeneralView: React.FC = () => {
             {data && (
                 <div className="bg-white rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center border border-slate-200/70 text-xs shadow-xs">
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">FECHA</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">FECHA CONSULTADA</span>
                         <span className="font-extrabold text-slate-800">
                             {data.fecha_inicio_bolivia === 'historial' ? 'Historial Completo' : data.fecha_inicio_bolivia}
                         </span>
                     </div>
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">ESTADO</span>
-                        <span className="font-extrabold text-emerald-700 flex items-center justify-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/60 inline-flex">
-                            <CheckCircle2 size={12} className="text-emerald-600" />
-                            {data.estado_sincronizacion}
+                        <span className={`font-extrabold flex items-center justify-center gap-1 px-2 py-0.5 rounded-lg border inline-flex ${
+                            hasNoSales
+                                ? 'text-amber-700 bg-amber-50 border-amber-200/80'
+                                : 'text-emerald-700 bg-emerald-50 border-emerald-100/60'
+                        }`}>
+                            {hasNoSales ? <Info size={12} /> : <CheckCircle2 size={12} />}
+                            {hasNoSales ? 'Sin ventas registradas' : data.estado_sincronizacion}
                         </span>
                     </div>
                     <div>
@@ -352,6 +361,21 @@ export const BIPanelGeneralView: React.FC = () => {
                         <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">SUCURSALES</span>
                         <span className="font-extrabold text-slate-700 truncate block">
                             {selectedSucursal === 'all' ? `${data.desglose_sucursales.length} Sucursales` : 'Filtrada'}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* NOTIFICACIÓN EXPLÍCITA SI NO EXISTEN VENTAS (SUCCESS_EMPTY, EJ. HOY RECIÉN INICIANDO CÓDIGO) */}
+            {hasNoSales && !loading && (
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex items-center gap-3 text-amber-900 text-xs font-bold shadow-xs">
+                    <Info size={18} className="text-amber-600 flex-shrink-0" />
+                    <div>
+                        <span className="font-black uppercase tracking-wider block text-[10px] text-amber-800">
+                            Consulta Realizada Correctamente
+                        </span>
+                        <span>
+                            No existen ventas registradas por el POS en la fecha seleccionada ({startDate}). Tan pronto como el POS emita un ticket, las métricas se actualizarán automáticamente.
                         </span>
                     </div>
                 </div>
@@ -403,7 +427,7 @@ export const BIPanelGeneralView: React.FC = () => {
                             Disponible próximamente
                         </span>
                         <p className="text-[10px] font-bold text-amber-700/80 mt-2">
-                            Fase auditando costos reales
+                            Fase: auditando costos reales
                         </p>
                     </div>
 
@@ -482,7 +506,7 @@ export const BIPanelGeneralView: React.FC = () => {
                             Disponible próximamente
                         </span>
                         <p className="text-[10px] font-bold text-violet-700/80 mt-2">
-                            Fase de integración ML
+                            Fase: integración ML
                         </p>
                     </div>
 
@@ -548,7 +572,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         )}
                     </div>
 
-                    {/* SECCIÓN E: ACTIVIDAD RECIENTE / HISTORIAL DE VENTAS (ESTILO SECTION HISTORY DE LA IMAGEN DE REFERENCIA) */}
+                    {/* SECCIÓN E: ACTIVIDAD RECIENTE / HISTORIAL DE VENTAS */}
                     {data?.ventas_recientes && data.ventas_recientes.length > 0 && (
                         <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -563,7 +587,6 @@ export const BIPanelGeneralView: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* FILAS DE ACTIVIDAD ESTILO TARJETA REDONDEADA DE LA IMAGEN DE REFERENCIA */}
                             <div className="space-y-3">
                                 {data.ventas_recientes.map((v) => (
                                     <div
@@ -603,10 +626,10 @@ export const BIPanelGeneralView: React.FC = () => {
                     )}
                 </div>
 
-                {/* COLUMNA DERECHA (1 TERCIO): SIDEBAR DESTACADO ESTILO IMAGEN DE REFERENCIA */}
+                {/* COLUMNA DERECHA (1 TERCIO): SIDEBAR DESTACADO */}
                 <div className="space-y-6">
 
-                    {/* TARJETA DESTACADA EN GRADIENTE ELEGANTE (ESTILO CREDIT CARD EN LA IMAGEN DE REFERENCIA) */}
+                    {/* TARJETA DESTACADA EN GRADIENTE ELEGANTE */}
                     <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 shadow-md border border-white/10 relative overflow-hidden">
                         <div className="flex justify-between items-start">
                             <div>
@@ -632,7 +655,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* DESGLOSE POR SUCURSAL (ESTILO RECENT ACTIVITIES DE LA IMAGEN DE REFERENCIA) */}
+                    {/* DESGLOSE POR SUCURSAL */}
                     {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
                         <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -676,7 +699,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     )}
 
-                    {/* SECCIÓN H: ALERTAS OPERATIVAS (ESTILO UPCOMING PAYMENTS EN LA IMAGEN DE REFERENCIA) */}
+                    {/* SECCIÓN H: ALERTAS OPERATIVAS */}
                     {data?.alertas_operativas && data.alertas_operativas.length > 0 && (
                         <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">

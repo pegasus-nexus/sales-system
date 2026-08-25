@@ -1,17 +1,21 @@
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo
 from bson import ObjectId
 
 from app.domain.repositories.bi_repository import BIRepository
 from app.db import get_raw_db
-from app.utils.date_utils import get_range_bolivia
+from app.core.config import BUSINESS_TIMEZONE
+
+BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
 
 class MongoBIRepository(BIRepository):
     """
     Implementación del repositorio analítico de BI utilizando PyMongo raw_db.
     Reutiliza la lógica del Historial de Ventas de Pegasus, garantizando
-    aislamiento estricto por tenant_id (ObjectId y str) y zona horaria America/La_Paz.
+    aislamiento estricto por tenant_id (ObjectId y str) y rango semiabierto
+    [start_utc, end_utc) en zona horaria America/La_Paz.
     """
 
     async def _get_db(self):
@@ -36,9 +40,13 @@ class MongoBIRepository(BIRepository):
             "anulada": {"$ne": True}
         }
 
-        # 2. Rango de Fechas en UTC (derivado de Bolivia America/La_Paz)
+        # 2. Rango de Fechas Semiabierto [start_utc, end_utc) derivado de Bolivia America/La_Paz
         if start_utc and end_utc:
-            match_stage["created_at"] = {"$gte": start_utc, "$lte": end_utc}
+            # Si el inicio y el fin recibidos son idénticos o marcan un rango diario,
+            # aseguramos que el límite superior sea semiabierto ($lt end_utc)
+            if start_utc == end_utc or (end_utc - start_utc).total_seconds() < 86400:
+                end_utc = start_utc + timedelta(days=1)
+            match_stage["created_at"] = {"$gte": start_utc, "$lt": end_utc}
 
         # 3. Filtro por Sucursal
         if sucursal_id and sucursal_id.lower() not in ["all", "todas", "global", ""]:
