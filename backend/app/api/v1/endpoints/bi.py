@@ -59,9 +59,8 @@ async def get_bi_panel_general(
     e_date = end_date or today_bolivia_str
 
     try:
-        tenant_id = str(current_user.tenant_id)
         return await bi_service.get_panel_general(
-            tenant_id=tenant_id,
+            current_user=current_user,
             start_date=s_date,
             end_date=e_date,
             sucursal_id=sucursal_id

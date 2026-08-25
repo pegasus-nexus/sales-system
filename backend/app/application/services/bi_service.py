@@ -1,66 +1,39 @@
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta, time
-from zoneinfo import ZoneInfo
-
-from app.core.config import BUSINESS_TIMEZONE
 from app.domain.repositories.bi_repository import BIRepository
+from app.domain.models.user import User
 from app.application.services.bi_pandas_service import BIPandasService
+from app.application.services.sales_read_service import SalesReadService
 from app.schemas.bi import BIPanelGeneralResponse
-
-BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
 
 class BIService:
     """
-    Servicio de aplicación para Business Intelligence.
-    Desacopla los endpoints de la infraestructura y coordina la extracción
-    de datos con la transformación en Modelo Estrella usando Pandas.
-    Calcula con precisión matemática el rango semiabierto [start_utc, end_utc)
-    para la zona horaria oficial America/La_Paz.
+    Servicio de Aplicación de BI.
+    Coordina la extracción de datos desde el servicio unificado SalesReadService
+    y realiza la transformación analítica con Pandas en un Modelo Estrella.
     """
 
     def __init__(self, repository: BIRepository, pandas_service: Optional[BIPandasService] = None):
         self.repository = repository
         self.pandas_service = pandas_service or BIPandasService()
 
-    def _convert_bolivia_dates_to_utc_range(self, start_date_str: str, end_date_str: str) -> tuple[Optional[datetime], Optional[datetime]]:
-        if start_date_str.lower() in ["all", "historial", "todo", ""]:
-            return None, None
-
-        try:
-            s_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            e_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
-            start_local = datetime.combine(s_dt, time.min, tzinfo=BOLIVIA_TZ)
-            # Rango semiabierto: sumar +1 día a e_dt para abarcar hasta 00:00:00 del día siguiente
-            end_local = datetime.combine(e_dt + timedelta(days=1), time.min, tzinfo=BOLIVIA_TZ)
-
-            start_utc = start_local.astimezone(ZoneInfo("UTC"))
-            end_utc = end_local.astimezone(ZoneInfo("UTC"))
-
-            return start_utc, end_utc
-        except Exception as err:
-            print(f"⚠️ Error parseando rango de fechas BI '{start_date_str}' a '{end_date_str}': {err}")
-            return None, None
-
     async def get_panel_general(
         self,
-        tenant_id: str,
+        current_user: User,
         start_date: str,
         end_date: str,
         sucursal_id: Optional[str] = None
     ) -> BIPanelGeneralResponse:
-        start_utc, end_utc = self._convert_bolivia_dates_to_utc_range(start_date, end_date)
-
-        # 1. Extracción de Ventas (fuente unificada MongoDB.sales)
-        raw_sales = await self.repository.get_raw_sales(
-            tenant_id=tenant_id,
-            start_utc=start_utc,
-            end_utc=end_utc,
+        # 1. Extracción de Ventas Unificada (Fuente única MongoDB sales via SalesReadService)
+        raw_sales = await SalesReadService.get_raw_sales_for_user(
+            user=current_user,
+            start_date_str=start_date,
+            end_date_str=end_date,
             sucursal_id=sucursal_id
         )
 
         # 2. Extracción de Dimensiones (Sucursales)
+        tenant_id = current_user.tenant_id or "default"
         sucursales = await self.repository.get_sucursales(tenant_id=tenant_id)
 
         # 3. Transformación Analítica en Modelo Estrella con Pandas
