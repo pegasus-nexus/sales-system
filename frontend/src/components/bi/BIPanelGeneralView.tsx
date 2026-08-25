@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
-    Download, Maximize2, RotateCcw, AlertTriangle, Store, Award, Zap,
-    Activity, Cpu, Bell
+    Download, Maximize2, RotateCcw, AlertTriangle, Store, Award,
+    Activity, Cpu, Bell, Sparkles
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -11,7 +11,6 @@ import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// Formatear la fecha local YYYY-MM-DD respetando la zona horaria local (sin salto a UTC)
 const getFormattedDate = (daysOffset: number = 0): string => {
     const d = new Date();
     d.setDate(d.getDate() + daysOffset);
@@ -25,7 +24,7 @@ export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Controles de Fecha y Sucursal (preset 'hoy' por defecto con la fecha exacta del día)
+    // Controles de Fecha y Sucursal
     const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
     const [startDate, setStartDate] = useState<string>(() => getFormattedDate(0));
     const [endDate, setEndDate] = useState<string>(() => getFormattedDate(0));
@@ -142,9 +141,9 @@ export const BIPanelGeneralView: React.FC = () => {
 
     if (error && !loading) {
         return (
-            <div className="bg-rose-50 border-2 border-rose-200 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8">
+            <div className="bg-rose-50/90 border-2 border-rose-200/80 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8 shadow-sm">
                 <div className="flex items-start gap-4">
-                    <div className="p-3 bg-rose-100 rounded-2xl text-rose-600">
+                    <div className="p-3.5 bg-rose-100 rounded-2xl text-rose-600 shadow-xs">
                         <AlertTriangle size={32} />
                     </div>
                     <div>
@@ -152,7 +151,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         <p className="text-xs font-bold text-rose-700 mt-1">
                             Error de Comunicación HTTP / Servidor Backend
                         </p>
-                        <p className="text-xs text-rose-800 mt-3 bg-white/70 p-3 rounded-xl border border-rose-200 font-mono">
+                        <p className="text-xs text-rose-800 mt-3 bg-white/80 p-3 rounded-2xl border border-rose-200 font-mono shadow-xs">
                             {error}
                         </p>
                     </div>
@@ -160,11 +159,11 @@ export const BIPanelGeneralView: React.FC = () => {
 
                 <div className="pt-4 border-t border-rose-200 flex flex-wrap items-center justify-between gap-4">
                     <span className="text-xs font-semibold text-rose-700">
-                        * Los datos contables se encuentran protegidos en MongoDB. No se mostrarán métricas en cero por error de red.
+                        * Los datos contables están protegidos en MongoDB. No se mostrarán métricas en cero por error de red.
                     </span>
                     <button
                         onClick={() => fetchBIData(startDate, endDate, selectedSucursal)}
-                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl transition-all shadow-md active:scale-95"
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl transition-all shadow-sm active:scale-95"
                     >
                         <RefreshCw size={14} />
                         <span>Reintentar Conexión</span>
@@ -175,26 +174,29 @@ export const BIPanelGeneralView: React.FC = () => {
     }
 
     return (
-        <div className={`space-y-6 animate-in fade-in duration-300 ${isFullscreen ? 'bg-slate-50 p-6' : ''}`}>
-            {/* CENTRO DE INTELIGENCIA — CABECERA DEL PANEL GENERAL */}
-            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className={`min-h-screen bg-[#f8f9fd] p-2 sm:p-4 md:p-6 space-y-6 font-sans text-slate-800 ${isFullscreen ? 'p-8' : ''}`}>
+            
+            {/* CABECERA PRINCIPAL ESTILO PASTEL LIMPÍSIMO */}
+            <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/90 rounded-3xl p-6 shadow-sm border border-indigo-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
                 <div>
-                    <div className="flex items-center gap-2 text-indigo-400 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <Layers size={14} />
+                    <div className="flex items-center gap-2 text-indigo-600 font-extrabold text-xs tracking-wider uppercase mb-1">
+                        <div className="p-1 bg-white rounded-lg shadow-xs">
+                            <Layers size={14} className="text-indigo-600" />
+                        </div>
                         <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — MODELO ESTRELLA</span>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white">Panel General — Día a Día</h1>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-400 font-bold">America/La_Paz</span>)
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Panel General — Día a Día</h1>
+                    <p className="text-xs text-slate-500 font-semibold mt-1">
+                        Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
                     </p>
                 </div>
 
-                {/* BOTONES DE ACCIÓN */}
+                {/* BOTONES DE ACCIÓN LIMPÍSIMOS EN PASTELES */}
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={() => fetchBIData(startDate, endDate, selectedSucursal)}
                         disabled={loading}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3.5 py-2 rounded-2xl transition-all shadow-md active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
                         title="Actualizar datos desde el POS"
                     >
                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -204,82 +206,82 @@ export const BIPanelGeneralView: React.FC = () => {
                     <button
                         onClick={handleExportCSV}
                         disabled={!data || loading}
-                        className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-3.5 py-2 rounded-2xl transition-all border border-slate-700 disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs disabled:opacity-50"
                         title="Exportar reporte en CSV"
                     >
-                        <Download size={14} />
+                        <Download size={14} className="text-slate-500" />
                         <span>Exportar</span>
                     </button>
 
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-3.5 py-2 rounded-2xl transition-all border border-slate-700"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs"
                         title="Restablecer filtros por defecto"
                     >
-                        <RotateCcw size={14} />
+                        <RotateCcw size={14} className="text-slate-500" />
                         <span>Restablecer</span>
                     </button>
 
                     <button
                         onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-3.5 py-2 rounded-2xl transition-all border border-slate-700"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs"
                         title="Pantalla Completa"
                     >
-                        <Maximize2 size={14} />
+                        <Maximize2 size={14} className="text-slate-500" />
                         <span>Pantalla completa</span>
                     </button>
                 </div>
             </div>
 
-            {/* BARRA DE CONTROLES Y FILTROS */}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                {/* Presets Rápidos */}
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
+            {/* BARRA DE CONTROLES Y FILTROS EN PASTEL BLANCO */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                {/* Presets Rápidos Pastel */}
+                <div className="flex items-center gap-1.5 bg-slate-100/70 p-1.5 rounded-2xl overflow-x-auto">
                     <button
                         onClick={() => handlePresetChange('hoy')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                            preset === 'hoy' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            preset === 'hoy' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         Hoy
                     </button>
                     <button
                         onClick={() => handlePresetChange('ayer')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                            preset === 'ayer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            preset === 'ayer' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         Ayer
                     </button>
                     <button
                         onClick={() => handlePresetChange('7dias')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                            preset === '7dias' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            preset === '7dias' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         7 Días
                     </button>
                     <button
                         onClick={() => handlePresetChange('30dias')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                            preset === '30dias' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            preset === '30dias' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         30 Días
                     </button>
                     <button
                         onClick={() => handlePresetChange('historial')}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                            preset === 'historial' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                            preset === 'historial' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100'
                         }`}
                     >
                         <span>Historial Completo</span>
                     </button>
                 </div>
 
-                {/* Selectores de Fechas Personalizadas y Sucursal */}
+                {/* Selectores de Fechas y Sucursal */}
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl">
+                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
                             type="date"
@@ -302,7 +304,7 @@ export const BIPanelGeneralView: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl">
+                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Filter size={14} className="text-slate-400" />
                         <select
                             value={selectedSucursal}
@@ -320,371 +322,392 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA DE ESTADO DE CONEXIÓN Y TRAZABILIDAD */}
+            {/* BARRA DE ESTADO EN TONO PASTEL SUAVE */}
             {data && (
-                <div className="bg-slate-900 text-slate-200 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center border border-slate-800 text-xs shadow-inner">
+                <div className="bg-white rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center border border-slate-200/70 text-xs shadow-xs">
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block">FECHA</span>
-                        <span className="font-extrabold text-white">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">FECHA</span>
+                        <span className="font-extrabold text-slate-800">
                             {data.fecha_inicio_bolivia === 'historial' ? 'Historial Completo' : data.fecha_inicio_bolivia}
                         </span>
                     </div>
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block">ESTADO</span>
-                        <span className="font-extrabold text-emerald-400 flex items-center justify-center gap-1">
-                            <CheckCircle2 size={12} />
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">ESTADO</span>
+                        <span className="font-extrabold text-emerald-700 flex items-center justify-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/60 inline-flex">
+                            <CheckCircle2 size={12} className="text-emerald-600" />
                             {data.estado_sincronizacion}
                         </span>
                     </div>
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block">ÚLTIMA ACTUALIZACIÓN</span>
-                        <span className="font-extrabold text-indigo-300">{data.ultima_actualizacion}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">ÚLTIMA ACTUALIZACIÓN</span>
+                        <span className="font-extrabold text-indigo-700">{data.ultima_actualizacion}</span>
                     </div>
                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block">MODO</span>
-                        <span className="font-extrabold text-amber-400">{data.modo}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">MODO</span>
+                        <span className="font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100/60 inline-flex">
+                            {data.modo}
+                        </span>
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                        <span className="text-[10px] font-black uppercase text-slate-400 block">SUCURSALES</span>
-                        <span className="font-extrabold text-slate-200 truncate block">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">SUCURSALES</span>
+                        <span className="font-extrabold text-slate-700 truncate block">
                             {selectedSucursal === 'all' ? `${data.desglose_sucursales.length} Sucursales` : 'Filtrada'}
                         </span>
                     </div>
                 </div>
             )}
 
-            {/* PRIMER BLOQUE DE KPIS (5 TARJETAS REQUERIDAS) */}
+            {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL ULTRA SUTIL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {/* 1. INGRESOS TOTALES */}
-                <div className="bg-[#7b75a6] rounded-3xl p-5 text-white shadow-md flex flex-col justify-between border border-white/10 relative overflow-hidden">
-                    <div className="flex justify-between items-center pb-2 border-b border-white/20">
+                
+                {/* TARJETA 1: INGRESOS TOTALES (Pastel Púrpura/Índigo) */}
+                <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
                         <div>
-                            <span className="text-[11px] font-black uppercase tracking-wider block text-white/90">Ingresos Totales</span>
-                            <span className="text-[9px] font-semibold text-white/70">Venta Neta POS</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
+                            <span className="text-[10px] font-bold text-indigo-600/80">Venta Neta POS</span>
                         </div>
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <div className="p-2 bg-indigo-100/60 rounded-2xl text-indigo-600">
+                            <TrendingUp size={18} />
+                        </div>
                     </div>
 
                     <div className="my-4">
-                        <h2 className="text-2xl lg:text-3xl font-black tracking-tight leading-none drop-shadow">
+                        <h2 className="text-2xl lg:text-3xl font-black text-indigo-950 tracking-tight leading-none">
                             {loading ? '...' : formatBs(data?.ingresos_totales)}
                         </h2>
-                        <p className="text-[10px] font-semibold text-white/80 mt-1.5 flex items-center gap-1">
-                            <TrendingUp size={12} />
+                        <p className="text-[10px] font-bold text-indigo-700/80 mt-2 flex items-center gap-1">
                             <span>Ventas brutas menos anuladas</span>
                         </p>
                     </div>
 
-                    <div className="pt-2 border-t border-white/20 flex justify-between items-center text-[10px] font-extrabold text-white/80">
+                    <div className="pt-2.5 border-t border-indigo-100/60 text-[10px] font-extrabold text-indigo-500">
                         <span>Fuente: MongoDB sales</span>
                     </div>
                 </div>
 
-                {/* 2. MARGEN LÍQUIDO */}
-                <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                {/* TARJETA 2: MARGEN LÍQUIDO (Pastel Ámbar/Naranja) */}
+                <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-white rounded-3xl p-5 shadow-xs border border-amber-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-amber-100/60">
                         <div>
-                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 block">Margen Líquido</span>
-                            <span className="text-[9px] font-semibold text-slate-400">Rentabilidad Contable</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-amber-950 block">Margen Líquido</span>
+                            <span className="text-[10px] font-bold text-amber-700/80">Rentabilidad Contable</span>
                         </div>
-                        <Receipt size={16} className="text-slate-400" />
+                        <div className="p-2 bg-amber-100/60 rounded-2xl text-amber-600">
+                            <Receipt size={18} />
+                        </div>
                     </div>
 
                     <div className="my-4">
-                        <span className="text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200 inline-block">
+                        <span className="text-xs font-extrabold text-amber-800 bg-amber-100/70 px-3 py-1.5 rounded-xl border border-amber-200/80 inline-block shadow-2xs">
                             Disponible próximamente
                         </span>
-                        <p className="text-[10px] font-bold text-slate-400 mt-2">
+                        <p className="text-[10px] font-bold text-amber-700/80 mt-2">
                             Fase auditando costos reales
                         </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 text-[10px] font-bold text-slate-400">
+                    <div className="pt-2.5 border-t border-amber-100/60 text-[10px] font-extrabold text-amber-600">
                         <span>Estructura visual lista</span>
                     </div>
                 </div>
 
-                {/* 3. TICKET MEDIO */}
-                <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                {/* TARJETA 3: TICKET MEDIO (Pastel Esmeralda/Menta) */}
+                <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
                         <div>
-                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 block">Ticket Medio</span>
-                            <span className="text-[9px] font-semibold text-slate-400">Promedio por venta</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">Ticket Medio</span>
+                            <span className="text-[10px] font-bold text-emerald-700/80">Promedio por venta</span>
                         </div>
-                        <Receipt size={16} className="text-emerald-600" />
+                        <div className="p-2 bg-emerald-100/60 rounded-2xl text-emerald-600">
+                            <Receipt size={18} />
+                        </div>
                     </div>
 
                     <div className="my-4">
-                        <h2 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-none">
+                        <h2 className="text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none">
                             {loading ? '...' : formatBs(data?.ticket_medio)}
                         </h2>
-                        <p className="text-[10px] font-bold text-slate-500 mt-1.5">
+                        <p className="text-[10px] font-bold text-emerald-700/80 mt-2">
                             Ingresos Totales / Órdenes
                         </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                    <div className="pt-2.5 border-t border-emerald-100/60 text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
                         <CheckCircle2 size={12} />
                         <span>Vectorial Pandas</span>
                     </div>
                 </div>
 
-                {/* 4. TOTAL DE ÓRDENES */}
-                <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                {/* TARJETA 4: TOTAL DE ÓRDENES (Pastel Azul/Cian) */}
+                <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
                         <div>
-                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 block">Total de Órdenes</span>
-                            <span className="text-[9px] font-semibold text-slate-400">Tickets válidos POS</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-blue-950 block">Total de Órdenes</span>
+                            <span className="text-[10px] font-bold text-blue-700/80">Tickets válidos POS</span>
                         </div>
-                        <ShoppingBag size={16} className="text-indigo-600" />
+                        <div className="p-2 bg-blue-100/60 rounded-2xl text-blue-600">
+                            <ShoppingBag size={18} />
+                        </div>
                     </div>
 
                     <div className="my-4">
-                        <h2 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-none">
+                        <h2 className="text-2xl lg:text-3xl font-black text-blue-950 tracking-tight leading-none">
                             {loading ? '...' : data?.cantidad_ordenes || 0}
                         </h2>
-                        <p className="text-[10px] font-bold text-slate-500 mt-1.5">
+                        <p className="text-[10px] font-bold text-blue-700/80 mt-2">
                             Excluye tickets anulados
                         </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 text-[10px] font-bold text-slate-400">
+                    <div className="pt-2.5 border-t border-blue-100/60 text-[10px] font-extrabold text-blue-600">
                         <span>1 Ticket = 1 Orden</span>
                     </div>
                 </div>
 
-                {/* 5. IMPACTO IA */}
-                <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                {/* TARJETA 5: IMPACTO IA (Pastel Violeta/Rosa) */}
+                <div className="bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white rounded-3xl p-5 shadow-xs border border-violet-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-violet-100/60">
                         <div>
-                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 block">Impacto IA</span>
-                            <span className="text-[9px] font-semibold text-slate-400">Modelo Predictivo</span>
+                            <span className="text-xs font-black uppercase tracking-wider text-violet-950 block">Impacto IA</span>
+                            <span className="text-[10px] font-bold text-violet-700/80">Modelo Predictivo</span>
                         </div>
-                        <Cpu size={16} className="text-indigo-600" />
+                        <div className="p-2 bg-violet-100/60 rounded-2xl text-violet-600">
+                            <Cpu size={18} />
+                        </div>
                     </div>
 
                     <div className="my-4">
-                        <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-200 inline-block">
+                        <span className="text-xs font-extrabold text-violet-800 bg-violet-100/70 px-3 py-1.5 rounded-xl border border-violet-200/80 inline-block shadow-2xs">
                             Disponible próximamente
                         </span>
-                        <p className="text-[10px] font-bold text-slate-400 mt-2">
+                        <p className="text-[10px] font-bold text-violet-700/80 mt-2">
                             Fase de integración ML
                         </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 text-[10px] font-bold text-slate-400">
+                    <div className="pt-2.5 border-t border-violet-100/60 text-[10px] font-extrabold text-violet-600">
                         <span>Sin predicción activa</span>
                     </div>
                 </div>
+
             </div>
 
-            {/* SECCIÓN A Y D: VENTAS EN TIEMPO REAL & RESUMEN DEL DÍA */}
-            {data?.resumen_operativo && (
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150">
-                        <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">SUCURSAL LÍDER</span>
-                        <span className="text-base font-black text-slate-900 flex items-center gap-1.5">
-                            <Award size={18} className="text-amber-500" />
-                            {data.resumen_operativo.sucursal_lider}
-                        </span>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150">
-                        <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">MEJOR HORA DE VENTA</span>
-                        <span className="text-base font-black text-indigo-900 flex items-center gap-1.5">
-                            <Clock size={18} className="text-indigo-600" />
-                            {data.resumen_operativo.mejor_hora}
-                        </span>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150">
-                        <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">PROMEDIO POR HORA</span>
-                        <span className="text-base font-black text-emerald-900 flex items-center gap-1.5">
-                            <Zap size={18} className="text-emerald-600" />
-                            {formatBs(data.resumen_operativo.promedio_por_hora)}
-                        </span>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150">
-                        <span className="text-[10px] font-black uppercase text-slate-500 block mb-1">ÚLTIMA VENTA REGISTRADA</span>
-                        <span className="text-base font-black text-slate-800 flex items-center gap-1.5">
-                            <Activity size={18} className="text-indigo-500" />
-                            {data.resumen_operativo.ultima_venta_hora}
-                        </span>
-                    </div>
-                </div>
-            )}
+            {/* LAYOUT PRINCIPAL INSPIRADO EN LA IMAGEN DE REFERENCIA */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* SECCIÓN B & F: TABLA DE VENTAS Y PARTICIPACIÓN POR SUCURSAL */}
-            {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                        <div>
-                            <h3 className="text-base font-black text-slate-900">Sección B & F — Desglose y Participación % por Sucursal</h3>
-                            <p className="text-xs font-bold text-slate-400">
-                                Ventas netas, cantidad de órdenes, ticket promedio y cuota de participación por tienda
-                            </p>
-                        </div>
-                        <span className="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
-                            {data.desglose_sucursales.length} Sucursales Activas
-                        </span>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase font-black tracking-wider">
-                                    <th className="p-3.5 rounded-l-xl">Sucursal</th>
-                                    <th className="p-3.5 text-right">Ventas Totales (Bs.)</th>
-                                    <th className="p-3.5 text-center">Órdenes</th>
-                                    <th className="p-3.5 text-right">Ticket Medio</th>
-                                    <th className="p-3.5 text-right rounded-r-xl">Participación %</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
-                                {data.desglose_sucursales.map((suc) => (
-                                    <tr key={suc.sucursal_id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="p-3.5">
-                                            <span className="font-extrabold text-slate-900 block flex items-center gap-1.5">
-                                                <Store size={14} className="text-indigo-600" />
-                                                {suc.nombre_sucursal}
-                                            </span>
-                                        </td>
-                                        <td className="p-3.5 text-right font-black text-indigo-950 text-sm">
-                                            {formatBs(suc.ingresos)}
-                                        </td>
-                                        <td className="p-3.5 text-center">
-                                            <span className="bg-slate-100 px-2.5 py-1 rounded-lg text-slate-800 font-extrabold">
-                                                {suc.ordenes} ord.
-                                            </span>
-                                        </td>
-                                        <td className="p-3.5 text-right text-emerald-700 font-extrabold">
-                                            {formatBs(suc.ticket_medio)}
-                                        </td>
-                                        <td className="p-3.5 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="bg-indigo-600 h-full rounded-full"
-                                                        style={{ width: `${Math.min(suc.participacion_pct, 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                                <span className="font-black text-slate-900">{suc.participacion_pct}%</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {/* SECCIÓN C: CURVA HORARIA (HORA DE BOLIVIA) */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80">
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                    <div>
-                        <h3 className="text-base font-black text-slate-900">Sección C — Ventas por Rango Horario (Hora de Bolivia)</h3>
-                        <p className="text-xs font-bold text-slate-400">
-                            Agrupación en hora local America/La_Paz (00:00 a 23:59)
-                        </p>
-                    </div>
-                    <Clock size={18} className="text-indigo-600" />
-                </div>
-
-                {loading ? (
-                    <div className="h-40 flex items-center justify-center text-slate-400 text-xs font-bold">
-                        Cargando distribución horaria...
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
-                        {data?.ventas_por_hora.map((item) => (
-                            <div
-                                key={item.hora}
-                                className={`p-2.5 rounded-2xl border text-center transition-all ${
-                                    item.ordenes > 0
-                                        ? 'bg-indigo-50/50 border-indigo-200 text-indigo-950 font-bold'
-                                        : 'bg-slate-50 border-slate-150 text-slate-400'
-                                }`}
-                            >
-                                <span className="text-[10px] font-black uppercase block text-slate-500 mb-1">
-                                    {item.hora}:00
-                                </span>
-                                <span className="text-xs font-extrabold block">
-                                    {item.ingresos > 0 ? formatBs(item.ingresos) : 'Bs. 0'}
-                                </span>
-                                <span className="text-[10px] font-medium block mt-0.5 text-slate-500">
-                                    {item.ordenes} ord.
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* SECCIÓN E: ACTIVIDAD RECIENTE (ÚLTIMAS VENTAS REALES DEL POS) */}
-            {data?.ventas_recientes && data.ventas_recientes.length > 0 && (
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                        <div>
-                            <h3 className="text-base font-black text-slate-900">Sección E — Actividad Reciente</h3>
-                            <p className="text-xs font-bold text-slate-400">
-                                Últimas ventas registradas por el POS ordenadas cronológicamente (Hora de Bolivia)
-                            </p>
-                        </div>
-                        <Activity size={18} className="text-emerald-600" />
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase font-black tracking-wider">
-                                    <th className="p-3 rounded-l-xl">Hora (Bolivia)</th>
-                                    <th className="p-3">Ticket #</th>
-                                    <th className="p-3">Sucursal</th>
-                                    <th className="p-3 text-right">Monto (Bs.)</th>
-                                    <th className="p-3 text-center rounded-r-xl">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
-                                {data.ventas_recientes.map((v) => (
-                                    <tr key={v.ticket_id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="p-3 font-mono font-extrabold text-indigo-950">
-                                            {v.hora_bolivia}
-                                        </td>
-                                        <td className="p-3 font-mono text-slate-500">
-                                            {v.numero_ticket}
-                                        </td>
-                                        <td className="p-3 font-extrabold text-slate-800">
-                                            {v.nombre_sucursal}
-                                        </td>
-                                        <td className="p-3 text-right font-black text-emerald-700">
-                                            {formatBs(v.total_neto)}
-                                        </td>
-                                        <td className="p-3 text-center">
-                                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase">
-                                                {v.estado_pago}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {/* SECCIÓN H: ALERTAS OPERATIVAS */}
-            {data?.alertas_operativas && data.alertas_operativas.length > 0 && (
-                <div className="space-y-2">
-                    {data.alertas_operativas.map((a, idx) => (
-                        <div key={idx} className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 flex items-center gap-3 text-indigo-900 text-xs font-bold">
-                            <Bell size={16} className="text-indigo-600 flex-shrink-0" />
+                {/* COLUMNA IZQUIERDA Y CENTRO (2 TÉRCIOS): HISTOGRAMA Y ACTIVIDAD RECIENTE */}
+                <div className="lg:col-span-2 space-y-6">
+                    
+                    {/* CURVA HORARIA DE VENTAS (ESTILO SECCIÓN BALANCE DE LA IMAGEN DE REFERENCIA) */}
+                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
                             <div>
-                                <span className="font-black uppercase tracking-wider block text-[10px] text-indigo-700">{a.titulo}</span>
-                                <span className="text-indigo-900">{a.mensaje}</span>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario</h3>
+                                    <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100">
+                                        America/La_Paz
+                                    </span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-400 mt-0.5">
+                                    Distribución de ingresos por hora del día (00:00 a 23:59)
+                                </p>
+                            </div>
+                            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+                                <Clock size={20} />
                             </div>
                         </div>
-                    ))}
+
+                        {loading ? (
+                            <div className="h-48 flex items-center justify-center text-slate-400 text-xs font-bold">
+                                Cargando distribución horaria...
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
+                                {data?.ventas_por_hora.map((item) => (
+                                    <div
+                                        key={item.hora}
+                                        className={`p-3 rounded-2xl border text-center transition-all flex flex-col justify-between ${
+                                            item.ordenes > 0
+                                                ? 'bg-gradient-to-b from-indigo-50/90 to-purple-50/50 border-indigo-200/80 text-indigo-950 shadow-2xs font-bold'
+                                                : 'bg-slate-50/60 border-slate-100 text-slate-400'
+                                        }`}
+                                    >
+                                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">
+                                            {item.hora}:00
+                                        </span>
+                                        <span className="text-xs font-extrabold block my-1">
+                                            {item.ingresos > 0 ? formatBs(item.ingresos) : 'Bs. 0'}
+                                        </span>
+                                        <span className="text-[10px] font-semibold text-indigo-600 block bg-white/70 py-0.5 rounded-md mt-1">
+                                            {item.ordenes} ord.
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SECCIÓN E: ACTIVIDAD RECIENTE / HISTORIAL DE VENTAS (ESTILO SECTION HISTORY DE LA IMAGEN DE REFERENCIA) */}
+                    {data?.ventas_recientes && data.ventas_recientes.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">Actividad Reciente</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-0.5">
+                                        Últimas ventas procesadas en vivo por el POS
+                                    </p>
+                                </div>
+                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+                                    <Activity size={20} />
+                                </div>
+                            </div>
+
+                            {/* FILAS DE ACTIVIDAD ESTILO TARJETA REDONDEADA DE LA IMAGEN DE REFERENCIA */}
+                            <div className="space-y-3">
+                                {data.ventas_recientes.map((v) => (
+                                    <div
+                                        key={v.ticket_id}
+                                        className="p-4 bg-slate-50/70 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/60 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs"
+                                    >
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="p-3 bg-indigo-100/70 text-indigo-700 rounded-2xl shadow-2xs">
+                                                <Receipt size={18} />
+                                            </div>
+                                            <div>
+                                                <span className="font-extrabold text-slate-900 text-sm block">
+                                                    Ticket #{v.numero_ticket}
+                                                </span>
+                                                <span className="text-xs text-slate-500 font-semibold flex items-center gap-2 mt-0.5">
+                                                    <span>{v.nombre_sucursal}</span>
+                                                    <span>•</span>
+                                                    <span className="font-mono text-indigo-600">{v.hora_bolivia}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
+                                            <div className="text-right">
+                                                <span className="text-base font-black text-slate-900 block">
+                                                    {formatBs(v.total_neto)}
+                                                </span>
+                                                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                                    {v.estado_pago}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* COLUMNA DERECHA (1 TERCIO): SIDEBAR DESTACADO ESTILO IMAGEN DE REFERENCIA */}
+                <div className="space-y-6">
+
+                    {/* TARJETA DESTACADA EN GRADIENTE ELEGANTE (ESTILO CREDIT CARD EN LA IMAGEN DE REFERENCIA) */}
+                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 shadow-md border border-white/10 relative overflow-hidden">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <span className="text-xs font-black uppercase tracking-wider text-indigo-300 block">Estado de Red & POS</span>
+                                <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">Aislamiento por Tenant</span>
+                            </div>
+                            <div className="p-2 bg-white/10 backdrop-blur rounded-2xl border border-white/10 text-emerald-400">
+                                <Sparkles size={20} />
+                            </div>
+                        </div>
+
+                        <div className="my-6">
+                            <span className="text-xs text-slate-400 font-bold block uppercase">Sucursal Líder del Período</span>
+                            <h2 className="text-xl font-black text-white mt-1 flex items-center gap-2">
+                                <Award size={22} className="text-amber-400" />
+                                {data?.resumen_operativo?.sucursal_lider || 'Cargando...'}
+                            </h2>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs font-bold text-slate-300">
+                            <span>Promedio por Hora:</span>
+                            <span className="text-emerald-400 font-black">{formatBs(data?.resumen_operativo?.promedio_por_hora)}</span>
+                        </div>
+                    </div>
+
+                    {/* DESGLOSE POR SUCURSAL (ESTILO RECENT ACTIVITIES DE LA IMAGEN DE REFERENCIA) */}
+                    {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h3 className="text-base font-black text-slate-900">Ventas por Sucursal</h3>
+                                <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-xl">
+                                    {data.desglose_sucursales.length}
+                                </span>
+                            </div>
+
+                            <div className="space-y-3">
+                                {data.desglose_sucursales.map((suc) => (
+                                    <div
+                                        key={suc.sucursal_id}
+                                        className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/60 flex items-center justify-between transition-all hover:bg-indigo-50/30"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-purple-100/70 text-purple-700 rounded-2xl">
+                                                <Store size={16} />
+                                            </div>
+                                            <div>
+                                                <span className="font-extrabold text-slate-900 text-xs block">
+                                                    {suc.nombre_sucursal}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-bold">
+                                                    {suc.ordenes} órdenes ({suc.participacion_pct}%)
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <span className="text-xs font-black text-slate-900 block">
+                                                {formatBs(suc.ingresos)}
+                                            </span>
+                                            <span className="text-[10px] text-emerald-700 font-extrabold block">
+                                                TM: {formatBs(suc.ticket_medio)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SECCIÓN H: ALERTAS OPERATIVAS (ESTILO UPCOMING PAYMENTS EN LA IMAGEN DE REFERENCIA) */}
+                    {data?.alertas_operativas && data.alertas_operativas.length > 0 && (
+                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                <h3 className="text-base font-black text-slate-900">Alertas Operativas</h3>
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-2xl">
+                                    <Bell size={18} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {data.alertas_operativas.map((a, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="p-3.5 bg-indigo-50/70 border border-indigo-100/80 rounded-2xl flex items-start gap-3 text-xs"
+                                    >
+                                        <div className="p-2 bg-white rounded-xl text-indigo-600 shadow-2xs mt-0.5">
+                                            <Bell size={14} />
+                                        </div>
+                                        <div>
+                                            <span className="font-black text-indigo-950 block text-xs">{a.titulo}</span>
+                                            <span className="text-indigo-800 text-[11px] font-semibold mt-0.5 block">{a.mensaje}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+            </div>
+
         </div>
     );
 };
