@@ -81,7 +81,7 @@ class BIPandasService:
                     AlertaOperativaBI(
                         tipo="info",
                         titulo="Sin ventas en el período",
-                        mensaje="No se encontraron tickets registrados por el POS en la fecha o rango de fechas seleccionado."
+                        mensaje="No se encontraron tickets registrados por el POS en la fecha seleccionada."
                     )
                 ]
             )
@@ -117,7 +117,7 @@ class BIPandasService:
 
         df_sales["fecha_bolivia"] = df_sales["fecha_hora_bolivia"].dt.date
         df_sales["hora_bolivia"] = df_sales["fecha_hora_bolivia"].dt.hour
-        df_sales["hora_minuto_bolivia"] = df_sales["fecha_hora_bolivia"].dt.strftime("%H:%M:%S")
+        df_sales["hora_minuto_bolivia"] = df_sales["fecha_hora_bolivia"].dt.strftime("%H:%M")
 
         # 5. MODELO ESTRELLA (FACT_VENTAS)
         fact_ventas = df_sales[[
@@ -131,7 +131,7 @@ class BIPandasService:
         cantidad_ordenes = int(fact_ventas["ticket_id"].nunique())
         ticket_medio = round(ingresos_totales / cantidad_ordenes, 2) if cantidad_ordenes > 0 else 0.0
 
-        # 7. Desglose por Sucursal
+        # 7. Desglose por Sucursal (Incluir todas las sucursales activas y las que vendieron)
         desglose_list: List[DesgloseSucursalBI] = []
         suc_lider_nombre = "Sin actividad"
         if not fact_ventas.empty:
@@ -140,14 +140,21 @@ class BIPandasService:
                 ordenes=("ticket_id", "nunique")
             ).reset_index()
 
+            # Merge con Dimensión Sucursales (Full outer para garantizar todas las sucursales)
             if not df_dim_sucursal.empty and "sucursal_id" in df_dim_sucursal.columns:
-                merged_suc = pd.merge(suc_group, df_dim_sucursal, on="sucursal_id", how="left")
+                merged_suc = pd.merge(df_dim_sucursal, suc_group, on="sucursal_id", how="outer")
             else:
                 merged_suc = suc_group
                 merged_suc["nombre"] = merged_suc["sucursal_id"]
 
             merged_suc["ingresos"] = merged_suc["ingresos"].fillna(0.0)
             merged_suc["ordenes"] = merged_suc["ordenes"].fillna(0).astype(int)
+
+            # Filtrar filas vacías de IDs sin nombre ni ventas
+            merged_suc = merged_suc[~((merged_suc["ingresos"] == 0) & (merged_suc["nombre"].isna()))]
+
+            # Ordenar por ingresos descendente
+            merged_suc = merged_suc.sort_values(by="ingresos", ascending=False)
 
             max_ing = -1.0
             for _, row in merged_suc.iterrows():
@@ -158,11 +165,11 @@ class BIPandasService:
 
                 nombre_raw = row.get("nombre")
                 if pd.isna(nombre_raw) or not str(nombre_raw).strip():
-                    nombre_suc = "Central / Principal" if str(row["sucursal_id"]) == "CENTRAL" else f"Sucursal ({row['sucursal_id'][:8]})"
+                    nombre_suc = "Central / Principal" if str(row["sucursal_id"]) == "CENTRAL" else f"Sucursal ({str(row['sucursal_id'])[:8]})"
                 else:
                     nombre_suc = str(nombre_raw)
 
-                if ing > max_ing:
+                if ing > max_ing and ing > 0:
                     max_ing = ing
                     suc_lider_nombre = nombre_suc
 
@@ -189,7 +196,7 @@ class BIPandasService:
         for h in range(24):
             h_data = hourly_group.get(h, {"ingresos": 0.0, "ordenes": 0})
             ing_h = round(float(h_data["ingresos"]), 2)
-            if ing_h > max_h_ing:
+            if ing_h > max_h_ing and ing_h > 0:
                 max_h_ing = ing_h
                 mejor_hora_str = f"{h:02d}:00"
 
@@ -202,8 +209,8 @@ class BIPandasService:
                 )
             )
 
-        # 9. Ventas Recientes (Últimas 5 ordenadas por timestamp Bolivia desc)
-        df_recent = fact_ventas.sort_values(by="fecha_hora_bolivia", ascending=False).head(5)
+        # 9. Ventas Recientes (Últimas 10 ordenadas por timestamp Bolivia desc)
+        df_recent = fact_ventas.sort_values(by="fecha_hora_bolivia", ascending=False).head(10)
         ventas_recientes_list: List[VentaRecienteBI] = []
         for _, row in df_recent.iterrows():
             suc_name = "Central / Principal"
@@ -211,10 +218,14 @@ class BIPandasService:
             if found_suc:
                 suc_name = found_suc[0].nombre_sucursal
 
+            num_ticket = str(row.get("numero_ticket") or row["ticket_id"])
+            if len(num_ticket) > 8 and not num_ticket.startswith("#"):
+                num_ticket = f"#{num_ticket[-6:].upper()}"
+
             ventas_recientes_list.append(
                 VentaRecienteBI(
                     ticket_id=str(row["ticket_id"]),
-                    numero_ticket=str(row.get("numero_ticket") or row["ticket_id"]),
+                    numero_ticket=num_ticket,
                     hora_bolivia=str(row["hora_minuto_bolivia"]),
                     nombre_sucursal=suc_name,
                     total_neto=round(float(row["total_neto"]), 2),

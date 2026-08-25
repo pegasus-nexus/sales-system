@@ -174,7 +174,7 @@ export const BIPanelGeneralView: React.FC = () => {
     }
 
     return (
-        <div className={`min-h-screen bg-[#f8f9fd] p-2 sm:p-4 md:p-6 space-y-6 font-sans text-slate-800 ${isFullscreen ? 'p-8' : ''}`}>
+        <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
             {/* CABECERA PRINCIPAL ESTILO PASTEL LIMPÍSIMO */}
             <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/90 rounded-3xl p-6 shadow-sm border border-indigo-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">

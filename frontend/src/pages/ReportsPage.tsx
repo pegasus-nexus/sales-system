@@ -41,7 +41,7 @@ export default function ReportsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8">
+        <div className={activeTab === 'bi' ? "w-full px-1 sm:px-2 md:px-3 py-3 space-y-6 pb-20 md:pb-8" : "max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8"}>
             {activeTab === 'bi' ? (
                 <BIView />
             ) : activeTab === 'evolucion_mensual' ? (
