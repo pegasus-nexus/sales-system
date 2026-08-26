@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Package, Users } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
+import { BIClientesView } from './bi/BIClientesView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes'>('panel');
 
     return (
         <div className="w-full space-y-4">
             {/* SUB-NAVEGACIÓN INTERNA EN PASTEL PARA EL CENTRO DE INTELIGENCIA DE NEGOCIOS */}
-            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-2 max-w-2xl mx-auto sm:mx-0 overflow-x-auto">
+            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-2 max-w-3xl mx-auto sm:mx-0 overflow-x-auto">
                 <button
                     onClick={() => setSubTab('panel')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
@@ -32,7 +33,7 @@ export default function BIView() {
                     }`}
                 >
                     <TrendingUp size={14} />
-                    <span>Comparativas Históricas</span>
+                    <span>Comparativas</span>
                 </button>
 
                 <button
@@ -46,12 +47,25 @@ export default function BIView() {
                     <Package size={14} />
                     <span>Productos & Categorías</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('clientes')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
+                        subTab === 'clientes'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                    <Users size={14} />
+                    <span>Clientes & Pagos</span>
+                </button>
             </div>
 
             {/* CONTENIDO SEGÚN SUBTAB SELECCIONADA */}
             {subTab === 'panel' && <BIPanelGeneralView />}
             {subTab === 'comparativas' && <BIComparativasView />}
             {subTab === 'productos' && <BIProductosView />}
+            {subTab === 'clientes' && <BIClientesView />}
         </div>
     );
 }

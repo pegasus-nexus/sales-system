@@ -161,6 +161,55 @@ export interface BIProductosResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 4: Clientes y Métodos de Pago (Clean Architecture)
+export interface KPIClientesBI {
+    ingresos_totales: number;
+    total_tickets: number;
+    ventas_nominadas_monto: number;
+    ventas_nominadas_tickets: number;
+    ventas_anonimas_monto: number;
+    ventas_anonimas_tickets: number;
+    top_cliente_nombre: string;
+    top_cliente_monto: number;
+}
+
+export interface MetodoPagoItemBI {
+    metodo: string;
+    monto_neto: number;
+    tickets_conteo: number;
+    participacion_pct: number;
+}
+
+export interface TopClienteItemBI {
+    cliente_id: string;
+    nombre: string;
+    nit_ci: string;
+    compras_conteo: number;
+    monto_total: number;
+    participacion_pct: number;
+}
+
+export interface ResumenCreditoBI {
+    total_cuentas_credito: number;
+    saldo_total_cartera: number;
+    cuentas_al_dia: number;
+    cuentas_mora: number;
+}
+
+export interface BIClientesResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIClientesBI;
+    metodos_pago: MetodoPagoItemBI[];
+    top_clientes: TopClienteItemBI[];
+    resumen_credito: ResumenCreditoBI;
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -210,6 +259,20 @@ export const getBIProductos = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIProductosResponse>(`/bi-productos/productos${queryString}`);
+};
+
+export const getBIClientes = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIClientesResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIClientesResponse>(`/bi-clientes/clientes${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
