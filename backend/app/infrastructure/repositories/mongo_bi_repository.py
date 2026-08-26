@@ -4,7 +4,7 @@ from bson import ObjectId
 
 from app.domain.repositories.bi_repository import BIRepository
 from app.domain.models.user import User
-from app.application.services.sales_read_service import SalesReadService
+from app.application.services.sales_read_service import SalesReadService, safe_float
 from app.db import get_raw_db
 
 
@@ -21,10 +21,6 @@ class MongoBIRepository(BIRepository):
         end_utc: Optional[datetime] = None,
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        # Si se pasa un objeto User, delegar al SalesReadService
-        if isinstance(user_or_tenant, User):
-            # Nota: el llamado directo por fechas de negocio se maneja en get_raw_sales_by_dates
-            pass
         return []
 
     async def get_raw_sales_by_dates(
@@ -63,3 +59,45 @@ class MongoBIRepository(BIRepository):
                 "direccion": d.get("direccion", "")
             })
         return result
+
+    async def get_products_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
+        db = await get_raw_db()
+        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
+
+        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
+            tenant_conditions = [str(tenant_id)]
+            if ObjectId.is_valid(tenant_id):
+                tenant_conditions.append(ObjectId(tenant_id))
+            filter_query["tenant_id"] = {"$in": tenant_conditions}
+
+        cursor = db.products.find(filter_query)
+        docs = await cursor.to_list(length=None)
+        res = []
+        for d in docs:
+            res.append({
+                "_id": str(d["_id"]),
+                "descripcion": d.get("descripcion", ""),
+                "categoria_id": str(d.get("categoria_id", "")),
+                "precio_venta": safe_float(d.get("precio_venta"))
+            })
+        return res
+
+    async def get_categories_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
+        db = await get_raw_db()
+        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
+
+        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
+            tenant_conditions = [str(tenant_id)]
+            if ObjectId.is_valid(tenant_id):
+                tenant_conditions.append(ObjectId(tenant_id))
+            filter_query["tenant_id"] = {"$in": tenant_conditions}
+
+        cursor = db.categories.find(filter_query)
+        docs = await cursor.to_list(length=None)
+        res = []
+        for d in docs:
+            res.append({
+                "_id": str(d["_id"]),
+                "name": d.get("name", "")
+            })
+        return res

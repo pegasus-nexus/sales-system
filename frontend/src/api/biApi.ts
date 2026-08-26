@@ -119,6 +119,48 @@ export interface BIComparativaResponse {
     fuente: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 3: Productos y Categorías (Clean Architecture)
+export interface KPIProductosBI {
+    producto_mas_vendido: string;
+    unidades_producto_mas_vendido: number;
+    producto_mayor_recaudacion: string;
+    ingresos_producto_mayor_recaudacion: number;
+    skus_distintos: number;
+    unidades_promedio_por_ticket: number;
+}
+
+export interface TopProductoItemBI {
+    producto_id: string;
+    nombre: string;
+    categoria_id: string;
+    categoria_nombre: string;
+    unidades_vendidas: number;
+    ingresos_bs: number;
+    precio_promedio_efectivo: number;
+    participacion_pct: number;
+}
+
+export interface CategoriaProductosItemBI {
+    categoria_id: string;
+    categoria_nombre: string;
+    unidades_vendidas: number;
+    ingresos_bs: number;
+    participacion_pct: number;
+}
+
+export interface BIProductosResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIProductosBI;
+    top_productos: TopProductoItemBI[];
+    categorias: CategoriaProductosItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -154,6 +196,20 @@ export const getBIComparativas = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIComparativaResponse>(`/bi/comparativas${queryString}`);
+};
+
+export const getBIProductos = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIProductosResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIProductosResponse>(`/bi-productos/productos${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {

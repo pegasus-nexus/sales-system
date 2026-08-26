@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from app.core.config import BUSINESS_TIMEZONE
+from app.application.services.sales_read_service import safe_float
 from app.schemas.bi import (
     BIPanelGeneralResponse,
     DesgloseSucursalBI,
@@ -15,7 +16,11 @@ from app.schemas.bi import (
     PeriodoMetricBI,
     VariacionMetricBI,
     SerieTiempoItemBI,
-    DesgloseSucursalComparativaBI
+    DesgloseSucursalComparativaBI,
+    BIProductosResponse,
+    KPIProductosBI,
+    TopProductoItemBI,
+    CategoriaProductosItemBI
 )
 
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
@@ -37,7 +42,6 @@ class BIPandasService:
     ) -> BIPanelGeneralResponse:
         now_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%H:%M:%S")
 
-        # 1. Dimensión Sucursal
         df_dim_sucursal = pd.DataFrame(sucursales)
         if df_dim_sucursal.empty:
             df_dim_sucursal = pd.DataFrame(columns=["sucursal_id", "nombre", "ciudad", "direccion"])
@@ -45,7 +49,6 @@ class BIPandasService:
             if "sucursal_id" not in df_dim_sucursal.columns:
                 df_dim_sucursal["sucursal_id"] = ""
 
-        # Manejo de dataset vacío de ventas
         if not raw_sales:
             desglose_sucursales_empty = [
                 DesgloseSucursalBI(
@@ -85,23 +88,19 @@ class BIPandasService:
                 alertas_operativas=[]
             )
 
-        # 2. Fact Table en Pandas DataFrame
         df_sales = pd.DataFrame(raw_sales)
         df_sales.rename(columns={"_id": "ticket_id", "total": "total_neto"}, inplace=True)
-        df_sales["total_neto"] = pd.to_numeric(df_sales["total_neto"], errors="coerce").fillna(0.0)
+        df_sales["total_neto"] = pd.to_numeric(df_sales["total_neto"].apply(safe_float), errors="coerce").fillna(0.0)
 
-        # 3. Conversión de Timezone a America/La_Paz
         df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True)
         df_sales["created_at_bolivia"] = df_sales["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
         df_sales["hora_bolivia"] = df_sales["created_at_bolivia"].dt.hour
         df_sales["hora_minuto_bolivia"] = df_sales["created_at_bolivia"].dt.strftime("%H:%M")
 
-        # 4. Agregación Vectorial Principal
         ingresos_totales = round(float(df_sales["total_neto"].sum()), 2)
         cantidad_ordenes = int(len(df_sales))
         ticket_medio = round(ingresos_totales / cantidad_ordenes, 2) if cantidad_ordenes > 0 else 0.0
 
-        # 5. Join con Dimensión Sucursales
         df_merged = pd.merge(
             df_sales,
             df_dim_sucursal,
@@ -110,7 +109,6 @@ class BIPandasService:
         )
         df_merged["nombre"] = df_merged["nombre"].fillna("Sucursal Central")
 
-        # Groupby Sucursales
         groupby_suc = df_merged.groupby(["sucursal_id", "nombre"]).agg(
             ingresos=("total_neto", "sum"),
             ordenes=("ticket_id", "count")
@@ -141,7 +139,6 @@ class BIPandasService:
                 )
             )
 
-        # Asegurar que sucursales sin ventas aparezcan con 0
         if not df_dim_sucursal.empty:
             existing_ids = {d.sucursal_id for d in desglose_list}
             for _, row in df_dim_sucursal.iterrows():
@@ -158,7 +155,6 @@ class BIPandasService:
                         )
                     )
 
-        # 6. Agregación Horaria
         hourly_groupby = df_sales.groupby("hora_bolivia").agg(
             ingresos=("total_neto", "sum"),
             ordenes=("ticket_id", "count")
@@ -189,7 +185,6 @@ class BIPandasService:
                 )
             )
 
-        # 7. Actividad Reciente (Últimas 10 ventas)
         df_recientes = df_merged.sort_values(by="created_at_utc", ascending=False).head(10)
         ventas_recientes_list: List[VentaRecienteBI] = []
 
@@ -259,12 +254,11 @@ class BIPandasService:
     ) -> BIComparativaResponse:
         now_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%H:%M:%S")
 
-        # 1. Función Interna de Resumen
         def summarize_sales(raw_list: List[Dict[str, Any]]) -> tuple[float, int, float, pd.DataFrame]:
             if not raw_list:
                 return 0.0, 0, 0.0, pd.DataFrame()
             df = pd.DataFrame(raw_list)
-            df["total_neto"] = pd.to_numeric(df["total"], errors="coerce").fillna(0.0)
+            df["total_neto"] = pd.to_numeric(df["total"].apply(safe_float), errors="coerce").fillna(0.0)
             df["created_at_utc"] = pd.to_datetime(df["created_at"], utc=True)
             df["created_at_bolivia"] = df["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
             df["fecha_bolivia"] = df["created_at_bolivia"].dt.strftime("%Y-%m-%d")
@@ -277,7 +271,6 @@ class BIPandasService:
         ing_act, ord_act, tm_act, df_act = summarize_sales(sales_actual)
         ing_comp, ord_comp, tm_comp, df_comp = summarize_sales(sales_comparativo)
 
-        # 2. Manejo Seguro de Variaciones (Regla de Cero / SIN_BASE_COMPARATIVA)
         def calc_variation(act: float, comp: float) -> tuple[float, Optional[float], str]:
             dif = round(act - comp, 2)
             if comp <= 0.0:
@@ -305,7 +298,6 @@ class BIPandasService:
             estado_ticket=st_tm
         )
 
-        # 3. Construcción de Serie Temporal Diaria
         def build_daily_series(df: pd.DataFrame) -> List[SerieTiempoItemBI]:
             if df.empty:
                 return []
@@ -334,7 +326,6 @@ class BIPandasService:
         serie_act = build_daily_series(df_act)
         serie_comp = build_daily_series(df_comp)
 
-        # 4. Desglose por Sucursal Comparativo
         df_dim_suc = pd.DataFrame(sucursales)
         if df_dim_suc.empty:
             df_dim_suc = pd.DataFrame(columns=["sucursal_id", "nombre"])
@@ -405,5 +396,184 @@ class BIPandasService:
                 "filtro_anuladas": "anulada != True",
                 "ventas_actuales_conteo": ord_act,
                 "ventas_comparativas_conteo": ord_comp
+            }
+        )
+
+    def process_productos(
+        self,
+        raw_sales: List[Dict[str, Any]],
+        products_dim: List[Dict[str, Any]],
+        categories_dim: List[Dict[str, Any]],
+        start_date_str: str,
+        end_date_str: str
+    ) -> BIProductosResponse:
+        now_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%H:%M:%S")
+
+        if not raw_sales:
+            return BIProductosResponse(
+                status="success",
+                fecha_inicio_bolivia=start_date_str,
+                fecha_fin_bolivia=end_date_str,
+                timezone=BUSINESS_TIMEZONE,
+                ultima_actualizacion=now_bolivia_str,
+                kpis=KPIProductosBI(),
+                top_productos=[],
+                categorias=[]
+            )
+
+        item_rows = []
+        unique_sale_ids = set()
+
+        for sale in raw_sales:
+            sale_id = str(sale.get("_id", ""))
+            unique_sale_ids.add(sale_id)
+            items = sale.get("items", [])
+
+            for item in items:
+                pid = str(item.get("producto_id") or item.get("product_id") or "")
+                desc = str(item.get("descripcion") or "Producto sin nombre")
+                qty = safe_float(item.get("cantidad") or item.get("quantity"))
+                price = safe_float(item.get("precio_unitario") or item.get("price"))
+                subt = safe_float(item.get("subtotal") or (qty * price))
+
+                item_rows.append({
+                    "sale_id": sale_id,
+                    "producto_id": pid,
+                    "descripcion": desc,
+                    "cantidad": qty,
+                    "precio_unitario": price,
+                    "subtotal": subt
+                })
+
+        if not item_rows:
+            return BIProductosResponse(
+                status="success",
+                fecha_inicio_bolivia=start_date_str,
+                fecha_fin_bolivia=end_date_str,
+                timezone=BUSINESS_TIMEZONE,
+                ultima_actualizacion=now_bolivia_str,
+                kpis=KPIProductosBI(),
+                top_productos=[],
+                categorias=[]
+            )
+
+        df_items = pd.DataFrame(item_rows)
+        ingresos_totales_items = round(float(df_items["subtotal"].sum()), 2)
+        total_tickets_cnt = len(unique_sale_ids)
+
+        df_prod_dim = pd.DataFrame(products_dim) if products_dim else pd.DataFrame()
+        if not df_prod_dim.empty and "_id" in df_prod_dim.columns:
+            df_prod_dim["_id"] = df_prod_dim["_id"].astype(str)
+            df_prod_dim.rename(columns={"_id": "producto_id", "descripcion": "nombre_oficial"}, inplace=True)
+        else:
+            df_prod_dim = pd.DataFrame(columns=["producto_id", "nombre_oficial", "categoria_id"])
+
+        df_cat_dim = pd.DataFrame(categories_dim) if categories_dim else pd.DataFrame()
+        if not df_cat_dim.empty and "_id" in df_cat_dim.columns:
+            df_cat_dim["_id"] = df_cat_dim["_id"].astype(str)
+            df_cat_dim.rename(columns={"_id": "categoria_id", "name": "categoria_nombre"}, inplace=True)
+        else:
+            df_cat_dim = pd.DataFrame(columns=["categoria_id", "categoria_nombre"])
+
+        df_merged = pd.merge(df_items, df_prod_dim, on="producto_id", how="left")
+        df_merged["nombre_final"] = df_merged["nombre_oficial"].fillna(df_merged["descripcion"])
+        df_merged["categoria_id"] = df_merged["categoria_id"].fillna("sin_categoria")
+
+        df_merged = pd.merge(df_merged, df_cat_dim, on="categoria_id", how="left")
+        df_merged["categoria_nombre"] = df_merged["categoria_nombre"].fillna("Sin Categoría")
+
+        grp_prod = df_merged.groupby(["producto_id", "nombre_final", "categoria_id", "categoria_nombre"]).agg(
+            unidades=("cantidad", "sum"),
+            ingresos=("subtotal", "sum")
+        ).reset_index()
+
+        grp_prod["unidades"] = grp_prod["unidades"].round(2)
+        grp_prod["ingresos"] = grp_prod["ingresos"].round(2)
+        grp_prod["precio_promedio"] = (grp_prod["ingresos"] / grp_prod["unidades"]).round(2).fillna(0.0)
+        grp_prod["participacion_pct"] = (grp_prod["ingresos"] / ingresos_totales_items * 100.0).round(2) if ingresos_totales_items > 0 else 0.0
+
+        df_top_prod = grp_prod.sort_values(by="ingresos", ascending=False)
+
+        top_productos_list: List[TopProductoItemBI] = []
+        for _, r in df_top_prod.iterrows():
+            top_productos_list.append(
+                TopProductoItemBI(
+                    producto_id=str(r["producto_id"]),
+                    nombre=str(r["nombre_final"]),
+                    categoria_id=str(r["categoria_id"]),
+                    categoria_nombre=str(r["categoria_nombre"]),
+                    unidades_vendidas=float(r["unidades"]),
+                    ingresos_bs=float(r["ingresos"]),
+                    precio_promedio_efectivo=float(r["precio_promedio"]),
+                    participacion_pct=float(r["participacion_pct"])
+                )
+            )
+
+        grp_cat = df_merged.groupby(["categoria_id", "categoria_nombre"]).agg(
+            unidades=("cantidad", "sum"),
+            ingresos=("subtotal", "sum")
+        ).reset_index()
+
+        grp_cat["unidades"] = grp_cat["unidades"].round(2)
+        grp_cat["ingresos"] = grp_cat["ingresos"].round(2)
+        grp_cat["participacion_pct"] = (grp_cat["ingresos"] / ingresos_totales_items * 100.0).round(2) if ingresos_totales_items > 0 else 0.0
+        grp_cat = grp_cat.sort_values(by="ingresos", ascending=False)
+
+        categorias_list: List[CategoriaProductosItemBI] = []
+        for _, r in grp_cat.iterrows():
+            categorias_list.append(
+                CategoriaProductosItemBI(
+                    categoria_id=str(r["categoria_id"]),
+                    categoria_nombre=str(r["categoria_nombre"]),
+                    unidades_vendidas=float(r["unidades"]),
+                    ingresos_bs=float(r["ingresos"]),
+                    participacion_pct=float(r["participacion_pct"])
+                )
+            )
+
+        prod_mas_vendido_nom = "Sin datos"
+        unidades_mas_vendido = 0.0
+        if not grp_prod.empty:
+            df_by_qty = grp_prod.sort_values(by="unidades", ascending=False).iloc[0]
+            prod_mas_vendido_nom = str(df_by_qty["nombre_final"])
+            unidades_mas_vendido = float(df_by_qty["unidades"])
+
+        prod_mayor_recaudacion_nom = "Sin datos"
+        ingresos_mayor_recaudacion = 0.0
+        if not df_top_prod.empty:
+            top_rec = df_top_prod.iloc[0]
+            prod_mayor_recaudacion_nom = str(top_rec["nombre_final"])
+            ingresos_mayor_recaudacion = float(top_rec["ingresos"])
+
+        skus_cnt = len(grp_prod)
+        total_units_sum = float(df_items["cantidad"].sum())
+        unidades_prom_ticket = round(total_units_sum / total_tickets_cnt, 2) if total_tickets_cnt > 0 else 0.0
+
+        kpis = KPIProductosBI(
+            producto_mas_vendido=prod_mas_vendido_nom,
+            unidades_producto_mas_vendido=unidades_mas_vendido,
+            producto_mayor_recaudacion=prod_mayor_recaudacion_nom,
+            ingresos_producto_mayor_recaudacion=ingresos_mayor_recaudacion,
+            skus_distintos=skus_cnt,
+            unidades_promedio_por_ticket=unidades_prom_ticket
+        )
+
+        return BIProductosResponse(
+            status="success",
+            fecha_inicio_bolivia=start_date_str,
+            fecha_fin_bolivia=end_date_str,
+            timezone=BUSINESS_TIMEZONE,
+            ultima_actualizacion=now_bolivia_str,
+            kpis=kpis,
+            top_productos=top_productos_list,
+            categorias=categorias_list,
+            trazabilidad={
+                "coleccion": "sales.items[]",
+                "servicio": "SalesReadService",
+                "modelo_analitico": "Star Schema (FACT_SALES_ITEMS)",
+                "filtro_anuladas": "anulada != True",
+                "total_tickets_procesados": total_tickets_cnt,
+                "total_lineas_items": len(df_items),
+                "suma_subtotales_items": ingresos_totales_items
             }
         )

@@ -8,7 +8,7 @@ from app.infrastructure.auth import get_current_user
 from app.domain.models.user import User
 from app.infrastructure.repositories.mongo_bi_repository import MongoBIRepository
 from app.application.services.bi_service import BIService
-from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse
+from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse, BIProductosResponse
 
 router = APIRouter()
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
@@ -64,10 +64,6 @@ async def get_bi_comparativas(
     current_user: User = Depends(get_current_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
-    """
-    Obtiene el análisis comparativo trazable (DoD, WoW, MoM, YoY) aplicando el Modelo Estrella
-    mediante Pandas sobre las ventas reales registradas por el POS en MongoDB 'sales'.
-    """
     today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
     s_date = start_date or today_bolivia_str
     e_date = end_date or today_bolivia_str
@@ -84,6 +80,36 @@ async def get_bi_comparativas(
         raise HTTPException(
             status_code=500,
             detail=f"Error procesando comparativas del BI: {str(e)}"
+        )
+
+
+@router.get("/productos", response_model=BIProductosResponse)
+async def get_bi_productos(
+    start_date: Optional[str] = Query(None, description="Fecha inicio YYYY-MM-DD."),
+    end_date: Optional[str] = Query(None, description="Fecha fin YYYY-MM-DD."),
+    sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
+    current_user: User = Depends(get_current_user),
+    bi_service: BIService = Depends(get_bi_service)
+):
+    """
+    Obtiene el análisis de rendimiento de productos y categorías aplicando el Modelo Estrella
+    (FACT_SALES_ITEMS) sobre las ventas reales registradas por el POS en MongoDB 'sales'.
+    """
+    today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
+    s_date = start_date or today_bolivia_str
+    e_date = end_date or today_bolivia_str
+
+    try:
+        return await bi_service.get_productos_analysis(
+            current_user=current_user,
+            start_date=s_date,
+            end_date=e_date,
+            sucursal_id=sucursal_id
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error procesando rendimiento de productos de BI: {str(e)}"
         )
 
 

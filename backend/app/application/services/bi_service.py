@@ -6,7 +6,7 @@ from app.domain.repositories.bi_repository import BIRepository
 from app.domain.models.user import User
 from app.application.services.bi_pandas_service import BIPandasService
 from app.application.services.sales_read_service import SalesReadService
-from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse
+from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse, BIProductosResponse
 
 
 class BIService:
@@ -27,19 +27,14 @@ class BIService:
         end_date: str,
         sucursal_id: Optional[str] = None
     ) -> BIPanelGeneralResponse:
-        # 1. Extracción de Ventas Unificada (Fuente única MongoDB sales via SalesReadService)
         raw_sales = await SalesReadService.get_raw_sales_for_user(
             user=current_user,
             start_date_str=start_date,
             end_date_str=end_date,
             sucursal_id=sucursal_id
         )
-
-        # 2. Extracción de Dimensiones (Sucursales)
         tenant_id = current_user.tenant_id or "default"
         sucursales = await self.repository.get_sucursales(tenant_id=tenant_id)
-
-        # 3. Transformación Analítica en Modelo Estrella con Pandas
         return self.pandas_service.process_panel_general(
             raw_sales=raw_sales,
             sucursales=sucursales,
@@ -55,7 +50,6 @@ class BIService:
         comparar_contra: str = "ayer",
         sucursal_id: Optional[str] = None
     ) -> BIComparativaResponse:
-        # 1. Función Centralizada de Cálculo de Período Comparativo
         s_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
         e_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
         delta_days = (e_dt - s_dt).days + 1
@@ -79,7 +73,6 @@ class BIService:
         start_comp_str = s_comp.strftime("%Y-%m-%d")
         end_comp_str = e_comp.strftime("%Y-%m-%d")
 
-        # 2. Extracción Unificada de Ventas (SalesReadService) para ambos períodos
         sales_actual = await SalesReadService.get_raw_sales_for_user(
             user=current_user,
             start_date_str=start_date,
@@ -94,11 +87,9 @@ class BIService:
             sucursal_id=sucursal_id
         )
 
-        # 3. Extracción de Dimensión Sucursales
         tenant_id = current_user.tenant_id or "default"
         sucursales = await self.repository.get_sucursales(tenant_id=tenant_id)
 
-        # 4. Transformación Analítica con Pandas ETL (Modelo Estrella)
         return self.pandas_service.process_comparativas(
             sales_actual=sales_actual,
             sales_comparativo=sales_comparativo,
@@ -108,6 +99,35 @@ class BIService:
             start_date_comp=start_comp_str,
             end_date_comp=end_comp_str,
             modo_comparativo=comparar_contra
+        )
+
+    async def get_productos_analysis(
+        self,
+        current_user: User,
+        start_date: str,
+        end_date: str,
+        sucursal_id: Optional[str] = None
+    ) -> BIProductosResponse:
+        # 1. Extracción Unificada con SalesReadService
+        raw_sales = await SalesReadService.get_raw_sales_for_user(
+            user=current_user,
+            start_date_str=start_date,
+            end_date_str=end_date,
+            sucursal_id=sucursal_id
+        )
+
+        # 2. Extracción de Dimensiones Productos y Categorías
+        tenant_id = current_user.tenant_id or "default"
+        products_dim = await self.repository.get_products_dim(tenant_id=tenant_id)
+        categories_dim = await self.repository.get_categories_dim(tenant_id=tenant_id)
+
+        # 3. Transformación Analítica Pandas ETL (Modelo Estrella FACT_SALES_ITEMS)
+        return self.pandas_service.process_productos(
+            raw_sales=raw_sales,
+            products_dim=products_dim,
+            categories_dim=categories_dim,
+            start_date_str=start_date,
+            end_date_str=end_date
         )
 
     async def get_sucursales_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
