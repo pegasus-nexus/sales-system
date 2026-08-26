@@ -29,7 +29,7 @@ async def get_web_collections(current_user: User = Depends(get_current_active_us
 
 @router.post("/web-collections", response_model=WebCollection)
 async def create_web_collection(collection_in: WebCollectionCreate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     collection = WebCollection(
@@ -41,7 +41,7 @@ async def create_web_collection(collection_in: WebCollectionCreate, current_user
 
 @router.patch("/web-collections/{collection_id}", response_model=WebCollection)
 async def update_web_collection(collection_id: str, collection_in: WebCollectionUpdate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     collection = await WebCollection.get(collection_id)
@@ -57,7 +57,7 @@ async def update_web_collection(collection_id: str, collection_in: WebCollection
 
 @router.delete("/web-collections/{collection_id}")
 async def delete_web_collection(collection_id: str, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     collection = await WebCollection.get(collection_id)

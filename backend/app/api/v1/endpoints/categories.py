@@ -24,7 +24,7 @@ async def get_categories(current_user: User = Depends(get_current_active_user)):
 
 @router.post("/categories", response_model=Category)
 async def create_category(category_in: CategoryCreate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Check if exists in tenant
@@ -47,7 +47,7 @@ class CategoryUpdate(BaseModel):
 
 @router.patch("/categories/{category_id}", response_model=Category)
 async def update_category(category_id: str, category_in: CategoryUpdate, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     category = await Category.get(category_id)
@@ -68,7 +68,7 @@ async def update_category(category_id: str, category_in: CategoryUpdate, current
 
 @router.delete("/categories/{category_id}")
 async def delete_category(category_id: str, current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     category = await Category.get(category_id)

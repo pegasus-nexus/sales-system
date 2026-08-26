@@ -36,7 +36,7 @@ async def update_web_config(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update the web config for the current tenant."""
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     config = await WebConfig.find_one(WebConfig.tenant_id == current_user.tenant_id)
