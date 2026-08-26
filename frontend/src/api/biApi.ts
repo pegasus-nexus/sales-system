@@ -289,6 +289,49 @@ export interface BIInventarioControlResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 7: Rentabilidad Teórica & Margen Bruto (Clean Architecture)
+export interface KPIRentabilidadBI {
+    ingresos_totales: number;
+    costo_directo_total: number;
+    margen_bruto_teorico_bs: number;
+    margen_bruto_teorico_pct: number;
+    total_lineas_procesadas: number;
+    producto_mayor_margen_nombre: string;
+    producto_mayor_margen_monto: number;
+}
+
+export interface CategoriaRentabilidadItemBI {
+    categoria_nombre: string;
+    ingresos_bs: number;
+    costos_bs: number;
+    margen_bruto_bs: number;
+    margen_bruto_pct: number;
+}
+
+export interface ProductoRentabilidadItemBI {
+    producto_id: string;
+    nombre: string;
+    categoria_nombre: string;
+    unidades_vendidas: number;
+    ingresos_bs: number;
+    costos_bs: number;
+    margen_bruto_bs: number;
+    margen_bruto_pct: number;
+}
+
+export interface BIRentabilidadMargenResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIRentabilidadBI;
+    categorias: CategoriaRentabilidadItemBI[];
+    top_productos: ProductoRentabilidadItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -376,6 +419,20 @@ export const getBIInventarioControl = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIInventarioControlResponse>(`/bi-inventario/control${queryString}`);
+};
+
+export const getBIRentabilidadMargen = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIRentabilidadMargenResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIRentabilidadMargenResponse>(`/bi-rentabilidad/margen${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
