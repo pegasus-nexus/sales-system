@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag, UserCheck } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
@@ -8,9 +8,10 @@ import { BISucursalesView } from './bi/BISucursalesView';
 import { BIInventarioView } from './bi/BIInventarioView';
 import { BIRentabilidadView } from './bi/BIRentabilidadView';
 import { BIDescuentosView } from './bi/BIDescuentosView';
+import { BIProductividadView } from './bi/BIProductividadView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos' | 'productividad'>('panel');
 
     return (
         <div className="w-full space-y-4">
@@ -111,6 +112,18 @@ export default function BIView() {
                     <Tag size={14} />
                     <span>Descuentos & Promociones</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('productividad')}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        subTab === 'productividad'
+                            ? 'bg-violet-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                    <UserCheck size={14} />
+                    <span>Productividad & Cajeros</span>
+                </button>
             </div>
 
             {/* CONTENIDO SEGÚN SUBTAB SELECCIONADA */}
@@ -122,6 +135,7 @@ export default function BIView() {
             {subTab === 'inventario' && <BIInventarioView />}
             {subTab === 'rentabilidad' && <BIRentabilidadView />}
             {subTab === 'descuentos' && <BIDescuentosView />}
+            {subTab === 'productividad' && <BIProductividadView />}
         </div>
     );
 }

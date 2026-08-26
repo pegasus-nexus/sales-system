@@ -363,6 +363,44 @@ export interface BIDescuentosImpactoResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 9: Productividad de Cajeros y Auditoría Operacional (Clean Architecture)
+export interface KPIProductividadBI {
+    ingresos_totales: number;
+    total_tickets: number;
+    cajeros_activos_con_venta: number;
+    cajero_lider_nombre: string;
+    cajero_lider_ingresos: number;
+    cajero_mayor_ticket_medio_nombre: string;
+    cajero_mayor_ticket_medio_monto: number;
+    total_eventos_auditoria: number;
+}
+
+export interface CajeroProductividadItemBI {
+    cajero_nombre: string;
+    tickets_conteo: number;
+    ingresos_bs: number;
+    ticket_medio: number;
+    participacion_pct: number;
+}
+
+export interface EventoAuditoriaItemBI {
+    accion: string;
+    total_eventos: number;
+}
+
+export interface BIProductividadDesempenoResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIProductividadBI;
+    cajeros: CajeroProductividadItemBI[];
+    auditoria_eventos: EventoAuditoriaItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -478,6 +516,20 @@ export const getBIDescuentosImpacto = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIDescuentosImpactoResponse>(`/bi-descuentos/impacto${queryString}`);
+};
+
+export const getBIProductividadDesempeno = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIProductividadDesempenoResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIProductividadDesempenoResponse>(`/bi-productividad/desempeno${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
