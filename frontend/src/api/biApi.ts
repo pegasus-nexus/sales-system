@@ -210,6 +210,42 @@ export interface BIClientesResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 5: Sucursales y Desempeño Operativo (Clean Architecture)
+export interface KPISucursalesBI {
+    ingresos_totales: number;
+    total_tickets: number;
+    ticket_medio_global: number;
+    total_sucursales_activas_con_venta: number;
+    sucursal_lider_nombre: string;
+    sucursal_lider_ingresos: number;
+    sucursal_mayor_ticket_medio_nombre: string;
+    sucursal_mayor_ticket_medio_monto: number;
+}
+
+export interface SucursalDesempenoItemBI {
+    sucursal_id: string;
+    nombre: string;
+    ciudad: string;
+    direccion: string;
+    is_active: boolean;
+    tickets_conteo: number;
+    ingresos_bs: number;
+    ticket_medio: number;
+    participacion_pct: number;
+}
+
+export interface BISucursalesDesempenoResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPISucursalesBI;
+    sucursales: SucursalDesempenoItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -273,6 +309,20 @@ export const getBIClientes = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIClientesResponse>(`/bi-clientes/clientes${queryString}`);
+};
+
+export const getBISucursalesDesempeno = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BISucursalesDesempenoResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BISucursalesDesempenoResponse>(`/bi-sucursales/desempeno${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
