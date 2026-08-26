@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
@@ -7,14 +7,15 @@ import { BIClientesView } from './bi/BIClientesView';
 import { BISucursalesView } from './bi/BISucursalesView';
 import { BIInventarioView } from './bi/BIInventarioView';
 import { BIRentabilidadView } from './bi/BIRentabilidadView';
+import { BIDescuentosView } from './bi/BIDescuentosView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos'>('panel');
 
     return (
         <div className="w-full space-y-4">
             {/* SUB-NAVEGACIÓN INTERNA EN PASTEL PARA EL CENTRO DE INTELIGENCIA DE NEGOCIOS */}
-            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-2 max-w-6xl mx-auto sm:mx-0 overflow-x-auto">
+            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-1.5 max-w-7xl mx-auto sm:mx-0 overflow-x-auto">
                 <button
                     onClick={() => setSubTab('panel')}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
@@ -98,6 +99,18 @@ export default function BIView() {
                     <DollarSign size={14} />
                     <span>Rentabilidad & Margen</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('descuentos')}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        subTab === 'descuentos'
+                            ? 'bg-orange-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                    <Tag size={14} />
+                    <span>Descuentos & Promociones</span>
+                </button>
             </div>
 
             {/* CONTENIDO SEGÚN SUBTAB SELECCIONADA */}
@@ -108,6 +121,7 @@ export default function BIView() {
             {subTab === 'sucursales' && <BISucursalesView />}
             {subTab === 'inventario' && <BIInventarioView />}
             {subTab === 'rentabilidad' && <BIRentabilidadView />}
+            {subTab === 'descuentos' && <BIDescuentosView />}
         </div>
     );
 }

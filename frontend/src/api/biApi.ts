@@ -332,6 +332,37 @@ export interface BIRentabilidadMargenResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 8: Descuentos y Promociones (Clean Architecture)
+export interface KPIDescuentosBI {
+    promociones_configuradas: number;
+    promociones_activas: number;
+    tickets_con_descuento: number;
+    monto_total_descuentos_otorgados: number;
+    promocion_mas_usada_nombre: string;
+    promocion_mas_usada_monto: number;
+}
+
+export interface PromocionDetalleItemBI {
+    promocion_id: string;
+    nombre: string;
+    tipo: string;
+    valor: number;
+    is_active: boolean;
+    tickets_aplicados: number;
+    monto_descuento_total: number;
+}
+
+export interface BIDescuentosImpactoResponse {
+    status: string;
+    fecha_consulta_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIDescuentosBI;
+    promociones: PromocionDetalleItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -433,6 +464,20 @@ export const getBIRentabilidadMargen = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIRentabilidadMargenResponse>(`/bi-rentabilidad/margen${queryString}`);
+};
+
+export const getBIDescuentosImpacto = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIDescuentosImpactoResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIDescuentosImpactoResponse>(`/bi-descuentos/impacto${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
