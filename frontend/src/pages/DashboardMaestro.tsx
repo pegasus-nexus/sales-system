@@ -18,7 +18,6 @@ import SpecialDatesChartRaw from '../components/SpecialDatesChart';
 import RegionalAndProductMixRaw from '../components/RegionalAndProductMix';
 import SalesPercentileTrackerRaw from '../components/SalesPercentileTracker';
 import WeeklyHourlyChartRaw from '../components/WeeklyHourlyChart';
-import { BIPanelGeneralView } from '../components/bi/BIPanelGeneralView';
 
 const HourlyMultiyearChart = memo(HourlyMultiyearChartRaw);
 const SpecialDatesChart = memo(SpecialDatesChartRaw);
@@ -742,9 +741,6 @@ export default function DashboardMaestro() {
                     </div>
                 </div>
             </div>
-
-            {/* NUEVA CAPA DE BI REESTRUCTURADA — FASE 1 (VENTAS BASE Y PANEL GENERAL) */}
-            <BIPanelGeneralView />
 
             {isLoading && !data ? (
                 <div className="flex flex-col justify-center items-center py-32 space-y-4">
