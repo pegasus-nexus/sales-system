@@ -8,7 +8,7 @@ from app.infrastructure.auth import get_current_user
 from app.domain.models.user import User
 from app.infrastructure.repositories.mongo_bi_repository import MongoBIRepository
 from app.application.services.bi_service import BIService
-from app.schemas.bi import BIPanelGeneralResponse
+from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse
 
 router = APIRouter()
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
@@ -21,9 +21,6 @@ def get_bi_service() -> BIService:
 
 @router.get("/health")
 async def bi_health_check():
-    """
-    Endpoint de salud del módulo de BI para diagnóstico de conectividad y despliegue.
-    """
     return {
         "status": "ok",
         "module": "business_intelligence",
@@ -34,26 +31,12 @@ async def bi_health_check():
 
 @router.get("/panel-general", response_model=BIPanelGeneralResponse)
 async def get_bi_panel_general(
-    start_date: Optional[str] = Query(
-        None,
-        description="Fecha de inicio YYYY-MM-DD o 'historial'. Por defecto el día de hoy en hora de Bolivia."
-    ),
-    end_date: Optional[str] = Query(
-        None,
-        description="Fecha de fin YYYY-MM-DD o 'historial'. Por defecto el día de hoy en hora de Bolivia."
-    ),
-    sucursal_id: Optional[str] = Query(
-        None,
-        description="ID de sucursal específica o 'all' para todas las sucursales."
-    ),
+    start_date: Optional[str] = Query(None, description="Fecha de inicio YYYY-MM-DD o 'historial'."),
+    end_date: Optional[str] = Query(None, description="Fecha de fin YYYY-MM-DD o 'historial'."),
+    sucursal_id: Optional[str] = Query(None, description="ID de sucursal específica o 'all'."),
     current_user: User = Depends(get_current_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
-    """
-    Obtiene las métricas oficiales trazables del Panel General del nuevo BI.
-    Aplica el Modelo Estrella mediante Pandas sobre las ventas reales registradas por el POS,
-    respetando estrictamente la zona horaria America/La_Paz.
-    """
     today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
     s_date = start_date or today_bolivia_str
     e_date = end_date or today_bolivia_str
@@ -72,13 +55,42 @@ async def get_bi_panel_general(
         )
 
 
+@router.get("/comparativas", response_model=BIComparativaResponse)
+async def get_bi_comparativas(
+    start_date: Optional[str] = Query(None, description="Fecha inicio del período actual YYYY-MM-DD."),
+    end_date: Optional[str] = Query(None, description="Fecha fin del período actual YYYY-MM-DD."),
+    comparar_contra: str = Query("ayer", description="Modo comparativo: 'ayer' | 'semana_anterior' | 'mes_anterior' | 'ano_anterior'."),
+    sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
+    current_user: User = Depends(get_current_user),
+    bi_service: BIService = Depends(get_bi_service)
+):
+    """
+    Obtiene el análisis comparativo trazable (DoD, WoW, MoM, YoY) aplicando el Modelo Estrella
+    mediante Pandas sobre las ventas reales registradas por el POS en MongoDB 'sales'.
+    """
+    today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
+    s_date = start_date or today_bolivia_str
+    e_date = end_date or today_bolivia_str
+
+    try:
+        return await bi_service.get_comparativas(
+            current_user=current_user,
+            start_date=s_date,
+            end_date=e_date,
+            comparar_contra=comparar_contra,
+            sucursal_id=sucursal_id
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error procesando comparativas del BI: {str(e)}"
+        )
+
+
 @router.get("/sucursales", response_model=List[Dict[str, Any]])
 async def get_bi_sucursales(
     current_user: User = Depends(get_current_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
-    """
-    Obtiene la dimensión oficial de sucursales para los filtros del BI.
-    """
     tenant_id = str(current_user.tenant_id)
     return await bi_service.get_sucursales_dim(tenant_id=tenant_id)

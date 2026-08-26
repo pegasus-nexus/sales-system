@@ -1,9 +1,12 @@
 from typing import Optional, List, Dict, Any
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 from app.domain.repositories.bi_repository import BIRepository
 from app.domain.models.user import User
 from app.application.services.bi_pandas_service import BIPandasService
 from app.application.services.sales_read_service import SalesReadService
-from app.schemas.bi import BIPanelGeneralResponse
+from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse
 
 
 class BIService:
@@ -42,6 +45,69 @@ class BIService:
             sucursales=sucursales,
             start_date_str=start_date,
             end_date_str=end_date
+        )
+
+    async def get_comparativas(
+        self,
+        current_user: User,
+        start_date: str,
+        end_date: str,
+        comparar_contra: str = "ayer",
+        sucursal_id: Optional[str] = None
+    ) -> BIComparativaResponse:
+        # 1. Función Centralizada de Cálculo de Período Comparativo
+        s_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        e_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        delta_days = (e_dt - s_dt).days + 1
+
+        if comparar_contra == "ayer":
+            s_comp = s_dt - timedelta(days=1)
+            e_comp = e_dt - timedelta(days=1)
+        elif comparar_contra in ["semana_anterior", "wow"]:
+            s_comp = s_dt - timedelta(days=7)
+            e_comp = e_dt - timedelta(days=7)
+        elif comparar_contra in ["mes_anterior", "mom"]:
+            s_comp = s_dt - relativedelta(months=1)
+            e_comp = e_dt - relativedelta(months=1)
+        elif comparar_contra in ["ano_anterior", "yoy"]:
+            s_comp = s_dt - relativedelta(years=1)
+            e_comp = e_dt - relativedelta(years=1)
+        else:
+            s_comp = s_dt - timedelta(days=delta_days)
+            e_comp = e_dt - timedelta(days=delta_days)
+
+        start_comp_str = s_comp.strftime("%Y-%m-%d")
+        end_comp_str = e_comp.strftime("%Y-%m-%d")
+
+        # 2. Extracción Unificada de Ventas (SalesReadService) para ambos períodos
+        sales_actual = await SalesReadService.get_raw_sales_for_user(
+            user=current_user,
+            start_date_str=start_date,
+            end_date_str=end_date,
+            sucursal_id=sucursal_id
+        )
+
+        sales_comparativo = await SalesReadService.get_raw_sales_for_user(
+            user=current_user,
+            start_date_str=start_comp_str,
+            end_date_str=end_comp_str,
+            sucursal_id=sucursal_id
+        )
+
+        # 3. Extracción de Dimensión Sucursales
+        tenant_id = current_user.tenant_id or "default"
+        sucursales = await self.repository.get_sucursales(tenant_id=tenant_id)
+
+        # 4. Transformación Analítica con Pandas ETL (Modelo Estrella)
+        return self.pandas_service.process_comparativas(
+            sales_actual=sales_actual,
+            sales_comparativo=sales_comparativo,
+            sucursales=sucursales,
+            start_date_act=start_date,
+            end_date_act=end_date,
+            start_date_comp=start_comp_str,
+            end_date_comp=end_comp_str,
+            modo_comparativo=comparar_contra
         )
 
     async def get_sucursales_dim(self, tenant_id: str) -> List[Dict[str, Any]]:

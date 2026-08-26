@@ -10,7 +10,12 @@ from app.schemas.bi import (
     HourlyDistributionItemBI,
     VentaRecienteBI,
     ResumenOperativoBI,
-    AlertaOperativaBI
+    AlertaOperativaBI,
+    BIComparativaResponse,
+    PeriodoMetricBI,
+    VariacionMetricBI,
+    SerieTiempoItemBI,
+    DesgloseSucursalComparativaBI
 )
 
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
@@ -77,147 +82,119 @@ class BIPandasService:
                 ventas_por_hora=hourly_empty,
                 ventas_recientes=[],
                 resumen_operativo=ResumenOperativoBI(),
-                alertas_operativas=[
-                    AlertaOperativaBI(
-                        tipo="info",
-                        titulo="Sin ventas en el período",
-                        mensaje="No se encontraron tickets registrados por el POS en la fecha seleccionada."
-                    )
-                ]
+                alertas_operativas=[]
             )
 
-        # 2. DataFrame de Ventas Raw
+        # 2. Fact Table en Pandas DataFrame
         df_sales = pd.DataFrame(raw_sales)
+        df_sales.rename(columns={"_id": "ticket_id", "total": "total_neto"}, inplace=True)
+        df_sales["total_neto"] = pd.to_numeric(df_sales["total_neto"], errors="coerce").fillna(0.0)
 
-        for col in ["_id", "tenant_id", "sucursal_id", "total", "estado_pago", "idempotency_key", "created_at", "numero_ticket"]:
-            if col not in df_sales.columns:
-                if col == "estado_pago":
-                    df_sales[col] = "PAGADO"
-                elif col == "sucursal_id":
-                    df_sales[col] = "CENTRAL"
-                elif col == "numero_ticket":
-                    df_sales[col] = df_sales["_id"].astype(str) if "_id" in df_sales.columns else "N/A"
-                else:
-                    df_sales[col] = ""
+        # 3. Conversión de Timezone a America/La_Paz
+        df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True)
+        df_sales["created_at_bolivia"] = df_sales["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
+        df_sales["hora_bolivia"] = df_sales["created_at_bolivia"].dt.hour
+        df_sales["hora_minuto_bolivia"] = df_sales["created_at_bolivia"].dt.strftime("%H:%M")
 
-        df_sales["sucursal_id"] = df_sales["sucursal_id"].fillna("CENTRAL").astype(str)
-
-        # 3. Clean & Deduplicate por idempotency_key o _id
-        if "idempotency_key" in df_sales.columns:
-            valid_idemp = df_sales[df_sales["idempotency_key"].notna() & (df_sales["idempotency_key"] != "")]
-            if not valid_idemp.empty:
-                dup_keys = valid_idemp[valid_idemp.duplicated("idempotency_key")]["_id"]
-                df_sales = df_sales[~df_sales["_id"].isin(dup_keys)]
-        df_sales = df_sales.drop_duplicates(subset=["_id"], keep="first")
-
-        # 4. Normalizar timestamps a UTC y luego a America/La_Paz
-        df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True, errors="coerce")
-        df_sales["created_at_utc"] = df_sales["created_at_utc"].fillna(pd.Timestamp.now(tz="UTC"))
-        df_sales["fecha_hora_bolivia"] = df_sales["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
-
-        df_sales["fecha_bolivia"] = df_sales["fecha_hora_bolivia"].dt.date
-        df_sales["hora_bolivia"] = df_sales["fecha_hora_bolivia"].dt.hour
-        df_sales["hora_minuto_bolivia"] = df_sales["fecha_hora_bolivia"].dt.strftime("%H:%M")
-
-        # 5. MODELO ESTRELLA (FACT_VENTAS)
-        fact_ventas = df_sales[[
-            "_id", "numero_ticket", "tenant_id", "sucursal_id", "total", "estado_pago",
-            "created_at_utc", "fecha_hora_bolivia", "fecha_bolivia", "hora_bolivia", "hora_minuto_bolivia"
-        ]].copy()
-        fact_ventas.rename(columns={"_id": "ticket_id", "total": "total_neto"}, inplace=True)
-
-        # 6. KPIs Globales
-        ingresos_totales = round(float(fact_ventas["total_neto"].sum()), 2)
-        cantidad_ordenes = int(fact_ventas["ticket_id"].nunique())
+        # 4. Agregación Vectorial Principal
+        ingresos_totales = round(float(df_sales["total_neto"].sum()), 2)
+        cantidad_ordenes = int(len(df_sales))
         ticket_medio = round(ingresos_totales / cantidad_ordenes, 2) if cantidad_ordenes > 0 else 0.0
 
-        # 7. Desglose por Sucursal (Incluir todas las sucursales activas y las que vendieron)
+        # 5. Join con Dimensión Sucursales
+        df_merged = pd.merge(
+            df_sales,
+            df_dim_sucursal,
+            on="sucursal_id",
+            how="left"
+        )
+        df_merged["nombre"] = df_merged["nombre"].fillna("Sucursal Central")
+
+        # Groupby Sucursales
+        groupby_suc = df_merged.groupby(["sucursal_id", "nombre"]).agg(
+            ingresos=("total_neto", "sum"),
+            ordenes=("ticket_id", "count")
+        ).reset_index()
+
         desglose_list: List[DesgloseSucursalBI] = []
         suc_lider_nombre = "Sin actividad"
-        if not fact_ventas.empty:
-            suc_group = fact_ventas.groupby("sucursal_id").agg(
-                ingresos=("total_neto", "sum"),
-                ordenes=("ticket_id", "nunique")
-            ).reset_index()
+        max_ingresos_suc = -1.0
 
-            # Merge con Dimensión Sucursales (Full outer para garantizar todas las sucursales)
-            if not df_dim_sucursal.empty and "sucursal_id" in df_dim_sucursal.columns:
-                merged_suc = pd.merge(df_dim_sucursal, suc_group, on="sucursal_id", how="outer")
-            else:
-                merged_suc = suc_group
-                merged_suc["nombre"] = merged_suc["sucursal_id"]
+        for _, row in groupby_suc.iterrows():
+            ing = round(float(row["ingresos"]), 2)
+            ord_cnt = int(row["ordenes"])
+            tm = round(ing / ord_cnt, 2) if ord_cnt > 0 else 0.0
+            part_pct = round((ing / ingresos_totales * 100), 1) if ingresos_totales > 0 else 0.0
 
-            merged_suc["ingresos"] = merged_suc["ingresos"].fillna(0.0)
-            merged_suc["ordenes"] = merged_suc["ordenes"].fillna(0).astype(int)
+            if ing > max_ingresos_suc:
+                max_ingresos_suc = ing
+                suc_lider_nombre = str(row["nombre"])
 
-            # Filtrar filas vacías de IDs sin nombre ni ventas
-            merged_suc = merged_suc[~((merged_suc["ingresos"] == 0) & (merged_suc["nombre"].isna()))]
-
-            # Ordenar por ingresos descendente
-            merged_suc = merged_suc.sort_values(by="ingresos", ascending=False)
-
-            max_ing = -1.0
-            for _, row in merged_suc.iterrows():
-                ing = round(float(row["ingresos"]), 2)
-                ord_count = int(row["ordenes"])
-                tm = round(ing / ord_count, 2) if ord_count > 0 else 0.0
-                pct = round((ing / ingresos_totales * 100), 1) if ingresos_totales > 0 else 0.0
-
-                nombre_raw = row.get("nombre")
-                if pd.isna(nombre_raw) or not str(nombre_raw).strip():
-                    nombre_suc = "Central / Principal" if str(row["sucursal_id"]) == "CENTRAL" else f"Sucursal ({str(row['sucursal_id'])[:8]})"
-                else:
-                    nombre_suc = str(nombre_raw)
-
-                if ing > max_ing and ing > 0:
-                    max_ing = ing
-                    suc_lider_nombre = nombre_suc
-
-                desglose_list.append(
-                    DesgloseSucursalBI(
-                        sucursal_id=str(row["sucursal_id"]),
-                        nombre_sucursal=nombre_suc,
-                        ingresos=ing,
-                        ordenes=ord_count,
-                        ticket_medio=tm,
-                        participacion_pct=pct
-                    )
+            desglose_list.append(
+                DesgloseSucursalBI(
+                    sucursal_id=str(row["sucursal_id"]),
+                    nombre_sucursal=str(row["nombre"]),
+                    ingresos=ing,
+                    ordenes=ord_cnt,
+                    ticket_medio=tm,
+                    participacion_pct=part_pct
                 )
+            )
 
-        # 8. Distribución Horaria 0..23 (Hora Bolivia)
-        hourly_group = fact_ventas.groupby("hora_bolivia").agg(
+        # Asegurar que sucursales sin ventas aparezcan con 0
+        if not df_dim_sucursal.empty:
+            existing_ids = {d.sucursal_id for d in desglose_list}
+            for _, row in df_dim_sucursal.iterrows():
+                sid = str(row.get("sucursal_id", ""))
+                if sid and sid not in existing_ids:
+                    desglose_list.append(
+                        DesgloseSucursalBI(
+                            sucursal_id=sid,
+                            nombre_sucursal=str(row.get("nombre", "Sin Nombre")),
+                            ingresos=0.0,
+                            ordenes=0,
+                            ticket_medio=0.0,
+                            participacion_pct=0.0
+                        )
+                    )
+
+        # 6. Agregación Horaria
+        hourly_groupby = df_sales.groupby("hora_bolivia").agg(
             ingresos=("total_neto", "sum"),
-            ordenes=("ticket_id", "nunique")
-        ).to_dict(orient="index")
+            ordenes=("ticket_id", "count")
+        ).reset_index()
 
+        hourly_dict = {int(r["hora_bolivia"]): r for _, r in hourly_groupby.iterrows()}
         hourly_list: List[HourlyDistributionItemBI] = []
-        max_h_ing = -1.0
         mejor_hora_str = "00:00"
+        max_ingresos_hora = -1.0
+
         for h in range(24):
-            h_data = hourly_group.get(h, {"ingresos": 0.0, "ordenes": 0})
-            ing_h = round(float(h_data["ingresos"]), 2)
-            if ing_h > max_h_ing and ing_h > 0:
-                max_h_ing = ing_h
-                mejor_hora_str = f"{h:02d}:00"
+            if h in hourly_dict:
+                ing_h = round(float(hourly_dict[h]["ingresos"]), 2)
+                ord_h = int(hourly_dict[h]["ordenes"])
+                if ing_h > max_ingresos_hora:
+                    max_ingresos_hora = ing_h
+                    mejor_hora_str = f"{h:02d}:00"
+            else:
+                ing_h = 0.0
+                ord_h = 0
 
             hourly_list.append(
                 HourlyDistributionItemBI(
                     hora=h,
                     rango=f"{h:02d}:00 - {(h+1)%24:02d}:00",
                     ingresos=ing_h,
-                    ordenes=int(h_data["ordenes"])
+                    ordenes=ord_h
                 )
             )
 
-        # 9. Ventas Recientes (Últimas 10 ordenadas por timestamp Bolivia desc)
-        df_recent = fact_ventas.sort_values(by="fecha_hora_bolivia", ascending=False).head(10)
+        # 7. Actividad Reciente (Últimas 10 ventas)
+        df_recientes = df_merged.sort_values(by="created_at_utc", ascending=False).head(10)
         ventas_recientes_list: List[VentaRecienteBI] = []
-        for _, row in df_recent.iterrows():
-            suc_name = "Central / Principal"
-            found_suc = [s for s in desglose_list if s.sucursal_id == str(row["sucursal_id"])]
-            if found_suc:
-                suc_name = found_suc[0].nombre_sucursal
 
+        for _, row in df_recientes.iterrows():
+            suc_name = str(row["nombre"])
             num_ticket = str(row.get("numero_ticket") or row["ticket_id"])
             if len(num_ticket) > 8 and not num_ticket.startswith("#"):
                 num_ticket = f"#{num_ticket[-6:].upper()}"
@@ -267,4 +244,166 @@ class BIPandasService:
             ventas_recientes=ventas_recientes_list,
             resumen_operativo=resumen_operativo,
             alertas_operativas=alertas
+        )
+
+    def process_comparativas(
+        self,
+        sales_actual: List[Dict[str, Any]],
+        sales_comparativo: List[Dict[str, Any]],
+        sucursales: List[Dict[str, Any]],
+        start_date_act: str,
+        end_date_act: str,
+        start_date_comp: str,
+        end_date_comp: str,
+        modo_comparativo: str
+    ) -> BIComparativaResponse:
+        now_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%H:%M:%S")
+
+        # 1. Función Interna de Resumen
+        def summarize_sales(raw_list: List[Dict[str, Any]]) -> tuple[float, int, float, pd.DataFrame]:
+            if not raw_list:
+                return 0.0, 0, 0.0, pd.DataFrame()
+            df = pd.DataFrame(raw_list)
+            df["total_neto"] = pd.to_numeric(df["total"], errors="coerce").fillna(0.0)
+            df["created_at_utc"] = pd.to_datetime(df["created_at"], utc=True)
+            df["created_at_bolivia"] = df["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
+            df["fecha_bolivia"] = df["created_at_bolivia"].dt.strftime("%Y-%m-%d")
+
+            ing = round(float(df["total_neto"].sum()), 2)
+            ord_cnt = int(len(df))
+            tm = round(ing / ord_cnt, 2) if ord_cnt > 0 else 0.0
+            return ing, ord_cnt, tm, df
+
+        ing_act, ord_act, tm_act, df_act = summarize_sales(sales_actual)
+        ing_comp, ord_comp, tm_comp, df_comp = summarize_sales(sales_comparativo)
+
+        # 2. Manejo Seguro de Variaciones (Regla de Cero / SIN_BASE_COMPARATIVA)
+        def calc_variation(act: float, comp: float) -> tuple[float, Optional[float], str]:
+            dif = round(act - comp, 2)
+            if comp <= 0.0:
+                if act > 0.0:
+                    return dif, None, "SIN_BASE_COMPARATIVA"
+                else:
+                    return 0.0, 0.0, "SIN_CAMBIO"
+            pct = round(((act - comp) / comp) * 100.0, 2)
+            st = "CRECIMIENTO" if pct > 0 else ("DECRECIMIENTO" if pct < 0 else "SIN_CAMBIO")
+            return dif, pct, st
+
+        dif_ing, pct_ing, st_ing = calc_variation(ing_act, ing_comp)
+        dif_ord, pct_ord, st_ord = calc_variation(float(ord_act), float(ord_comp))
+        dif_tm, pct_tm, st_tm = calc_variation(tm_act, tm_comp)
+
+        variaciones = VariacionMetricBI(
+            diferencia_ingresos=dif_ing,
+            variacion_ingresos_pct=pct_ing,
+            estado_ingresos=st_ing,
+            diferencia_ordenes=int(dif_ord),
+            variacion_ordenes_pct=pct_ord,
+            estado_ordenes=st_ord,
+            diferencia_ticket=dif_tm,
+            variacion_ticket_pct=pct_tm,
+            estado_ticket=st_tm
+        )
+
+        # 3. Construcción de Serie Temporal Diaria
+        def build_daily_series(df: pd.DataFrame) -> List[SerieTiempoItemBI]:
+            if df.empty:
+                return []
+            grp = df.groupby("fecha_bolivia").agg(
+                ingresos=("total_neto", "sum"),
+                ordenes=("created_at", "count")
+            ).reset_index()
+            res = []
+            for _, r in grp.iterrows():
+                dt_obj = datetime.strptime(str(r["fecha_bolivia"]), "%Y-%m-%d")
+                d_name = dt_obj.strftime("%A")
+                ing_d = round(float(r["ingresos"]), 2)
+                ord_d = int(r["ordenes"])
+                tm_d = round(ing_d / ord_d, 2) if ord_d > 0 else 0.0
+                res.append(
+                    SerieTiempoItemBI(
+                        fecha_bolivia=str(r["fecha_bolivia"]),
+                        dia_semana=d_name,
+                        ingresos=ing_d,
+                        ordenes=ord_d,
+                        ticket_medio=tm_d
+                    )
+                )
+            return res
+
+        serie_act = build_daily_series(df_act)
+        serie_comp = build_daily_series(df_comp)
+
+        # 4. Desglose por Sucursal Comparativo
+        df_dim_suc = pd.DataFrame(sucursales)
+        if df_dim_suc.empty:
+            df_dim_suc = pd.DataFrame(columns=["sucursal_id", "nombre"])
+
+        desglose_suc: List[DesgloseSucursalComparativaBI] = []
+
+        for _, row_suc in df_dim_suc.iterrows():
+            sid = str(row_suc.get("sucursal_id", ""))
+            sname = str(row_suc.get("nombre", "Sin Nombre"))
+
+            act_sub = df_act[df_act["sucursal_id"] == sid] if not df_act.empty and "sucursal_id" in df_act.columns else pd.DataFrame()
+            comp_sub = df_comp[df_comp["sucursal_id"] == sid] if not df_comp.empty and "sucursal_id" in df_comp.columns else pd.DataFrame()
+
+            ing_s_act = round(float(act_sub["total_neto"].sum()), 2) if not act_sub.empty else 0.0
+            ord_s_act = int(len(act_sub)) if not act_sub.empty else 0
+            tm_s_act = round(ing_s_act / ord_s_act, 2) if ord_s_act > 0 else 0.0
+
+            ing_s_comp = round(float(comp_sub["total_neto"].sum()), 2) if not comp_sub.empty else 0.0
+            ord_s_comp = int(len(comp_sub)) if not comp_sub.empty else 0
+            tm_s_comp = round(ing_s_comp / ord_s_comp, 2) if ord_s_comp > 0 else 0.0
+
+            _, pct_s_ing, _ = calc_variation(ing_s_act, ing_s_comp)
+            _, pct_s_ord, _ = calc_variation(float(ord_s_act), float(ord_s_comp))
+
+            if ing_s_act > 0 or ing_s_comp > 0:
+                desglose_suc.append(
+                    DesgloseSucursalComparativaBI(
+                        sucursal_id=sid,
+                        nombre_sucursal=sname,
+                        ingresos_actual=ing_s_act,
+                        ingresos_comparativo=ing_s_comp,
+                        variacion_ingresos_pct=pct_s_ing,
+                        ordenes_actual=ord_s_act,
+                        ordenes_comparativo=ord_s_comp,
+                        variacion_ordenes_pct=pct_s_ord,
+                        ticket_medio_actual=tm_s_act,
+                        ticket_medio_comparativo=tm_s_comp
+                    )
+                )
+
+        return BIComparativaResponse(
+            status="success",
+            timezone=BUSINESS_TIMEZONE,
+            modo_comparativo=modo_comparativo,
+            ultima_actualizacion=now_bolivia_str,
+            periodo_actual=PeriodoMetricBI(
+                start_date=start_date_act,
+                end_date=end_date_act,
+                ingresos=ing_act,
+                ordenes=ord_act,
+                ticket_medio=tm_act
+            ),
+            periodo_comparativo=PeriodoMetricBI(
+                start_date=start_date_comp,
+                end_date=end_date_comp,
+                ingresos=ing_comp,
+                ordenes=ord_comp,
+                ticket_medio=tm_comp
+            ),
+            variaciones=variaciones,
+            serie_actual=serie_act,
+            serie_comparativa=serie_comp,
+            desglose_sucursales=desglose_suc,
+            fuente={
+                "coleccion": "sales",
+                "servicio": "SalesReadService",
+                "modelo_analitico": "Star Schema (FACT_VENTAS)",
+                "filtro_anuladas": "anulada != True",
+                "ventas_actuales_conteo": ord_act,
+                "ventas_comparativas_conteo": ord_comp
+            }
         )

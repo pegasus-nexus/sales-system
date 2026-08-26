@@ -59,6 +59,66 @@ export interface BIPanelGeneralResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 2: Comparativas Históricas
+export interface PeriodoMetricBI {
+    start_date: string;
+    end_date: string;
+    ingresos: number;
+    ordenes: number;
+    ticket_medio: number;
+}
+
+export interface VariacionMetricBI {
+    diferencia_ingresos: number;
+    variacion_ingresos_pct: number | null;
+    estado_ingresos: string;
+
+    diferencia_ordenes: number;
+    variacion_ordenes_pct: number | null;
+    estado_ordenes: string;
+
+    diferencia_ticket: number;
+    variacion_ticket_pct: number | null;
+    estado_ticket: string;
+}
+
+export interface SerieTiempoItemBI {
+    fecha_bolivia: string;
+    dia_semana: string;
+    ingresos: number;
+    ordenes: number;
+    ticket_medio: number;
+}
+
+export interface DesgloseSucursalComparativaBI {
+    sucursal_id: string;
+    nombre_sucursal: string;
+    ingresos_actual: number;
+    ingresos_comparativo: number;
+    variacion_ingresos_pct: number | null;
+    ordenes_actual: number;
+    ordenes_comparativo: number;
+    variacion_ordenes_pct: number | null;
+    ticket_medio_actual: number;
+    ticket_medio_comparativo: number;
+}
+
+export interface BIComparativaResponse {
+    status: string;
+    timezone: string;
+    modo_comparativo: string;
+    ultima_actualizacion: string;
+
+    periodo_actual: PeriodoMetricBI;
+    periodo_comparativo: PeriodoMetricBI;
+    variaciones: VariacionMetricBI;
+
+    serie_actual: SerieTiempoItemBI[];
+    serie_comparativa: SerieTiempoItemBI[];
+    desglose_sucursales: DesgloseSucursalComparativaBI[];
+    fuente: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -78,6 +138,22 @@ export const getBIPanelGeneral = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIPanelGeneralResponse>(`/bi/panel-general${queryString}`);
+};
+
+export const getBIComparativas = async (
+    startDate?: string,
+    endDate?: string,
+    compararContra: string = 'ayer',
+    sucursalId?: string
+): Promise<BIComparativaResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    params.append('comparar_contra', compararContra);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIComparativaResponse>(`/bi/comparativas${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {
