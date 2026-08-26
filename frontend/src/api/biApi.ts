@@ -246,6 +246,49 @@ export interface BISucursalesDesempenoResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 6: Inventario, Stock y Valorización (Clean Architecture)
+export interface KPIInventarioBI {
+    total_unidades_stock: number;
+    valorizacion_costo_total: number;
+    skus_con_stock_disponible: number;
+    skus_agotados: number;
+    skus_stock_bajo: number;
+    sucursal_mayor_inventario_nombre: string;
+    sucursal_mayor_inventario_monto: number;
+}
+
+export interface SucursalInventarioItemBI {
+    sucursal_id: string;
+    nombre: string;
+    ciudad: string;
+    unidades_stock: number;
+    skus_conteo: number;
+    skus_agotados: number;
+    valorizacion_costo: number;
+}
+
+export interface ProductoInventarioItemBI {
+    producto_id: string;
+    nombre: string;
+    categoria_nombre: string;
+    stock_actual: number;
+    costo_unitario: number;
+    valor_total_costo: number;
+    estado_stock: string;
+}
+
+export interface BIInventarioControlResponse {
+    status: string;
+    fecha_consulta_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIInventarioBI;
+    desglose_sucursales: SucursalInventarioItemBI[];
+    top_productos_inventario: ProductoInventarioItemBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -323,6 +366,16 @@ export const getBISucursalesDesempeno = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BISucursalesDesempenoResponse>(`/bi-sucursales/desempeno${queryString}`);
+};
+
+export const getBIInventarioControl = async (
+    sucursalId?: string
+): Promise<BIInventarioControlResponse> => {
+    const params = new URLSearchParams();
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIInventarioControlResponse>(`/bi-inventario/control${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {

@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package, Users, Building2 } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
 import { BIClientesView } from './bi/BIClientesView';
 import { BISucursalesView } from './bi/BISucursalesView';
+import { BIInventarioView } from './bi/BIInventarioView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario'>('panel');
 
     return (
         <div className="w-full space-y-4">
             {/* SUB-NAVEGACIÓN INTERNA EN PASTEL PARA EL CENTRO DE INTELIGENCIA DE NEGOCIOS */}
-            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-2 max-w-4xl mx-auto sm:mx-0 overflow-x-auto">
+            <div className="bg-white rounded-2xl p-2 shadow-xs border border-slate-200/70 flex items-center gap-2 max-w-5xl mx-auto sm:mx-0 overflow-x-auto">
                 <button
                     onClick={() => setSubTab('panel')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
@@ -72,6 +73,18 @@ export default function BIView() {
                     <Building2 size={14} />
                     <span>Sucursales & Desempeño</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('inventario')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
+                        subTab === 'inventario'
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                    <Boxes size={14} />
+                    <span>Inventario & Stock</span>
+                </button>
             </div>
 
             {/* CONTENIDO SEGÚN SUBTAB SELECCIONADA */}
@@ -80,6 +93,7 @@ export default function BIView() {
             {subTab === 'productos' && <BIProductosView />}
             {subTab === 'clientes' && <BIClientesView />}
             {subTab === 'sucursales' && <BISucursalesView />}
+            {subTab === 'inventario' && <BIInventarioView />}
         </div>
     );
 }
