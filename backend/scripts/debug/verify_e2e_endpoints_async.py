@@ -8,9 +8,6 @@ from app.db import init_db, get_raw_db
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import create_access_token
 from app.core.config import BUSINESS_TIMEZONE
-from app.application.services.sales_read_service import SalesReadService
-from app.application.services.bi_service import BIService
-from app.infrastructure.repositories.mongo_bi_repository import MongoBIRepository
 
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
@@ -34,8 +31,8 @@ async def run_e2e_comparison():
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # 1. Petición HTTP a GET /api/v1/sales (Historial de Ventas)
-        sales_url = "/api/v1/sales?start_date=2026-08-24&end_date=2026-08-24&limit=100"
+        # 1. Petición HTTP a GET /api/v1/sales (Historial de Ventas del 25/08/2026)
+        sales_url = "/api/v1/sales?start_date=2026-08-25&end_date=2026-08-25&limit=100"
         res_hist = await client.get(sales_url, headers=headers)
         print(f"\n[REQUEST 1]: GET {sales_url}")
         print(f"  Status Code: {res_hist.status_code}")
@@ -51,8 +48,8 @@ async def run_e2e_comparison():
             hist_count = 0
             hist_total = 0.0
 
-        # 2. Petición HTTP a GET /api/v1/bi/panel-general (Panel General BI)
-        bi_url = "/api/v1/bi/panel-general?start_date=2026-08-24&end_date=2026-08-24&sucursal_id=all"
+        # 2. Petición HTTP a GET /api/v1/bi/panel-general (Panel General BI del 25/08/2026)
+        bi_url = "/api/v1/bi/panel-general?start_date=2026-08-25&end_date=2026-08-25&sucursal_id=all"
         res_bi = await client.get(bi_url, headers=headers)
         print(f"\n[REQUEST 2]: GET {bi_url}")
         print(f"  Status Code: {res_bi.status_code}")
@@ -65,7 +62,8 @@ async def run_e2e_comparison():
             print(f"  [BI PANEL ENDPOINT]:   Ventas = {bi_count} | Suma Total = Bs. {bi_total:,.2f} | Ticket Medio = Bs. {bi_ticket:,.2f}")
             print("  [DESGLOSE SUCURSALES BI]:")
             for s in data_bi.get("desglose_sucursales", []):
-                print(f"    - {s.get('nombre_sucursal')}: Bs. {s.get('ingresos'):,.2f} ({s.get('ordenes')} ord, {s.get('participacion_pct')}%)")
+                if s.get("ordenes", 0) > 0 or s.get("ingresos", 0) > 0:
+                    print(f"    - {s.get('nombre_sucursal')}: Bs. {s.get('ingresos'):,.2f} ({s.get('ordenes')} ord, {s.get('participacion_pct')}%)")
         else:
             print(f"  [BI ERROR]: {res_bi.text}")
             bi_count = -1
@@ -73,7 +71,7 @@ async def run_e2e_comparison():
 
     # 3. MATRIZ DE DIAGNÓSTICO COMPARATIVO OBLIGATORIA
     print("\n" + "=" * 60)
-    print("MATRIZ DE DIAGNÓSTICO COMPARATIVO EXTREMO A EXTREMO")
+    print("MATRIZ DE DIAGNÓSTICO COMPARATIVO EXTREMO A EXTREMO (25/08/2026)")
     print("=" * 60)
     print(f"  {'MÉTRICA':<22} | {'HISTORIAL (/sales)':<20} | {'PANEL GENERAL BI':<20}")
     print("-" * 60)
@@ -82,7 +80,7 @@ async def run_e2e_comparison():
     print("=" * 60)
 
     if hist_count == bi_count and abs(hist_total - bi_total) < 0.01:
-        print("\n✓ RESULTADO VERIFICADO: 100% EQUIVALENCIA EXACTA ENTRE HISTORIAL Y BI")
+        print("\n✓ RESULTADO VERIFICADO: 100% EQUIVALENCIA EXACTA ENTRE HISTORIAL Y BI EN HTTP ENDPOINTS")
     else:
         print("\n❌ ALERTA: DISCREPANCIA DETECTADA ENTRE HISTORIAL Y BI")
 

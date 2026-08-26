@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
 from bson import ObjectId
+from bson.decimal128 import Decimal128
 
 from app.db import get_raw_db
 from app.domain.models.user import User, UserRole
@@ -10,19 +11,35 @@ from app.core.config import BUSINESS_TIMEZONE
 BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
 
+def safe_float(val) -> float:
+    """
+    Convierte de forma segura cualquier tipo numérico de MongoDB
+    (float, int, Decimal128, string, o BSON Decimal) a float nativo de Python.
+    """
+    if val is None:
+        return 0.0
+    if isinstance(val, Decimal128):
+        return float(val.to_decimal())
+    if hasattr(val, "to_decimal"):
+        try:
+            return float(val.to_decimal())
+        except Exception:
+            pass
+    try:
+        return float(val)
+    except Exception:
+        return 0.0
+
+
 class SalesReadService:
     """
     Servicio Centralizado Unificado de Lectura de Ventas POS (Fuente de Verdad única).
     Garantiza que tanto el Historial de Ventas como el Módulo de BI consulten la colección
-    MongoDB 'sales' con las exactas mismas reglas de autorización, fechas y filtros.
+    MongoDB 'sales' con las exactas mismas reglas de autorización, fechas y tipos BSON.
     """
 
     @staticmethod
     def calculate_bolivia_date_range(start_date_str: str, end_date_str: str) -> tuple[Optional[datetime], Optional[datetime]]:
-        """
-        Calcula el rango UTC semiabierto [start_utc, end_utc) para las fechas YYYY-MM-DD
-        ingresadas en el horario de negocio America/La_Paz.
-        """
         if start_date_str.lower() in ["all", "historial", "todo", ""]:
             return None, None
 
@@ -57,7 +74,6 @@ class SalesReadService:
         }
 
         # 2. Aislamiento por Tenant (igual que Historial de Ventas)
-        # Superadmin bypass para ver las ventas globales de la empresa
         if user.role != UserRole.SUPERADMIN:
             tenant_id = user.tenant_id or "default"
             tenant_conditions = [str(tenant_id)]
@@ -65,7 +81,7 @@ class SalesReadService:
                 tenant_conditions.append(ObjectId(tenant_id))
             match_stage["tenant_id"] = {"$in": tenant_conditions}
 
-        # 3. Permisos por Rol y Aislamiento por Sucursal (coincidiendo 100% con Historial)
+        # 3. Permisos por Rol y Aislamiento por Sucursal
         is_admin_matriz = user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.FACTURADOR]
         if not is_admin_matriz:
             user_suc = user.sucursal_id or "__none__"
@@ -107,16 +123,6 @@ class SalesReadService:
 
         cursor = db.sales.find(match_stage, projection)
         sales_docs = await cursor.to_list(length=None)
-
-        def safe_float(val) -> float:
-            if val is None:
-                return 0.0
-            if hasattr(val, "to_decimal"):
-                return float(val.to_decimal())
-            try:
-                return float(val)
-            except Exception:
-                return 0.0
 
         cleaned_sales = []
         for doc in sales_docs:
