@@ -11,13 +11,28 @@ import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// FUNCIÓN ÚNICA CENTRALIZADA DE FECHAS EN EL FRONTEND (Formato YYYY-MM-DD sin UTC drift)
-const getFormattedLocalDate = (daysOffset: number = 0): string => {
-    const d = new Date();
-    d.setDate(d.getDate() + daysOffset);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+// FUNCIÓN ÚNICA CENTRALIZADA DE FECHAS EN EL FRONTEND BASADA STRICTAMENTE EN AMERICA/LA_PAZ
+const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
+    const now = new Date();
+    // Obtener la fecha en formato YYYY-MM-DD usando la zona horaria oficial del negocio America/La_Paz
+    const boliviaDateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(now);
+
+    if (daysOffset === 0) {
+        return boliviaDateStr;
+    }
+
+    const [y, m, d] = boliviaDateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    dateObj.setDate(dateObj.getDate() + daysOffset);
+
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
 
@@ -25,10 +40,10 @@ export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Controles de Fecha y Sucursal
+    // Controles de Fecha y Sucursal (Inicializados en fecha Bolivia)
     const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
-    const [startDate, setStartDate] = useState<string>(() => getFormattedLocalDate(0));
-    const [endDate, setEndDate] = useState<string>(() => getFormattedLocalDate(0));
+    const [startDate, setStartDate] = useState<string>(() => getFormattedBoliviaDate(0));
+    const [endDate, setEndDate] = useState<string>(() => getFormattedBoliviaDate(0));
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
@@ -78,22 +93,22 @@ export const BIPanelGeneralView: React.FC = () => {
 
     const handlePresetChange = (newPreset: 'hoy' | 'ayer' | '7dias' | '30dias' | 'historial') => {
         setPreset(newPreset);
-        const todayStr = getFormattedLocalDate(0);
+        const todayBoliviaStr = getFormattedBoliviaDate(0);
         if (newPreset === 'hoy') {
-            setStartDate(todayStr);
-            setEndDate(todayStr);
+            setStartDate(todayBoliviaStr);
+            setEndDate(todayBoliviaStr);
         } else if (newPreset === 'ayer') {
-            const yesterdayStr = getFormattedLocalDate(-1);
-            setStartDate(yesterdayStr);
-            setEndDate(yesterdayStr);
+            const yesterdayBoliviaStr = getFormattedBoliviaDate(-1);
+            setStartDate(yesterdayBoliviaStr);
+            setEndDate(yesterdayBoliviaStr);
         } else if (newPreset === '7dias') {
-            const d7Str = getFormattedLocalDate(-6);
+            const d7Str = getFormattedBoliviaDate(-6);
             setStartDate(d7Str);
-            setEndDate(todayStr);
+            setEndDate(todayBoliviaStr);
         } else if (newPreset === '30dias') {
-            const d30Str = getFormattedLocalDate(-29);
+            const d30Str = getFormattedBoliviaDate(-29);
             setStartDate(d30Str);
-            setEndDate(todayStr);
+            setEndDate(todayBoliviaStr);
         } else if (newPreset === 'historial') {
             setStartDate('historial');
             setEndDate('historial');
@@ -102,9 +117,9 @@ export const BIPanelGeneralView: React.FC = () => {
 
     const handleReset = () => {
         setPreset('hoy');
-        const todayStr = getFormattedLocalDate(0);
-        setStartDate(todayStr);
-        setEndDate(todayStr);
+        const todayBoliviaStr = getFormattedBoliviaDate(0);
+        setStartDate(todayBoliviaStr);
+        setEndDate(todayBoliviaStr);
         setSelectedSucursal('all');
     };
 
