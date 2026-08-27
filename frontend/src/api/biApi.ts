@@ -592,3 +592,89 @@ export const getBISucursales = async (): Promise<BISucursalOption[]> => {
 export const checkBIHealth = async (): Promise<{ status: string; module: string; timezone: string }> => {
     return client<{ status: string; module: string; timezone: string }>('/bi/health');
 };
+
+// --- INTERFACES Y FETCHERS BI IA / ANALÍTICA AVANZADA (AVANCE 13) ---
+export interface BIAIForecastItem {
+    horizon_step: number;
+    prediccion_monto: number;
+    lower_bound_95: number;
+    upper_bound_95: number;
+    confianza_pct: number;
+    categoria_dato: string;
+}
+
+export interface BIAIForecastResponse {
+    status: string;
+    model_champion: string;
+    backtesting_evaluated_days: number;
+    metrics: {
+        holt_winters: {
+            mae: number;
+            rmse: number;
+            mape: number;
+        }
+    };
+    sample_forecast_comparison: Array<{
+        fecha: string;
+        real_mongodb: number;
+        prediccion_ml: number;
+        error_bs: number;
+    }>;
+}
+
+export interface BIAIProductDemandItem {
+    producto_id: string;
+    nombre: string;
+    estado_ml: string;
+    unidades_historicas: number;
+    promedio_diario_unidades?: number;
+    demanda_estimada_horizonte?: number;
+    intervalo_confianza_95?: {
+        limite_inferior: number;
+        limite_superior: number;
+    };
+    horizonte_dias?: number;
+    mensaje?: string;
+}
+
+export interface BIAIProductDemandResponse {
+    status: string;
+    horizon_days: number;
+    total_skus_evaluados: number;
+    skus_prediccion_confiable: number;
+    skus_datos_insuficientes: number;
+    productos: BIAIProductDemandItem[];
+}
+
+export interface BIAIAnomalyItem {
+    fecha: string;
+    tipo_anomalia: string;
+    severidad: string;
+    ingresos_reales_bs: number;
+    tickets_reales: number;
+    z_score_ingresos: number;
+    z_score_tickets: number;
+    explicacion_tecnica: string;
+    categoria_dato: string;
+}
+
+export interface BIAIAnomalyResponse {
+    status: string;
+    total_days_analyzed: number;
+    media_historica_ingresos: number;
+    desviacion_estandar_ingresos: number;
+    total_anomalies_found: number;
+    anomalies_summary: BIAIAnomalyItem[];
+}
+
+export const getBIAIForecast = async (horizonDays: number = 14): Promise<BIAIForecastResponse> => {
+    return client<BIAIForecastResponse>(`/bi-ai/forecast?horizon_days=${horizonDays}`);
+};
+
+export const getBIAIProductDemand = async (horizonDays: number = 7): Promise<BIAIProductDemandResponse> => {
+    return client<BIAIProductDemandResponse>(`/bi-ai/product-demand?horizon_days=${horizonDays}`);
+};
+
+export const getBIAIAnomalies = async (thresholdZScore: number = 2.0): Promise<BIAIAnomalyResponse> => {
+    return client<BIAIAnomalyResponse>(`/bi-ai/anomalies?threshold_zscore=${thresholdZScore}`);
+};

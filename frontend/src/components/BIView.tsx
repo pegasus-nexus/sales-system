@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag, UserCheck, Crown } from 'lucide-react';
+import { Sparkles, LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag, UserCheck, Crown } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
@@ -10,9 +10,10 @@ import { BIRentabilidadView } from './bi/BIRentabilidadView';
 import { BIDescuentosView } from './bi/BIDescuentosView';
 import { BIProductividadView } from './bi/BIProductividadView';
 import { BIEjecutivoView } from './bi/BIEjecutivoView';
+import { BIIAAnalyticaView } from './bi/BIIAAnalyticaView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos' | 'productividad' | 'ejecutivo'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos' | 'productividad' | 'ejecutivo' | 'ia'>('panel');
 
     return (
         <div className="w-full space-y-4">
@@ -137,6 +138,18 @@ export default function BIView() {
                     <Crown size={14} className="text-amber-400" />
                     <span>Resumen Ejecutivo</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('ia')}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        subTab === 'ia'
+                            ? 'bg-indigo-900 text-white shadow-xs'
+                            : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100'
+                    }`}
+                >
+                    <Sparkles size={14} className="text-indigo-400 animate-pulse" />
+                    <span>Inteligencia & IA</span>
+                </button>
             </div>
 
             {/* CONTENIDO DE CADA PESTAÑA DEL CENTRO DE INTELIGENCIA DE NEGOCIOS */}
@@ -151,6 +164,7 @@ export default function BIView() {
                 {subTab === 'descuentos' && <BIDescuentosView />}
                 {subTab === 'productividad' && <BIProductividadView />}
                 {subTab === 'ejecutivo' && <BIEjecutivoView />}
+                {subTab === 'ia' && <BIIAAnalyticaView />}
             </div>
         </div>
     );
