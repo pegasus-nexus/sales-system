@@ -1,0 +1,58 @@
+name: Pegasus SalesSystem Production Hardening & CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-build:
+    name: 🎨 Frontend Build & Typecheck Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Compile Frontend (Build Code 0 Gate)
+        run: |
+          cd frontend
+          npm run build
+
+  backend-hardening-gates:
+    name: 🔒 Backend Hardening & BI Regression Gates (Ejes 1-6)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run Master Hardening & CI/CD Gate Suite
+        env:
+          MONGODB_URL: ${{ secrets.MONGODB_URL }}
+          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          BUSINESS_TIMEZONE: "America/La_Paz"
+        run: |
+          cd backend
+          python run_script.py verify_pipeline_eje6_master_gate.py
