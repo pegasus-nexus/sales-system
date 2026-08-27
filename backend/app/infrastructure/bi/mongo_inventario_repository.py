@@ -59,7 +59,7 @@ class MongoInventarioRepository:
 
     async def get_products_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
+        filter_query: Dict[str, Any] = {}
 
         if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
             t_cond = [str(tenant_id)]
@@ -71,12 +71,13 @@ class MongoInventarioRepository:
         docs = await cursor.to_list(length=None)
         res = []
         for d in docs:
+            costo = safe_float_bi(d.get("costo_producto") if d.get("costo_producto") is not None else (d.get("costo") or d.get("costo_unitario") or 0.0))
             res.append({
                 "_id": str(d["_id"]),
-                "nombre": d.get("descripcion", "Producto Sin Nombre"),
-                "categoria_nombre": d.get("categoria_nombre", "Sin Categoría"),
-                "costo_producto": safe_float_bi(d.get("costo_producto")),
-                "precio_venta": safe_float_bi(d.get("precio_venta"))
+                "nombre": str(d.get("nombre") or d.get("descripcion") or "Producto Sin Nombre"),
+                "categoria_nombre": str(d.get("categoria_nombre") or d.get("categoria") or "Sin Categoría"),
+                "costo_producto": costo,
+                "precio_venta": safe_float_bi(d.get("precio_venta") or d.get("precio"))
             })
         return res
 
