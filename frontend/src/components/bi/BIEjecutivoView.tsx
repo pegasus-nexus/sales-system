@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { getBIEjecutivoResumen, getBISucursales } from '../../api/biApi';
 import type { BIEjecutivoResumenResponse, BISucursalOption } from '../../api/biApi';
+import { BIStateBanner } from './common/BIStateBanner';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -387,6 +388,13 @@ export const BIEjecutivoView: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {/* AVISO DE MÉTRICAS NO IMPLEMENTADAS (EBITDA / IA / ML) */}
+            <BIStateBanner
+                type="FEATURE_COMING_SOON"
+                title="Métricas Financieras de Egresos Fijos & Modelos Predictivos de IA"
+                message="Las métricas de EBITDA (gastos fijos operativos), Kardex continuo y pronósticos de Inteligencia Artificial están etiquetadas explícitamente como NO DISPONIBLES en MongoDB y se activarán en fases posteriores sin simular estimaciones ficticias."
+            />
 
         </div>
     );
