@@ -8,6 +8,8 @@ import {
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 
+import { BIStateBanner } from './common/BIStateBanner';
+
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -381,19 +383,13 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
             )}
 
-            {/* NOTIFICACIÓN EXPLÍCITA SI NO EXISTEN VENTAS (SUCCESS_EMPTY, EJ. HOY RECIÉN INICIANDO CÓDIGO) */}
+            {/* NOTIFICACIÓN ESTANDARIZADA DE ESTADO DE INFORMACIÓN */}
             {hasNoSales && !loading && (
-                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex items-center gap-3 text-amber-900 text-xs font-bold shadow-xs">
-                    <Info size={18} className="text-amber-600 flex-shrink-0" />
-                    <div>
-                        <span className="font-black uppercase tracking-wider block text-[10px] text-amber-800">
-                            Consulta Realizada Correctamente
-                        </span>
-                        <span>
-                            No existen ventas registradas por el POS en la fecha seleccionada ({startDate}). Tan pronto como el POS emita un ticket, las métricas se actualizarán automáticamente.
-                        </span>
-                    </div>
-                </div>
+                <BIStateBanner
+                    type="NO_ACTIVITY"
+                    dateRange={startDate === endDate ? startDate : `${startDate} a ${endDate}`}
+                    message={`No se detectaron transacciones emitidas por el POS para la fecha seleccionada (${startDate}). La consulta a MongoDB fue realizada exitosamente retornando 200 OK con Bs. 0.00 en ventas.`}
+                />
             )}
 
             {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL ULTRA SUTIL */}
