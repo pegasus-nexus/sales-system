@@ -61,6 +61,17 @@ export const BIPanelGeneralView: React.FC = () => {
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+    // PRUEBA OBLIGATORIA #2 — REGISTRO DE ACTUALIZACIÓN DE ESTADO REACT
+    useEffect(() => {
+        console.log('[BI DATA STATE UPDATED]', {
+            fechaInicio: data?.fecha_inicio_bolivia,
+            fechaFin: data?.fecha_fin_bolivia,
+            ingresos: data?.ingresos_totales,
+            ordenes: data?.cantidad_ordenes,
+            ticket: data?.ticket_medio,
+        });
+    }, [data]);
+
     const loadSucursales = async () => {
         try {
             const list = await getBISucursales();
@@ -71,6 +82,13 @@ export const BIPanelGeneralView: React.FC = () => {
     };
 
     const fetchBIData = useCallback(async (sDate: string, eDate: string, sucId: string) => {
+        // PRUEBA OBLIGATORIA #4 — CONSOLE TRACE ORIGEN DE PETICIÓN
+        console.trace('[BI FETCH CALL]', {
+            startDate: sDate,
+            endDate: eDate,
+            sucId,
+        });
+
         // 1. Cancelar la petición HTTP en vuelo previa si aún no terminó
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -81,14 +99,12 @@ export const BIPanelGeneralView: React.FC = () => {
         // 2. Incrementar el contador secuencial único del Request ID
         const currentRequestId = ++requestIdRef.current;
 
-        if (import.meta.env.DEV) {
-            console.debug('[BI REQUEST INICIADO]', {
-                requestId: currentRequestId,
-                startDate: sDate,
-                endDate: eDate,
-                sucursalId: sucId
-            });
-        }
+        console.log('[BI REQUEST START]', {
+            requestId: currentRequestId,
+            startDate: sDate,
+            endDate: eDate,
+            sucursal: sucId,
+        });
 
         setLoading(true);
         setError(null);
@@ -96,31 +112,46 @@ export const BIPanelGeneralView: React.FC = () => {
         try {
             const res = await getBIPanelGeneral(sDate, eDate, sucId, { signal: controller.signal });
 
+            console.log('[BI HTTP RESPONSE]', {
+                requestId: currentRequestId,
+                startDate: sDate,
+                endDate: eDate,
+                sucId,
+                responseStart: res.fecha_inicio_bolivia,
+                responseEnd: res.fecha_fin_bolivia,
+                ingresos: res.ingresos_totales,
+                ordenes: res.cantidad_ordenes,
+                ticket: res.ticket_medio,
+            });
+
             // 3. PROTECCIÓN CONTRA RESPUESTAS OBSOLETAS: Descartar si el ID no corresponde a la consulta más reciente
             if (currentRequestId !== requestIdRef.current) {
-                if (import.meta.env.DEV) {
-                    console.debug('[BI RESPONSE DESCARTADO POR RACE CONDITION]', {
-                        requestId: currentRequestId,
-                        activeRequestId: requestIdRef.current
-                    });
-                }
+                console.warn('[BI REQUEST DISCARDED BY RACE GUARD]', {
+                    requestId: currentRequestId,
+                    activeRequestId: requestIdRef.current,
+                    startDate: sDate,
+                    endDate: eDate
+                });
                 return;
             }
 
-            if (import.meta.env.DEV) {
-                console.debug('[BI RESPONSE ACEPTADO Y RENDERIZADO]', {
-                    requestId: currentRequestId,
-                    responseStart: res.fecha_inicio_bolivia,
-                    responseEnd: res.fecha_fin_bolivia,
-                    ingresos: res.ingresos_totales,
-                    ordenes: res.cantidad_ordenes
-                });
-            }
+            console.log('[BI SET DATA]', {
+                requestId: currentRequestId,
+                activeRequestId: requestIdRef.current,
+                startDate: sDate,
+                endDate: eDate,
+                ingresos: res.ingresos_totales,
+                ordenes: res.cantidad_ordenes,
+            });
 
             setData(res);
         } catch (err: unknown) {
             if (err instanceof Error && err.name === 'AbortError') {
-                // Cancelación limpia por AbortController: NO mutar estado
+                console.warn('[BI REQUEST CANCELLED CLEANLY BY ABORT CONTROLLER]', {
+                    requestId: currentRequestId,
+                    startDate: sDate,
+                    endDate: eDate
+                });
                 return;
             }
 
@@ -136,6 +167,13 @@ export const BIPanelGeneralView: React.FC = () => {
                 setData(null);
             }
         } finally {
+            console.log('[BI REQUEST END]', {
+                requestId: currentRequestId,
+                activeRequestId: requestIdRef.current,
+                startDate: sDate,
+                endDate: eDate,
+            });
+
             // Desactivar spinner únicamente para la petición activa
             if (currentRequestId === requestIdRef.current) {
                 setLoading(false);
@@ -267,8 +305,9 @@ export const BIPanelGeneralView: React.FC = () => {
                         <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — MODELO ESTRELLA</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Panel General — Día a Día</h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                    <p className="text-xs text-slate-500 font-semibold mt-1 flex flex-wrap items-center gap-2">
+                        <span>Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)</span>
+                        <span className="text-[10px] font-black text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-md">BUILD: dd9ef7e-v1.0.1</span>
                     </p>
                 </div>
 
