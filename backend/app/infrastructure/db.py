@@ -147,12 +147,39 @@ async def init_db():
     col_sales = database["sales"]
     for idx_spec, idx_name in [
         ([("created_at", DESCENDING), ("sucursal_id", ASCENDING)], "created_sucursal_opt"),
-        ([("created_at", ASCENDING)], "created_asc_opt")
+        ([("created_at", ASCENDING)], "created_asc_opt"),
+        ([("tenant_id", ASCENDING), ("fecha", DESCENDING)], "tenant_fecha_opt"),
+        ([("tenant_id", ASCENDING), ("sucursal_id", ASCENDING), ("fecha", DESCENDING)], "tenant_suc_fecha_opt")
     ]:
         try:
             await col_sales.create_index(idx_spec, name=idx_name, background=True)
         except Exception as e:
             print(f"Skipping index {idx_name} creation: {e}", flush=True)
+
+    # Índices optimizados para BI (products, inventario, descuentos, audit_logs)
+    col_prods = database["products"]
+    try:
+        await col_prods.create_index([("tenant_id", ASCENDING), ("is_active", ASCENDING)], name="tenant_active_prods_opt", background=True)
+    except Exception:
+        pass
+
+    col_inv = database["inventario"]
+    try:
+        await col_inv.create_index([("tenant_id", ASCENDING), ("sucursal_id", ASCENDING)], name="tenant_suc_inv_opt", background=True)
+    except Exception:
+        pass
+
+    col_desc = database["descuentos"]
+    try:
+        await col_desc.create_index([("tenant_id", ASCENDING), ("is_active", ASCENDING)], name="tenant_active_desc_opt", background=True)
+    except Exception:
+        pass
+
+    col_audit = database["audit_logs"]
+    try:
+        await col_audit.create_index([("tenant_id", ASCENDING), ("created_at", DESCENDING)], name="tenant_created_audit_opt", background=True)
+    except Exception:
+        pass
 
     print("Optimized indexes setup completed.", flush=True)
 
