@@ -48,6 +48,7 @@ class SaleCreate(BaseModel):
     cliente: Optional[ClienteIn] = None
     vendedor_id: Optional[str] = None
     vendedor_name: Optional[str] = None
+    fecha_venta: Optional[datetime] = None
     idempotency_key: Optional[str] = None
     confirm_duplicate: bool = False
 

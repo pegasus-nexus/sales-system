@@ -276,6 +276,7 @@ class SalesService:
                         cashier_name=current_user.full_name or current_user.username,
                         vendedor_id=sale_in.vendedor_id,
                         vendedor_name=sale_in.vendedor_name,
+                        created_at=sale_in.fecha_venta if sale_in.fecha_venta else datetime.utcnow(),
                         idempotency_key=sale_in.idempotency_key,
                     )
                     await SalesService._get_sale_repo().add(sale, session=session)
