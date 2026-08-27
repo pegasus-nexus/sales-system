@@ -838,6 +838,18 @@ export const BIPanelGeneralView: React.FC = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* PIE DE PÁGINA DE AUDITORÍA Y TRAZABILIDAD SEGURA BI */}
+                    <div className="bg-slate-100/80 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-500 gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Estado BI: <strong className="text-slate-800">{data?.estado_sincronizacion || 'Conectado'}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span>Timezone: <strong className="text-indigo-700">{data?.timezone || 'America/La_Paz'}</strong></span>
+                            <span>Última Actualización: <strong className="text-slate-800">{data?.ultima_actualizacion || '--:--'}</strong></span>
+                        </div>
+                    </div>
                 </div>
 
             </div>
