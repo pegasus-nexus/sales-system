@@ -450,7 +450,8 @@ export interface BISucursalOption {
 export const getBIPanelGeneral = async (
     startDate?: string,
     endDate?: string,
-    sucursalId?: string
+    sucursalId?: string,
+    options?: { signal?: AbortSignal }
 ): Promise<BIPanelGeneralResponse> => {
     const params = new URLSearchParams();
     if (startDate) params.append('start_date', startDate);
@@ -458,7 +459,7 @@ export const getBIPanelGeneral = async (
     if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
-    return client<BIPanelGeneralResponse>(`/bi/panel-general${queryString}`);
+    return client<BIPanelGeneralResponse>(`/bi/panel-general${queryString}`, { signal: options?.signal });
 };
 
 export const getBIComparativas = async (
@@ -574,7 +575,8 @@ export const getBIProductividadDesempeno = async (
 export const getBIEjecutivoResumen = async (
     startDate?: string,
     endDate?: string,
-    sucursalId?: string
+    sucursalId?: string,
+    options?: { signal?: AbortSignal }
 ): Promise<BIEjecutivoResumenResponse> => {
     const params = new URLSearchParams();
     if (startDate) params.append('start_date', startDate);
@@ -582,7 +584,7 @@ export const getBIEjecutivoResumen = async (
     if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
-    return client<BIEjecutivoResumenResponse>(`/bi-ejecutivo/resumen${queryString}`);
+    return client<BIEjecutivoResumenResponse>(`/bi-ejecutivo/resumen${queryString}`, { signal: options?.signal });
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {

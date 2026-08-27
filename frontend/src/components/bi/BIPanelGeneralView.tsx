@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
@@ -42,10 +42,18 @@ export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Controles de Fecha y Sucursal (Inicializados en fecha Bolivia)
+    // Sequence Guard & Request Cancellation Refs
+    const requestIdRef = useRef<number>(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Controles de Fecha y Sucursal (Estado Atómico Rango de Fechas)
     const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
-    const [startDate, setStartDate] = useState<string>(() => getFormattedBoliviaDate(0));
-    const [endDate, setEndDate] = useState<string>(() => getFormattedBoliviaDate(0));
+    const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>(() => ({
+        startDate: getFormattedBoliviaDate(0),
+        endDate: getFormattedBoliviaDate(0)
+    }));
+    const { startDate, endDate } = dateRange;
+
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
@@ -63,65 +71,116 @@ export const BIPanelGeneralView: React.FC = () => {
     };
 
     const fetchBIData = useCallback(async (sDate: string, eDate: string, sucId: string) => {
+        // 1. Cancelar la petición HTTP en vuelo previa si aún no terminó
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        // 2. Incrementar el contador secuencial único del Request ID
+        const currentRequestId = ++requestIdRef.current;
+
+        if (import.meta.env.DEV) {
+            console.debug('[BI REQUEST INICIADO]', {
+                requestId: currentRequestId,
+                startDate: sDate,
+                endDate: eDate,
+                sucursalId: sucId
+            });
+        }
+
         setLoading(true);
         setError(null);
+
         try {
-            const res = await getBIPanelGeneral(sDate, eDate, sucId);
+            const res = await getBIPanelGeneral(sDate, eDate, sucId, { signal: controller.signal });
+
+            // 3. PROTECCIÓN CONTRA RESPUESTAS OBSOLETAS: Descartar si el ID no corresponde a la consulta más reciente
+            if (currentRequestId !== requestIdRef.current) {
+                if (import.meta.env.DEV) {
+                    console.debug('[BI RESPONSE DESCARTADO POR RACE CONDITION]', {
+                        requestId: currentRequestId,
+                        activeRequestId: requestIdRef.current
+                    });
+                }
+                return;
+            }
+
+            if (import.meta.env.DEV) {
+                console.debug('[BI RESPONSE ACEPTADO Y RENDERIZADO]', {
+                    requestId: currentRequestId,
+                    responseStart: res.fecha_inicio_bolivia,
+                    responseEnd: res.fecha_fin_bolivia,
+                    ingresos: res.ingresos_totales,
+                    ordenes: res.cantidad_ordenes
+                });
+            }
+
             setData(res);
         } catch (err: unknown) {
-            console.error('Error obteniendo métricas del BI:', err);
-            const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
-            const status = axiosErr?.response?.status;
-            const msg = axiosErr?.response?.data?.detail
-                || (status === 404
-                    ? 'HTTP 404: El endpoint /api/v1/bi/panel-general no fue encontrado en el servidor. Verifica el despliegue del backend en Render.'
-                    : 'No fue posible obtener los datos del BI. Error de conexión con el servidor.');
-            setError(msg);
-            setData(null);
+            if (err instanceof Error && err.name === 'AbortError') {
+                // Cancelación limpia por AbortController: NO mutar estado
+                return;
+            }
+
+            if (currentRequestId === requestIdRef.current) {
+                console.error('Error obteniendo métricas del BI:', err);
+                const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
+                const status = axiosErr?.response?.status;
+                const msg = axiosErr?.response?.data?.detail
+                    || (status === 404
+                        ? 'HTTP 404: El endpoint /api/v1/bi/panel-general no fue encontrado en el servidor. Verifica el despliegue del backend en Render.'
+                        : 'No fue posible obtener los datos del BI. Error de conexión con el servidor.');
+                setError(msg);
+                setData(null);
+            }
         } finally {
-            setLoading(false);
+            // Desactivar spinner únicamente para la petición activa
+            if (currentRequestId === requestIdRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 
     useEffect(() => {
         loadSucursales();
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
     }, []);
 
     useEffect(() => {
-        if (startDate && endDate) {
-            fetchBIData(startDate, endDate, selectedSucursal);
+        if (dateRange.startDate && dateRange.endDate) {
+            fetchBIData(dateRange.startDate, dateRange.endDate, selectedSucursal);
         }
-    }, [startDate, endDate, selectedSucursal, fetchBIData]);
+    }, [dateRange, selectedSucursal, fetchBIData]);
 
     const handlePresetChange = (newPreset: 'hoy' | 'ayer' | '7dias' | '30dias' | 'historial') => {
         setPreset(newPreset);
         const todayBoliviaStr = getFormattedBoliviaDate(0);
         if (newPreset === 'hoy') {
-            setStartDate(todayBoliviaStr);
-            setEndDate(todayBoliviaStr);
+            setDateRange({ startDate: todayBoliviaStr, endDate: todayBoliviaStr });
         } else if (newPreset === 'ayer') {
             const yesterdayBoliviaStr = getFormattedBoliviaDate(-1);
-            setStartDate(yesterdayBoliviaStr);
-            setEndDate(yesterdayBoliviaStr);
+            setDateRange({ startDate: yesterdayBoliviaStr, endDate: yesterdayBoliviaStr });
         } else if (newPreset === '7dias') {
             const d7Str = getFormattedBoliviaDate(-6);
-            setStartDate(d7Str);
-            setEndDate(todayBoliviaStr);
+            setDateRange({ startDate: d7Str, endDate: todayBoliviaStr });
         } else if (newPreset === '30dias') {
             const d30Str = getFormattedBoliviaDate(-29);
-            setStartDate(d30Str);
-            setEndDate(todayBoliviaStr);
+            setDateRange({ startDate: d30Str, endDate: todayBoliviaStr });
         } else if (newPreset === 'historial') {
-            setStartDate('historial');
-            setEndDate('historial');
+            setDateRange({ startDate: 'historial', endDate: 'historial' });
         }
     };
 
     const handleReset = () => {
         setPreset('hoy');
         const todayBoliviaStr = getFormattedBoliviaDate(0);
-        setStartDate(todayBoliviaStr);
-        setEndDate(todayBoliviaStr);
+        setDateRange({ startDate: todayBoliviaStr, endDate: todayBoliviaStr });
         setSelectedSucursal('all');
     };
 
@@ -310,7 +369,8 @@ export const BIPanelGeneralView: React.FC = () => {
                             value={startDate === 'historial' ? '' : startDate}
                             onChange={(e) => {
                                 setPreset('custom');
-                                setStartDate(e.target.value);
+                                const val = e.target.value;
+                                setDateRange(prev => ({ ...prev, startDate: val }));
                             }}
                             className="bg-transparent text-xs font-bold text-slate-700 outline-none"
                         />
@@ -320,7 +380,8 @@ export const BIPanelGeneralView: React.FC = () => {
                             value={endDate === 'historial' ? '' : endDate}
                             onChange={(e) => {
                                 setPreset('custom');
-                                setEndDate(e.target.value);
+                                const val = e.target.value;
+                                setDateRange(prev => ({ ...prev, endDate: val }));
                             }}
                             className="bg-transparent text-xs font-bold text-slate-700 outline-none"
                         />

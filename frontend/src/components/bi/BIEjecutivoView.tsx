@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Calendar, RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle,
     Crown, DollarSign, Boxes, Tag, UserCheck, Building2, Info, PieChart
@@ -37,8 +37,16 @@ export const BIEjecutivoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [startDate, setStartDate] = useState<string>(() => getFormattedBoliviaDate(0));
-    const [endDate, setEndDate] = useState<string>(() => getFormattedBoliviaDate(0));
+    // Sequence Guard & Request Cancellation Refs
+    const requestIdRef = useRef<number>(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>(() => ({
+        startDate: getFormattedBoliviaDate(0),
+        endDate: getFormattedBoliviaDate(0)
+    }));
+    const { startDate, endDate } = dateRange;
+
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursalesOptions, setSucursalesOptions] = useState<BISucursalOption[]>([]);
 
@@ -55,40 +63,65 @@ export const BIEjecutivoView: React.FC = () => {
     };
 
     const fetchEjecutivoData = useCallback(async (sDate: string, eDate: string, sucId: string) => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        const currentRequestId = ++requestIdRef.current;
+
         setLoading(true);
         setError(null);
         try {
-            const res = await getBIEjecutivoResumen(sDate, eDate, sucId);
+            const res = await getBIEjecutivoResumen(sDate, eDate, sucId, { signal: controller.signal });
+
+            if (currentRequestId !== requestIdRef.current) {
+                return;
+            }
+
             setData(res);
         } catch (err: unknown) {
-            console.error('Error obteniendo resumen ejecutivo global:', err);
-            const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
-            const status = axiosErr?.response?.status;
-            const msg = axiosErr?.response?.data?.detail
-                || (status === 404
-                    ? 'HTTP 404: El endpoint /api/v1/bi-ejecutivo/resumen no fue encontrado.'
-                    : 'Error de conexión con el servicio de resumen ejecutivo del BI.');
-            setError(msg);
-            setData(null);
+            if (err instanceof Error && err.name === 'AbortError') {
+                return;
+            }
+
+            if (currentRequestId === requestIdRef.current) {
+                console.error('Error obteniendo resumen ejecutivo global:', err);
+                const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
+                const status = axiosErr?.response?.status;
+                const msg = axiosErr?.response?.data?.detail
+                    || (status === 404
+                        ? 'HTTP 404: El endpoint /api/v1/bi-ejecutivo/resumen no fue encontrado.'
+                        : 'Error de conexión con el servicio de resumen ejecutivo del BI.');
+                setError(msg);
+                setData(null);
+            }
         } finally {
-            setLoading(false);
+            if (currentRequestId === requestIdRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 
     useEffect(() => {
         loadSucursales();
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
     }, []);
 
     useEffect(() => {
-        if (startDate && endDate) {
-            fetchEjecutivoData(startDate, endDate, selectedSucursal);
+        if (dateRange.startDate && dateRange.endDate) {
+            fetchEjecutivoData(dateRange.startDate, dateRange.endDate, selectedSucursal);
         }
-    }, [startDate, endDate, selectedSucursal, fetchEjecutivoData]);
+    }, [dateRange, selectedSucursal, fetchEjecutivoData]);
 
     const handleReset = () => {
         const todayStr = getFormattedBoliviaDate(0);
-        setStartDate(todayStr);
-        setEndDate(todayStr);
+        setDateRange({ startDate: todayStr, endDate: todayStr });
         setSelectedSucursal('all');
     };
 
@@ -188,14 +221,20 @@ export const BIEjecutivoView: React.FC = () => {
                         <input
                             type="date"
                             value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setDateRange(prev => ({ ...prev, startDate: val }));
+                            }}
                             className="bg-transparent text-xs font-bold text-slate-700 outline-none"
                         />
                         <span className="text-slate-400 font-bold text-xs">a</span>
                         <input
                             type="date"
                             value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setDateRange(prev => ({ ...prev, endDate: val }));
+                            }}
                             className="bg-transparent text-xs font-bold text-slate-700 outline-none"
                         />
                     </div>

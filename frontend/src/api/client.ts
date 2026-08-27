@@ -108,7 +108,10 @@ export async function client<T>(
     let response: Response;
     try {
         response = await fetch(`${BASE_URL}${endpoint}`, config);
-    } catch {
+    } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+            throw err;
+        }
         // Error de red (sin conexión, servidor caído)
         window.dispatchEvent(new CustomEvent('api:critical-error', {
             detail: {
