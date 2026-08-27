@@ -120,7 +120,7 @@ export default function IngresoMercaderiaPage() {
                 return;
             }
             if (scannerInputRef.current) {
-                scannerInputRef.current.focus();
+                scannerInputRef.current.focus({ preventScroll: true });
             }
         };
         document.addEventListener('click', handleGlobalClick);
@@ -386,11 +386,11 @@ export default function IngresoMercaderiaPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-gray-50/50">
-                                    <th className="p-5 text-sm font-bold text-gray-500 uppercase tracking-wider">Producto</th>
-                                    <th className="p-5 text-sm font-bold text-gray-500 uppercase tracking-wider text-center">Cant. Recibida</th>
-                                    <th className="p-5 text-sm font-bold text-gray-500 uppercase tracking-wider text-right">Costo Unit. (Bs)</th>
-                                    <th className="p-5 text-sm font-bold text-gray-500 uppercase tracking-wider text-right">Subtotal</th>
-                                    <th className="p-5 text-sm font-bold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
+                                    <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Producto</th>
+                                    <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Cant. Recibida</th>
+                                    <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Costo Unit. (Bs)</th>
+                                    <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Subtotal</th>
+                                    <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -400,54 +400,54 @@ export default function IngresoMercaderiaPage() {
 
                                     return (
                                         <tr key={idx} className={`transition-colors ${isComplete ? 'bg-emerald-50/30' : 'hover:bg-gray-50'}`}>
-                                            <td className="p-5">
-                                                <p className="font-bold text-gray-900">{item.nombre_producto}</p>
+                                            <td className="p-3">
+                                                <p className="font-bold text-gray-900 text-sm">{item.nombre_producto}</p>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                                    <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                                                         {item.codigo_producto}
                                                     </span>
                                                     {purchaseOrderId && (
-                                                        <span className="text-xs font-medium text-blue-600">
+                                                        <span className="text-[10px] font-medium text-blue-600">
                                                             Pedido: {item.cantidad_pedida}
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="p-5 text-center">
+                                            <td className="p-3 text-center">
                                                 <input 
                                                     type="number" 
                                                     min="0"
-                                                    className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg text-gray-900 outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    className="w-20 p-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-black text-base text-gray-900 outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     value={item.cantidad_recibida === 0 ? '' : item.cantidad_recibida}
                                                     onChange={(e) => updateItem(idx, 'cantidad_recibida', Number(e.target.value))}
                                                 />
                                             </td>
-                                            <td className="p-5 text-right">
+                                            <td className="p-3 text-right">
                                                 <div className="flex flex-col items-end">
                                                     <input 
                                                         type="number" 
-                                                        min="0" step="0.1"
-                                                        className={`w-28 p-3 bg-gray-50 border rounded-xl text-right font-bold outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isCostHigher ? 'border-orange-300 text-orange-700 bg-orange-50' : 'border-gray-200 text-gray-900'}`}
+                                                        min="0" step="any"
+                                                        className={`w-24 p-2 bg-gray-50 border rounded-lg text-right font-bold text-sm outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isCostHigher ? 'border-orange-300 text-orange-700 bg-orange-50' : 'border-gray-200 text-gray-900'}`}
                                                         value={item.costo_unitario_real === 0 ? '' : item.costo_unitario_real}
                                                         onChange={(e) => updateItem(idx, 'costo_unitario_real', Number(e.target.value))}
                                                     />
                                                     {isCostHigher && (
-                                                        <span className="flex items-center gap-1 text-[10px] text-orange-600 mt-1 font-bold">
-                                                            <AlertTriangle size={12} />
+                                                        <span className="flex items-center gap-1 text-[9px] text-orange-600 mt-0.5 font-bold">
+                                                            <AlertTriangle size={10} />
                                                             Mayor al hist. ({item.costo_historico})
                                                         </span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="p-5 text-right font-black text-xl text-gray-900">
+                                            <td className="p-3 text-right font-black text-base text-gray-900">
                                                 {item.subtotal.toFixed(2)}
                                             </td>
-                                            <td className="p-5 text-center">
+                                            <td className="p-3 text-center">
                                                 <button 
                                                     onClick={() => removeItem(idx)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 >
-                                                    <Trash2 size={20} />
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -455,7 +455,7 @@ export default function IngresoMercaderiaPage() {
                                 })}
                                 {detalles.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="p-20 text-center">
+                                        <td colSpan={5} className="p-10 text-center">
                                             <PackageCheck className="w-16 h-16 text-gray-200 mx-auto mb-4" />
                                             <p className="text-gray-500 font-medium">No hay productos. Usa el escáner o selecciona un pedido.</p>
                                         </td>
