@@ -4,6 +4,18 @@ Todas las modificaciones notables a este proyecto están documentadas en este ar
 
 ---
 
+## 🩹 [v1.0.1] - 2026-08-27 (Hotfix Date Presets & Sum Conciliation)
+
+### 🐛 Correcciones & Mejoras:
+- **Matemática de Fechas UTC-Safe en UI**: Corrección en `getFormattedBoliviaDate` de [`BIFilterHeader.tsx`](file:///c:/Users/dell/OneDrive/Desktop/SalesSystem/frontend/src/components/bi/common/BIFilterHeader.tsx) utilizando `Date.UTC(y, m - 1, d + offset)` para evitar desvíos causados por el huso horario local de la máquina del usuario.
+- **Conciliación de Sumas Diarias vs. Rangos Acumulados (`verify_presets_sum_audit.py`)**:
+  - **Hoy (27/08/2026)**: Mongo = API = `Bs. 434.50` (15 tickets) (`Bs. 0.00 / 0 Tks Dif`).
+  - **Ayer (26/08/2026)**: Mongo = API = `Bs. 2,355.83` (51 tickets) (`Bs. 0.00 / 0 Tks Dif`).
+  - **7 Días**: Suma Diarias = API Rango = `Bs. 17,302.62` (379 tickets) (`Bs. 0.00 / 0 Tks Dif`).
+  - **30 Días**: Suma Diarias = API Rango = `Bs. 61,881.27` (1,673 tickets) (`Bs. 0.00 / 0 Tks Dif`).
+
+---
+
 ## 🏆 [v1.0.0] - 2026-08-27 (Official Product Release)
 
 ### 🌟 Novedades Principales:
