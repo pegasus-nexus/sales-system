@@ -1,3 +1,4 @@
+import time
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -19,14 +20,46 @@ def get_bi_service() -> BIService:
     return BIService(repository=repository)
 
 
+from app.db import get_raw_db
+
 @router.get("/health")
 async def bi_health_check():
-    return {
-        "status": "ok",
-        "module": "business_intelligence",
-        "timezone": BUSINESS_TIMEZONE,
-        "timestamp": datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d %H:%M:%S")
-    }
+    """
+    Endpoint de Diagnóstico y Observabilidad Avanzado para el Centro BI (Eje 4).
+    Verifica conectividad real con MongoDB, existencia de índices, timezone y latencia.
+    """
+    t0 = time.time()
+    try:
+        db = await get_raw_db()
+        await db.command("ping")
+
+        indexes = await db["sales"].list_indexes().to_list(length=None)
+        index_names = [idx.get("name") for idx in indexes]
+        indexes_ok = "tenant_fecha_opt" in index_names or len(indexes) > 1
+
+        latency_ms = round((time.time() - t0) * 1000, 2)
+
+        return {
+            "status": "healthy",
+            "timezone": BUSINESS_TIMEZONE,
+            "mongodb": "connected",
+            "indexes": "ok" if indexes_ok else "warning",
+            "latency_ms": latency_ms,
+            "build": "90420be",
+            "bi_modules": 10
+        }
+    except Exception as e:
+        latency_ms = round((time.time() - t0) * 1000, 2)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "unhealthy",
+                "timezone": BUSINESS_TIMEZONE,
+                "mongodb": "disconnected",
+                "error": str(e),
+                "latency_ms": latency_ms
+            }
+        )
 
 
 @router.get("/panel-general", response_model=BIPanelGeneralResponse)

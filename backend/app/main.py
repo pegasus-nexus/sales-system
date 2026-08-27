@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -36,6 +36,9 @@ app = FastAPI(
 )
 
 from app.infrastructure.middleware.tenant_context import TenantContextMiddleware
+from app.middleware.request_logging import ObservabilityRequestLoggingMiddleware
+
+app.add_middleware(ObservabilityRequestLoggingMiddleware)
 app.add_middleware(TenantContextMiddleware)
 
 app.state.limiter = limiter
