@@ -18,12 +18,11 @@ export const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
   }
 
   const [y, m, d] = boliviaDateStr.split('-').map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  dateObj.setDate(dateObj.getDate() + daysOffset);
+  const utcDate = new Date(Date.UTC(y, m - 1, d + daysOffset));
 
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
+  const year = utcDate.getUTCFullYear();
+  const month = String(utcDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(utcDate.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
