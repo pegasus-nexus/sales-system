@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { getBIClientes, getBISucursales } from '../../api/biApi';
 import type { BIClientesResponse, BISucursalOption } from '../../api/biApi';
+import { BIPieChart } from './common/charts/BIPieChart';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -333,6 +334,23 @@ export const BIClientesView: React.FC = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* PIE CHART GRÁFICO DISTRIBUCIÓN DE MÉTODOS DE PAGO */}
+                    {data && data.metodos_pago.length > 0 && (
+                        <div className="pt-3 border-t border-slate-100">
+                            <BIPieChart
+                                title="Distribución Porcentual"
+                                subtitle="Participación relativa de cada medio de cobro"
+                                data={data.metodos_pago.map(m => ({
+                                    name: m.metodo,
+                                    value: m.monto_neto,
+                                    percentage: m.participacion_pct
+                                }))}
+                                valuePrefix="Bs. "
+                                height={220}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* TABLA DE TOP CLIENTES NOMINADOS (2 TERCIOS) */}

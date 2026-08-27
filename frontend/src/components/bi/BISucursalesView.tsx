@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { getBISucursalesDesempeno, getBISucursales } from '../../api/biApi';
 import type { BISucursalesDesempenoResponse, BISucursalOption } from '../../api/biApi';
+import { BIBarChart } from './common/charts/BIBarChart';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -296,6 +297,21 @@ export const BISucursalesView: React.FC = () => {
                     </div>
 
                 </div>
+            )}
+
+            {/* GRÁFICO VISUAL DE BARRAS DE FACTURACIÓN POR SUCURSAL */}
+            {data && data.sucursales.length > 0 && (
+                <BIBarChart
+                    title="Comparativa Visual de Facturación por Sucursal"
+                    subtitle="Rankings monetarios de ventas brutas por tienda (Bs.)"
+                    data={data.sucursales.map(s => ({
+                        label: s.nombre,
+                        value: s.ingresos_bs,
+                        formattedValue: `Bs. ${s.ingresos_bs.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${s.participacion_pct}%)`
+                    }))}
+                    valuePrefix="Bs. "
+                    height={280}
+                />
             )}
 
             {/* TABLA PRINCIPAL DESEMPEÑO POR SUCURSALES */}
