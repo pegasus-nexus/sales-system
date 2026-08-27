@@ -49,12 +49,12 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
   onSucursalChange
 }) => {
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 my-4">
-      {/* SECTOR BOTONES DE PRESET */}
-      <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 my-4 overflow-hidden">
+      {/* SECTOR BOTONES DE PRESET (SCROLL HORIZONTAL EN MÓVIL) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full lg:w-auto shrink-0">
         <button
           onClick={() => onPresetChange('hoy')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             preset === 'hoy'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -65,7 +65,7 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
 
         <button
           onClick={() => onPresetChange('ayer')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             preset === 'ayer'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -76,7 +76,7 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
 
         <button
           onClick={() => onPresetChange('7dias')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             preset === '7dias'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -87,7 +87,7 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
 
         <button
           onClick={() => onPresetChange('30dias')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             preset === '30dias'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -98,7 +98,7 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
 
         <button
           onClick={() => onPresetChange('historial')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             preset === 'historial'
               ? 'bg-indigo-600 text-white shadow-xs'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -109,31 +109,31 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
       </div>
 
       {/* SECTOR INPUTS DE FECHA Y ZONA HORARIA */}
-      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+      <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl flex-1 sm:flex-none">
+          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <input
             type="date"
             value={startDate === 'historial' ? '' : startDate}
             onChange={(e) => onCustomDateChange(e.target.value, endDate)}
-            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
+            className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full sm:w-auto"
           />
           <span className="text-slate-400 font-bold text-xs">a</span>
           <input
             type="date"
             value={endDate === 'historial' ? '' : endDate}
             onChange={(e) => onCustomDateChange(startDate, e.target.value)}
-            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
+            className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full sm:w-auto"
           />
         </div>
 
         {/* SELECTOR DE SUCURSAL */}
-        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl flex-1 sm:flex-none">
+          <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <select
             value={selectedSucursal}
             onChange={(e) => onSucursalChange(e.target.value)}
-            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer w-full"
           >
             <option value="all">Todas las Sucursales</option>
             {sucursales.map((s) => (
@@ -145,7 +145,7 @@ export const BIFilterHeader: React.FC<BIFilterHeaderProps> = ({
         </div>
 
         {/* INDICADOR ZONA HORARIA BOLIVIA */}
-        <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl">
+        <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shrink-0">
           <Globe className="w-3 h-3 text-emerald-600" />
           <span>America/La_Paz</span>
         </div>
