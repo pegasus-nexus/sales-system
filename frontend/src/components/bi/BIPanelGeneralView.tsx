@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
+import { useAuthStore } from '../../store/authStore';
 
 import { BIStateBanner } from './common/BIStateBanner';
 
@@ -82,6 +83,15 @@ export const BIPanelGeneralView: React.FC = () => {
     };
 
     const fetchBIData = useCallback(async (sDate: string, eDate: string, sucId: string) => {
+        const authState = useAuthStore.getState();
+        console.log('[AUTH DEBUG]', {
+            user: authState.user?.username || authState.user?.full_name || 'N/A',
+            role: authState.role || authState.user?.role || 'N/A',
+            tenantId: authState.user?.tenant_id || 'N/A',
+            sucursalId: authState.sucursal_id || authState.user?.sucursal_id || 'N/A',
+            tokenPresent: !!authState.token,
+        });
+
         // PRUEBA OBLIGATORIA #4 — CONSOLE TRACE ORIGEN DE PETICIÓN
         console.trace('[BI FETCH CALL]', {
             startDate: sDate,
@@ -307,7 +317,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Panel General — Día a Día</h1>
                     <p className="text-xs text-slate-500 font-semibold mt-1 flex flex-wrap items-center gap-2">
                         <span>Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)</span>
-                        <span className="text-[10px] font-black text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-md">BUILD: dd9ef7e-v1.0.1</span>
+                        <span className="text-[10px] font-black text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-md">BUILD: {typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'PROD-LIVE'}</span>
                     </p>
                 </div>
 
