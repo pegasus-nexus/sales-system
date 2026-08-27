@@ -1,0 +1,37 @@
+{
+  "project": "Pegasus SalesSystem",
+  "release_version": "v1.0.0",
+  "git_tag": "v1.0.0",
+  "baseline_commit": "00ea770",
+  "release_date": "2026-08-26T21:09:17-04:00",
+  "status": "PRODUCTION_READY_APPROVED_GO",
+  "bi_modules_status": {
+    "fases_completadas": 10,
+    "ventas_consolidadas_bs": 2653.00,
+    "costo_directo_bs": 2212.30,
+    "margen_bruto_bs": 440.70,
+    "margen_bruto_porcentaje": 16.61,
+    "diferencia_reconciliacion_bs": 0.00
+  },
+  "hardening_axes_status": {
+    "eje_1_seguridad_rbac_tenant": "PASS 🏆",
+    "eje_2_backups_restore_rollback": "PASS 🏆",
+    "eje_3_explain_indexes_mongodb": "PASS 🏆",
+    "eje_4_observabilidad_health_logs": "PASS 🏆",
+    "eje_5_estres_red_adversarial": "PASS 🏆",
+    "eje_6_pipeline_ci_cd_master_gate": "PASS 🏆"
+  },
+  "artifacts_and_documentation": [
+    "RELEASE_NOTES_v1.0.0.md",
+    "backend/docs/go_no_go_checklist.md",
+    "backend/docs/post_launch_monitoring.md",
+    "backend/docs/rollback_procedure.md",
+    "backend/docs/eje5_load_report.md",
+    ".github/workflows/production_hardening_pipeline.yml"
+  ],
+  "backup_reference": {
+    "directory": "backend/backups/backup_20260826_210142",
+    "checksum_sha256": "54e3c7ca9ad33d43daca4a01b69bb59f7568dbefd27c4d0ebbcf2e9b71e1f61e",
+    "total_documents_backed_up": 19730
+  }
+}
