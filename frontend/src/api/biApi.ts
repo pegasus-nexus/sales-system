@@ -401,6 +401,45 @@ export interface BIProductividadDesempenoResponse {
     trazabilidad: Record<string, unknown>;
 }
 
+// Interfaces de la Sección 10: Resumen Ejecutivo Global Consolidado (Clean Architecture)
+export interface KPIEjecutivoBI {
+    ingresos_totales: number;
+    costo_directo_total: number;
+    margen_bruto_teorico_bs: number;
+    margen_bruto_teorico_pct: number;
+    total_tickets: number;
+    ticket_medio: number;
+    total_unidades_stock: number;
+    valorizacion_costo_stock: number;
+    promociones_configuradas: number;
+    monto_total_descuentos: number;
+    tickets_con_descuento: number;
+    sucursal_lider_nombre: string;
+    sucursal_lider_ingresos: number;
+    cajero_lider_nombre: string;
+    cajero_lider_ingresos: number;
+}
+
+export interface ResumenSucursalEjecutivoBI {
+    sucursal_id: string;
+    nombre: string;
+    ingresos_bs: number;
+    tickets_conteo: number;
+    participacion_pct: number;
+}
+
+export interface BIEjecutivoResumenResponse {
+    status: string;
+    fecha_inicio_bolivia: string;
+    fecha_fin_bolivia: string;
+    timezone: string;
+    ultima_actualizacion: string;
+
+    kpis: KPIEjecutivoBI;
+    sucursales: ResumenSucursalEjecutivoBI[];
+    trazabilidad: Record<string, unknown>;
+}
+
 export interface BISucursalOption {
     sucursal_id: string;
     nombre: string;
@@ -530,6 +569,20 @@ export const getBIProductividadDesempeno = async (
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return client<BIProductividadDesempenoResponse>(`/bi-productividad/desempeno${queryString}`);
+};
+
+export const getBIEjecutivoResumen = async (
+    startDate?: string,
+    endDate?: string,
+    sucursalId?: string
+): Promise<BIEjecutivoResumenResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (sucursalId && sucursalId !== 'all') params.append('sucursal_id', sucursalId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return client<BIEjecutivoResumenResponse>(`/bi-ejecutivo/resumen${queryString}`);
 };
 
 export const getBISucursales = async (): Promise<BISucursalOption[]> => {

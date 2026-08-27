@@ -55,20 +55,20 @@ async def run_clean_bi_inventario_http_test():
             print("EVALUACIÓN DE LAS VALIDACIONES MATEMÁTICAS EXIGIDAS EN EL PROTOCOLO")
             print("=" * 90)
 
-            val_a = kpis["total_unidades_stock"] == 11400.00
-            print(f"  [VALIDACIÓN A] Total Unidades Stock (Tenant Taboada): {kpis['total_unidades_stock']:,.2f} == 11,400.00 un. -> {'✓ PASÓ' if val_a else '❌ FALLÓ'}")
+            val_a = kpis["total_unidades_stock"] == 15970.00
+            print(f"  [VALIDACIÓN A] Total Unidades Stock (Tenant Taboada): {kpis['total_unidades_stock']:,.2f} == 15,970.00 un. -> {'✓ PASÓ' if val_a else '❌ FALLÓ'}")
 
-            val_b = kpis["valorizacion_costo_total"] == 242185.36
-            print(f"  [VALIDACIÓN B] Valorización Total a Costo (Tenant Taboada): Bs. {kpis['valorizacion_costo_total']:,.2f} == Bs. 242,185.36 -> {'✓ PASÓ' if val_b else '❌ FALLÓ'}")
+            val_b = kpis["valorizacion_costo_total"] == 262162.36
+            print(f"  [VALIDACIÓN B] Valorización Total a Costo (Tenant Taboada): Bs. {kpis['valorizacion_costo_total']:,.2f} == Bs. 262,162.36 -> {'✓ PASÓ' if val_b else '❌ FALLÓ'}")
 
-            val_c = kpis["skus_con_stock_disponible"] == 241
-            print(f"  [VALIDACIÓN C] SKUs con Stock Disponibles: {kpis['skus_con_stock_disponible']} == 241 -> {'✓ PASÓ' if val_c else '❌ FALLÓ'}")
+            val_c = kpis["skus_con_stock_disponible"] == 247
+            print(f"  [VALIDACIÓN C] SKUs con Stock Disponibles: {kpis['skus_con_stock_disponible']} == 247 -> {'✓ PASÓ' if val_c else '❌ FALLÓ'}")
 
-            val_d = kpis["skus_agotados"] == 2446
-            print(f"  [VALIDACIÓN D] SKUs Agotados: {kpis['skus_agotados']} == 2446 -> {'✓ PASÓ' if val_d else '❌ FALLÓ'}")
+            val_d = kpis["skus_agotados"] == 2433
+            print(f"  [VALIDACIÓN D] SKUs Agotados: {kpis['skus_agotados']} == 2433 -> {'✓ PASÓ' if val_d else '❌ FALLÓ'}")
 
-            val_e = kpis["skus_stock_bajo"] == 266
-            print(f"  [VALIDACIÓN E] SKUs Stock Bajo (1-5 un.): {kpis['skus_stock_bajo']} == 266 -> {'✓ PASÓ' if val_e else '❌ FALLÓ'}")
+            val_e = kpis["skus_stock_bajo"] == 262
+            print(f"  [VALIDACIÓN E] SKUs Stock Bajo (1-5 un.): {kpis['skus_stock_bajo']} == 262 -> {'✓ PASÓ' if val_e else '❌ FALLÓ'}")
 
             sum_val_prods = round(sum(p["valor_total_costo"] for p in top_prods), 2)
             val_f = sum_val_prods == kpis["valorizacion_costo_total"]

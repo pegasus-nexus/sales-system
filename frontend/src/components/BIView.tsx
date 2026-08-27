@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag, UserCheck } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Package, Users, Building2, Boxes, DollarSign, Tag, UserCheck, Crown } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
 import { BIProductosView } from './bi/BIProductosView';
@@ -9,9 +9,10 @@ import { BIInventarioView } from './bi/BIInventarioView';
 import { BIRentabilidadView } from './bi/BIRentabilidadView';
 import { BIDescuentosView } from './bi/BIDescuentosView';
 import { BIProductividadView } from './bi/BIProductividadView';
+import { BIEjecutivoView } from './bi/BIEjecutivoView';
 
 export default function BIView() {
-    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos' | 'productividad'>('panel');
+    const [subTab, setSubTab] = useState<'panel' | 'comparativas' | 'productos' | 'clientes' | 'sucursales' | 'inventario' | 'rentabilidad' | 'descuentos' | 'productividad' | 'ejecutivo'>('panel');
 
     return (
         <div className="w-full space-y-4">
@@ -69,7 +70,7 @@ export default function BIView() {
                     onClick={() => setSubTab('sucursales')}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                         subTab === 'sucursales'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-indigo-600 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                 >
@@ -93,7 +94,7 @@ export default function BIView() {
                     onClick={() => setSubTab('rentabilidad')}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                         subTab === 'rentabilidad'
-                            ? 'bg-teal-600 text-white shadow-xs'
+                            ? 'bg-emerald-600 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                 >
@@ -117,25 +118,40 @@ export default function BIView() {
                     onClick={() => setSubTab('productividad')}
                     className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                         subTab === 'productividad'
-                            ? 'bg-violet-600 text-white shadow-xs'
+                            ? 'bg-indigo-600 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                 >
                     <UserCheck size={14} />
                     <span>Productividad & Cajeros</span>
                 </button>
+
+                <button
+                    onClick={() => setSubTab('ejecutivo')}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        subTab === 'ejecutivo'
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                    <Crown size={14} className="text-amber-400" />
+                    <span>Resumen Ejecutivo</span>
+                </button>
             </div>
 
-            {/* CONTENIDO SEGÚN SUBTAB SELECCIONADA */}
-            {subTab === 'panel' && <BIPanelGeneralView />}
-            {subTab === 'comparativas' && <BIComparativasView />}
-            {subTab === 'productos' && <BIProductosView />}
-            {subTab === 'clientes' && <BIClientesView />}
-            {subTab === 'sucursales' && <BISucursalesView />}
-            {subTab === 'inventario' && <BIInventarioView />}
-            {subTab === 'rentabilidad' && <BIRentabilidadView />}
-            {subTab === 'descuentos' && <BIDescuentosView />}
-            {subTab === 'productividad' && <BIProductividadView />}
+            {/* CONTENIDO DE CADA PESTAÑA DEL CENTRO DE INTELIGENCIA DE NEGOCIOS */}
+            <div>
+                {subTab === 'panel' && <BIPanelGeneralView />}
+                {subTab === 'comparativas' && <BIComparativasView />}
+                {subTab === 'productos' && <BIProductosView />}
+                {subTab === 'clientes' && <BIClientesView />}
+                {subTab === 'sucursales' && <BISucursalesView />}
+                {subTab === 'inventario' && <BIInventarioView />}
+                {subTab === 'rentabilidad' && <BIRentabilidadView />}
+                {subTab === 'descuentos' && <BIDescuentosView />}
+                {subTab === 'productividad' && <BIProductividadView />}
+                {subTab === 'ejecutivo' && <BIEjecutivoView />}
+            </div>
         </div>
     );
 }
