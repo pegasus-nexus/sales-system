@@ -100,6 +100,9 @@ export default function POSPage() {
         staleTime: 10 * 60 * 1000,
     });
     
+    const [fechaVenta, setFechaVenta] = useState<string>('');
+    const esSupermercado = sucursales.find(s => s._id === sucursalId)?.nombre.toLowerCase().includes('supermercado');
+
     const { data: almacenes = [] } = useQuery({ 
         queryKey: ['almacenes', sucursalId], 
         queryFn: () => getAlmacenes(sucursalId),
@@ -282,6 +285,7 @@ export default function POSPage() {
                 } : undefined,
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
+                fecha_venta: fechaVenta ? new Date(fechaVenta).toISOString() : undefined,
                 
                 send_whatsapp: sendWhatsApp && (!!cliente.telefono || !!cliente.cliente_id),
                 idempotency_key: idempotencyKeyRef.current,
@@ -299,7 +303,7 @@ export default function POSPage() {
             qc.invalidateQueries({ queryKey: ['pos-stats'] });
             setLastSale(data);
             setSuccess(true);
-            
+            setFechaVenta('');
             setPendingConfirmDuplicate(false);
         },
     });
@@ -742,6 +746,17 @@ export default function POSPage() {
                                     onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false })}
                                     disabled={ticketCovered}
                                 />
+                                {esSupermercado && (
+                                    <div className="pt-2 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha de Venta (Histórica)</span>
+                                        <input 
+                                            type="datetime-local"
+                                            value={fechaVenta}
+                                            onChange={(e) => setFechaVenta(e.target.value)}
+                                            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between mt-1">
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
