@@ -92,6 +92,52 @@ async def register_public_client(data: PublicClientRegister, tenant_id: str = "6
         "is_new": True
     }
 
+class PublicClientLogin(BaseModel):
+    telefono: str = Field(..., description="Número de teléfono celular")
+
+@router.post("/login")
+async def login_public_client(data: PublicClientLogin, tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+    """
+    Endpoint para iniciar sesión solo con el celular.
+    """
+    telefono = data.telefono.strip()
+    if not telefono:
+        raise HTTPException(status_code=400, detail="El teléfono es obligatorio")
+        
+    existing_cliente = await Cliente.find_one(
+        Cliente.tenant_id == tenant_id,
+        Cliente.telefono == telefono
+    )
+    
+    if not existing_cliente:
+        raise HTTPException(status_code=404, detail="No se encontró una cuenta con este número. Por favor, regístrate.")
+        
+    # Asegurar que tenga código de miembro
+    import random
+    import string
+    updated = False
+    if not existing_cliente.numero_tarjeta:
+        random_code = ''.join(random.choices(string.digits, k=6))
+        existing_cliente.numero_tarjeta = f"TAB-{random_code}"
+        updated = True
+        
+    if not existing_cliente.is_miembro_comunidad:
+        existing_cliente.is_miembro_comunidad = True
+        updated = True
+        
+    if updated:
+        await existing_cliente.save()
+        
+    return {
+        "status": "success",
+        "message": "Bienvenido de vuelta",
+        "cliente_id": str(existing_cliente.id),
+        "nombre": existing_cliente.nombre,
+        "telefono": existing_cliente.telefono,
+        "codigo_miembro": existing_cliente.numero_tarjeta,
+        "is_new": False
+    }
+
 from app.domain.models.product import Product
 from app.domain.models.category import Category
 from app.domain.models.inventario import Inventario
