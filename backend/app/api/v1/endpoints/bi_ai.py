@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, status
-from app.api.deps import get_current_active_user
+from app.infrastructure.auth import get_current_active_user
 from app.schemas.user import UserInDB
 from app.application.services.bi_ml_forecasting_service import BIMLForecastingService
 from app.application.services.bi_ml_product_demand_service import BIMLProductDemandService
