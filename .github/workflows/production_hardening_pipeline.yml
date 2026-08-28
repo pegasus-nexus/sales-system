@@ -33,6 +33,13 @@ jobs:
   backend-hardening-gates:
     name: 🔒 Backend Hardening & BI Regression Gates (Ejes 1-6)
     runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
     steps:
       - uses: actions/checkout@v3
 
@@ -42,6 +49,24 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
+      - name: Wait for MongoDB
+        run: |
+          python -c '
+          import socket, time
+          for i in range(15):
+              try:
+                  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                      s.settimeout(1)
+                      s.connect(("127.0.0.1", 27017))
+                      print("MongoDB is up and running!")
+                      exit(0)
+              except Exception:
+                  print("Waiting for MongoDB...")
+                  time.sleep(1)
+          print("MongoDB did not start in time")
+          exit(1)
+          '
+
       - name: Install Backend Dependencies
         run: |
           cd backend
@@ -49,9 +74,9 @@ jobs:
 
       - name: Run Master Hardening & CI/CD Gate Suite
         env:
-          MONGODB_URL: ${{ secrets.MONGODB_URL }}
-          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          MONGODB_URL: "mongodb://127.0.0.1:27017"
+          MONGODB_DB_NAME: "salessystem_test"
+          JWT_SECRET_KEY: "test_secret_key"
           BUSINESS_TIMEZONE: "America/La_Paz"
         run: |
           cd backend
