@@ -68,7 +68,7 @@ export default function POSPage() {
 
     const [search, setSearch] = useLocalStorage('pos-search', '');
     const [selectedCat, setSelectedCat] = useLocalStorage('pos-selected-cat', 'all');
-    const [fechaVenta, setFechaVenta] = useState<string>('');
+    
     const [success, setSuccess] = useState(false);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
     const [confirmSale, setConfirmSale] = useState(false);
@@ -282,7 +282,7 @@ export default function POSPage() {
                 } : undefined,
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
-                fecha_venta: fechaVenta ? new Date(fechaVenta).toISOString() : undefined,
+                
                 send_whatsapp: sendWhatsApp && (!!cliente.telefono || !!cliente.cliente_id),
                 idempotency_key: idempotencyKeyRef.current,
                 confirm_duplicate: pendingConfirmDuplicate,
@@ -299,7 +299,7 @@ export default function POSPage() {
             qc.invalidateQueries({ queryKey: ['pos-stats'] });
             setLastSale(data);
             setSuccess(true);
-            setFechaVenta('');
+            
             setPendingConfirmDuplicate(false);
         },
     });
@@ -809,19 +809,7 @@ export default function POSPage() {
                             </div>
 
                             {/* Fecha Venta (Solo Supermercados) */}
-                            {esSupermercado && (
-                                <div className="px-3 pb-2 pt-1 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha y Hora de Venta (Opcional)</span>
-                                    <div className="relative">
-                                        <input 
-                                            type="datetime-local"
-                                            value={fechaVenta}
-                                            onChange={(e) => setFechaVenta(e.target.value)}
-                                            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                            
 
                             {/* Vendedor */}
                             <div className="px-3 pb-2 pt-1 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
