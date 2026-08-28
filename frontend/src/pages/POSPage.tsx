@@ -99,7 +99,7 @@ export default function POSPage() {
         queryFn: getSucursales,
         staleTime: 10 * 60 * 1000,
     });
-    const esSupermercado = sucursales.find(s => s._id === sucursalId)?.nombre.toLowerCase().includes('supermercado');
+    
     const { data: almacenes = [] } = useQuery({ 
         queryKey: ['almacenes', sucursalId], 
         queryFn: () => getAlmacenes(sucursalId),
