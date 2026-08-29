@@ -53,6 +53,12 @@ class BIPanelGeneralResponse(BaseModel):
     cantidad_ordenes: int = Field(..., description="Conteo de tickets/ventas válidas emitidas")
     ticket_medio: float = Field(..., description="Ingresos Totales / Cantidad de Órdenes")
 
+    # KPIs Financieros de Márgenes y Rentabilidad
+    margen_liquido_bs: float = Field(0.0, description="Margen Líquido Total en Bs después de costos y comisiones")
+    rentabilidad_contable_pct: float = Field(0.0, description="Porcentaje de Rentabilidad Contable sobre Ventas Públicas")
+    comision_matriz_bs: float = Field(0.0, description="Comisión Matriz / Fábrica (15% Chocolates Taboada)")
+    margen_retail_bs: float = Field(0.0, description="Margen Retail de los puntos de venta")
+
     # Desgloses y Estructuras Analíticas
     desglose_sucursales: List[DesgloseSucursalBI] = []
     ventas_por_hora: List[HourlyDistributionItemBI] = []

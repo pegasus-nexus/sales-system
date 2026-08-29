@@ -101,6 +101,41 @@ class BIPandasService:
         cantidad_ordenes = int(len(df_sales))
         ticket_medio = round(ingresos_totales / cantidad_ordenes, 2) if cantidad_ordenes > 0 else 0.0
 
+        # CÁLCULO FINANCIERO DE MÁRGENES Y RENTABILIDAD
+        comision_matriz_total = 0.0
+        margen_retail_total = 0.0
+        costos_directos_otros = 0.0
+
+        for sale in raw_sales:
+            items = sale.get("items", [])
+            for item in items:
+                qty = safe_float(item.get("cantidad") or item.get("quantity"))
+                price = safe_float(item.get("precio_unitario") or item.get("price"))
+                subt = safe_float(item.get("subtotal") or (qty * price))
+                costo_u = safe_float(item.get("costo_unitario") or item.get("costo") or item.get("costo_base"))
+                desc_prod = str(item.get("descripcion") or item.get("nombre") or "").upper()
+                prov_prod = str(item.get("proveedor") or "").upper()
+
+                # Lógica especial Chocolates Taboada (15% Comisión Matriz)
+                is_taboada = ("TABOADA" in desc_prod) or ("TABOADA" in prov_prod)
+
+                if is_taboada:
+                    comision = subt * 0.15
+                    costo_fabrica = subt * 0.85
+                    margen_ret = subt - costo_fabrica
+                    comision_matriz_total += comision
+                    margen_retail_total += margen_ret
+                else:
+                    costo_linea = qty * costo_u
+                    costos_directos_otros += costo_linea
+                    margen_ret = subt - costo_linea
+                    margen_retail_total += margen_ret
+
+        comision_matriz_bs = round(comision_matriz_total, 2)
+        margen_retail_bs = round(margen_retail_total, 2)
+        margen_liquido_bs = round(comision_matriz_total + margen_retail_total - costos_directos_otros, 2)
+        rentabilidad_contable_pct = round((margen_liquido_bs / ingresos_totales * 100.0), 2) if ingresos_totales > 0 else 0.0
+
         df_merged = pd.merge(
             df_sales,
             df_dim_sucursal,
@@ -234,6 +269,10 @@ class BIPandasService:
             ingresos_totales=ingresos_totales,
             cantidad_ordenes=cantidad_ordenes,
             ticket_medio=ticket_medio,
+            margen_liquido_bs=margen_liquido_bs,
+            rentabilidad_contable_pct=rentabilidad_contable_pct,
+            comision_matriz_bs=comision_matriz_bs,
+            margen_retail_bs=margen_retail_bs,
             desglose_sucursales=desglose_list,
             ventas_por_hora=hourly_list,
             ventas_recientes=ventas_recientes_list,

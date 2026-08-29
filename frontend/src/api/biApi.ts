@@ -50,6 +50,11 @@ export interface BIPanelGeneralResponse {
     cantidad_ordenes: number;
     ticket_medio: number;
 
+    margen_liquido_bs?: number;
+    rentabilidad_contable_pct?: number;
+    comision_matriz_bs?: number;
+    margen_retail_bs?: number;
+
     desglose_sucursales: DesgloseSucursalBI[];
     ventas_por_hora: HourlyDistributionItemBI[];
     ventas_recientes: VentaRecienteBI[];

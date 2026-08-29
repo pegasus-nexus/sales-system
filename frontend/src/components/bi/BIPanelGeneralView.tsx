@@ -3,13 +3,15 @@ import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     Download, Maximize2, RotateCcw, AlertTriangle, Store, Award,
-    Activity, Cpu, Bell, Sparkles, Info, ChevronRight, X
+    Activity, Bell, Sparkles, Info, ChevronRight, X
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 import { useAuthStore } from '../../store/authStore';
 
 import { BIStateBanner } from './common/BIStateBanner';
+import { MargenLiquidoCard } from './MargenLiquidoCard';
+import { RentabilidadContableCard } from './RentabilidadContableCard';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -541,30 +543,13 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
 
                 {/* TARJETA 2: MARGEN LÍQUIDO (Pastel Ámbar/Naranja) */}
-                <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-white rounded-3xl p-5 shadow-xs border border-amber-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
-                    <div className="flex justify-between items-start pb-3 border-b border-amber-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-amber-950 block">Margen Líquido</span>
-                            <span className="text-[10px] font-bold text-amber-700/80">Rentabilidad Contable</span>
-                        </div>
-                        <div className="p-2 bg-amber-100/60 rounded-2xl text-amber-600">
-                            <Receipt size={18} />
-                        </div>
-                    </div>
-
-                    <div className="my-3">
-                        <span className="text-xs font-extrabold text-amber-800 bg-amber-100/70 px-3 py-1.5 rounded-xl border border-amber-200/80 inline-block shadow-2xs">
-                            Disponible próximamente
-                        </span>
-                        <p className="text-[10px] font-bold text-amber-700/80 mt-1">
-                            Fase: auditando costos reales
-                        </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-amber-100/60 text-[10px] font-extrabold text-amber-600">
-                        <span>Estructura visual lista</span>
-                    </div>
-                </div>
+                <MargenLiquidoCard
+                    margenLiquidoBs={data?.margen_liquido_bs}
+                    comisionMatrizBs={data?.comision_matriz_bs}
+                    margenRetailBs={data?.margen_retail_bs}
+                    loading={loading}
+                    formatBs={formatBs}
+                />
 
                 {/* TARJETA 3: TICKET MEDIO (Pastel Esmeralda/Menta) */}
                 <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
@@ -634,35 +619,12 @@ export const BIPanelGeneralView: React.FC = () => {
                     </button>
                 </div>
 
-                {/* TARJETA 5: IMPACTO IA / BOTÓN ACCIÓN DESGLOSE SUCURSALES (Pastel Violeta/Rosa) */}
-                <div className="bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white rounded-3xl p-5 shadow-xs border border-violet-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
-                    <div className="flex justify-between items-start pb-3 border-b border-violet-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-violet-950 block">Impacto IA</span>
-                            <span className="text-[10px] font-bold text-violet-700/80">Modelo Predictivo</span>
-                        </div>
-                        <div className="p-2 bg-violet-100/60 rounded-2xl text-violet-600">
-                            <Cpu size={18} />
-                        </div>
-                    </div>
-
-                    <div className="my-3">
-                        <span className="text-[11px] font-extrabold text-violet-800 bg-violet-100/70 px-2.5 py-1 rounded-xl border border-violet-200/80 inline-block shadow-2xs">
-                            Sin predicción activa
-                        </span>
-                        <p className="text-[10px] font-bold text-violet-700/80 mt-1">
-                            Ver desglose por sucursales
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={() => setShowSucursalesModal(true)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-2 px-3 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer mt-1"
-                    >
-                        <Store size={14} />
-                        <span>Desglose por Sucursales</span>
-                    </button>
-                </div>
+                {/* TARJETA 5: RENTABILIDAD CONTABLE (Pastel Violeta/Rosa) */}
+                <RentabilidadContableCard
+                    rentabilidadPct={data?.rentabilidad_contable_pct}
+                    loading={loading}
+                    onOpenModal={() => setShowSucursalesModal(true)}
+                />
 
             </div>
 
