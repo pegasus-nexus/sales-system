@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://user:password@localhost:27017"
     MONGODB_DB_NAME: str = "sales_system_dev"
     JWT_SECRET_KEY: str = "supersecretkey_change_me_in_production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 hour
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 720  # 12 hours (was 60 mins)
     ALLOWED_ORIGINS: str = "https://salessystem-app.vercel.app,http://localhost:5173,http://127.0.0.1:5173"
     ENVIRONMENT: str = "development"
     GEMINI_API_KEY: str = ""
