@@ -96,3 +96,7 @@ class ListaPrecioItemResponse(BaseModel):
     vigente: bool = True
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class SaleDateUpdate(BaseModel):
+    nueva_fecha: datetime

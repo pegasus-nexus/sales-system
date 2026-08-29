@@ -16,7 +16,7 @@ from pymongo import ReturnDocument
 router = APIRouter()
 
 
-from app.domain.schemas.sale import SaleCreate, SalesPaginated
+from app.domain.schemas.sale import SaleCreate, SalesPaginated, SaleDateUpdate
 from app.application.services.sales_service import SalesService
 from fastapi import BackgroundTasks
 from app.domain.models.tenant import Tenant
@@ -338,3 +338,11 @@ async def update_qr_info(
     await sale.save()
     
     return sale
+@ r o u t e r . p a t c h ( ' / { s a l e _ i d } / f e c h a ' ) 
+ a s y n c   d e f   u p d a t e _ s a l e _ d a t e ( r e q u e s t :   R e q u e s t ,   s a l e _ i d :   s t r ,   p a y l o a d :   S a l e D a t e U p d a t e ,   c u r r e n t _ u s e r :   U s e r   =   D e p e n d s ( g e t _ c u r r e n t _ a c t i v e _ u s e r ) ) : 
+         t e n a n t _ i d   =   r e q u e s t . s t a t e . t e n a n t _ i d 
+         i f   c u r r e n t _ u s e r . r o l e   n o t   i n   [ U s e r R o l e . A D M I N ,   U s e r R o l e . M A N A G E R ,   U s e r R o l e . A D M I N _ S U C U R S A L ] : 
+                 r a i s e   H T T P E x c e p t i o n ( s t a t u s _ c o d e = 4 0 3 ,   d e t a i l = ' N o   t i e n e s   p e r m i s o s   p a r a   m o d i f i c a r   l a   f e c h a   d e   u n a   v e n t a ' ) 
+         u p d a t e d _ s a l e   =   a w a i t   S a l e s S e r v i c e . u p d a t e _ s a l e _ d a t e ( t e n a n t _ i d ,   s a l e _ i d ,   p a y l o a d . n u e v a _ f e c h a ,   c u r r e n t _ u s e r ) 
+         r e t u r n   { ' s t a t u s ' :   ' s u c c e s s ' ,   ' m e s s a g e ' :   ' F e c h a   a c t u a l i z a d a   m a s i v a m e n t e ' ,   ' s a l e ' :   u p d a t e d _ s a l e }  
+ 
