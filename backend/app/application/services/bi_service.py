@@ -9,11 +9,13 @@ from app.application.services.sales_read_service import SalesReadService
 from app.schemas.bi import BIPanelGeneralResponse, BIComparativaResponse, BIProductosResponse
 
 
+from app.application.services.financial_service import FinancialService
+
 class BIService:
     """
     Servicio de Aplicación de BI.
     Coordina la extracción de datos desde el servicio unificado SalesReadService
-    y realiza la transformación analítica con Pandas en un Modelo Estrella.
+    y el servicio financiero unificado FinancialService para garantizar 100% de coincidencia.
     """
 
     def __init__(self, repository: BIRepository, pandas_service: Optional[BIPandasService] = None):
@@ -33,13 +35,20 @@ class BIService:
             end_date_str=end_date,
             sucursal_id=sucursal_id
         )
+        financial_summary = await FinancialService.get_financial_summary(
+            user=current_user,
+            start_date_str=start_date,
+            end_date_str=end_date,
+            sucursal_id=sucursal_id
+        )
         tenant_id = current_user.tenant_id or "default"
         sucursales = await self.repository.get_sucursales(tenant_id=tenant_id)
         return self.pandas_service.process_panel_general(
             raw_sales=raw_sales,
             sucursales=sucursales,
             start_date_str=start_date,
-            end_date_str=end_date
+            end_date_str=end_date,
+            financial_summary=financial_summary
         )
 
     async def get_comparativas(
