@@ -3,7 +3,7 @@ import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     Download, Maximize2, RotateCcw, AlertTriangle, Store, Award,
-    Activity, Cpu, Bell, Sparkles, Info
+    Activity, Cpu, Bell, Sparkles, Info, ChevronRight, X
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -61,6 +61,7 @@ export const BIPanelGeneralView: React.FC = () => {
     // Datos del BI Backend
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [showSucursalesModal, setShowSucursalesModal] = useState<boolean>(false);
 
     // PRUEBA OBLIGATORIA #2 — REGISTRO DE ACTUALIZACIÓN DE ESTADO REACT
     useEffect(() => {
@@ -517,18 +518,26 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="my-4">
+                    <div className="my-3">
                         <h2 className="text-2xl lg:text-3xl font-black text-indigo-950 tracking-tight leading-none">
                             {loading ? '...' : formatBs(data?.ingresos_totales)}
                         </h2>
-                        <p className="text-[10px] font-bold text-indigo-700/80 mt-2 flex items-center gap-1">
+                        <p className="text-[10px] font-bold text-indigo-700/80 mt-1 flex items-center gap-1">
                             <span>Ventas brutas menos anuladas</span>
                         </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-indigo-100/60 text-[10px] font-extrabold text-indigo-500">
-                        <span>Fuente: MongoDB sales</span>
-                    </div>
+                    <button
+                        onClick={() => setShowSucursalesModal(true)}
+                        className="pt-2 border-t border-indigo-100/60 text-[11px] font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                        title="Ver desglose detallado por sucursales"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Store size={13} className="text-indigo-600" />
+                            <span>Desglose Sucursales</span>
+                        </span>
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
                 </div>
 
                 {/* TARJETA 2: MARGEN LÍQUIDO (Pastel Ámbar/Naranja) */}
@@ -543,16 +552,16 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="my-4">
+                    <div className="my-3">
                         <span className="text-xs font-extrabold text-amber-800 bg-amber-100/70 px-3 py-1.5 rounded-xl border border-amber-200/80 inline-block shadow-2xs">
                             Disponible próximamente
                         </span>
-                        <p className="text-[10px] font-bold text-amber-700/80 mt-2">
+                        <p className="text-[10px] font-bold text-amber-700/80 mt-1">
                             Fase: auditando costos reales
                         </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-amber-100/60 text-[10px] font-extrabold text-amber-600">
+                    <div className="pt-2 border-t border-amber-100/60 text-[10px] font-extrabold text-amber-600">
                         <span>Estructura visual lista</span>
                     </div>
                 </div>
@@ -569,19 +578,26 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="my-4">
+                    <div className="my-3">
                         <h2 className="text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none">
                             {loading ? '...' : formatBs(data?.ticket_medio)}
                         </h2>
-                        <p className="text-[10px] font-bold text-emerald-700/80 mt-2">
+                        <p className="text-[10px] font-bold text-emerald-700/80 mt-1">
                             Ingresos Totales / Órdenes
                         </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-emerald-100/60 text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 size={12} />
-                        <span>Vectorial Pandas</span>
-                    </div>
+                    <button
+                        onClick={() => setShowSucursalesModal(true)}
+                        className="pt-2 border-t border-emerald-100/60 text-[11px] font-black text-emerald-700 hover:text-emerald-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                        title="Ver comparativa entre sucursales"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <CheckCircle2 size={13} className="text-emerald-600" />
+                            <span>Ver Promedios</span>
+                        </span>
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
                 </div>
 
                 {/* TARJETA 4: TOTAL DE ÓRDENES (Pastel Azul/Cian) */}
@@ -596,21 +612,29 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="my-4">
+                    <div className="my-3">
                         <h2 className="text-2xl lg:text-3xl font-black text-blue-950 tracking-tight leading-none">
                             {loading ? '...' : data?.cantidad_ordenes || 0}
                         </h2>
-                        <p className="text-[10px] font-bold text-blue-700/80 mt-2">
+                        <p className="text-[10px] font-bold text-blue-700/80 mt-1">
                             Excluye tickets anulados
                         </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-blue-100/60 text-[10px] font-extrabold text-blue-600">
-                        <span>1 Ticket = 1 Orden</span>
-                    </div>
+                    <button
+                        onClick={() => setShowSucursalesModal(true)}
+                        className="pt-2 border-t border-blue-100/60 text-[11px] font-black text-blue-700 hover:text-blue-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                        title="Ver órdenes por sucursal"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Layers size={13} className="text-blue-600" />
+                            <span>Órdenes Sucursales</span>
+                        </span>
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
                 </div>
 
-                {/* TARJETA 5: IMPACTO IA (Pastel Violeta/Rosa) */}
+                {/* TARJETA 5: IMPACTO IA / BOTÓN ACCIÓN DESGLOSE SUCURSALES (Pastel Violeta/Rosa) */}
                 <div className="bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white rounded-3xl p-5 shadow-xs border border-violet-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-violet-100/60">
                         <div>
@@ -622,18 +646,22 @@ export const BIPanelGeneralView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="my-4">
-                        <span className="text-xs font-extrabold text-violet-800 bg-violet-100/70 px-3 py-1.5 rounded-xl border border-violet-200/80 inline-block shadow-2xs">
-                            Disponible próximamente
+                    <div className="my-3">
+                        <span className="text-[11px] font-extrabold text-violet-800 bg-violet-100/70 px-2.5 py-1 rounded-xl border border-violet-200/80 inline-block shadow-2xs">
+                            Sin predicción activa
                         </span>
-                        <p className="text-[10px] font-bold text-violet-700/80 mt-2">
-                            Fase: integración ML
+                        <p className="text-[10px] font-bold text-violet-700/80 mt-1">
+                            Ver desglose por sucursales
                         </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-violet-100/60 text-[10px] font-extrabold text-violet-600">
-                        <span>Sin predicción activa</span>
-                    </div>
+                    <button
+                        onClick={() => setShowSucursalesModal(true)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-2 px-3 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer mt-1"
+                    >
+                        <Store size={14} />
+                        <span>Desglose por Sucursales</span>
+                    </button>
                 </div>
 
             </div>
@@ -863,6 +891,127 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
 
             </div>
+
+            {/* MODAL INTERACTIVO: DESGLOSE DE VENTAS POR SUCURSAL */}
+            {showSucursalesModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-6">
+                        {/* Cabecera del Modal */}
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-indigo-100 text-indigo-700 rounded-2xl shadow-xs">
+                                    <Store size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Desglose de Ventas por Sucursales</h3>
+                                    <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                        Período consultado: <span className="text-indigo-600 font-bold">{startDate} a {endDate}</span> (America/La_Paz)
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowSucursalesModal(false)}
+                                className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                                title="Cerrar ventana"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Tarjetas Resumen Global */}
+                        <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <div>
+                                <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Venta Neta POS</span>
+                                <span className="text-lg font-black text-indigo-950 block">{formatBs(data?.ingresos_totales)}</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Total Órdenes</span>
+                                <span className="text-lg font-black text-slate-900 block">{data?.cantidad_ordenes || 0} tickets</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Ticket Medio Global</span>
+                                <span className="text-lg font-black text-emerald-700 block">{formatBs(data?.ticket_medio)}</span>
+                            </div>
+                        </div>
+
+                        {/* Lista / Tabla de Desglose por Sucursales */}
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Distribución por Punto de Venta</h4>
+                            
+                            {(!data?.desglose_sucursales || data.desglose_sucursales.length === 0) ? (
+                                <div className="p-6 text-center text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl">
+                                    No se registraron ventas en las sucursales para el período seleccionado.
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {data.desglose_sucursales.map((suc) => (
+                                        <div
+                                            key={suc.sucursal_id}
+                                            className="p-4 bg-slate-50/80 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/70 transition-all space-y-2"
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl">
+                                                        <Store size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-extrabold text-slate-900 text-sm block">
+                                                            {suc.nombre_sucursal}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 font-semibold">
+                                                            {suc.ordenes} órdenes • Ticket Medio: <strong className="text-emerald-700">{formatBs(suc.ticket_medio)}</strong>
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right flex items-center gap-4">
+                                                    <div>
+                                                        <span className="text-base font-black text-slate-900 block">
+                                                            {formatBs(suc.ingresos)}
+                                                        </span>
+                                                        <span className="text-xs font-black text-indigo-600 block">
+                                                            {suc.participacion_pct}% del total
+                                                        </span>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedSucursal(suc.sucursal_id);
+                                                            setShowSucursalesModal(false);
+                                                        }}
+                                                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold text-xs rounded-xl border border-indigo-200 transition-all cursor-pointer"
+                                                        title={`Filtrar vista exclusivamente por ${suc.nombre_sucursal}`}
+                                                    >
+                                                        Filtrar sucursal
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Barra de progreso de participación */}
+                                            <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+                                                <div
+                                                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                                                    style={{ width: `${Math.min(100, Math.max(0, suc.participacion_pct))}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Botón de cierre */}
+                        <div className="pt-4 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={() => setShowSucursalesModal(false)}
+                                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-2xl transition-all shadow-xs cursor-pointer"
+                            >
+                                Entendido / Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
