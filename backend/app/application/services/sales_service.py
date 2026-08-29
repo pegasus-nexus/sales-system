@@ -80,6 +80,7 @@ class SalesService:
         client = get_client()
 
         async def _run_transaction() -> Sale:
+            fecha_transaccion = sale_in.fecha_venta if sale_in.fecha_venta else datetime.utcnow()
             async with await client.start_session() as session:
                 async with session.start_transaction():
                     sale_items: List[SaleItem] = []
@@ -181,14 +182,15 @@ class SalesService:
                                 usuario_id=str(current_user.id),
                                 usuario_nombre=current_user.full_name or current_user.username,
                                 notas="Salida por Venta POS",
-                                referencia_id="PENDING"
+                                referencia_id="PENDING",
+                                created_at=fecha_transaccion
                             ).create(session=session)
 
                         await SaleItemAnalytics(
                             tenant_id=tenant_id,
                             sucursal_id=sucursal_id,
                             sale_id="PENDING",
-                            sale_date=datetime.utcnow(),
+                            sale_date=fecha_transaccion,
                             producto_id=str(product.id),
                             descripcion=product.descripcion,
                             cantidad=item.cantidad,
@@ -276,7 +278,7 @@ class SalesService:
                         cashier_name=current_user.full_name or current_user.username,
                         vendedor_id=sale_in.vendedor_id,
                         vendedor_name=sale_in.vendedor_name,
-                        created_at=sale_in.fecha_venta if sale_in.fecha_venta else datetime.utcnow(),
+                        created_at=fecha_transaccion,
                         idempotency_key=sale_in.idempotency_key,
                     )
                     await SalesService._get_sale_repo().add(sale, session=session)
@@ -467,6 +469,8 @@ class SalesService:
                                 monto       = monto_p,
                                 descripcion = f"Venta #{sale_id_str[-6:]} — {label}",
                                 sale_id     = sale_id_str,
+                                fecha       = fecha_transaccion,
+                                created_at  = fecha_transaccion
                             ).create(session=session)
 
                         cambio = _total_pagado - computed_total
@@ -482,6 +486,8 @@ class SalesService:
                                 monto       = cambio,
                                 descripcion = f"Venta #{sale_id_str[-6:]} — Cambio entregado",
                                 sale_id     = sale_id_str,
+                                fecha       = fecha_transaccion,
+                                created_at  = fecha_transaccion
                             ).create(session=session)
 
                     return sale

@@ -50,8 +50,8 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:p-0 print:bg-transparent">
-            <div className="bg-white rounded-[24px] w-full max-w-4xl max-h-[95vh] flex flex-col shadow-2xl overflow-hidden print:shadow-none print:w-full print:max-w-full print:h-auto print:max-h-none print:rounded-none">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:static print:p-0 print:bg-transparent print:flex-none print:items-start">
+            <div className="bg-white rounded-[24px] w-full max-w-4xl max-h-[95vh] flex flex-col shadow-2xl overflow-hidden print:shadow-none print:w-full print:max-w-full print:h-auto print:max-h-none print:rounded-none print:overflow-visible">
                 
                 {/* Header NO-PRINT */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 print:hidden">
@@ -234,11 +234,8 @@ export default function ComprobanteCompraModal({ reception, onClose }: Props) {
                     #comprobante-impresion, #comprobante-impresion * {
                         visibility: visible;
                     }
-                    /* Posicionar el comprobante en la esquina superior izquierda de la hoja */
                     #comprobante-impresion {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
+                        position: relative;
                         width: 100%;
                         background-color: white;
                     }

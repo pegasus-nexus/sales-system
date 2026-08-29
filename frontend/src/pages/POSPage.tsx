@@ -754,9 +754,12 @@ export default function POSPage() {
                                             value={fechaVenta}
                                             onChange={(e) => setFechaVenta(e.target.value)}
                                             className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
+                                            title="Si dejas este campo en blanco, se usará la fecha actual."
                                         />
+                                        <span className="text-[9px] text-gray-400">Si dejas la hora en 00:00, se guardará así en sistema.</span>
                                     </div>
                                 )}
+                                
 
                                 <div className="flex items-center justify-between mt-1">
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
