@@ -22,6 +22,9 @@ async def lifespan(app: FastAPI):
         
     # No capturar excepciones aquÃ­ para que la app se detenga inmediatamente si no hay conexiÃ³n a base de datos.
     # Esto evita el estado zombi "CollectionWasNotInitialized".
+    import logging
+    logging.getLogger("uvicorn.access").disabled = True
+    
     await init_db()
     print("Database initialized successfully.", flush=True)
     
