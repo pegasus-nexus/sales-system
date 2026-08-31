@@ -44,7 +44,7 @@ async def get_inventario(
         # Escapar caracteres para búsqueda segura y permitir coincidencias parciales
         import re
         safe_search = re.escape(search.strip())
-        prod_match["descripcion"] = {"$regex": safe_search, "$options": "i"}
+        prod_match["$or"] = [{"descripcion": {"$regex": safe_search, "$options": "i"}}, {"codigo_corto": {"$regex": safe_search, "$options": "i"}}, {"codigo_largo": {"$regex": safe_search, "$options": "i"}}]
         
     if categoria_id:
         prod_match["categoria_id"] = categoria_id
