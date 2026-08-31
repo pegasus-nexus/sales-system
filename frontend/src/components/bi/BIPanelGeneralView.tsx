@@ -11,7 +11,6 @@ import { useAuthStore } from '../../store/authStore';
 
 import { BIStateBanner } from './common/BIStateBanner';
 import { MargenLiquidoCard } from './MargenLiquidoCard';
-import { RentabilidadContableCard } from './RentabilidadContableCard';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -468,12 +467,44 @@ export const BIPanelGeneralView: React.FC = () => {
                     formatBs={formatBs}
                 />
 
-                {/* TARJETA 3: RENTABILIDAD CONTABLE (SUTIL) */}
-                <RentabilidadContableCard
-                    rentabilidadPct={data?.rentabilidad_contable_pct}
-                    loading={loading}
-                    onOpenModal={() => setShowSucursalesModal(true)}
-                />
+                {/* TARJETA 3: PREDICCIÓN & IMPACTO IA (Pastel Violeta/Ámbar) */}
+                <div className="bg-gradient-to-br from-purple-50/90 via-amber-50/40 to-white rounded-3xl p-5 shadow-xs border border-purple-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex justify-between items-start pb-3 border-b border-purple-100/60">
+                        <div>
+                            <span className="text-xs font-black uppercase tracking-wider text-purple-950 block">Predicción IA</span>
+                            <span className="text-[10px] font-bold text-purple-700/80">Modelo Predictivo ML</span>
+                        </div>
+                        <div className="p-2 bg-purple-100/60 rounded-2xl text-purple-600">
+                            <Sparkles size={18} className="animate-pulse text-amber-500" />
+                        </div>
+                    </div>
+
+                    <div className="my-3">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-xs font-black text-purple-950 bg-purple-100/80 px-2 py-0.5 rounded-md border border-purple-200/60">
+                                ☁️ Clima + Bajas Ventas
+                            </span>
+                        </div>
+                        <h2 className="text-xl font-black text-purple-950 tracking-tight leading-none mt-1">
+                            Proyección IA
+                        </h2>
+                        <p className="text-[10px] font-bold text-purple-700/80 mt-1">
+                            Ajustado por clima y tendencias de consumo
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={() => setShowSucursalesModal(true)}
+                        className="pt-2 border-t border-purple-100/60 text-[11px] font-black text-purple-700 hover:text-purple-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                        title="Ver factores causales y predicción IA"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-purple-600" />
+                            <span>Factores Causales</span>
+                        </span>
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                </div>
 
                 {/* TARJETA 4: TICKET MEDIO */}
                 <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
