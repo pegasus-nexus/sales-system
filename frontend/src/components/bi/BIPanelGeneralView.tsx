@@ -1,25 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-    Calendar, RefreshCw, Layers,
-    TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
-    RotateCcw, AlertTriangle, Store, Award,
-    Activity, Bell, Sparkles, Info, ChevronRight
-} from 'lucide-react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
-import { useAuthStore } from '../../store/authStore';
-
-import { BIStateBanner } from './common/BIStateBanner';
-import { MargenLiquidoCard } from './MargenLiquidoCard';
-import { BIVentasHorarioInteligenteView } from './BIVentasHorarioInteligenteView';
+import { BIOperacionDiariaView } from './BIOperacionDiariaView';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// FUNCIÓN ÚNICA CENTRALIZADA DE FECHAS EN EL FRONTEND BASADA STRICTAMENTE EN AMERICA/LA_PAZ
 const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     const now = new Date();
-    // Obtener la fecha en formato YYYY-MM-DD usando la zona horaria oficial del negocio America/La_Paz
     const boliviaDateStr = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/La_Paz',
         year: 'numeric',
@@ -27,9 +16,7 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
         day: '2-digit'
     }).format(now);
 
-    if (daysOffset === 0) {
-        return boliviaDateStr;
-    }
+    if (daysOffset === 0) return boliviaDateStr;
 
     const [y, m, d] = boliviaDateStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
@@ -45,11 +32,9 @@ export const BIPanelGeneralView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Sequence Guard & Request Cancellation Refs
     const requestIdRef = useRef<number>(0);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // Controles de Fecha y Sucursal (Estado Atómico Rango de Fechas)
     const [preset, setPreset] = useState<'hoy' | 'ayer' | '7dias' | '30dias' | 'historial' | 'custom'>('hoy');
     const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>(() => ({
         startDate: getFormattedBoliviaDate(0),
@@ -59,21 +44,7 @@ export const BIPanelGeneralView: React.FC = () => {
 
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
-
-    // Datos del BI Backend
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
-    const [expandedCard, setExpandedCard] = useState<'ingresos' | 'margen' | 'ia' | 'ticket' | 'ordenes' | null>(null);
-
-    // PRUEBA OBLIGATORIA #2 — REGISTRO DE ACTUALIZACIÓN DE ESTADO REACT
-    useEffect(() => {
-        console.log('[BI DATA STATE UPDATED]', {
-            fechaInicio: data?.fecha_inicio_bolivia,
-            fechaFin: data?.fecha_fin_bolivia,
-            ingresos: data?.ingresos_totales,
-            ordenes: data?.cantidad_ordenes,
-            ticket: data?.ticket_medio,
-        });
-    }, [data]);
 
     const loadSucursales = async () => {
         try {
@@ -85,108 +56,28 @@ export const BIPanelGeneralView: React.FC = () => {
     };
 
     const fetchBIData = useCallback(async (sDate: string, eDate: string, sucId: string) => {
-        const authState = useAuthStore.getState();
-        console.log('[AUTH DEBUG]', {
-            user: authState.user?.username || authState.user?.full_name || 'N/A',
-            role: authState.role || authState.user?.role || 'N/A',
-            tenantId: authState.user?.tenant_id || 'N/A',
-            sucursalId: authState.sucursal_id || authState.user?.sucursal_id || 'N/A',
-            tokenPresent: !!authState.token,
-        });
-
-        // PRUEBA OBLIGATORIA #4 — CONSOLE TRACE ORIGEN DE PETICIÓN
-        console.trace('[BI FETCH CALL]', {
-            startDate: sDate,
-            endDate: eDate,
-            sucId,
-        });
-
-        // 1. Cancelar la petición HTTP en vuelo previa si aún no terminó
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
-        // 2. Incrementar el contador secuencial único del Request ID
         const currentRequestId = ++requestIdRef.current;
-
-        console.log('[BI REQUEST START]', {
-            requestId: currentRequestId,
-            startDate: sDate,
-            endDate: eDate,
-            sucursal: sucId,
-        });
-
         setLoading(true);
         setError(null);
 
         try {
             const res = await getBIPanelGeneral(sDate, eDate, sucId, { signal: controller.signal });
-
-            console.log('[BI HTTP RESPONSE]', {
-                requestId: currentRequestId,
-                startDate: sDate,
-                endDate: eDate,
-                sucId,
-                responseStart: res.fecha_inicio_bolivia,
-                responseEnd: res.fecha_fin_bolivia,
-                ingresos: res.ingresos_totales,
-                ordenes: res.cantidad_ordenes,
-                ticket: res.ticket_medio,
-            });
-
-            // 3. PROTECCIÓN CONTRA RESPUESTAS OBSOLETAS: Descartar si el ID no corresponde a la consulta más reciente
-            if (currentRequestId !== requestIdRef.current) {
-                console.warn('[BI REQUEST DISCARDED BY RACE GUARD]', {
-                    requestId: currentRequestId,
-                    activeRequestId: requestIdRef.current,
-                    startDate: sDate,
-                    endDate: eDate
-                });
-                return;
-            }
-
-            console.log('[BI SET DATA]', {
-                requestId: currentRequestId,
-                activeRequestId: requestIdRef.current,
-                startDate: sDate,
-                endDate: eDate,
-                ingresos: res.ingresos_totales,
-                ordenes: res.cantidad_ordenes,
-            });
-
+            if (currentRequestId !== requestIdRef.current) return;
             setData(res);
         } catch (err: unknown) {
-            if (err instanceof Error && err.name === 'AbortError') {
-                console.warn('[BI REQUEST CANCELLED CLEANLY BY ABORT CONTROLLER]', {
-                    requestId: currentRequestId,
-                    startDate: sDate,
-                    endDate: eDate
-                });
-                return;
-            }
-
+            if (err instanceof Error && err.name === 'AbortError') return;
             if (currentRequestId === requestIdRef.current) {
                 console.error('Error obteniendo métricas del BI:', err);
-                const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
-                const status = axiosErr?.response?.status;
-                const msg = axiosErr?.response?.data?.detail
-                    || (status === 404
-                        ? 'HTTP 404: El endpoint /api/v1/bi/panel-general no fue encontrado en el servidor. Verifica el despliegue del backend en Render.'
-                        : 'No fue posible obtener los datos del BI. Error de conexión con el servidor.');
-                setError(msg);
+                setError('No fue posible obtener los datos del BI. Error de conexión con el servidor.');
                 setData(null);
             }
         } finally {
-            console.log('[BI REQUEST END]', {
-                requestId: currentRequestId,
-                activeRequestId: requestIdRef.current,
-                startDate: sDate,
-                endDate: eDate,
-            });
-
-            // Desactivar spinner únicamente para la petición activa
             if (currentRequestId === requestIdRef.current) {
                 setLoading(false);
             }
@@ -234,7 +125,6 @@ export const BIPanelGeneralView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
-    // SI HAY ERROR DE RED/HTTP (DIFERENCIAR ERROR DE CONEXIÓN DE SIN VENTAS)
     if (error && !loading) {
         return (
             <div className="bg-rose-50/90 border-2 border-rose-200/80 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8 shadow-sm">
@@ -244,22 +134,13 @@ export const BIPanelGeneralView: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-rose-900">No se pudo obtener los datos del BI</h2>
-                        <p className="text-xs font-bold text-rose-700 mt-1">
-                            Error de Comunicación HTTP / Servidor Backend
-                        </p>
-                        <p className="text-xs text-rose-800 mt-3 bg-white/80 p-3 rounded-2xl border border-rose-200 font-mono shadow-xs">
-                            {error}
-                        </p>
+                        <p className="text-xs font-bold text-rose-700 mt-1">{error}</p>
                     </div>
                 </div>
-
-                <div className="pt-4 border-t border-rose-200 flex flex-wrap items-center justify-between gap-4">
-                    <span className="text-xs font-semibold text-rose-700">
-                        * Los datos contables están protegidos en MongoDB. No se mostrarán métricas en cero por error de red.
-                    </span>
+                <div className="pt-4 border-t border-rose-200 flex justify-end">
                     <button
                         onClick={() => fetchBIData(startDate, endDate, selectedSucursal)}
-                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl transition-all shadow-sm active:scale-95"
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl transition-all"
                     >
                         <RefreshCw size={14} />
                         <span>Reintentar Conexión</span>
@@ -269,639 +150,26 @@ export const BIPanelGeneralView: React.FC = () => {
         );
     }
 
-    const hasNoSales = data && data.cantidad_ordenes === 0;
-
     return (
         <div className="min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full">
-            
-            {/* BARRA DE CONTROLES Y FILTROS EN PASTEL AZUL */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                {/* Presets Rápidos Pastel */}
-                <div className="flex items-center gap-1.5 bg-slate-100/70 p-1.5 rounded-2xl overflow-x-auto">
-                    <button
-                        onClick={() => handlePresetChange('hoy')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            preset === 'hoy' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        Hoy
-                    </button>
-                    <button
-                        onClick={() => handlePresetChange('ayer')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            preset === 'ayer' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        Ayer
-                    </button>
-                    <button
-                        onClick={() => handlePresetChange('7dias')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            preset === '7dias' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        7 Días
-                    </button>
-                    <button
-                        onClick={() => handlePresetChange('30dias')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                            preset === '30dias' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        30 Días
-                    </button>
-                    <button
-                        onClick={() => handlePresetChange('historial')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                            preset === 'historial' ? 'bg-sky-600 text-white shadow-xs' : 'text-sky-800 bg-sky-50/80 hover:bg-sky-100'
-                        }`}
-                    >
-                        <span>Historial Completo</span>
-                    </button>
-                </div>
-
-                {/* Selectores de Fechas y Sucursal */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Calendar size={14} className="text-slate-400" />
-                        <input
-                            type="date"
-                            value={startDate === 'historial' ? '' : startDate}
-                            onChange={(e) => {
-                                setPreset('custom');
-                                const val = e.target.value;
-                                setDateRange(prev => ({ ...prev, startDate: val }));
-                            }}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                        <span className="text-slate-400 font-bold text-xs">a</span>
-                        <input
-                            type="date"
-                            value={endDate === 'historial' ? '' : endDate}
-                            onChange={(e) => {
-                                setPreset('custom');
-                                const val = e.target.value;
-                                setDateRange(prev => ({ ...prev, endDate: val }));
-                            }}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Filter size={14} className="text-slate-400" />
-                        <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales.map((s) => (
-                                <option key={s.sucursal_id} value={s.sucursal_id}>
-                                    {s.nombre} ({s.ciudad})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-2xl transition-all border border-slate-200/80 cursor-pointer"
-                        title="Restablecer todos los filtros"
-                    >
-                        <RotateCcw size={13} className="text-slate-500" />
-                        <span>Restablecer</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* BARRA DE ESTADO EN TONO PASTEL SUAVE */}
-            {data && (
-                <div className="bg-white rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center border border-slate-200/70 text-xs shadow-xs">
-                    <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">FECHA CONSULTADA</span>
-                        <span className="font-extrabold text-slate-800">
-                            {data.fecha_inicio_bolivia === 'historial' ? 'Historial Completo' : data.fecha_inicio_bolivia}
-                        </span>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">ESTADO</span>
-                        <span className={`font-extrabold flex items-center justify-center gap-1 px-2 py-0.5 rounded-lg border inline-flex ${
-                            hasNoSales
-                                ? 'text-amber-700 bg-amber-50 border-amber-200/80'
-                                : 'text-emerald-700 bg-emerald-50 border-emerald-100/60'
-                        }`}>
-                            {hasNoSales ? <Info size={12} /> : <CheckCircle2 size={12} />}
-                            {hasNoSales ? 'Sin ventas registradas' : data.estado_sincronizacion}
-                        </span>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">ÚLTIMA ACTUALIZACIÓN</span>
-                        <span className="font-extrabold text-indigo-700">{data.ultima_actualizacion}</span>
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">MODO</span>
-                        <span className="font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100/60 inline-flex">
-                            {data.modo}
-                        </span>
-                    </div>
-                    <div className="col-span-2 sm:col-span-1">
-                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">SUCURSALES</span>
-                        <span className="font-extrabold text-slate-700 truncate block">
-                            {selectedSucursal === 'all' ? `${data.desglose_sucursales.length} Sucursales` : 'Filtrada'}
-                        </span>
-                    </div>
-                </div>
-            )}
-
-            {/* NOTIFICACIÓN ESTANDARIZADA DE ESTADO DE INFORMACIÓN */}
-            {hasNoSales && !loading && (
-                <BIStateBanner
-                    type="NO_ACTIVITY"
-                    dateRange={startDate === endDate ? startDate : `${startDate} a ${endDate}`}
-                    message={`No se detectaron transacciones emitidas por el POS para la fecha seleccionada (${startDate}). La consulta a MongoDB fue realizada exitosamente retornando 200 OK con Bs. 0.00 en ventas.`}
-                />
-            )}
-
-            {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL SUTIL */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                
-                {/* TARJETA 1: INGRESOS TOTALES */}
-                <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
-                    <div>
-                        <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
-                                <span className="text-[10px] font-bold text-indigo-600/80">Venta Neta POS</span>
-                            </div>
-                            <div className="p-2 bg-indigo-100/60 rounded-2xl text-indigo-600">
-                                <TrendingUp size={18} />
-                            </div>
-                        </div>
-
-                        <div className="my-3">
-                            <h2 className="text-2xl lg:text-3xl font-black text-indigo-950 tracking-tight leading-none">
-                                {loading ? '...' : formatBs(data?.ingresos_totales)}
-                            </h2>
-                            <p className="text-[10px] font-bold text-indigo-700/80 mt-1 flex items-center gap-1">
-                                <span>Ventas brutas menos anuladas</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            onClick={() => setExpandedCard(expandedCard === 'ingresos' ? null : 'ingresos')}
-                            className="pt-2 border-t border-indigo-100/60 text-[11px] font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                            title="Ver desglose por sucursales"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <Store size={13} className="text-indigo-600" />
-                                <span>{expandedCard === 'ingresos' ? 'Ocultar Desglose' : 'Desglose Sucursales'}</span>
-                            </span>
-                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ingresos' ? 'rotate-90' : ''}`} />
-                        </button>
-
-                        {expandedCard === 'ingresos' && data && (
-                            <div className="mt-3 pt-3 border-t border-indigo-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {(() => {
-                                    const activeSucursales = (data.desglose_sucursales || []).filter(
-                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
-                                    );
-
-                                    if (activeSucursales.length === 0) {
-                                        return <p className="text-[11px] font-bold text-indigo-700/70 italic text-center py-1">Sin ventas registradas</p>;
-                                    }
-
-                                    return (
-                                        <div className="space-y-1.5 pt-0.5">
-                                            {activeSucursales.map((suc) => (
-                                                <div
-                                                    key={suc.sucursal_id}
-                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
-                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-indigo-100/70 rounded-xl text-xs font-bold text-indigo-950 border border-indigo-100/80 transition-all cursor-pointer"
-                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
-                                                >
-                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
-                                                    <span className="font-black shrink-0 text-indigo-900">{formatBs(suc.ingresos)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* TARJETA 2: MARGEN LÍQUIDO */}
-                <MargenLiquidoCard
-                    margenLiquidoBs={data?.margen_liquido_bs}
-                    comisionMatrizBs={data?.comision_matriz_bs}
-                    margenRetailBs={data?.margen_retail_bs}
-                    loading={loading}
-                    formatBs={formatBs}
-                    isExpanded={expandedCard === 'margen'}
-                    onToggleExpand={() => setExpandedCard(expandedCard === 'margen' ? null : 'margen')}
-                    desgloseSucursales={data?.desglose_sucursales || []}
-                    onSelectSucursal={setSelectedSucursal}
-                />
-
-                {/* TARJETA 3: PREDICCIÓN & IMPACTO IA */}
-                <div className="bg-gradient-to-br from-purple-50/90 via-amber-50/40 to-white rounded-3xl p-5 shadow-xs border border-purple-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
-                    <div>
-                        <div className="flex justify-between items-start pb-3 border-b border-purple-100/60">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-purple-950 block">Predicción IA</span>
-                                <span className="text-[10px] font-bold text-purple-700/80">Modelo Predictivo ML</span>
-                            </div>
-                            <div className="p-2 bg-purple-100/60 rounded-2xl text-purple-600">
-                                <Sparkles size={18} className="animate-pulse text-amber-500" />
-                            </div>
-                        </div>
-
-                        <div className="my-3">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-xs font-black text-purple-950 bg-purple-100/80 px-2 py-0.5 rounded-md border border-purple-200/60">
-                                    ☁️ Clima + Bajas Ventas
-                                </span>
-                            </div>
-                            <h2 className="text-xl font-black text-purple-950 tracking-tight leading-none mt-1">
-                                Proyección IA
-                            </h2>
-                            <p className="text-[10px] font-bold text-purple-700/80 mt-1">
-                                Ajustado por clima y tendencias de consumo
-                            </p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            onClick={() => setExpandedCard(expandedCard === 'ia' ? null : 'ia')}
-                            className="pt-2 border-t border-purple-100/60 text-[11px] font-black text-purple-700 hover:text-purple-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                            title="Ver factores causales y predicción IA"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <Sparkles size={13} className="text-purple-600" />
-                                <span>{expandedCard === 'ia' ? 'Ocultar' : 'Factores Causales'}</span>
-                            </span>
-                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ia' ? 'rotate-90' : ''}`} />
-                        </button>
-
-                        {expandedCard === 'ia' && data && (
-                            <div className="mt-3 pt-3 border-t border-purple-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {(() => {
-                                    const activeSucursales = (data.desglose_sucursales || []).filter(
-                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
-                                    );
-
-                                    if (activeSucursales.length === 0) {
-                                        return <p className="text-[11px] font-bold text-purple-700/70 italic text-center py-1">Sin datos de predicción</p>;
-                                    }
-
-                                    return (
-                                        <div className="space-y-1.5 pt-0.5">
-                                            {activeSucursales.map((suc) => (
-                                                <div
-                                                    key={suc.sucursal_id}
-                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
-                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-purple-100/70 rounded-xl text-xs font-bold text-purple-950 border border-purple-100/80 transition-all cursor-pointer"
-                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
-                                                >
-                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
-                                                    <span className="font-black shrink-0 text-purple-900">Demanda Normal</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* TARJETA 4: TICKET MEDIO */}
-                <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
-                    <div>
-                        <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">Ticket Medio</span>
-                                <span className="text-[10px] font-bold text-emerald-700/80">Promedio por venta</span>
-                            </div>
-                            <div className="p-2 bg-emerald-100/60 rounded-2xl text-emerald-600">
-                                <Receipt size={18} />
-                            </div>
-                        </div>
-
-                        <div className="my-3">
-                            <h2 className="text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none">
-                                {loading ? '...' : formatBs(data?.ticket_medio)}
-                            </h2>
-                            <p className="text-[10px] font-bold text-emerald-700/80 mt-1">
-                                Ingresos Totales / Órdenes
-                            </p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            onClick={() => setExpandedCard(expandedCard === 'ticket' ? null : 'ticket')}
-                            className="pt-2 border-t border-emerald-100/60 text-[11px] font-black text-emerald-700 hover:text-emerald-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                            title="Ver comparativa de promedio por sucursal"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <CheckCircle2 size={13} className="text-emerald-600" />
-                                <span>{expandedCard === 'ticket' ? 'Ocultar' : 'Ver Promedios'}</span>
-                            </span>
-                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ticket' ? 'rotate-90' : ''}`} />
-                        </button>
-
-                        {expandedCard === 'ticket' && data && (
-                            <div className="mt-3 pt-3 border-t border-emerald-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {(() => {
-                                    const activeSucursales = (data.desglose_sucursales || []).filter(
-                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
-                                    );
-
-                                    if (activeSucursales.length === 0) {
-                                        return <p className="text-[11px] font-bold text-emerald-700/70 italic text-center py-1">Sin promedios registrados</p>;
-                                    }
-
-                                    return (
-                                        <div className="space-y-1.5 pt-0.5">
-                                            {activeSucursales.map((suc) => (
-                                                <div
-                                                    key={suc.sucursal_id}
-                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
-                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-emerald-100/70 rounded-xl text-xs font-bold text-emerald-950 border border-emerald-100/80 transition-all cursor-pointer"
-                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
-                                                >
-                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
-                                                    <span className="font-black shrink-0 text-emerald-900">{formatBs(suc.ticket_medio)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* TARJETA 5: TOTAL DE ÓRDENES */}
-                <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
-                    <div>
-                        <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-blue-950 block">Total de Órdenes</span>
-                                <span className="text-[10px] font-bold text-blue-700/80">Tickets válidos POS</span>
-                            </div>
-                            <div className="p-2 bg-blue-100/60 rounded-2xl text-blue-600">
-                                <ShoppingBag size={18} />
-                            </div>
-                        </div>
-
-                        <div className="my-3">
-                            <h2 className="text-2xl lg:text-3xl font-black text-blue-950 tracking-tight leading-none">
-                                {loading ? '...' : data?.cantidad_ordenes || 0}
-                            </h2>
-                            <p className="text-[10px] font-bold text-blue-700/80 mt-1">
-                                Excluye tickets anulados
-                            </p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            onClick={() => setExpandedCard(expandedCard === 'ordenes' ? null : 'ordenes')}
-                            className="pt-2 border-t border-blue-100/60 text-[11px] font-black text-blue-700 hover:text-blue-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                            title="Ver órdenes por sucursal"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <Layers size={13} className="text-blue-600" />
-                                <span>{expandedCard === 'ordenes' ? 'Ocultar' : 'Órdenes Sucursales'}</span>
-                            </span>
-                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ordenes' ? 'rotate-90' : ''}`} />
-                        </button>
-
-                        {expandedCard === 'ordenes' && data && (
-                            <div className="mt-3 pt-3 border-t border-blue-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {(() => {
-                                    const activeSucursales = (data.desglose_sucursales || []).filter(
-                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
-                                    );
-
-                                    if (activeSucursales.length === 0) {
-                                        return <p className="text-[11px] font-bold text-blue-700/70 italic text-center py-1">Sin órdenes registradas</p>;
-                                    }
-
-                                    return (
-                                        <div className="space-y-1.5 pt-0.5">
-                                            {activeSucursales.map((suc) => (
-                                                <div
-                                                    key={suc.sucursal_id}
-                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
-                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-blue-100/70 rounded-xl text-xs font-bold text-blue-950 border border-blue-100/80 transition-all cursor-pointer"
-                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
-                                                >
-                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
-                                                    <span className="font-black shrink-0 text-blue-900">{suc.ordenes} órdenes</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-            </div>
-
-            {/* LAYOUT PRINCIPAL INSPIRADO EN LA IMAGEN DE REFERENCIA */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* COLUMNA IZQUIERDA Y CENTRO (2 TÉRCIOS): HISTOGRAMA Y ACTIVIDAD RECIENTE */}
-                <div className="lg:col-span-2 space-y-6">
-                    
-                    {/* VENTAS POR HORARIO INTELIGENTE */}
-                    <BIVentasHorarioInteligenteView
-                        data={data?.horario_inteligente}
-                        loading={loading}
-                        formatBs={formatBs}
-                        onRefresh={() => fetchBIData(startDate, endDate, selectedSucursal)}
-                    />
-
-                    {/* SECCIÓN E: ACTIVIDAD RECIENTE / HISTORIAL DE VENTAS */}
-                    {data?.ventas_recientes && data.ventas_recientes.length > 0 && (
-                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                <div>
-                                    <h3 className="text-base font-black text-slate-900">Actividad Reciente</h3>
-                                    <p className="text-xs font-bold text-slate-400 mt-0.5">
-                                        Últimas ventas procesadas en vivo por el POS
-                                    </p>
-                                </div>
-                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
-                                    <Activity size={20} />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                {data.ventas_recientes.map((v) => (
-                                    <div
-                                        key={v.ticket_id}
-                                        className="p-4 bg-slate-50/70 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/60 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs"
-                                    >
-                                        <div className="flex items-center gap-3.5">
-                                            <div className="p-3 bg-indigo-100/70 text-indigo-700 rounded-2xl shadow-2xs">
-                                                <Receipt size={18} />
-                                            </div>
-                                            <div>
-                                                <span className="font-extrabold text-slate-900 text-sm block">
-                                                    Ticket #{v.numero_ticket}
-                                                </span>
-                                                <span className="text-xs text-slate-500 font-semibold flex items-center gap-2 mt-0.5">
-                                                    <span>{v.nombre_sucursal}</span>
-                                                    <span>•</span>
-                                                    <span className="font-mono text-indigo-600">{v.hora_bolivia}</span>
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
-                                            <div className="text-right">
-                                                <span className="text-base font-black text-slate-900 block">
-                                                    {formatBs(v.total_neto)}
-                                                </span>
-                                                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                                    {v.estado_pago}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* COLUMNA DERECHA (1 TERCIO): SIDEBAR DESTACADO */}
-                <div className="space-y-6">
-
-                    {/* TARJETA DESTACADA EN GRADIENTE ELEGANTE */}
-                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 shadow-md border border-white/10 relative overflow-hidden">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-indigo-300 block">Estado de Red & POS</span>
-                                <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">Aislamiento por Tenant</span>
-                            </div>
-                            <div className="p-2 bg-white/10 backdrop-blur rounded-2xl border border-white/10 text-emerald-400">
-                                <Sparkles size={20} />
-                            </div>
-                        </div>
-
-                        <div className="my-6">
-                            <span className="text-xs text-slate-400 font-bold block uppercase">Sucursal Líder del Período</span>
-                            <h2 className="text-xl font-black text-white mt-1 flex items-center gap-2">
-                                <Award size={22} className="text-amber-400" />
-                                {data?.resumen_operativo?.sucursal_lider || 'Cargando...'}
-                            </h2>
-                        </div>
-
-                        <div className="pt-4 border-t border-white/10 flex justify-between items-center text-xs font-bold text-slate-300">
-                            <span>Promedio por Hora:</span>
-                            <span className="text-emerald-400 font-black">{formatBs(data?.resumen_operativo?.promedio_por_hora)}</span>
-                        </div>
-                    </div>
-
-                    {/* DESGLOSE POR SUCURSAL */}
-                    {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
-                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                <h3 className="text-base font-black text-slate-900">Ventas por Sucursal</h3>
-                                <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-xl">
-                                    {data.desglose_sucursales.length}
-                                </span>
-                            </div>
-
-                            <div className="space-y-3">
-                                {data.desglose_sucursales.map((suc) => (
-                                    <div
-                                        key={suc.sucursal_id}
-                                        className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/60 flex items-center justify-between transition-all hover:bg-indigo-50/30"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-purple-100/70 text-purple-700 rounded-2xl">
-                                                <Store size={16} />
-                                            </div>
-                                            <div>
-                                                <span className="font-extrabold text-slate-900 text-xs block">
-                                                    {suc.nombre_sucursal}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 font-bold">
-                                                    {suc.ordenes} órdenes ({suc.participacion_pct}%)
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="text-right">
-                                            <span className="text-xs font-black text-slate-900 block">
-                                                {formatBs(suc.ingresos)}
-                                            </span>
-                                            <span className="text-[10px] text-emerald-700 font-extrabold block">
-                                                TM: {formatBs(suc.ticket_medio)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SECCIÓN H: ALERTAS OPERATIVAS */}
-                    {data?.alertas_operativas && data.alertas_operativas.length > 0 && (
-                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                <h3 className="text-base font-black text-slate-900">Alertas Operativas</h3>
-                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-2xl">
-                                    <Bell size={18} />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                {data.alertas_operativas.map((a, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="p-3.5 bg-indigo-50/70 border border-indigo-100/80 rounded-2xl flex items-start gap-3 text-xs"
-                                    >
-                                        <div className="p-2 bg-white rounded-xl text-indigo-600 shadow-2xs mt-0.5">
-                                            <Bell size={14} />
-                                        </div>
-                                        <div>
-                                            <span className="font-black text-indigo-950 block text-xs">{a.titulo}</span>
-                                            <span className="text-indigo-800 text-[11px] font-semibold mt-0.5 block">{a.mensaje}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* PIE DE PÁGINA DE AUDITORÍA Y TRAZABILIDAD SEGURA BI */}
-                    <div className="bg-slate-100/80 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-500 gap-2">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>Estado BI: <strong className="text-slate-800">{data?.estado_sincronizacion || 'Conectado'}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <span>Timezone: <strong className="text-indigo-700">{data?.timezone || 'America/La_Paz'}</strong></span>
-                            <span>Última Actualización: <strong className="text-slate-800">{data?.ultima_actualizacion || '--:--'}</strong></span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+            <BIOperacionDiariaView
+                data={data}
+                loading={loading}
+                formatBs={formatBs}
+                startDate={startDate}
+                endDate={endDate}
+                preset={preset}
+                selectedSucursal={selectedSucursal}
+                sucursales={sucursales}
+                onPresetChange={handlePresetChange}
+                onDateChange={(start, end) => {
+                    setPreset('custom');
+                    setDateRange({ startDate: start, endDate: end });
+                }}
+                onSucursalChange={(sucId) => setSelectedSucursal(sucId)}
+                onReset={handleReset}
+                onRefresh={() => fetchBIData(startDate, endDate, selectedSucursal)}
+            />
         </div>
     );
 };
