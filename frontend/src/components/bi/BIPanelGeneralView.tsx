@@ -61,7 +61,7 @@ export const BIPanelGeneralView: React.FC = () => {
 
     // Datos del BI Backend
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
-    const [isExpandedDesglose, setIsExpandedDesglose] = useState<boolean>(false);
+    const [expandedCard, setExpandedCard] = useState<'ingresos' | 'margen' | 'ia' | 'ticket' | 'ordenes' | null>(null);
 
     // PRUEBA OBLIGATORIA #2 — REGISTRO DE ACTUALIZACIÓN DE ESTADO REACT
     useEffect(() => {
@@ -424,7 +424,7 @@ export const BIPanelGeneralView: React.FC = () => {
             {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL SUTIL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
-                {/* TARJETA 1: INGRESOS TOTALES (DESGLOSE VERTICAL COMPACTO: SOLO NOMBRE Y MONTO) */}
+                {/* TARJETA 1: INGRESOS TOTALES */}
                 <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
                     <div>
                         <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
@@ -449,19 +449,18 @@ export const BIPanelGeneralView: React.FC = () => {
 
                     <div>
                         <button
-                            onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
+                            onClick={() => setExpandedCard(expandedCard === 'ingresos' ? null : 'ingresos')}
                             className="pt-2 border-t border-indigo-100/60 text-[11px] font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
                             title="Ver desglose por sucursales"
                         >
                             <span className="flex items-center gap-1.5">
                                 <Store size={13} className="text-indigo-600" />
-                                <span>{isExpandedDesglose ? 'Ocultar Desglose' : 'Desglose Sucursales'}</span>
+                                <span>{expandedCard === 'ingresos' ? 'Ocultar Desglose' : 'Desglose Sucursales'}</span>
                             </span>
-                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
+                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ingresos' ? 'rotate-90' : ''}`} />
                         </button>
 
-                        {/* LISTA COMPACTA VERTICAL: SOLO SUCURSAL Y MONTO CON VENTA */}
-                        {isExpandedDesglose && data && (
+                        {expandedCard === 'ingresos' && data && (
                             <div className="mt-3 pt-3 border-t border-indigo-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {(() => {
                                     const activeSucursales = (data.desglose_sucursales || []).filter(
@@ -469,11 +468,7 @@ export const BIPanelGeneralView: React.FC = () => {
                                     );
 
                                     if (activeSucursales.length === 0) {
-                                        return (
-                                            <p className="text-[11px] font-bold text-indigo-700/70 italic text-center py-1">
-                                                Sin ventas registradas
-                                            </p>
-                                        );
+                                        return <p className="text-[11px] font-bold text-indigo-700/70 italic text-center py-1">Sin ventas registradas</p>;
                                     }
 
                                     return (
@@ -504,113 +499,219 @@ export const BIPanelGeneralView: React.FC = () => {
                     margenRetailBs={data?.margen_retail_bs}
                     loading={loading}
                     formatBs={formatBs}
+                    isExpanded={expandedCard === 'margen'}
+                    onToggleExpand={() => setExpandedCard(expandedCard === 'margen' ? null : 'margen')}
+                    desgloseSucursales={data?.desglose_sucursales || []}
+                    onSelectSucursal={setSelectedSucursal}
                 />
 
-                {/* TARJETA 3: PREDICCIÓN & IMPACTO IA (Pastel Violeta/Ámbar) */}
-                <div className="bg-gradient-to-br from-purple-50/90 via-amber-50/40 to-white rounded-3xl p-5 shadow-xs border border-purple-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
-                    <div className="flex justify-between items-start pb-3 border-b border-purple-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-purple-950 block">Predicción IA</span>
-                            <span className="text-[10px] font-bold text-purple-700/80">Modelo Predictivo ML</span>
+                {/* TARJETA 3: PREDICCIÓN & IMPACTO IA */}
+                <div className="bg-gradient-to-br from-purple-50/90 via-amber-50/40 to-white rounded-3xl p-5 shadow-xs border border-purple-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
+                    <div>
+                        <div className="flex justify-between items-start pb-3 border-b border-purple-100/60">
+                            <div>
+                                <span className="text-xs font-black uppercase tracking-wider text-purple-950 block">Predicción IA</span>
+                                <span className="text-[10px] font-bold text-purple-700/80">Modelo Predictivo ML</span>
+                            </div>
+                            <div className="p-2 bg-purple-100/60 rounded-2xl text-purple-600">
+                                <Sparkles size={18} className="animate-pulse text-amber-500" />
+                            </div>
                         </div>
-                        <div className="p-2 bg-purple-100/60 rounded-2xl text-purple-600">
-                            <Sparkles size={18} className="animate-pulse text-amber-500" />
+
+                        <div className="my-3">
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-xs font-black text-purple-950 bg-purple-100/80 px-2 py-0.5 rounded-md border border-purple-200/60">
+                                    ☁️ Clima + Bajas Ventas
+                                </span>
+                            </div>
+                            <h2 className="text-xl font-black text-purple-950 tracking-tight leading-none mt-1">
+                                Proyección IA
+                            </h2>
+                            <p className="text-[10px] font-bold text-purple-700/80 mt-1">
+                                Ajustado por clima y tendencias de consumo
+                            </p>
                         </div>
                     </div>
 
-                    <div className="my-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-xs font-black text-purple-950 bg-purple-100/80 px-2 py-0.5 rounded-md border border-purple-200/60">
-                                ☁️ Clima + Bajas Ventas
+                    <div>
+                        <button
+                            onClick={() => setExpandedCard(expandedCard === 'ia' ? null : 'ia')}
+                            className="pt-2 border-t border-purple-100/60 text-[11px] font-black text-purple-700 hover:text-purple-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                            title="Ver factores causales y predicción IA"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-purple-600" />
+                                <span>{expandedCard === 'ia' ? 'Ocultar' : 'Factores Causales'}</span>
                             </span>
-                        </div>
-                        <h2 className="text-xl font-black text-purple-950 tracking-tight leading-none mt-1">
-                            Proyección IA
-                        </h2>
-                        <p className="text-[10px] font-bold text-purple-700/80 mt-1">
-                            Ajustado por clima y tendencias de consumo
-                        </p>
-                    </div>
+                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ia' ? 'rotate-90' : ''}`} />
+                        </button>
 
-                    <button
-                        onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
-                        className="pt-2 border-t border-purple-100/60 text-[11px] font-black text-purple-700 hover:text-purple-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                        title="Ver factores causales y predicción IA"
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <Sparkles size={13} className="text-purple-600" />
-                            <span>Factores Causales</span>
-                        </span>
-                        <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
-                    </button>
+                        {expandedCard === 'ia' && data && (
+                            <div className="mt-3 pt-3 border-t border-purple-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {(() => {
+                                    const activeSucursales = (data.desglose_sucursales || []).filter(
+                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
+                                    );
+
+                                    if (activeSucursales.length === 0) {
+                                        return <p className="text-[11px] font-bold text-purple-700/70 italic text-center py-1">Sin datos de predicción</p>;
+                                    }
+
+                                    return (
+                                        <div className="space-y-1.5 pt-0.5">
+                                            {activeSucursales.map((suc) => (
+                                                <div
+                                                    key={suc.sucursal_id}
+                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
+                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-purple-100/70 rounded-xl text-xs font-bold text-purple-950 border border-purple-100/80 transition-all cursor-pointer"
+                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
+                                                >
+                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
+                                                    <span className="font-black shrink-0 text-purple-900">Demanda Normal</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* TARJETA 4: TICKET MEDIO */}
-                <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
-                    <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">Ticket Medio</span>
-                            <span className="text-[10px] font-bold text-emerald-700/80">Promedio por venta</span>
+                <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
+                    <div>
+                        <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
+                            <div>
+                                <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">Ticket Medio</span>
+                                <span className="text-[10px] font-bold text-emerald-700/80">Promedio por venta</span>
+                            </div>
+                            <div className="p-2 bg-emerald-100/60 rounded-2xl text-emerald-600">
+                                <Receipt size={18} />
+                            </div>
                         </div>
-                        <div className="p-2 bg-emerald-100/60 rounded-2xl text-emerald-600">
-                            <Receipt size={18} />
+
+                        <div className="my-3">
+                            <h2 className="text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none">
+                                {loading ? '...' : formatBs(data?.ticket_medio)}
+                            </h2>
+                            <p className="text-[10px] font-bold text-emerald-700/80 mt-1">
+                                Ingresos Totales / Órdenes
+                            </p>
                         </div>
                     </div>
 
-                    <div className="my-3">
-                        <h2 className="text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none">
-                            {loading ? '...' : formatBs(data?.ticket_medio)}
-                        </h2>
-                        <p className="text-[10px] font-bold text-emerald-700/80 mt-1">
-                            Ingresos Totales / Órdenes
-                        </p>
-                    </div>
+                    <div>
+                        <button
+                            onClick={() => setExpandedCard(expandedCard === 'ticket' ? null : 'ticket')}
+                            className="pt-2 border-t border-emerald-100/60 text-[11px] font-black text-emerald-700 hover:text-emerald-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                            title="Ver comparativa de promedio por sucursal"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <CheckCircle2 size={13} className="text-emerald-600" />
+                                <span>{expandedCard === 'ticket' ? 'Ocultar' : 'Ver Promedios'}</span>
+                            </span>
+                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ticket' ? 'rotate-90' : ''}`} />
+                        </button>
 
-                    <button
-                        onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
-                        className="pt-2 border-t border-emerald-100/60 text-[11px] font-black text-emerald-700 hover:text-emerald-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                        title="Ver comparativa entre sucursales"
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <CheckCircle2 size={13} className="text-emerald-600" />
-                            <span>Ver Promedios</span>
-                        </span>
-                        <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
-                    </button>
+                        {expandedCard === 'ticket' && data && (
+                            <div className="mt-3 pt-3 border-t border-emerald-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {(() => {
+                                    const activeSucursales = (data.desglose_sucursales || []).filter(
+                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
+                                    );
+
+                                    if (activeSucursales.length === 0) {
+                                        return <p className="text-[11px] font-bold text-emerald-700/70 italic text-center py-1">Sin promedios registrados</p>;
+                                    }
+
+                                    return (
+                                        <div className="space-y-1.5 pt-0.5">
+                                            {activeSucursales.map((suc) => (
+                                                <div
+                                                    key={suc.sucursal_id}
+                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
+                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-emerald-100/70 rounded-xl text-xs font-bold text-emerald-950 border border-emerald-100/80 transition-all cursor-pointer"
+                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
+                                                >
+                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
+                                                    <span className="font-black shrink-0 text-emerald-900">{formatBs(suc.ticket_medio)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* TARJETA 5: TOTAL DE ÓRDENES */}
-                <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
-                    <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-blue-950 block">Total de Órdenes</span>
-                            <span className="text-[10px] font-bold text-blue-700/80">Tickets válidos POS</span>
+                <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
+                    <div>
+                        <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
+                            <div>
+                                <span className="text-xs font-black uppercase tracking-wider text-blue-950 block">Total de Órdenes</span>
+                                <span className="text-[10px] font-bold text-blue-700/80">Tickets válidos POS</span>
+                            </div>
+                            <div className="p-2 bg-blue-100/60 rounded-2xl text-blue-600">
+                                <ShoppingBag size={18} />
+                            </div>
                         </div>
-                        <div className="p-2 bg-blue-100/60 rounded-2xl text-blue-600">
-                            <ShoppingBag size={18} />
+
+                        <div className="my-3">
+                            <h2 className="text-2xl lg:text-3xl font-black text-blue-950 tracking-tight leading-none">
+                                {loading ? '...' : data?.cantidad_ordenes || 0}
+                            </h2>
+                            <p className="text-[10px] font-bold text-blue-700/80 mt-1">
+                                Excluye tickets anulados
+                            </p>
                         </div>
                     </div>
 
-                    <div className="my-3">
-                        <h2 className="text-2xl lg:text-3xl font-black text-blue-950 tracking-tight leading-none">
-                            {loading ? '...' : data?.cantidad_ordenes || 0}
-                        </h2>
-                        <p className="text-[10px] font-bold text-blue-700/80 mt-1">
-                            Excluye tickets anulados
-                        </p>
-                    </div>
+                    <div>
+                        <button
+                            onClick={() => setExpandedCard(expandedCard === 'ordenes' ? null : 'ordenes')}
+                            className="pt-2 border-t border-blue-100/60 text-[11px] font-black text-blue-700 hover:text-blue-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                            title="Ver órdenes por sucursal"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <Layers size={13} className="text-blue-600" />
+                                <span>{expandedCard === 'ordenes' ? 'Ocultar' : 'Órdenes Sucursales'}</span>
+                            </span>
+                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${expandedCard === 'ordenes' ? 'rotate-90' : ''}`} />
+                        </button>
 
-                    <button
-                        onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
-                        className="pt-2 border-t border-blue-100/60 text-[11px] font-black text-blue-700 hover:text-blue-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                        title="Ver órdenes por sucursal"
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <Layers size={13} className="text-blue-600" />
-                            <span>Órdenes Sucursales</span>
-                        </span>
-                        <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
-                    </button>
+                        {expandedCard === 'ordenes' && data && (
+                            <div className="mt-3 pt-3 border-t border-blue-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {(() => {
+                                    const activeSucursales = (data.desglose_sucursales || []).filter(
+                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
+                                    );
+
+                                    if (activeSucursales.length === 0) {
+                                        return <p className="text-[11px] font-bold text-blue-700/70 italic text-center py-1">Sin órdenes registradas</p>;
+                                    }
+
+                                    return (
+                                        <div className="space-y-1.5 pt-0.5">
+                                            {activeSucursales.map((suc) => (
+                                                <div
+                                                    key={suc.sucursal_id}
+                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
+                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-blue-100/70 rounded-xl text-xs font-bold text-blue-950 border border-blue-100/80 transition-all cursor-pointer"
+                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
+                                                >
+                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
+                                                    <span className="font-black shrink-0 text-blue-900">{suc.ordenes} órdenes</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
             </div>
