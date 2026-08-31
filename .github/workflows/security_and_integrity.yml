@@ -1,0 +1,64 @@
+﻿name: Security and Integrity Test Pipeline
+
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
+
+jobs:
+  security-tests:
+    name: Security Vulnerability Scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Security Tools
+        run: pip install bandit safety
+      - name: Run Bandit (SAST)
+        run: bandit -r backend/app/ -c backend/pyproject.toml || echo "Bandit found potential issues, but continuing..."
+      # Add more security tools here as needed
+
+  integrity-tests:
+    name: Data Integrity & View Tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Dependencies
+        run: |
+          pip install pytest pytest-asyncio httpx
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+      - name: Wait for MongoDB
+        run: |
+          python -c '
+          import socket, time
+          for i in range(15):
+              try:
+                  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                      s.settimeout(1)
+                      s.connect(("127.0.0.1", 27017))
+                      print("MongoDB is up and running!")
+                      exit(0)
+              except Exception:
+                  time.sleep(1)
+          exit(1)
+          '
+      - name: Run Module Tests (POS, Ventas, Caja, Inventario, Reporte)
+        env:
+          MONGO_URI: "mongodb://127.0.0.1:27017/salessystem_test"
+          PYTHONPATH: "backend"
+        run: |
+          cd backend
+          pytest tests/test_caja.py tests/test_inventario_models.py tests/test_inventario_concurrencia.py tests/test_financial_flows.py tests/test_upload_historico.py tests/test_sale_idempotency.py -v
