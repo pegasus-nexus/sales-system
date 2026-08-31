@@ -308,28 +308,28 @@ export const BIPanelGeneralView: React.FC = () => {
     return (
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
-            {/* CABECERA PRINCIPAL ESTILO PASTEL LIMPÍSIMO */}
-            <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/90 rounded-3xl p-6 shadow-sm border border-indigo-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
+            {/* CABECERA PRINCIPAL ESTILO PASTEL LIMPÍSIMO EN AZUL */}
+            <div className="bg-gradient-to-r from-sky-50/90 via-blue-50/80 to-indigo-50/90 rounded-3xl p-6 shadow-sm border border-sky-100/80 backdrop-blur-sm">
                 <div>
-                    <div className="flex items-center gap-2 text-indigo-600 font-extrabold text-xs tracking-wider uppercase mb-1">
+                    <div className="flex items-center gap-2 text-sky-700 font-extrabold text-xs tracking-wider uppercase mb-1">
                         <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Layers size={14} className="text-indigo-600" />
+                            <Layers size={14} className="text-sky-600" />
                         </div>
                         <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — MODELO ESTRELLA</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Panel General — Día a Día</h1>
                     <p className="text-xs text-slate-500 font-semibold mt-1 flex flex-wrap items-center gap-2">
                         <span>Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)</span>
-                        <span className="text-[10px] font-black text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-md">BUILD: {typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'PROD-LIVE'}</span>
+                        <span className="text-[10px] font-black text-sky-700 bg-sky-100/80 border border-sky-200 px-2 py-0.5 rounded-md">BUILD: {typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'PROD-LIVE'}</span>
                     </p>
                 </div>
 
-                {/* BOTONES DE ACCIÓN LIMPÍSIMOS EN PASTELES */}
+                {/* BOTONES DE ACCIÓN LIMPÍSIMOS EN AZUL PASTEL */}
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={() => fetchBIData(startDate, endDate, selectedSucursal)}
                         disabled={loading}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
                         title="Actualizar datos desde el POS"
                     >
                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -339,7 +339,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     <button
                         onClick={handleExportCSV}
                         disabled={!data || loading}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs disabled:opacity-50 cursor-pointer"
                         title="Exportar reporte en CSV"
                     >
                         <Download size={14} className="text-slate-500" />
@@ -348,7 +348,7 @@ export const BIPanelGeneralView: React.FC = () => {
 
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs cursor-pointer"
                         title="Restablecer filtros por defecto"
                     >
                         <RotateCcw size={14} className="text-slate-500" />
@@ -357,7 +357,7 @@ export const BIPanelGeneralView: React.FC = () => {
 
                     <button
                         onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs"
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs cursor-pointer"
                         title="Pantalla Completa"
                     >
                         <Maximize2 size={14} className="text-slate-500" />
@@ -366,46 +366,46 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA DE CONTROLES Y FILTROS EN PASTEL BLANCO */}
+            {/* BARRA DE CONTROLES Y FILTROS EN PASTEL AZUL */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
                 {/* Presets Rápidos Pastel */}
                 <div className="flex items-center gap-1.5 bg-slate-100/70 p-1.5 rounded-2xl overflow-x-auto">
                     <button
                         onClick={() => handlePresetChange('hoy')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            preset === 'hoy' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            preset === 'hoy' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         Hoy
                     </button>
                     <button
                         onClick={() => handlePresetChange('ayer')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            preset === 'ayer' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            preset === 'ayer' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         Ayer
                     </button>
                     <button
                         onClick={() => handlePresetChange('7dias')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            preset === '7dias' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            preset === '7dias' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         7 Días
                     </button>
                     <button
                         onClick={() => handlePresetChange('30dias')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            preset === '30dias' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            preset === '30dias' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                         30 Días
                     </button>
                     <button
                         onClick={() => handlePresetChange('historial')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                            preset === 'historial' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100'
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                            preset === 'historial' ? 'bg-sky-600 text-white shadow-xs' : 'text-sky-800 bg-sky-50/80 hover:bg-sky-100'
                         }`}
                     >
                         <span>Historial Completo</span>
