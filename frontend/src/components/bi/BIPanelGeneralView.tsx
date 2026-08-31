@@ -422,15 +422,8 @@ export const BIPanelGeneralView: React.FC = () => {
                 />
             )}
 
-            {/* TARJETA DESTACADA: RENTABILIDAD CONTABLE */}
-            <RentabilidadContableCard
-                rentabilidadPct={data?.rentabilidad_contable_pct}
-                loading={loading}
-                onOpenModal={() => setShowSucursalesModal(true)}
-            />
-
-            {/* BLOQUE DE 4 TARJETAS KPIS PRINCIPALES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL SUTIL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
                 {/* TARJETA 1: INGRESOS TOTALES */}
                 <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
@@ -475,7 +468,14 @@ export const BIPanelGeneralView: React.FC = () => {
                     formatBs={formatBs}
                 />
 
-                {/* TARJETA 3: TICKET MEDIO */}
+                {/* TARJETA 3: RENTABILIDAD CONTABLE (SUTIL) */}
+                <RentabilidadContableCard
+                    rentabilidadPct={data?.rentabilidad_contable_pct}
+                    loading={loading}
+                    onOpenModal={() => setShowSucursalesModal(true)}
+                />
+
+                {/* TARJETA 4: TICKET MEDIO */}
                 <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
                         <div>
@@ -509,7 +509,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </button>
                 </div>
 
-                {/* TARJETA 4: TOTAL DE ÓRDENES */}
+                {/* TARJETA 5: TOTAL DE ÓRDENES */}
                 <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
                         <div>

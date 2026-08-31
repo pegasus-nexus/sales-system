@@ -1,5 +1,5 @@
 import React from 'react';
-import { Percent, Sparkles } from 'lucide-react';
+import { Percent, ChevronRight, Store } from 'lucide-react';
 
 interface RentabilidadContableCardProps {
     rentabilidadPct?: number;
@@ -36,11 +36,14 @@ export const RentabilidadContableCard: React.FC<RentabilidadContableCardProps> =
 
             <button
                 onClick={onOpenModal}
-                className="w-full bg-violet-600 hover:bg-violet-700 text-white font-black text-xs py-2 px-3 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer mt-1"
+                className="pt-2 border-t border-violet-100/60 text-[11px] font-black text-violet-700 hover:text-violet-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
                 title="Ver desglose financiero por sucursal"
             >
-                <Sparkles size={14} />
-                <span>Desglose por Sucursales</span>
+                <span className="flex items-center gap-1.5">
+                    <Store size={13} className="text-violet-600" />
+                    <span>Ver Detalles</span>
+                </span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
         </div>
     );
