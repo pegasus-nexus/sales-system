@@ -274,31 +274,6 @@ export const BIPanelGeneralView: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full">
             
-            {/* CABECERA COMPACTA EN AZUL PASTEL */}
-            <div className="bg-gradient-to-r from-sky-50 via-blue-50/80 to-indigo-50/90 rounded-2xl px-5 py-3 shadow-xs border border-sky-100/80 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-xl text-sky-600 shadow-2xs border border-sky-100 shrink-0">
-                        <Layers size={16} />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-sm font-black text-slate-900 leading-none">Panel General — Día a Día</h1>
-                            <span className="text-[10px] font-extrabold text-sky-700 bg-sky-100/80 border border-sky-200/80 px-2 py-0.5 rounded-md">MongoDB sales • America/La_Paz</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* BOTÓN ÚNICO EN LADO DERECHO: RESTABLECER */}
-                <button
-                    onClick={handleReset}
-                    className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl transition-all border border-slate-200/80 shadow-2xs cursor-pointer shrink-0"
-                    title="Restablecer filtros por defecto"
-                >
-                    <RotateCcw size={13} className="text-slate-500" />
-                    <span>Restablecer</span>
-                </button>
-            </div>
-
             {/* BARRA DE CONTROLES Y FILTROS EN PASTEL AZUL */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
                 {/* Presets Rápidos Pastel */}
@@ -387,6 +362,15 @@ export const BIPanelGeneralView: React.FC = () => {
                             ))}
                         </select>
                     </div>
+
+                    <button
+                        onClick={handleReset}
+                        className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-2xl transition-all border border-slate-200/80 cursor-pointer"
+                        title="Restablecer todos los filtros"
+                    >
+                        <RotateCcw size={13} className="text-slate-500" />
+                        <span>Restablecer</span>
+                    </button>
                 </div>
             </div>
 
@@ -438,37 +422,17 @@ export const BIPanelGeneralView: React.FC = () => {
                 />
             )}
 
-            {/* TARJETA INTELIGENTE: DIAGNÓSTICO IA DEL DÍA */}
-            {data && !loading && (
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-md border border-indigo-800/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3.5">
-                        <div className="p-3 bg-indigo-600/50 rounded-2xl border border-indigo-400/30 text-amber-300 shadow-xs mt-0.5 shrink-0">
-                            <Sparkles size={22} className="animate-pulse" />
-                        </div>
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-black uppercase tracking-wider text-indigo-300">🤖 Diagnóstico IA del Día</span>
-                                <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-indigo-900/80 text-indigo-200 border border-indigo-600/50">
-                                    {(data.rentabilidad_contable_pct || 0) >= 15 ? '🟢 SALUDABLE' : (data.rentabilidad_contable_pct || 0) >= 5 ? '🟡 ESTABLE' : '🔴 PRECAUCIÓN'}
-                                </span>
-                            </div>
-                            <p className="text-sm font-bold text-slate-100">
-                                {data.cantidad_ordenes > 0 
-                                    ? `Las ventas registradas alcanzan ${formatBs(data.ingresos_totales)} en ${data.cantidad_ordenes} tickets POS. Rentabilidad contable estimada del ${(data.rentabilidad_contable_pct || 0).toFixed(2)}%.` 
-                                    : `Sin registros de ventas POS para el filtro seleccionado (${startDate}).`}
-                            </p>
-                            <p className="text-xs text-indigo-200 font-medium">
-                                <strong className="text-amber-300">Principal impulsor:</strong> {data.desglose_sucursales && data.desglose_sucursales.length > 0 ? `Punto de venta ${data.desglose_sucursales[0]?.nombre_sucursal} lidera con el ${data.desglose_sucursales[0]?.participacion_pct}% de los ingresos.` : 'Seguimiento de transacciones en vivo.'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* TARJETA DESTACADA: RENTABILIDAD CONTABLE */}
+            <RentabilidadContableCard
+                rentabilidadPct={data?.rentabilidad_contable_pct}
+                loading={loading}
+                onOpenModal={() => setShowSucursalesModal(true)}
+            />
 
-            {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL ULTRA SUTIL */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* BLOQUE DE 4 TARJETAS KPIS PRINCIPALES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
-                {/* TARJETA 1: INGRESOS TOTALES (Pastel Púrpura/Índigo) */}
+                {/* TARJETA 1: INGRESOS TOTALES */}
                 <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
                         <div>
@@ -502,7 +466,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </button>
                 </div>
 
-                {/* TARJETA 2: MARGEN LÍQUIDO (Pastel Ámbar/Naranja) */}
+                {/* TARJETA 2: MARGEN LÍQUIDO */}
                 <MargenLiquidoCard
                     margenLiquidoBs={data?.margen_liquido_bs}
                     comisionMatrizBs={data?.comision_matriz_bs}
@@ -511,7 +475,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     formatBs={formatBs}
                 />
 
-                {/* TARJETA 3: TICKET MEDIO (Pastel Esmeralda/Menta) */}
+                {/* TARJETA 3: TICKET MEDIO */}
                 <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-emerald-100/60">
                         <div>
@@ -545,7 +509,7 @@ export const BIPanelGeneralView: React.FC = () => {
                     </button>
                 </div>
 
-                {/* TARJETA 4: TOTAL DE ÓRDENES (Pastel Azul/Cian) */}
+                {/* TARJETA 4: TOTAL DE ÓRDENES */}
                 <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
                     <div className="flex justify-between items-start pb-3 border-b border-blue-100/60">
                         <div>
@@ -578,13 +542,6 @@ export const BIPanelGeneralView: React.FC = () => {
                         <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                     </button>
                 </div>
-
-                {/* TARJETA 5: RENTABILIDAD CONTABLE (Pastel Violeta/Rosa) */}
-                <RentabilidadContableCard
-                    rentabilidadPct={data?.rentabilidad_contable_pct}
-                    loading={loading}
-                    onOpenModal={() => setShowSucursalesModal(true)}
-                />
 
             </div>
 
