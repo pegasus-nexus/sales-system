@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
-    Download, Maximize2, RotateCcw, AlertTriangle, Store, Award,
+    RotateCcw, AlertTriangle, Store, Award,
     Activity, Bell, Sparkles, Info, ChevronRight, X
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
@@ -62,7 +62,6 @@ export const BIPanelGeneralView: React.FC = () => {
 
     // Datos del BI Backend
     const [data, setData] = useState<BIPanelGeneralResponse | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
     const [showSucursalesModal, setShowSucursalesModal] = useState<boolean>(false);
 
     // PRUEBA OBLIGATORIA #2 — REGISTRO DE ACTUALIZACIÓN DE ESTADO REACT
@@ -235,39 +234,6 @@ export const BIPanelGeneralView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
-    const handleExportCSV = () => {
-        if (!data || !data.desglose_sucursales) return;
-        const headers = ['Sucursal ID', 'Nombre Sucursal', 'Ingresos Totales (Bs)', 'Órdenes', 'Ticket Medio (Bs)', 'Participacion %'];
-        const rows = data.desglose_sucursales.map(s => [
-            s.sucursal_id,
-            `"${s.nombre_sucursal}"`,
-            s.ingresos,
-            s.ordenes,
-            s.ticket_medio,
-            `${s.participacion_pct}%`
-        ]);
-        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement('a');
-        link.setAttribute('href', encodedUri);
-        link.setAttribute('download', `bi_panel_general_${startDate}_${endDate}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            setIsFullscreen(true);
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                setIsFullscreen(false);
-            }
-        }
-    };
-
     // SI HAY ERROR DE RED/HTTP (DIFERENCIAR ERROR DE CONEXIÓN DE SIN VENTAS)
     if (error && !loading) {
         return (
@@ -306,64 +272,31 @@ export const BIPanelGeneralView: React.FC = () => {
     const hasNoSales = data && data.cantidad_ordenes === 0;
 
     return (
-        <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
+        <div className="min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full">
             
-            {/* CABECERA PRINCIPAL ESTILO PASTEL LIMPÍSIMO EN AZUL */}
-            <div className="bg-gradient-to-r from-sky-50/90 via-blue-50/80 to-indigo-50/90 rounded-3xl p-6 shadow-sm border border-sky-100/80 backdrop-blur-sm">
-                <div>
-                    <div className="flex items-center gap-2 text-sky-700 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Layers size={14} className="text-sky-600" />
-                        </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — MODELO ESTRELLA</span>
+            {/* CABECERA COMPACTA EN AZUL PASTEL */}
+            <div className="bg-gradient-to-r from-sky-50 via-blue-50/80 to-indigo-50/90 rounded-2xl px-5 py-3 shadow-xs border border-sky-100/80 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-xl text-sky-600 shadow-2xs border border-sky-100 shrink-0">
+                        <Layers size={16} />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Panel General — Día a Día</h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1 flex flex-wrap items-center gap-2">
-                        <span>Orquestación en tiempo real sobre los datos del POS (MongoDB `sales` • Zona Horaria: <span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)</span>
-                        <span className="text-[10px] font-black text-sky-700 bg-sky-100/80 border border-sky-200 px-2 py-0.5 rounded-md">BUILD: {typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'PROD-LIVE'}</span>
-                    </p>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-sm font-black text-slate-900 leading-none">Panel General — Día a Día</h1>
+                            <span className="text-[10px] font-extrabold text-sky-700 bg-sky-100/80 border border-sky-200/80 px-2 py-0.5 rounded-md">MongoDB sales • America/La_Paz</span>
+                        </div>
+                    </div>
                 </div>
 
-                {/* BOTONES DE ACCIÓN LIMPÍSIMOS EN AZUL PASTEL */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        onClick={() => fetchBIData(startDate, endDate, selectedSucursal)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
-                        title="Actualizar datos desde el POS"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        <span>Actualizar</span>
-                    </button>
-
-                    <button
-                        onClick={handleExportCSV}
-                        disabled={!data || loading}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs disabled:opacity-50 cursor-pointer"
-                        title="Exportar reporte en CSV"
-                    >
-                        <Download size={14} className="text-slate-500" />
-                        <span>Exportar</span>
-                    </button>
-
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs cursor-pointer"
-                        title="Restablecer filtros por defecto"
-                    >
-                        <RotateCcw size={14} className="text-slate-500" />
-                        <span>Restablecer</span>
-                    </button>
-
-                    <button
-                        onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl transition-all border border-slate-200/80 shadow-xs cursor-pointer"
-                        title="Pantalla Completa"
-                    >
-                        <Maximize2 size={14} className="text-slate-500" />
-                        <span>Pantalla completa</span>
-                    </button>
-                </div>
+                {/* BOTÓN ÚNICO EN LADO DERECHO: RESTABLECER */}
+                <button
+                    onClick={handleReset}
+                    className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl transition-all border border-slate-200/80 shadow-2xs cursor-pointer shrink-0"
+                    title="Restablecer filtros por defecto"
+                >
+                    <RotateCcw size={13} className="text-slate-500" />
+                    <span>Restablecer</span>
+                </button>
             </div>
 
             {/* BARRA DE CONTROLES Y FILTROS EN PASTEL AZUL */}
