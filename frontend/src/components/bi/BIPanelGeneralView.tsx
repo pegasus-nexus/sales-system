@@ -3,7 +3,7 @@ import {
     Calendar, RefreshCw, Layers, Clock,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     RotateCcw, AlertTriangle, Store, Award,
-    Activity, Bell, Sparkles, Info, ChevronRight, ChevronUp
+    Activity, Bell, Sparkles, Info, ChevronRight
 } from 'lucide-react';
 import { getBIPanelGeneral, getBISucursales } from '../../api/biApi';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -424,8 +424,8 @@ export const BIPanelGeneralView: React.FC = () => {
             {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL SUTIL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
-                {/* TARJETA 1: INGRESOS TOTALES */}
-                <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-md">
+                {/* TARJETA 1: INGRESOS TOTALES (CON DESGLOSE EN EL MISMO RECUADRO) */}
+                <div className={`bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md ${isExpandedDesglose ? 'lg:col-span-5' : ''}`}>
                     <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
                         <div>
                             <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
@@ -456,6 +456,91 @@ export const BIPanelGeneralView: React.FC = () => {
                         </span>
                         <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
                     </button>
+
+                    {/* DESGLOSE INTEGRADO DENTRO DEL MISMO RECUADRO */}
+                    {isExpandedDesglose && data && (
+                        <div className="mt-4 pt-4 border-t border-indigo-200/80 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-indigo-950 uppercase tracking-wider">
+                                    Sucursales con Ventas Registradas
+                                </span>
+                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/90 px-2.5 py-0.5 rounded-md">
+                                    {startDate} a {endDate}
+                                </span>
+                            </div>
+
+                            {(() => {
+                                // FILTRAR STRICTAMENTE SÓLO SUCURSALES QUE SÍ TUVIERON VENTAS (> 0)
+                                const activeSucursales = (data.desglose_sucursales || []).filter(
+                                    (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
+                                );
+
+                                if (activeSucursales.length === 0) {
+                                    return (
+                                        <div className="p-4 text-center text-indigo-900/70 text-xs font-bold bg-white/80 rounded-2xl border border-indigo-100/80">
+                                            Sin registros de ventas en sucursales para el filtro seleccionado.
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                                        {activeSucursales.map((suc) => (
+                                            <div
+                                                key={suc.sucursal_id}
+                                                className="p-3.5 bg-white/95 rounded-2xl border border-indigo-100/80 shadow-2xs space-y-2 hover:border-indigo-300 transition-all"
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl shrink-0">
+                                                            <Store size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-extrabold text-slate-900 text-xs block leading-tight">
+                                                                {suc.nombre_sucursal}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500 font-semibold">
+                                                                {suc.ordenes} órdenes • TM: <strong className="text-emerald-700">{formatBs(suc.ticket_medio)}</strong>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <span className="text-sm font-black text-slate-900 block">
+                                                            {formatBs(suc.ingresos)}
+                                                        </span>
+                                                        <span className="text-[10px] font-black text-indigo-600 block">
+                                                            {suc.participacion_pct}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Barra de progreso de participación */}
+                                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                    <div
+                                                        className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500"
+                                                        style={{ width: `${Math.min(100, Math.max(0, suc.participacion_pct))}%` }}
+                                                    ></div>
+                                                </div>
+
+                                                <div className="flex justify-end pt-0.5">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedSucursal(suc.sucursal_id);
+                                                        }}
+                                                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold text-[10px] rounded-lg border border-indigo-200 transition-all cursor-pointer"
+                                                        title={`Filtrar vista exclusivamente por ${suc.nombre_sucursal}`}
+                                                    >
+                                                        Filtrar sucursal
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
 
                 {/* TARJETA 2: MARGEN LÍQUIDO */}
@@ -575,112 +660,6 @@ export const BIPanelGeneralView: React.FC = () => {
                 </div>
 
             </div>
-
-            {/* SECCIÓN DESGLOSABLE INLINE (SE AGRANDE HACIA ABAJO AL PRESIONAR DESGLOSE SUCURSALES) */}
-            {isExpandedDesglose && data && (
-                <div className="bg-white rounded-3xl p-6 shadow-md border-2 border-indigo-100 space-y-6 animate-in slide-in-from-top-3 duration-300">
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-indigo-100 text-indigo-700 rounded-2xl shadow-xs">
-                                <Store size={22} />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-black text-slate-900">Desglose de Ventas por Sucursales</h3>
-                                <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                                    Período consultado: <span className="text-indigo-600 font-bold">{startDate} a {endDate}</span> (America/La_Paz)
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setIsExpandedDesglose(false)}
-                            className="px-3.5 py-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                            title="Cerrar / Plegar recuadro"
-                        >
-                            <ChevronUp size={16} />
-                            <span>Plegar</span>
-                        </button>
-                    </div>
-
-                    {/* Tarjetas Resumen Global */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <div>
-                            <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Venta Neta POS</span>
-                            <span className="text-lg font-black text-indigo-950 block">{formatBs(data?.ingresos_totales)}</span>
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Total Órdenes</span>
-                            <span className="text-lg font-black text-slate-900 block">{data?.cantidad_ordenes || 0} tickets</span>
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Ticket Medio Global</span>
-                            <span className="text-lg font-black text-emerald-700 block">{formatBs(data?.ticket_medio)}</span>
-                        </div>
-                    </div>
-
-                    {/* Lista / Tabla de Desglose por Sucursales */}
-                    <div className="space-y-3">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Distribución por Punto de Venta</h4>
-                        
-                        {(!data?.desglose_sucursales || data.desglose_sucursales.length === 0) ? (
-                            <div className="p-6 text-center text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl">
-                                No se registraron ventas en las sucursales para el período seleccionado.
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {data.desglose_sucursales.map((suc) => (
-                                    <div
-                                        key={suc.sucursal_id}
-                                        className="p-4 bg-slate-50/80 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/70 transition-all space-y-2"
-                                    >
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl">
-                                                    <Store size={18} />
-                                                </div>
-                                                <div>
-                                                    <span className="font-extrabold text-slate-900 text-sm block">
-                                                        {suc.nombre_sucursal}
-                                                    </span>
-                                                    <span className="text-xs text-slate-500 font-semibold">
-                                                        {suc.ordenes} órdenes • TM: <strong className="text-emerald-700">{formatBs(suc.ticket_medio)}</strong>
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="text-right">
-                                                <span className="text-base font-black text-slate-900 block">
-                                                    {formatBs(suc.ingresos)}
-                                                </span>
-                                                <span className="text-xs font-black text-indigo-600 block">
-                                                    {suc.participacion_pct}% del total
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Barra de progreso de participación */}
-                                        <div className="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden mt-1">
-                                            <div
-                                                className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
-                                                style={{ width: `${Math.min(100, Math.max(0, suc.participacion_pct))}%` }}
-                                            ></div>
-                                        </div>
-
-                                        <div className="flex justify-end pt-1">
-                                            <button
-                                                onClick={() => setSelectedSucursal(suc.sucursal_id)}
-                                                className="px-3 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold text-[11px] rounded-xl border border-indigo-200 transition-all cursor-pointer"
-                                                title={`Filtrar vista exclusivamente por ${suc.nombre_sucursal}`}
-                                            >
-                                                Filtrar sucursal
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* LAYOUT PRINCIPAL INSPIRADO EN LA IMAGEN DE REFERENCIA */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
