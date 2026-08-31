@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    Sparkles, LayoutDashboard, Package, Boxes, DollarSign, Crown, X
+    Sparkles, LayoutDashboard, Package, Boxes, DollarSign, Crown
 } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
@@ -20,16 +20,16 @@ interface ModuleConfig {
     id: ModuleId;
     label: string;
     icon: any;
-    color: string;
+    accentColor: string;
 }
 
 const MODULES: ModuleConfig[] = [
-    { id: 'panel', label: '1. Panel General', icon: LayoutDashboard, color: 'from-slate-700 to-slate-800' },
-    { id: 'rentabilidad', label: '2. Rentabilidad & Negocio', icon: DollarSign, color: 'from-emerald-700 to-emerald-800' },
-    { id: 'catalogo', label: '3. Catálogo Inteligente', icon: Package, color: 'from-amber-700 to-amber-800' },
-    { id: 'inventario', label: '4. Inventario & Operación', icon: Boxes, color: 'from-orange-700 to-orange-800' },
-    { id: 'ia', label: '5. Inteligencia Artificial', icon: Sparkles, color: 'from-indigo-700 to-indigo-800' },
-    { id: 'ejecutivo', label: '6. Ejecutivo C-Level', icon: Crown, color: 'from-purple-800 to-purple-900' },
+    { id: 'panel', label: '1. Panel General', icon: LayoutDashboard, accentColor: 'text-sky-600' },
+    { id: 'rentabilidad', label: '2. Rentabilidad & Negocio', icon: DollarSign, accentColor: 'text-emerald-600' },
+    { id: 'catalogo', label: '3. Catálogo Inteligente', icon: Package, accentColor: 'text-amber-600' },
+    { id: 'inventario', label: '4. Inventario & Operación', icon: Boxes, accentColor: 'text-orange-600' },
+    { id: 'ia', label: '5. Inteligencia Artificial', icon: Sparkles, accentColor: 'text-indigo-600' },
+    { id: 'ejecutivo', label: '6. Ejecutivo C-Level', icon: Crown, accentColor: 'text-purple-600' },
 ];
 
 export default function BIView() {
@@ -47,60 +47,39 @@ export default function BIView() {
         }, 180);
     };
 
-    const currentModuleInfo = MODULES.find(m => m.id === activeModule) || MODULES[0];
-
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-3">
             
-            {/* BARRA SUPERIOR DE PESTAÑAS INTEGRADA AL ESTILO "MAC / MODERN CAPSULE DIAL" */}
-            <div className="bg-[#2B2D30] rounded-3xl p-2.5 shadow-xl border border-slate-700/60 flex items-center justify-between gap-2 overflow-x-auto select-none">
-                
-                {/* BOTÓN MÓDULO ACTIVO (ESTILO SOLAPA PRINCIPAL RETRAÍBLE) */}
-                <div className="flex items-center gap-2 bg-[#E2E4DC] text-slate-900 px-5 py-2.5 rounded-2xl shadow-inner font-extrabold text-sm border border-white/50 shrink-0 transition-all duration-300">
-                    <button 
-                        onClick={() => handleModuleChange('panel')}
-                        className="p-1 rounded-full hover:bg-slate-300/60 text-slate-700 transition-colors cursor-pointer"
-                        title="Ir al inicio"
-                    >
-                        <X size={14} />
-                    </button>
-                    <span className="tracking-tight text-slate-950 font-black flex items-center gap-2">
-                        {currentModuleInfo.label}
-                    </span>
-                </div>
-
-                {/* CÁPSULAS OVALADAS DE NAVEGACIÓN RÁPIDA DE LOS 6 MÓDULOS */}
-                <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 px-1">
-                    {MODULES.map((mod) => {
-                        const Icon = mod.icon;
-                        const isActive = activeModule === mod.id;
-                        return (
-                            <button
-                                key={mod.id}
-                                onClick={() => handleModuleChange(mod.id)}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-                                    isActive
-                                        ? 'bg-[#E2E4DC] text-slate-950 shadow-md font-black scale-105 border border-white/80'
-                                        : 'bg-[#3A3D42] text-slate-200 hover:bg-[#464A50] hover:text-white border border-slate-600/40'
-                                }`}
-                            >
-                                <Icon size={14} className={isActive ? 'text-slate-900' : 'text-slate-300'} />
-                                <span>{mod.label.replace(/^\d+\.\s*/, '')}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+            {/* CONTENEDOR DE PESTAÑAS ESTILO CARPETA — COLOR CLARO / AZUL PASTEL */}
+            <div className="bg-[#EBF2FC]/90 p-2 pt-3 rounded-t-3xl border-b-2 border-indigo-200/80 flex items-end gap-1.5 overflow-x-auto select-none">
+                {MODULES.map((mod) => {
+                    const Icon = mod.icon;
+                    const isActive = activeModule === mod.id;
+                    return (
+                        <button
+                            key={mod.id}
+                            onClick={() => handleModuleChange(mod.id)}
+                            className={`px-5 py-3 rounded-t-2xl font-black text-xs transition-all duration-200 flex items-center gap-2 whitespace-nowrap relative cursor-pointer ${
+                                isActive
+                                    ? 'bg-white text-indigo-950 shadow-sm border-t-2 border-x-2 border-indigo-200 -mb-[2px] z-10 scale-[1.02]'
+                                    : 'bg-indigo-50/60 text-slate-600 hover:bg-white/80 hover:text-indigo-900 border-t border-x border-indigo-100/80'
+                            }`}
+                        >
+                            <Icon size={16} className={isActive ? mod.accentColor : 'text-slate-400'} />
+                            <span>{mod.label}</span>
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* NIVELES DE NAVEGACIÓN 2: SUB-MÓDULOS CON DISEÑO DE CÁPSULAS SUAVES */}
-            <div className="bg-[#F4F5F0] rounded-2xl p-2 shadow-xs border border-slate-300/70 flex items-center gap-2 overflow-x-auto text-xs font-bold">
-                
+            {/* BARRA DE SUB-MÓDULOS EN PASTEL CLARO */}
+            <div className="bg-white rounded-2xl p-2 shadow-xs border border-indigo-100 flex items-center gap-2 overflow-x-auto text-xs font-bold">
                 {activeModule === 'panel' && (
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-sky-100 text-sky-900 font-black border border-sky-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             📊 Operación Diaria Día a Día
@@ -108,7 +87,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('comparativas')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'comparativas' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'comparativas' ? 'bg-sky-100 text-sky-900 font-black border border-sky-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             📈 Comparativas Multitemporales (DoD/WoW/MoM)
@@ -121,7 +100,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-emerald-100 text-emerald-900 font-black border border-emerald-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             💵 Márgenes & Rentabilidad Contable
@@ -129,7 +108,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('sucursales')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'sucursales' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'sucursales' ? 'bg-emerald-100 text-emerald-900 font-black border border-emerald-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             🏬 Rentabilidad por Sucursal
@@ -137,7 +116,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('productividad')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'productividad' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'productividad' ? 'bg-emerald-100 text-emerald-900 font-black border border-emerald-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             👤 Productividad & Cajeros
@@ -145,7 +124,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('clientes')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'clientes' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'clientes' ? 'bg-emerald-100 text-emerald-900 font-black border border-emerald-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             👥 Comportamiento de Clientes & Pagos
@@ -158,7 +137,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-amber-100 text-amber-900 font-black border border-amber-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             📦 Ranking de Productos & Categorías
@@ -166,7 +145,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('descuentos')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'descuentos' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'descuentos' ? 'bg-amber-100 text-amber-900 font-black border border-amber-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             🏷️ Descuentos & Impacto Promocional
@@ -179,7 +158,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-orange-100 text-orange-900 font-black border border-orange-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             🗃️ Stock Actual & Demanda Predictiva
@@ -192,7 +171,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-indigo-100 text-indigo-900 font-black border border-indigo-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             ✨ Forecast, Causal & Chat BI Conversacional
@@ -205,7 +184,7 @@ export default function BIView() {
                         <button
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-xl transition-all ${
-                                subTab === 'default' ? 'bg-[#2B2D30] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-slate-200/70'
+                                subTab === 'default' ? 'bg-purple-100 text-purple-900 font-black border border-purple-300/80' : 'text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             👑 Dashboard Gerencial C-Level & Score Empresarial
@@ -214,11 +193,11 @@ export default function BIView() {
                 )}
             </div>
 
-            {/* CONTENEDOR CON ANIMACIÓN DE TRANSICIÓN SUAVE (SUAVE FADE/SLIDE) */}
+            {/* CONTENEDOR CON ANIMACIÓN DE TRANSICIÓN SUAVE */}
             <div
                 className={`transition-all duration-300 transform ${
                     isAnimating
-                        ? 'opacity-0 translate-y-2 scale-[0.99]'
+                        ? 'opacity-0 translate-y-2 scale-[0.995]'
                         : 'opacity-100 translate-y-0 scale-100'
                 }`}
             >
