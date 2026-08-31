@@ -14,6 +14,59 @@ export interface HourlyDistributionItemBI {
     rango: string;
     ingresos: number;
     ordenes: number;
+    ticket_medio?: number;
+    estado_horario?: 'NORMAL' | 'PRE_APERTURA' | 'POST_CIERRE';
+    variacion_historica_pct?: number | null;
+    es_hora_pico?: boolean;
+}
+
+export interface HourlyIntelligentAnalysisItem {
+    hora: number;
+    rango: string;
+    ingresos: number;
+    ordenes: number;
+    ticket_medio: number;
+    estado_horario: 'NORMAL' | 'PRE_APERTURA' | 'POST_CIERRE';
+    variacion_historica_pct?: number | null;
+    es_hora_pico: boolean;
+}
+
+export interface AfterHoursActivityItem {
+    sucursal_nombre: string;
+    hora_exacta: string;
+    tickets: number;
+    monto_total: number;
+    estado_operativo: 'NORMAL' | 'PRE_APERTURA' | 'POST_CIERRE';
+    mensaje_alerta: string;
+}
+
+export interface AIHourlyInsightItem {
+    tipo: 'PATRON' | 'ANOMALIA' | 'RECOMENDACION';
+    titulo: string;
+    mensaje: string;
+    impacto: string;
+    confianza_pct: number;
+}
+
+export interface VentasHorarioInteligenteBI {
+    opening_time: string;
+    closing_time: string;
+    allow_after_hours: boolean;
+    hora_pico_hora: string;
+    hora_pico_monto: number;
+    hora_pico_participacion_pct: number;
+    distribucion_horaria: HourlyIntelligentAnalysisItem[];
+    actividad_fuera_horario: AfterHoursActivityItem[];
+    insights_ia: AIHourlyInsightItem[];
+}
+
+export interface BranchOperatingHoursConfig {
+    tenant_id?: string;
+    sucursal_id: string;
+    sucursal_nombre: string;
+    opening_time: string;
+    closing_time: string;
+    allow_after_hours: boolean;
 }
 
 export interface VentaRecienteBI {
@@ -57,6 +110,7 @@ export interface BIPanelGeneralResponse {
 
     desglose_sucursales: DesgloseSucursalBI[];
     ventas_por_hora: HourlyDistributionItemBI[];
+    horario_inteligente?: VentasHorarioInteligenteBI;
     ventas_recientes: VentaRecienteBI[];
     resumen_operativo: ResumenOperativoBI;
     alertas_operativas: AlertaOperativaBI[];
@@ -717,6 +771,18 @@ export const postBIAIChat = async (message: string, contextPeriod: string = 'hoy
     return client<{ status: string; query: string; reply: string; timestamp: string }>(`/bi-ai/chat`, {
         method: 'POST',
         body: JSON.stringify({ message, context_period: contextPeriod }),
+        headers: { 'Content-Type': 'application/json' }
+    });
+};
+
+export const getOperatingHours = async (): Promise<BranchOperatingHoursConfig[]> => {
+    return client<BranchOperatingHoursConfig[]>('/bi/operating-hours');
+};
+
+export const updateOperatingHours = async (payload: BranchOperatingHoursConfig): Promise<BranchOperatingHoursConfig> => {
+    return client<BranchOperatingHoursConfig>('/bi/operating-hours', {
+        method: 'POST',
+        body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' }
     });
 };

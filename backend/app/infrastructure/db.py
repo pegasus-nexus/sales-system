@@ -36,6 +36,7 @@ from app.domain.models.proveedor import Proveedor
 from app.domain.models.client_wallet import ClientWallet
 from app.domain.models.compra import PurchaseOrder, PurchaseReception
 from app.domain.models.cuenta_por_pagar import CuentaPorPagar
+from app.domain.models.branch_operating_hours import BranchOperatingHours
 
 from app.infrastructure.core.config import settings
 
@@ -125,6 +126,7 @@ async def init_db():
             PurchaseOrder,
             PurchaseReception,
             CuentaPorPagar,
+            BranchOperatingHours,
             Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True

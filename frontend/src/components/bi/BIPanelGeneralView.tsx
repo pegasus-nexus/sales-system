@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    Calendar, RefreshCw, Layers, Clock,
+    Calendar, RefreshCw, Layers,
     TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     RotateCcw, AlertTriangle, Store, Award,
     Activity, Bell, Sparkles, Info, ChevronRight
@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/authStore';
 
 import { BIStateBanner } from './common/BIStateBanner';
 import { MargenLiquidoCard } from './MargenLiquidoCard';
+import { BIVentasHorarioInteligenteView } from './BIVentasHorarioInteligenteView';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -722,54 +723,13 @@ export const BIPanelGeneralView: React.FC = () => {
                 {/* COLUMNA IZQUIERDA Y CENTRO (2 TÉRCIOS): HISTOGRAMA Y ACTIVIDAD RECIENTE */}
                 <div className="lg:col-span-2 space-y-6">
                     
-                    {/* CURVA HORARIA DE VENTAS (ESTILO SECCIÓN BALANCE DE LA IMAGEN DE REFERENCIA) */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70">
-                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario</h3>
-                                    <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100">
-                                        America/La_Paz
-                                    </span>
-                                </div>
-                                <p className="text-xs font-bold text-slate-400 mt-0.5">
-                                    Distribución de ingresos por hora del día (00:00 a 23:59)
-                                </p>
-                            </div>
-                            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
-                                <Clock size={20} />
-                            </div>
-                        </div>
-
-                        {loading ? (
-                            <div className="h-48 flex items-center justify-center text-slate-400 text-xs font-bold">
-                                Cargando distribución horaria...
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
-                                {data?.ventas_por_hora.map((item) => (
-                                    <div
-                                        key={item.hora}
-                                        className={`p-3 rounded-2xl border text-center transition-all flex flex-col justify-between ${
-                                            item.ordenes > 0
-                                                ? 'bg-gradient-to-b from-indigo-50/90 to-purple-50/50 border-indigo-200/80 text-indigo-950 shadow-2xs font-bold'
-                                                : 'bg-slate-50/60 border-slate-100 text-slate-400'
-                                        }`}
-                                    >
-                                        <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">
-                                            {item.hora}:00
-                                        </span>
-                                        <span className="text-xs font-extrabold block my-1">
-                                            {item.ingresos > 0 ? formatBs(item.ingresos) : 'Bs. 0'}
-                                        </span>
-                                        <span className="text-[10px] font-semibold text-indigo-600 block bg-white/70 py-0.5 rounded-md mt-1">
-                                            {item.ordenes} ord.
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    {/* VENTAS POR HORARIO INTELIGENTE */}
+                    <BIVentasHorarioInteligenteView
+                        data={data?.horario_inteligente}
+                        loading={loading}
+                        formatBs={formatBs}
+                        onRefresh={() => fetchBIData(startDate, endDate, selectedSucursal)}
+                    />
 
                     {/* SECCIÓN E: ACTIVIDAD RECIENTE / HISTORIAL DE VENTAS */}
                     {data?.ventas_recientes && data.ventas_recientes.length > 0 && (

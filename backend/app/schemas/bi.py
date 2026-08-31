@@ -16,6 +16,39 @@ class HourlyDistributionItemBI(BaseModel):
     rango: str
     ingresos: float = 0.0
     ordenes: int = 0
+    ticket_medio: float = 0.0
+    estado_horario: str = "NORMAL"  # 'NORMAL' | 'PRE_APERTURA' | 'POST_CIERRE'
+    variacion_historica_pct: Optional[float] = None
+    es_hora_pico: bool = False
+
+
+class AfterHoursActivityItem(BaseModel):
+    sucursal_nombre: str
+    hora_exacta: str
+    tickets: int = 0
+    monto_total: float = 0.0
+    estado_operativo: str = "POST_CIERRE"
+    mensaje_alerta: str = "⚠ Revisar operación"
+
+
+class AIHourlyInsightItem(BaseModel):
+    tipo: str  # 'PATRON' | 'ANOMALIA' | 'RECOMENDACION'
+    titulo: str
+    mensaje: str
+    impacto: str = "ALTO"
+    confianza_pct: float = 95.0
+
+
+class VentasHorarioInteligenteBI(BaseModel):
+    opening_time: str = "08:00"
+    closing_time: str = "21:00"
+    allow_after_hours: bool = True
+    hora_pico_hora: str = "15:00"
+    hora_pico_monto: float = 0.0
+    hora_pico_participacion_pct: float = 0.0
+    distribucion_horaria: List[HourlyIntelligentAnalysisItem] = []
+    actividad_fuera_horario: List[AfterHoursActivityItem] = []
+    insights_ia: List[AIHourlyInsightItem] = []
 
 
 class VentaRecienteBI(BaseModel):
@@ -62,6 +95,7 @@ class BIPanelGeneralResponse(BaseModel):
     # Desgloses y Estructuras Analíticas
     desglose_sucursales: List[DesgloseSucursalBI] = []
     ventas_por_hora: List[HourlyDistributionItemBI] = []
+    horario_inteligente: Optional[VentasHorarioInteligenteBI] = None
     ventas_recientes: List[VentaRecienteBI] = []
     resumen_operativo: ResumenOperativoBI = Field(default_factory=ResumenOperativoBI)
     alertas_operativas: List[AlertaOperativaBI] = []
