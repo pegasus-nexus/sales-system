@@ -505,6 +505,33 @@ export const BIPanelGeneralView: React.FC = () => {
                 />
             )}
 
+            {/* TARJETA INTELIGENTE: DIAGNÓSTICO IA DEL DÍA */}
+            {data && !loading && (
+                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-md border border-indigo-800/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="p-3 bg-indigo-600/50 rounded-2xl border border-indigo-400/30 text-amber-300 shadow-xs mt-0.5 shrink-0">
+                            <Sparkles size={22} className="animate-pulse" />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-indigo-300">🤖 Diagnóstico IA del Día</span>
+                                <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-indigo-900/80 text-indigo-200 border border-indigo-600/50">
+                                    {(data.rentabilidad_contable_pct || 0) >= 15 ? '🟢 SALUDABLE' : (data.rentabilidad_contable_pct || 0) >= 5 ? '🟡 ESTABLE' : '🔴 PRECAUCIÓN'}
+                                </span>
+                            </div>
+                            <p className="text-sm font-bold text-slate-100">
+                                {data.cantidad_ordenes > 0 
+                                    ? `Las ventas registradas alcanzan ${formatBs(data.ingresos_totales)} en ${data.cantidad_ordenes} tickets POS. Rentabilidad contable estimada del ${(data.rentabilidad_contable_pct || 0).toFixed(2)}%.` 
+                                    : `Sin registros de ventas POS para el filtro seleccionado (${startDate}).`}
+                            </p>
+                            <p className="text-xs text-indigo-200 font-medium">
+                                <strong className="text-amber-300">Principal impulsor:</strong> {data.desglose_sucursales && data.desglose_sucursales.length > 0 ? `Punto de venta ${data.desglose_sucursales[0]?.nombre_sucursal} lidera con el ${data.desglose_sucursales[0]?.participacion_pct}% de los ingresos.` : 'Seguimiento de transacciones en vivo.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL ULTRA SUTIL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 

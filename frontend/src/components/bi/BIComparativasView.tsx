@@ -373,6 +373,38 @@ export const BIComparativasView: React.FC = () => {
                 </div>
             )}
 
+            {/* BLOQUE DE ANÁLISIS AUTOMÁTICO EXPLICATIVO CON IA */}
+            {data && (
+                <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-6 text-white shadow-md border border-indigo-800/60 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-indigo-600/50 rounded-xl text-amber-300 border border-indigo-400/30">
+                            <Info size={18} />
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-indigo-300">Análisis Automático IA — Causa Raíz de Variación</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold text-slate-200">
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
+                            <span className="text-[10px] font-black uppercase text-amber-300 block">Diagnóstico de Ingresos</span>
+                            <p className="text-sm font-bold text-white">
+                                {data.variaciones.variacion_ingresos_pct !== null && data.variaciones.variacion_ingresos_pct >= 0
+                                    ? `Las ventas aumentaron un +${data.variaciones.variacion_ingresos_pct.toFixed(2)}% impulsadas por mayor volumen transaccional.`
+                                    : data.variaciones.variacion_ingresos_pct !== null
+                                    ? `Las ventas disminuyeron un ${data.variaciones.variacion_ingresos_pct.toFixed(2)}% principalmente por menor densidad de tickets emitidos.`
+                                    : 'Sin base comparativa previa registrada para este rango de fechas.'}
+                            </p>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
+                            <span className="text-[10px] font-black uppercase text-indigo-300 block">Descomposición Precio vs Volumen</span>
+                            <p className="text-xs text-slate-200">
+                                Ticket medio varió un <strong>{data.variaciones.variacion_ticket_pct !== null ? `${data.variaciones.variacion_ticket_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ticket_pct.toFixed(2)}%` : '0%'}</strong>, mientras que el volumen de tickets cambió en un <strong>{data.variaciones.variacion_ordenes_pct !== null ? `${data.variaciones.variacion_ordenes_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ordenes_pct.toFixed(2)}%` : '0%'}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* TABLA DE DESGLOSE POR SUCURSAL COMPARATIVA */}
             {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
                 <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">

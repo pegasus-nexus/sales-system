@@ -682,6 +682,43 @@ export const getBIAIProductDemand = async (horizonDays: number = 7): Promise<BIA
     return client<BIAIProductDemandResponse>(`/bi-ai/product-demand?horizon_days=${horizonDays}`);
 };
 
-export const getBIAIAnomalies = async (thresholdZScore: number = 2.0): Promise<BIAIAnomalyResponse> => {
-    return client<BIAIAnomalyResponse>(`/bi-ai/anomalies?threshold_zscore=${thresholdZScore}`);
+export const getBIAIAnomalies = async (thresholdZscore: number = 2.0): Promise<BIAIAnomalyResponse> => {
+    return client<BIAIAnomalyResponse>(`/bi-ai/anomalies?threshold_zscore=${thresholdZscore}`);
 };
+
+export interface BIAIDiagnosisResponse {
+    status: string;
+    diagnostico_principal: string;
+    impulsor_clave: string;
+    alerta_riesgo: string;
+    score_salud: 'SALUDABLE' | 'ESTABLE' | 'PRECAUCION' | 'NEUTRAL';
+    detalles: {
+        total_ventas: number;
+        total_ordenes: number;
+        ticket_medio: number;
+        rentabilidad_pct: number;
+        margen_neto_bs?: number;
+    };
+}
+
+export const getBIAIDiagnosis = async (startDate: string = 'hoy', endDate: string = 'hoy', sucursalId: string = 'all'): Promise<BIAIDiagnosisResponse> => {
+    return client<BIAIDiagnosisResponse>(`/bi-ai/diagnosis?start_date=${startDate}&end_date=${endDate}&sucursal_id=${sucursalId}`);
+};
+
+export const getBIAICausal = async (): Promise<any> => {
+    return client<any>(`/bi-ai/causal`);
+};
+
+export const getBIAIRecommendations = async (): Promise<any[]> => {
+    return client<any[]>(`/bi-ai/recommendations`);
+};
+
+export const postBIAIChat = async (message: string, contextPeriod: string = 'hoy'): Promise<{ status: string; query: string; reply: string; timestamp: string }> => {
+    return client<{ status: string; query: string; reply: string; timestamp: string }>(`/bi-ai/chat`, {
+        method: 'POST',
+        body: JSON.stringify({ message, context_period: contextPeriod }),
+        headers: { 'Content-Type': 'application/json' }
+    });
+};
+
+

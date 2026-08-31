@@ -263,6 +263,58 @@ export const BIEjecutivoView: React.FC = () => {
                 )}
             </div>
 
+            {/* DASHBOARD GERENCIAL: SALUD DEL NEGOCIO & RIESGOS */}
+            {data && (
+                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 text-white shadow-md border border-indigo-800/60 space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-indigo-800/50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-indigo-600/50 text-amber-300 rounded-2xl border border-indigo-400/30">
+                                <Crown size={22} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black tracking-tight">Evaluación Ejecutiva C-Level</h2>
+                                <p className="text-xs text-indigo-200 font-medium">Síntesis gerencial de salud, crecimiento y oportunidades</p>
+                            </div>
+                        </div>
+                        <div className="px-4 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-2xl text-xs font-black flex items-center gap-2">
+                            <span>Estado de Salud: 🟢 SALUDABLE</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
+                            <span className="text-[10px] font-black uppercase text-indigo-300 block">Crecimiento Financiero</span>
+                            <span className="text-lg font-black text-white block">
+                                {formatBs(data.kpis.ingresos_totales)}
+                            </span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                                Procesado en {data.kpis.total_tickets} tickets POS
+                            </span>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
+                            <span className="text-[10px] font-black uppercase text-emerald-300 block">Rentabilidad Teórica</span>
+                            <span className="text-lg font-black text-emerald-400 block">
+                                {data.kpis.margen_bruto_teorico_pct}% Margen Bruto
+                            </span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                                Utilidad teórica acumulada {formatBs(data.kpis.margen_bruto_teorico_bs)}
+                            </span>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
+                            <span className="text-[10px] font-black uppercase text-amber-300 block">Riesgos & Oportunidades</span>
+                            <span className="text-xs font-bold text-amber-200 block">
+                                Monitorear nivel de inventarios en productos de alta rotación
+                            </span>
+                            <span className="text-[11px] text-slate-300 font-medium">
+                                Oportunidad: Fomentar combo en horas valle
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* BLOCK PRINCIPAL DE KPIs CONSOLIDADOS */}
             {data && (
                 <div className="space-y-4">

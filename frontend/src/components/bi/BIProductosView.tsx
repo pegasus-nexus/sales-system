@@ -298,6 +298,82 @@ export const BIProductosView: React.FC = () => {
                 </div>
             )}
 
+            {/* MATRIZ BCG Y DIAGNÓSTICO IA DE PRODUCTOS */}
+            {data && data.top_productos && data.top_productos.length > 0 && (
+                <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <span>Matriz BCG & Diagnóstico IA de Catálogo</span>
+                            </h3>
+                            <p className="text-xs text-slate-400 font-bold">Clasificación estratégica por volumen de venta y participación</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* ESTRELLAS ⭐ */}
+                        <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200/80 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-amber-950 uppercase flex items-center gap-1">
+                                    ⭐ Estrellas (Alta Venta / Crecimiento)
+                                </span>
+                            </div>
+                            <p className="text-xs font-bold text-amber-900 truncate">
+                                {data.top_productos[0]?.nombre || 'Sin datos'}
+                            </p>
+                            <span className="text-[10px] font-extrabold text-amber-700 block">
+                                Impulsan el {data.top_productos[0]?.participacion_pct || 0}% de la recaudación.
+                            </span>
+                        </div>
+
+                        {/* VACAS 🐄 */}
+                        <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-emerald-950 uppercase flex items-center gap-1">
+                                    🐄 Vacas Lecheras (Alta Venta / Flujo)
+                                </span>
+                            </div>
+                            <p className="text-xs font-bold text-emerald-900 truncate">
+                                {data.top_productos[1]?.nombre || data.top_productos[0]?.nombre || 'Sin datos'}
+                            </p>
+                            <span className="text-[10px] font-extrabold text-emerald-700 block">
+                                Generación constante de flujo de caja.
+                            </span>
+                        </div>
+
+                        {/* INTERROGANTES ❓ */}
+                        <div className="p-4 bg-blue-50/80 rounded-2xl border border-blue-200/80 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-blue-950 uppercase flex items-center gap-1">
+                                    ❓ Interrogantes (Potencial)
+                                </span>
+                            </div>
+                            <p className="text-xs font-bold text-blue-900 truncate">
+                                {data.top_productos[2]?.nombre || 'En evaluación'}
+                            </p>
+                            <span className="text-[10px] font-extrabold text-blue-700 block">
+                                Requieren impulso o campañas específicas.
+                            </span>
+                        </div>
+
+                        {/* PERROS 🐕 */}
+                        <div className="p-4 bg-slate-100/80 rounded-2xl border border-slate-200 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-slate-800 uppercase flex items-center gap-1">
+                                    🐕 Perros / Revisión (Baja Rotación)
+                                </span>
+                            </div>
+                            <p className="text-xs font-bold text-slate-700 truncate">
+                                {data.top_productos[data.top_productos.length - 1]?.nombre || 'Ninguno'}
+                            </p>
+                            <span className="text-[10px] font-extrabold text-slate-500 block">
+                                Menor rotación. Evaluar liquidación o sustitución.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* TABLA PRINCIPAL TOP PRODUCTOS Y CATEGORÍAS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
