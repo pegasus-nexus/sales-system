@@ -4,7 +4,7 @@ import json
 import hashlib
 from datetime import datetime
 from bson import json_util
-from app.db import get_raw_db
+from motor.motor_asyncio import AsyncIOMotorClient
 from app.infrastructure.core.config import settings
 
 
@@ -14,7 +14,8 @@ async def run_mongodb_backup():
     print("PEGASUS SALES SYSTEM — BASELINE CONGELADO (COMMIT afc8029)")
     print("=" * 90)
 
-    db = await get_raw_db()
+    client = AsyncIOMotorClient("mongodb+srv://admin_prod:VigKJWIIMV6CXKsH@sales-system.hh277gd.mongodb.net/?retryWrites=true&w=majority")
+    db = client["sales_system_prod"]
     db_name = db.name
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -23,7 +24,7 @@ async def run_mongodb_backup():
     os.makedirs(target_backup_dir, exist_ok=True)
 
     collections_to_backup = [
-        "sales", "products", "inventario", "clientes",
+        "sales", "products", "inventario", "clientes", "sale_item_analytics", "caja_movimientos", "inventory_logs", "compras", "comprobantes_compra",
         "sucursales", "descuentos", "audit_logs", "users", "tenants"
     ]
 
