@@ -21,46 +21,67 @@ type ModuleId = 'panel' | 'rentabilidad' | 'catalogo' | 'inventario' | 'ia' | 'e
 interface ModuleConfig {
     id: ModuleId;
     label: string;
-    activeClass: string;
-    inactiveClass: string;
+    activeBg: string;
+    activeText: string;
+    activeBorder: string;
+    containerBg: string;
+    subTabActiveBg: string;
 }
 
 const MODULES: ModuleConfig[] = [
     {
         id: 'panel',
         label: '1. Panel General',
-        activeClass: 'bg-[#0284C7] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#E0F2FE]/80 text-[#0369A1] hover:bg-[#E0F2FE]'
+        activeBg: 'bg-[#EAF2FE]',
+        activeText: 'text-sky-700',
+        activeBorder: 'border-t-2 border-sky-500',
+        containerBg: 'bg-[#EAF2FE]/70',
+        subTabActiveBg: 'bg-sky-600 text-white'
     },
     {
         id: 'rentabilidad',
         label: '2. Rentabilidad & Negocio',
-        activeClass: 'bg-[#059669] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#D1FAE5]/80 text-[#047857] hover:bg-[#D1FAE5]'
+        activeBg: 'bg-[#E6F8F0]',
+        activeText: 'text-emerald-700',
+        activeBorder: 'border-t-2 border-emerald-500',
+        containerBg: 'bg-[#E6F8F0]/70',
+        subTabActiveBg: 'bg-emerald-600 text-white'
     },
     {
         id: 'catalogo',
         label: '3. Catálogo Inteligente',
-        activeClass: 'bg-[#D97706] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#FEF3C7]/80 text-[#B45309] hover:bg-[#FEF3C7]'
+        activeBg: 'bg-[#FEF6E6]',
+        activeText: 'text-amber-800',
+        activeBorder: 'border-t-2 border-amber-500',
+        containerBg: 'bg-[#FEF6E6]/70',
+        subTabActiveBg: 'bg-amber-600 text-white'
     },
     {
         id: 'inventario',
         label: '4. Inventario & Operación',
-        activeClass: 'bg-[#EA580C] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#FFEDD5]/80 text-[#C2410C] hover:bg-[#FFEDD5]'
+        activeBg: 'bg-[#FFEDE6]',
+        activeText: 'text-orange-800',
+        activeBorder: 'border-t-2 border-orange-500',
+        containerBg: 'bg-[#FFEDE6]/70',
+        subTabActiveBg: 'bg-orange-600 text-white'
     },
     {
         id: 'ia',
         label: '5. Inteligencia Artificial',
-        activeClass: 'bg-[#4F46E5] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#E0E7FF]/80 text-[#4338CA] hover:bg-[#E0E7FF]'
+        activeBg: 'bg-[#EEF2FF]',
+        activeText: 'text-indigo-700',
+        activeBorder: 'border-t-2 border-indigo-500',
+        containerBg: 'bg-[#EEF2FF]/70',
+        subTabActiveBg: 'bg-indigo-600 text-white'
     },
     {
         id: 'ejecutivo',
         label: '6. Ejecutivo C-Level',
-        activeClass: 'bg-[#9333EA] text-white font-black shadow-xs',
-        inactiveClass: 'bg-[#F3E8FF]/80 text-[#6B21A8] hover:bg-[#F3E8FF]'
+        activeBg: 'bg-[#F5EEFE]',
+        activeText: 'text-purple-800',
+        activeBorder: 'border-t-2 border-purple-500',
+        containerBg: 'bg-[#F5EEFE]/70',
+        subTabActiveBg: 'bg-purple-700 text-white'
     },
 ];
 
@@ -107,13 +128,15 @@ export default function BIView() {
         }
     };
 
+    const currentModConfig = MODULES.find(m => m.id === activeModule) || MODULES[0];
+
     return (
-        <div className="w-full space-y-0 rounded-3xl overflow-hidden bg-[#F8FAFC]">
+        <div className="w-full space-y-0 rounded-3xl overflow-hidden bg-[#F6F9FE]">
             
-            {/* BARRA SUPERIOR EN AZUL PASTEL CLARO */}
+            {/* ENCABEZADO SUPERIOR LIMPIO EN AZUL PASTEL */}
             <div className="bg-gradient-to-r from-sky-100/90 via-indigo-100/70 to-blue-100/90 px-6 pt-5 pb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 select-none">
                 
-                {/* LADO IZQUIERDO: TÍTULO EN TONOS AZUL PASTEL */}
+                {/* LADO IZQUIERDO: TÍTULO Y SUBTÍTULO */}
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-white text-indigo-600 rounded-2xl shadow-xs shrink-0 border border-indigo-100">
                         <BarChart3 size={24} className="stroke-[2.5]" />
@@ -128,7 +151,7 @@ export default function BIView() {
                     </div>
                 </div>
 
-                {/* LADO DERECHO: ACCIONES Y ESTADO EN PASTEL */}
+                {/* LADO DERECHO: ACCIONES Y ESTADO EN LÍNEA */}
                 <div className="flex flex-wrap items-center gap-2.5 text-xs font-bold text-indigo-950">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/80 text-emerald-900 border border-emerald-200/80">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
@@ -173,18 +196,18 @@ export default function BIView() {
                 </div>
             </div>
 
-            {/* PESTAÑAS ESTILO SOLAPA CON COLORES PASTEL INDIVIDUALES HARMONIZADOS */}
-            <div className="bg-[#E4EFFD] px-4 pt-2.5 flex items-end gap-1.5 overflow-x-auto select-none">
+            {/* PESTAÑAS PRINCIPALES: BLANCAS ANTES DE PRESIONAR, PASTEL LUMINOSO AL SELECCIONAR */}
+            <div className="bg-[#EBF2FD] px-4 pt-2.5 flex items-end gap-1 overflow-x-auto select-none">
                 {MODULES.map((mod) => {
                     const isActive = activeModule === mod.id;
                     return (
                         <button
                             key={mod.id}
                             onClick={() => handleModuleChange(mod.id)}
-                            className={`flex-1 min-w-[170px] py-3.5 px-4 font-black text-xs transition-all duration-200 flex items-center justify-center whitespace-nowrap cursor-pointer rounded-t-2xl relative ${
+                            className={`flex-1 min-w-[170px] py-3.5 px-5 font-black text-xs transition-all duration-200 flex items-center justify-center whitespace-nowrap cursor-pointer rounded-t-2xl relative ${
                                 isActive
-                                    ? `${mod.activeClass} -mb-[1px] z-10 scale-[1.01]`
-                                    : `${mod.inactiveClass} opacity-90`
+                                    ? `${mod.activeBg} ${mod.activeText} ${mod.activeBorder} shadow-xs -mb-[1px] z-10 scale-[1.01]`
+                                    : 'bg-white text-slate-700 hover:bg-white hover:text-slate-900 shadow-2xs opacity-90'
                             }`}
                         >
                             <span>{mod.label}</span>
@@ -193,8 +216,8 @@ export default function BIView() {
                 })}
             </div>
 
-            {/* BARRA DE SUB-MÓDULOS EN CÁPSULAS UNIFICADA SIN BORDES INTERMEDIOS */}
-            <div className="bg-white px-6 py-3.5 flex items-center gap-2 overflow-x-auto text-xs font-bold select-none">
+            {/* BARRA DE SUB-MÓDULOS CON EL COLOR PREDOMINANTE DE LA SECCIÓN SELECCIONADA */}
+            <div className={`${currentModConfig.containerBg} px-6 py-3.5 flex items-center gap-2 overflow-x-auto text-xs font-bold select-none transition-colors duration-300`}>
                 
                 {activeModule === 'panel' && (
                     <div className="flex items-center gap-2">
@@ -202,11 +225,11 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-sky-100 text-sky-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-indigo-900 hover:bg-sky-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-sky-950 hover:bg-white/80'
                             }`}
                         >
-                            <Activity size={15} className={subTab === 'default' ? 'text-sky-700' : 'text-slate-400'} />
+                            <Activity size={15} className={subTab === 'default' ? 'text-white' : 'text-sky-600'} />
                             <span>Operación Diaria Día a Día</span>
                         </button>
 
@@ -214,11 +237,11 @@ export default function BIView() {
                             onClick={() => setSubTab('comparativas')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'comparativas'
-                                    ? 'bg-sky-100 text-sky-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-indigo-900 hover:bg-sky-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-sky-950 hover:bg-white/80'
                             }`}
                         >
-                            <TrendingUp size={15} className={subTab === 'comparativas' ? 'text-sky-700' : 'text-slate-400'} />
+                            <TrendingUp size={15} className={subTab === 'comparativas' ? 'text-white' : 'text-sky-600'} />
                             <span>Comparativas Multitemporales (DoD/WoW/MoM)</span>
                         </button>
 
@@ -226,11 +249,11 @@ export default function BIView() {
                             onClick={() => setSubTab('monitor')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'monitor'
-                                    ? 'bg-sky-100 text-sky-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-indigo-900 hover:bg-sky-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-sky-950 hover:bg-white/80'
                             }`}
                         >
-                            <Radio size={15} className={subTab === 'monitor' ? 'text-sky-700' : 'text-slate-400'} />
+                            <Radio size={15} className={subTab === 'monitor' ? 'text-white' : 'text-sky-600'} />
                             <span>Monitor POS & Conexiones</span>
                         </button>
 
@@ -238,11 +261,11 @@ export default function BIView() {
                             onClick={() => setSubTab('diagnostico')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'diagnostico'
-                                    ? 'bg-sky-100 text-sky-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-indigo-900 hover:bg-sky-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-sky-950 hover:bg-white/80'
                             }`}
                         >
-                            <Sparkles size={15} className={subTab === 'diagnostico' ? 'text-sky-700 animate-pulse' : 'text-slate-400'} />
+                            <Sparkles size={15} className={subTab === 'diagnostico' ? 'text-amber-300 animate-pulse' : 'text-sky-600'} />
                             <span>Diagnóstico IA del Día</span>
                         </button>
                     </div>
@@ -254,44 +277,44 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-emerald-100 text-emerald-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-emerald-950 hover:bg-white/80'
                             }`}
                         >
-                            <DollarSign size={15} className="text-emerald-700" />
+                            <DollarSign size={15} className={subTab === 'default' ? 'text-white' : 'text-emerald-600'} />
                             <span>Márgenes & Rentabilidad Contable</span>
                         </button>
                         <button
                             onClick={() => setSubTab('sucursales')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'sucursales'
-                                    ? 'bg-emerald-100 text-emerald-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-emerald-950 hover:bg-white/80'
                             }`}
                         >
-                            <Building2 size={15} className="text-emerald-700" />
+                            <Building2 size={15} className={subTab === 'sucursales' ? 'text-white' : 'text-emerald-600'} />
                             <span>Rentabilidad por Sucursal</span>
                         </button>
                         <button
                             onClick={() => setSubTab('productividad')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'productividad'
-                                    ? 'bg-emerald-100 text-emerald-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-emerald-950 hover:bg-white/80'
                             }`}
                         >
-                            <UserCheck size={15} className="text-emerald-700" />
+                            <UserCheck size={15} className={subTab === 'productividad' ? 'text-white' : 'text-emerald-600'} />
                             <span>Productividad & Cajeros</span>
                         </button>
                         <button
                             onClick={() => setSubTab('clientes')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'clientes'
-                                    ? 'bg-emerald-100 text-emerald-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-emerald-950 hover:bg-white/80'
                             }`}
                         >
-                            <Users size={15} className="text-emerald-700" />
+                            <Users size={15} className={subTab === 'clientes' ? 'text-white' : 'text-emerald-600'} />
                             <span>Comportamiento de Clientes & Pagos</span>
                         </button>
                     </div>
@@ -303,22 +326,22 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-amber-100 text-amber-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-amber-900 hover:bg-amber-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-amber-950 hover:bg-white/80'
                             }`}
                         >
-                            <Package size={15} className="text-amber-700" />
+                            <Package size={15} className={subTab === 'default' ? 'text-white' : 'text-amber-600'} />
                             <span>Ranking de Productos & Matriz BCG</span>
                         </button>
                         <button
                             onClick={() => setSubTab('descuentos')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'descuentos'
-                                    ? 'bg-amber-100 text-amber-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-amber-900 hover:bg-amber-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-amber-950 hover:bg-white/80'
                             }`}
                         >
-                            <Tag size={15} className="text-amber-700" />
+                            <Tag size={15} className={subTab === 'descuentos' ? 'text-white' : 'text-amber-600'} />
                             <span>Descuentos & Promociones</span>
                         </button>
                     </div>
@@ -330,11 +353,11 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-orange-100 text-orange-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-orange-900 hover:bg-orange-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-orange-950 hover:bg-white/80'
                             }`}
                         >
-                            <Boxes size={15} className="text-orange-700" />
+                            <Boxes size={15} className={subTab === 'default' ? 'text-white' : 'text-orange-600'} />
                             <span>Stock Actual & Demanda Predictiva IA</span>
                         </button>
                     </div>
@@ -346,11 +369,11 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-indigo-100 text-indigo-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-indigo-900 hover:bg-indigo-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-indigo-950 hover:bg-white/80'
                             }`}
                         >
-                            <Sparkles size={15} className="text-indigo-700 animate-pulse" />
+                            <Sparkles size={15} className={subTab === 'default' ? 'text-amber-300 animate-pulse' : 'text-indigo-600'} />
                             <span>Forecast, Causal & Chat BI Conversacional</span>
                         </button>
                     </div>
@@ -362,11 +385,11 @@ export default function BIView() {
                             onClick={() => setSubTab('default')}
                             className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
                                 subTab === 'default'
-                                    ? 'bg-purple-100 text-purple-900 font-black shadow-xs'
-                                    : 'text-slate-600 hover:text-purple-900 hover:bg-purple-50'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-purple-950 hover:bg-white/80'
                             }`}
                         >
-                            <Crown size={15} className="text-purple-700" />
+                            <Crown size={15} className={subTab === 'default' ? 'text-amber-300' : 'text-purple-600'} />
                             <span>Dashboard Gerencial C-Level & Score Empresarial</span>
                         </button>
                     </div>
@@ -374,7 +397,7 @@ export default function BIView() {
             </div>
 
             {/* CONTENEDOR DE CONTENIDO CON ANIMACIÓN SUAVE */}
-            <div className="p-4 bg-[#F8FAFC] min-h-[500px]">
+            <div className="p-4 bg-[#F6F9FE] min-h-[500px]">
                 <div
                     className={`transition-all duration-300 transform ${
                         isAnimating
