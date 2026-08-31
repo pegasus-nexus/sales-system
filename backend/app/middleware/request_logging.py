@@ -25,6 +25,9 @@ class ObservabilityRequestLoggingMiddleware(BaseHTTPMiddleware):
         
         # Extracción de tenant_id si viene en headers o query params
         tenant_id = request.headers.get("X-Tenant-ID") or request.query_params.get("tenant_id") or "system"
+        client_ip = request.client.host if request.client else "Unknown"
+        user_agent = request.headers.get("user-agent", "Unknown")
+        query_params = str(request.query_params) if request.query_params else ""
 
         try:
             response = await call_next(request)
@@ -40,7 +43,10 @@ class ObservabilityRequestLoggingMiddleware(BaseHTTPMiddleware):
                     "endpoint": request.url.path,
                     "method": request.method,
                     "status_code": 500,
-                    "latency_ms": latency_ms
+                    "latency_ms": latency_ms,
+                    "client_ip": client_ip,
+                    "user_agent": user_agent[:30] + "..." if len(user_agent) > 30 else user_agent,
+                    "query": query_params
                 },
                 exc_info=exc
             )
@@ -57,7 +63,10 @@ class ObservabilityRequestLoggingMiddleware(BaseHTTPMiddleware):
                 "endpoint": request.url.path,
                 "method": request.method,
                 "status_code": status_code,
-                "latency_ms": latency_ms
+                "latency_ms": latency_ms,
+                    "client_ip": client_ip,
+                    "user_agent": user_agent[:30] + "..." if len(user_agent) > 30 else user_agent,
+                    "query": query_params
             }
         )
 

@@ -67,11 +67,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     return response
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def index():
     return {"message": "Welcome to Choco-Sys API", "docs": "/docs"}
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     """Real-time health check â€” verifies API status and MongoDB connection."""
     try:

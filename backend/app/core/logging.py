@@ -18,6 +18,9 @@ class ColoredPrettyFormatter(logging.Formatter):
         method = getattr(record, "method", "SYS")
         endpoint = getattr(record, "endpoint", "")
         latency_ms = getattr(record, "latency_ms", 0.0)
+        client_ip = getattr(record, "client_ip", "")
+        user_agent = getattr(record, "user_agent", "")
+        query = getattr(record, "query", "")
         message = record.getMessage()
         
         # ANSI Colors
@@ -31,7 +34,9 @@ class ColoredPrettyFormatter(logging.Formatter):
         
         if status_code:
             status_color = GREEN if status_code < 400 else (YELLOW if status_code < 500 else RED)
-            return f"{CYAN}[{now_str}]{RESET} {BLUE}{method}{RESET} {endpoint} -> {BOLD}{status_color}{status_code}{RESET} ({latency_ms}ms)"
+            query_str = f"?{query}" if query else ""
+            client_info = f" | {client_ip} | {user_agent}" if client_ip else ""
+            return f"{CYAN}[{now_str}]{RESET} {BLUE}{method}{RESET} {endpoint}{query_str} -> {BOLD}{status_color}{status_code}{RESET} ({latency_ms}ms){client_info}"
         else:
             level_color = RED if record.levelno >= 400 else (YELLOW if record.levelno >= 300 else GREEN)
             return f"{CYAN}[{now_str}]{RESET} {level_color}{record.levelname}{RESET}: {message}"
