@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any, Optional, Dict
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from pydantic import BaseModel
@@ -170,5 +171,5 @@ async def post_bi_ai_chat(
         "status": "success",
         "query": req.message,
         "reply": reply,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
