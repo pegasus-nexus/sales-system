@@ -21,15 +21,47 @@ type ModuleId = 'panel' | 'rentabilidad' | 'catalogo' | 'inventario' | 'ia' | 'e
 interface ModuleConfig {
     id: ModuleId;
     label: string;
+    activeClass: string;
+    inactiveClass: string;
 }
 
 const MODULES: ModuleConfig[] = [
-    { id: 'panel', label: '1. Panel General' },
-    { id: 'rentabilidad', label: '2. Rentabilidad & Negocio' },
-    { id: 'catalogo', label: '3. Catálogo Inteligente' },
-    { id: 'inventario', label: '4. Inventario & Operación' },
-    { id: 'ia', label: '5. Inteligencia Artificial' },
-    { id: 'ejecutivo', label: '6. Ejecutivo C-Level' },
+    {
+        id: 'panel',
+        label: '1. Panel General',
+        activeClass: 'bg-[#0284C7] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#E0F2FE]/80 text-[#0369A1] hover:bg-[#E0F2FE]'
+    },
+    {
+        id: 'rentabilidad',
+        label: '2. Rentabilidad & Negocio',
+        activeClass: 'bg-[#059669] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#D1FAE5]/80 text-[#047857] hover:bg-[#D1FAE5]'
+    },
+    {
+        id: 'catalogo',
+        label: '3. Catálogo Inteligente',
+        activeClass: 'bg-[#D97706] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#FEF3C7]/80 text-[#B45309] hover:bg-[#FEF3C7]'
+    },
+    {
+        id: 'inventario',
+        label: '4. Inventario & Operación',
+        activeClass: 'bg-[#EA580C] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#FFEDD5]/80 text-[#C2410C] hover:bg-[#FFEDD5]'
+    },
+    {
+        id: 'ia',
+        label: '5. Inteligencia Artificial',
+        activeClass: 'bg-[#4F46E5] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#E0E7FF]/80 text-[#4338CA] hover:bg-[#E0E7FF]'
+    },
+    {
+        id: 'ejecutivo',
+        label: '6. Ejecutivo C-Level',
+        activeClass: 'bg-[#9333EA] text-white font-black shadow-xs',
+        inactiveClass: 'bg-[#F3E8FF]/80 text-[#6B21A8] hover:bg-[#F3E8FF]'
+    },
 ];
 
 export default function BIView() {
@@ -76,9 +108,9 @@ export default function BIView() {
     };
 
     return (
-        <div className="w-full space-y-0 rounded-3xl overflow-hidden bg-[#F6F9FE]">
+        <div className="w-full space-y-0 rounded-3xl overflow-hidden bg-[#F8FAFC]">
             
-            {/* BARRA SUPERIOR EN AZUL PASTEL CLARO (SIN FONDOS PLOMOS) */}
+            {/* BARRA SUPERIOR EN AZUL PASTEL CLARO */}
             <div className="bg-gradient-to-r from-sky-100/90 via-indigo-100/70 to-blue-100/90 px-6 pt-5 pb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 select-none">
                 
                 {/* LADO IZQUIERDO: TÍTULO EN TONOS AZUL PASTEL */}
@@ -141,18 +173,18 @@ export default function BIView() {
                 </div>
             </div>
 
-            {/* PESTAÑAS ESTILO SOLAPA DE CARPETA (AZUL PASTEL CLARO, SIN BORDES DIVISORIOS) */}
-            <div className="bg-[#E4EFFD] px-4 pt-2.5 flex items-end gap-1 overflow-x-auto select-none">
+            {/* PESTAÑAS ESTILO SOLAPA CON COLORES PASTEL INDIVIDUALES HARMONIZADOS */}
+            <div className="bg-[#E4EFFD] px-4 pt-2.5 flex items-end gap-1.5 overflow-x-auto select-none">
                 {MODULES.map((mod) => {
                     const isActive = activeModule === mod.id;
                     return (
                         <button
                             key={mod.id}
                             onClick={() => handleModuleChange(mod.id)}
-                            className={`flex-1 min-w-[170px] py-3.5 px-5 font-black text-xs transition-all duration-200 flex items-center justify-center whitespace-nowrap cursor-pointer rounded-t-2xl relative ${
+                            className={`flex-1 min-w-[170px] py-3.5 px-4 font-black text-xs transition-all duration-200 flex items-center justify-center whitespace-nowrap cursor-pointer rounded-t-2xl relative ${
                                 isActive
-                                    ? 'bg-white text-indigo-600 shadow-xs -mb-[1px] z-10 scale-[1.01]'
-                                    : 'bg-[#D7E6FA]/70 text-slate-700 hover:bg-white hover:text-indigo-900 opacity-90'
+                                    ? `${mod.activeClass} -mb-[1px] z-10 scale-[1.01]`
+                                    : `${mod.inactiveClass} opacity-90`
                             }`}
                         >
                             <span>{mod.label}</span>
@@ -342,7 +374,7 @@ export default function BIView() {
             </div>
 
             {/* CONTENEDOR DE CONTENIDO CON ANIMACIÓN SUAVE */}
-            <div className="p-4 bg-[#F6F9FE] min-h-[500px]">
+            <div className="p-4 bg-[#F8FAFC] min-h-[500px]">
                 <div
                     className={`transition-all duration-300 transform ${
                         isAnimating
