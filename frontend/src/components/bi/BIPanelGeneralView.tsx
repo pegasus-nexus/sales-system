@@ -424,123 +424,77 @@ export const BIPanelGeneralView: React.FC = () => {
             {/* BLOQUE DE 5 TARJETAS KPIS CON ESTILO PASTEL SUTIL */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
-                {/* TARJETA 1: INGRESOS TOTALES (CON DESGLOSE EN EL MISMO RECUADRO) */}
-                <div className={`bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md ${isExpandedDesglose ? 'lg:col-span-5' : ''}`}>
-                    <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
-                        <div>
-                            <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
-                            <span className="text-[10px] font-bold text-indigo-600/80">Venta Neta POS</span>
-                        </div>
-                        <div className="p-2 bg-indigo-100/60 rounded-2xl text-indigo-600">
-                            <TrendingUp size={18} />
-                        </div>
-                    </div>
-
-                    <div className="my-3">
-                        <h2 className="text-2xl lg:text-3xl font-black text-indigo-950 tracking-tight leading-none">
-                            {loading ? '...' : formatBs(data?.ingresos_totales)}
-                        </h2>
-                        <p className="text-[10px] font-bold text-indigo-700/80 mt-1 flex items-center gap-1">
-                            <span>Ventas brutas menos anuladas</span>
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
-                        className="pt-2 border-t border-indigo-100/60 text-[11px] font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
-                        title="Ver desglose detallado por sucursales"
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <Store size={13} className="text-indigo-600" />
-                            <span>{isExpandedDesglose ? 'Ocultar Desglose' : 'Desglose Sucursales'}</span>
-                        </span>
-                        <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
-                    </button>
-
-                    {/* DESGLOSE INTEGRADO DENTRO DEL MISMO RECUADRO */}
-                    {isExpandedDesglose && data && (
-                        <div className="mt-4 pt-4 border-t border-indigo-200/80 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-black text-indigo-950 uppercase tracking-wider">
-                                    Sucursales con Ventas Registradas
-                                </span>
-                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/90 px-2.5 py-0.5 rounded-md">
-                                    {startDate} a {endDate}
-                                </span>
+                {/* TARJETA 1: INGRESOS TOTALES (DESGLOSE VERTICAL COMPACTO: SOLO NOMBRE Y MONTO) */}
+                <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/50 to-white rounded-3xl p-5 shadow-xs border border-indigo-100/80 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-md">
+                    <div>
+                        <div className="flex justify-between items-start pb-3 border-b border-indigo-100/60">
+                            <div>
+                                <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
+                                <span className="text-[10px] font-bold text-indigo-600/80">Venta Neta POS</span>
                             </div>
+                            <div className="p-2 bg-indigo-100/60 rounded-2xl text-indigo-600">
+                                <TrendingUp size={18} />
+                            </div>
+                        </div>
 
-                            {(() => {
-                                // FILTRAR STRICTAMENTE SÓLO SUCURSALES QUE SÍ TUVIERON VENTAS (> 0)
-                                const activeSucursales = (data.desglose_sucursales || []).filter(
-                                    (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
-                                );
+                        <div className="my-3">
+                            <h2 className="text-2xl lg:text-3xl font-black text-indigo-950 tracking-tight leading-none">
+                                {loading ? '...' : formatBs(data?.ingresos_totales)}
+                            </h2>
+                            <p className="text-[10px] font-bold text-indigo-700/80 mt-1 flex items-center gap-1">
+                                <span>Ventas brutas menos anuladas</span>
+                            </p>
+                        </div>
+                    </div>
 
-                                if (activeSucursales.length === 0) {
+                    <div>
+                        <button
+                            onClick={() => setIsExpandedDesglose(!isExpandedDesglose)}
+                            className="pt-2 border-t border-indigo-100/60 text-[11px] font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors group cursor-pointer"
+                            title="Ver desglose por sucursales"
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <Store size={13} className="text-indigo-600" />
+                                <span>{isExpandedDesglose ? 'Ocultar Desglose' : 'Desglose Sucursales'}</span>
+                            </span>
+                            <ChevronRight size={14} className={`group-hover:translate-x-0.5 transition-transform ${isExpandedDesglose ? 'rotate-90' : ''}`} />
+                        </button>
+
+                        {/* LISTA COMPACTA VERTICAL: SOLO SUCURSAL Y MONTO CON VENTA */}
+                        {isExpandedDesglose && data && (
+                            <div className="mt-3 pt-3 border-t border-indigo-200/60 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {(() => {
+                                    const activeSucursales = (data.desglose_sucursales || []).filter(
+                                        (suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0
+                                    );
+
+                                    if (activeSucursales.length === 0) {
+                                        return (
+                                            <p className="text-[11px] font-bold text-indigo-700/70 italic text-center py-1">
+                                                Sin ventas registradas
+                                            </p>
+                                        );
+                                    }
+
                                     return (
-                                        <div className="p-4 text-center text-indigo-900/70 text-xs font-bold bg-white/80 rounded-2xl border border-indigo-100/80">
-                                            Sin registros de ventas en sucursales para el filtro seleccionado.
+                                        <div className="space-y-1.5 pt-0.5">
+                                            {activeSucursales.map((suc) => (
+                                                <div
+                                                    key={suc.sucursal_id}
+                                                    onClick={() => setSelectedSucursal(suc.sucursal_id)}
+                                                    className="flex items-center justify-between py-1.5 px-2.5 bg-white/90 hover:bg-indigo-100/70 rounded-xl text-xs font-bold text-indigo-950 border border-indigo-100/80 transition-all cursor-pointer"
+                                                    title={`Filtrar vista por ${suc.nombre_sucursal}`}
+                                                >
+                                                    <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
+                                                    <span className="font-black shrink-0 text-indigo-900">{formatBs(suc.ingresos)}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     );
-                                }
-
-                                return (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-                                        {activeSucursales.map((suc) => (
-                                            <div
-                                                key={suc.sucursal_id}
-                                                className="p-3.5 bg-white/95 rounded-2xl border border-indigo-100/80 shadow-2xs space-y-2 hover:border-indigo-300 transition-all"
-                                            >
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl shrink-0">
-                                                            <Store size={16} />
-                                                        </div>
-                                                        <div>
-                                                            <span className="font-extrabold text-slate-900 text-xs block leading-tight">
-                                                                {suc.nombre_sucursal}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-500 font-semibold">
-                                                                {suc.ordenes} órdenes • TM: <strong className="text-emerald-700">{formatBs(suc.ticket_medio)}</strong>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <span className="text-sm font-black text-slate-900 block">
-                                                            {formatBs(suc.ingresos)}
-                                                        </span>
-                                                        <span className="text-[10px] font-black text-indigo-600 block">
-                                                            {suc.participacion_pct}%
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Barra de progreso de participación */}
-                                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                    <div
-                                                        className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(100, Math.max(0, suc.participacion_pct))}%` }}
-                                                    ></div>
-                                                </div>
-
-                                                <div className="flex justify-end pt-0.5">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedSucursal(suc.sucursal_id);
-                                                        }}
-                                                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold text-[10px] rounded-lg border border-indigo-200 transition-all cursor-pointer"
-                                                        title={`Filtrar vista exclusivamente por ${suc.nombre_sucursal}`}
-                                                    >
-                                                        Filtrar sucursal
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                    )}
+                                })()}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* TARJETA 2: MARGEN LÍQUIDO */}
