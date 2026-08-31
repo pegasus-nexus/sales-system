@@ -9,7 +9,7 @@ from app.schemas.bi import (
     BIPanelGeneralResponse,
     DesgloseSucursalBI,
     HourlyDistributionItemBI,
-    HourlyIntelligentAnalysisItem,
+    
     AfterHoursActivityItem,
     AIHourlyInsightItem,
     VentasHorarioInteligenteBI,
@@ -201,7 +201,7 @@ class BIPandasService:
 
         op_hour = 8
         cl_hour = 21
-        intelligent_hourly_list: List[HourlyIntelligentAnalysisItem] = []
+        intelligent_hourly_list: List[HourlyDistributionItemBI] = []
 
         for h in range(24):
             if h in hourly_dict:
@@ -238,7 +238,7 @@ class BIPandasService:
             )
 
             intelligent_hourly_list.append(
-                HourlyIntelligentAnalysisItem(
+                HourlyDistributionItemBI(
                     hora=h,
                     rango=f"{h:02d}:00 - {(h+1)%24:02d}:00",
                     ingresos=ing_h,

@@ -46,7 +46,7 @@ class VentasHorarioInteligenteBI(BaseModel):
     hora_pico_hora: str = "15:00"
     hora_pico_monto: float = 0.0
     hora_pico_participacion_pct: float = 0.0
-    distribucion_horaria: List[HourlyIntelligentAnalysisItem] = []
+    distribucion_horaria: List[HourlyDistributionItemBI] = []
     actividad_fuera_horario: List[AfterHoursActivityItem] = []
     insights_ia: List[AIHourlyInsightItem] = []
 
