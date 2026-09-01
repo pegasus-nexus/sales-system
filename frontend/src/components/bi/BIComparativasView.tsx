@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Filter,
     AlertTriangle, Store, Info, ArrowUpRight, ArrowDownRight, Minus,
-    Clock, Download, AlertCircle
+    Clock, Download, AlertCircle, BarChart3, TrendingUp, Layers
 } from 'lucide-react';
 import { getBIComparativas, getBISucursales } from '../../api/biApi';
 import type { BIComparativaResponse, BISucursalOption } from '../../api/biApi';
@@ -58,9 +58,12 @@ export const BIComparativasView: React.FC = () => {
     // Modo de Rango Horario (comercial 08-21 por defecto, auto, o 24h)
     const [rangeMode, setRangeMode] = useState<'comercial' | 'auto' | 'full'>('comercial');
 
+    // Selector Interactivo de Estilos de Gráfica (area, grouped_bars, line_nodes)
+    const [chartStyle, setChartStyle] = useState<'area' | 'grouped_bars' | 'line_nodes'>('area');
+
     const [data, setData] = useState<BIComparativaResponse | null>(null);
 
-    // Datos multianuales desglosados de 24 horas coincidiendo con la maqueta
+    // Datos multianuales desglosados coincidiendo con la maqueta
     const allHourlyData: HourlyMultiYearData[] = [
         { hora: '06:00', hourNum: 6, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
         { hora: '07:00', hourNum: 7, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
@@ -306,52 +309,91 @@ export const BIComparativasView: React.FC = () => {
 
             </div>
 
-            {/* SECCIÓN DEL GRÁFICO HISTOGRAMA MULTIANUAL + SELECTOR DE RANGO HORARIO (08:00 - 21:00) */}
+            {/* SECCIÓN DEL GRÁFICO HISTOGRAMA MULTIANUAL CON SELECTOR DE ESTILOS */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-6">
                 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                     <div>
                         <div className="flex items-center gap-2">
                             <Clock size={18} className="text-purple-600" />
                             <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
                         <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Comparativa de ingresos hora a hora de <strong>2026 (Curva Púrpura)</strong> vs <strong>2025 (Barras Doradas)</strong> vs <strong>2024 (Barras Rosadas)</strong>
+                            Comparativa de ingresos hora a hora: <strong>2026 (Púrpura)</strong> vs <strong>2025 (Amarillo)</strong> vs <strong>2024 (Coral)</strong>
                         </p>
                     </div>
 
-                    {/* Selector de Rango Horario Inteligente (Solución al Horario 08-21) */}
-                    <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl self-start md:self-auto">
-                        <button
-                            onClick={() => setRangeMode('comercial')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                rangeMode === 'comercial'
-                                    ? 'bg-purple-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                        >
-                            ⏰ Comercial (08:00 - 21:00)
-                        </button>
-                        <button
-                            onClick={() => setRangeMode('auto')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                rangeMode === 'auto'
-                                    ? 'bg-purple-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                        >
-                            ✨ Auto (Con Ventas)
-                        </button>
-                        <button
-                            onClick={() => setRangeMode('full')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                rangeMode === 'full'
-                                    ? 'bg-purple-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                        >
-                            🌐 24 Horas
-                        </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* SELECTOR DE ESTILOS DE GRÁFICA (area, grouped_bars, line_nodes) */}
+                        <div className="flex items-center gap-1 bg-purple-50 p-1.5 rounded-2xl border border-purple-100">
+                            <button
+                                onClick={() => setChartStyle('area')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    chartStyle === 'area'
+                                        ? 'bg-purple-600 text-white shadow-xs'
+                                        : 'text-purple-900 hover:bg-purple-100/80'
+                                }`}
+                            >
+                                <Layers size={13} />
+                                <span>Curvas & Áreas</span>
+                            </button>
+                            <button
+                                onClick={() => setChartStyle('grouped_bars')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    chartStyle === 'grouped_bars'
+                                        ? 'bg-purple-600 text-white shadow-xs'
+                                        : 'text-purple-900 hover:bg-purple-100/80'
+                                }`}
+                            >
+                                <BarChart3 size={13} />
+                                <span>Barras Agrupadas</span>
+                            </button>
+                            <button
+                                onClick={() => setChartStyle('line_nodes')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    chartStyle === 'line_nodes'
+                                        ? 'bg-purple-600 text-white shadow-xs'
+                                        : 'text-purple-900 hover:bg-purple-100/80'
+                                }`}
+                            >
+                                <TrendingUp size={13} />
+                                <span>Líneas & Picos</span>
+                            </button>
+                        </div>
+
+                        {/* Selector de Rango Horario Inteligente (08:00 - 21:00) */}
+                        <div className="flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-2xl">
+                            <button
+                                onClick={() => setRangeMode('comercial')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                    rangeMode === 'comercial'
+                                        ? 'bg-slate-900 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                ⏰ Comercial (08-21)
+                            </button>
+                            <button
+                                onClick={() => setRangeMode('auto')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                    rangeMode === 'auto'
+                                        ? 'bg-slate-900 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                ✨ Auto (Ventas)
+                            </button>
+                            <button
+                                onClick={() => setRangeMode('full')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                    rangeMode === 'full'
+                                        ? 'bg-slate-900 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                🌐 24h
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -371,7 +413,7 @@ export const BIComparativasView: React.FC = () => {
                     </div>
                 )}
 
-                {/* CONTENEDOR DEL HISTOGRAMA DUAL (BARRAS MULTIANUALES + LÍNEA PÚRPURA 2026) */}
+                {/* CONTENEDOR DE LA GRÁFICA SEGÚN EL ESTILO SELECCIONADO */}
                 <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4 relative">
                     
                     {/* Marcador de Hora Actual en el gráfico */}
@@ -382,7 +424,7 @@ export const BIComparativasView: React.FC = () => {
                         <div className="w-px h-44 bg-indigo-400 stroke-dasharray-2 border-r border-dashed border-indigo-400"></div>
                     </div>
 
-                    {/* Gráfico de Barras Simuladas + Curva Púrpura */}
+                    {/* RENDERING DE LA GRÁFICA DEPENDIENDO DE chartStyle */}
                     <div className="h-56 relative flex items-end justify-between px-4 pt-8">
                         {/* Escala Eje Y */}
                         <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none">
@@ -393,48 +435,111 @@ export const BIComparativasView: React.FC = () => {
                             <span>Bs 0</span>
                         </div>
 
-                        {/* Visualización de barras por hora */}
-                        <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
-                            {visibleHourlyData.map((h) => {
-                                const maxVal = 2000;
-                                const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
-                                const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
+                        {/* ESTILO 1: BARRAS MAQUETA ORIGINAL + CURVA PÚRPURA (AREA / MAQUETA) */}
+                        {chartStyle === 'area' && (
+                            <>
+                                <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
+                                    {visibleHourlyData.map((h) => {
+                                        const maxVal = 2000;
+                                        const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
+                                        const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
 
-                                return (
-                                    <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
-                                        {/* Barra 2024 (Rosada/Coral) */}
-                                        <div
-                                            style={{ height: `${h2024Pct}%` }}
-                                            className="w-2 bg-rose-300 rounded-t-xs transition-all group-hover:bg-rose-400"
-                                        ></div>
+                                        return (
+                                            <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
+                                                <div
+                                                    style={{ height: `${h2024Pct}%` }}
+                                                    className="w-2.5 bg-rose-300 rounded-t-xs transition-all group-hover:bg-rose-400"
+                                                ></div>
+                                                <div
+                                                    style={{ height: `${h2025Pct}%` }}
+                                                    className="w-3 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
+                                                ></div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <svg className="absolute inset-0 w-full h-full pl-14 pr-14 pt-8 pb-6 pointer-events-none" viewBox="0 0 300 100" fill="none" stroke="currentColor">
+                                    <path
+                                        d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
+                                        fill="none"
+                                        stroke="#7C3AED"
+                                        strokeWidth="3"
+                                    />
+                                    <circle cx="20" cy="85" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="60" cy="88" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="100" cy="20" r="5" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2.5" />
+                                    <circle cx="120" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="160" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="200" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="240" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                </svg>
+                            </>
+                        )}
 
-                                        {/* Barra 2025 (Dorada/Amarilla) */}
-                                        <div
-                                            style={{ height: `${h2025Pct}%` }}
-                                            className="w-2.5 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
-                                        ></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        {/* ESTILO 2: BARRAS AGRUPADAS TRIPLES (GROUPED BARS 2026, 2025, 2024) */}
+                        {chartStyle === 'grouped_bars' && (
+                            <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
+                                {visibleHourlyData.map((h) => {
+                                    const maxVal = 2000;
+                                    const h2026Pct = Math.min((h.v2026 / maxVal) * 100, 100);
+                                    const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
+                                    const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
 
-                        {/* Superposición de Curva Púrpura Suave 2026 con Nodos */}
-                        <svg className="absolute inset-0 w-full h-full pl-14 pr-14 pt-8 pb-6 pointer-events-none" viewBox="0 0 300 100" fill="none" stroke="currentColor">
-                            <path
-                                d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
-                                fill="none"
-                                stroke="#7C3AED"
-                                strokeWidth="3"
-                            />
-                            {/* Nodos interactivos */}
-                            <circle cx="20" cy="85" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                            <circle cx="60" cy="88" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                            <circle cx="100" cy="20" r="5" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2.5" />
-                            <circle cx="120" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                            <circle cx="160" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                            <circle cx="200" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                            <circle cx="240" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                        </svg>
+                                    return (
+                                        <div key={h.hora} className="flex-1 flex items-end justify-center gap-0.5 h-full relative group">
+                                            {/* 2026 (Púrpura) */}
+                                            <div
+                                                style={{ height: `${h2026Pct}%` }}
+                                                className="w-2.5 bg-purple-600 rounded-t-xs transition-all group-hover:bg-purple-700"
+                                            ></div>
+                                            {/* 2025 (Amarillo) */}
+                                            <div
+                                                style={{ height: `${h2025Pct}%` }}
+                                                className="w-2.5 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
+                                            ></div>
+                                            {/* 2024 (Coral/Rosado) */}
+                                            <div
+                                                style={{ height: `${h2024Pct}%` }}
+                                                className="w-2.5 bg-rose-400 rounded-t-xs transition-all group-hover:bg-rose-500"
+                                            ></div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* ESTILO 3: LÍNEAS & PICOS (MULTILINE GRADIENT TREND) */}
+                        {chartStyle === 'line_nodes' && (
+                            <div className="w-full h-full pl-14 pr-14 relative">
+                                <svg className="w-full h-full" viewBox="0 0 300 100" fill="none" stroke="currentColor">
+                                    {/* Línea 2024 (Coral) */}
+                                    <path
+                                        d="M0 95 C 40 90, 80 80, 120 70 C 160 85, 200 95, 240 90 L 300 95"
+                                        fill="none"
+                                        stroke="#FB7185"
+                                        strokeWidth="2"
+                                        strokeDasharray="4 4"
+                                    />
+                                    {/* Línea 2025 (Azul) */}
+                                    <path
+                                        d="M0 90 C 40 80, 80 20, 120 30 C 160 50, 200 85, 240 80 L 300 90"
+                                        fill="none"
+                                        stroke="#3B82F6"
+                                        strokeWidth="2.5"
+                                    />
+                                    {/* Línea 2026 (Púrpura Neón) */}
+                                    <path
+                                        d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
+                                        fill="none"
+                                        stroke="#8B5CF6"
+                                        strokeWidth="3.5"
+                                    />
+                                    {/* Nodos de Picos */}
+                                    <circle cx="100" cy="20" r="6" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2" />
+                                    <circle cx="80" cy="20" r="5" fill="#3B82F6" stroke="#FFFFFF" strokeWidth="2" />
+                                </svg>
+                            </div>
+                        )}
                     </div>
 
                     {/* Leyenda Eje X de Horas */}
