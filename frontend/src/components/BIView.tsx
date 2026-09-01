@@ -16,6 +16,7 @@ import { BIProductividadView } from './bi/BIProductividadView';
 import { BIEjecutivoView } from './bi/BIEjecutivoView';
 import { BIIAAnalyticaView } from './bi/BIIAAnalyticaView';
 import { BIDiagnosticoIAView } from './bi/BIDiagnosticoIAView';
+import { BIBenchmarkHistoricoView } from './bi/BIBenchmarkHistoricoView';
 
 type ModuleId = 'panel' | 'rentabilidad' | 'catalogo' | 'inventario' | 'ia' | 'ejecutivo';
 
@@ -243,6 +244,19 @@ export default function BIView() {
                             }`}
                         >
                             <TrendingUp size={15} className={subTab === 'comparativas' ? 'text-white' : 'text-sky-600'} />
+                            <span>Comparativas Multitemporales (DoD/WoW/MoM)</span>
+                        </button>
+
+                        <button
+                            onClick={() => setSubTab('benchmark')}
+                            className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
+                                subTab === 'benchmark'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-sky-950 hover:bg-white/80'
+                            }`}
+                        >
+                            <BarChart3 size={15} className={subTab === 'benchmark' ? 'text-white' : 'text-sky-600'} />
+                            <span>Benchmark Histórico</span>
                         </button>
 
                         <button
@@ -395,6 +409,7 @@ export default function BIView() {
                 >
                     {activeModule === 'panel' && (
                         subTab === 'comparativas' ? <BIComparativasView /> :
+                        subTab === 'benchmark' ? <BIBenchmarkHistoricoView /> :
                         subTab === 'diagnostico' ? <BIDiagnosticoIAView /> :
                         <BIPanelGeneralView />
                     )}
