@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Calendar, RefreshCw, Filter, RotateCcw,
+    Calendar, RefreshCw, Filter,
     AlertTriangle, Store, Info, ArrowUpRight, ArrowDownRight, Minus,
-    Sparkles, DollarSign, ShoppingBag, Receipt, TrendingUp, PieChart, Clock, BarChart2
+    Clock, Download, AlertCircle
 } from 'lucide-react';
 import { getBIComparativas, getBISucursales } from '../../api/biApi';
 import type { BIComparativaResponse, BISucursalOption } from '../../api/biApi';
@@ -35,12 +35,14 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
 
 interface HourlyMultiYearData {
     hora: string;
+    hourNum: number;
     v2026: number;
     ord2026: number;
     v2025: number;
     ord2025: number;
     v2024: number;
     ord2024: number;
+    isOffHours?: boolean;
 }
 
 export const BIComparativasView: React.FC = () => {
@@ -53,35 +55,48 @@ export const BIComparativasView: React.FC = () => {
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
+    // Modo de Rango Horario (comercial 08-21 por defecto, auto, o 24h)
+    const [rangeMode, setRangeMode] = useState<'comercial' | 'auto' | 'full'>('comercial');
+
     const [data, setData] = useState<BIComparativaResponse | null>(null);
 
-    // Datos simulados de rango horario multianual (2026 vs 2025 vs 2024)
-    const hourlyMultiYear: HourlyMultiYearData[] = [
-        { hora: '0:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '1:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '2:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '3:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '4:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '5:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '6:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '7:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '8:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '9:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '10:00', v2026: 94.00, ord2026: 4, v2025: 80.00, ord2025: 3, v2024: 65.00, ord2024: 2 },
-        { hora: '11:00', v2026: 144.00, ord2026: 5, v2025: 120.00, ord2025: 4, v2024: 100.00, ord2024: 3 },
-        { hora: '12:00', v2026: 520.00, ord2026: 7, v2025: 440.00, ord2025: 6, v2024: 380.00, ord2024: 5 },
-        { hora: '13:00', v2026: 205.50, ord2026: 6, v2025: 180.00, ord2025: 5, v2024: 410.00, ord2024: 6 },
-        { hora: '14:00', v2026: 245.00, ord2026: 2, v2025: 490.00, ord2025: 7, v2024: 320.00, ord2024: 4 },
-        { hora: '15:00', v2026: 581.50, ord2026: 8, v2025: 350.00, ord2025: 5, v2024: 290.00, ord2024: 4 },
-        { hora: '16:00', v2026: 69.50, ord2026: 2, v2025: 85.00, ord2025: 3, v2024: 70.00, ord2024: 2 },
-        { hora: '17:00', v2026: 44.50, ord2026: 2, v2025: 50.00, ord2025: 2, v2024: 40.00, ord2024: 1 },
-        { hora: '18:00', v2026: 191.50, ord2026: 4, v2025: 160.00, ord2025: 3, v2024: 130.00, ord2024: 2 },
-        { hora: '19:00', v2026: 216.00, ord2026: 8, v2025: 190.00, ord2025: 6, v2024: 150.00, ord2024: 5 },
-        { hora: '20:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '21:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '22:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '23:00', v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
+    // Datos multianuales desglosados de 24 horas coincidiendo con la maqueta
+    const allHourlyData: HourlyMultiYearData[] = [
+        { hora: '06:00', hourNum: 6, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
+        { hora: '07:00', hourNum: 7, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
+        { hora: '08:00', hourNum: 8, v2026: 0, ord2026: 0, v2025: 350.00, ord2025: 4, v2024: 0, ord2024: 0 },
+        { hora: '09:00', hourNum: 9, v2026: 220.00, ord2026: 4, v2025: 450.00, ord2025: 5, v2024: 180.00, ord2024: 2 },
+        { hora: '10:00', hourNum: 10, v2026: 94.00, ord2026: 4, v2025: 230.00, ord2025: 3, v2024: 110.00, ord2024: 2 },
+        { hora: '11:00', hourNum: 11, v2026: 300.00, ord2026: 5, v2025: 800.00, ord2025: 9, v2024: 290.00, ord2024: 3 },
+        { hora: '12:00', hourNum: 12, v2026: 1050.00, ord2026: 12, v2025: 1930.00, ord2025: 18, v2024: 610.00, ord2024: 7 },
+        { hora: '13:00', hourNum: 13, v2026: 205.50, ord2026: 6, v2025: 1740.00, ord2025: 15, v2024: 680.00, ord2024: 8 },
+        { hora: '14:00', hourNum: 14, v2026: 0.00, ord2026: 0, v2025: 1020.00, ord2025: 10, v2024: 300.00, ord2024: 4 },
+        { hora: '15:00', hourNum: 15, v2026: 390.00, ord2026: 6, v2025: 1250.00, ord2025: 11, v2024: 150.00, ord2024: 2 },
+        { hora: '16:00', hourNum: 16, v2026: 310.00, ord2026: 4, v2025: 290.00, ord2025: 3, v2024: 0, ord2024: 0 },
+        { hora: '17:00', hourNum: 17, v2026: 170.00, ord2026: 3, v2025: 190.00, ord2025: 2, v2024: 0, ord2024: 0 },
+        { hora: '18:00', hourNum: 18, v2026: 220.00, ord2026: 4, v2025: 210.00, ord2025: 3, v2024: 0, ord2024: 0 },
+        { hora: '19:00', hourNum: 19, v2026: 345.00, ord2026: 6, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
+        { hora: '20:00', hourNum: 20, v2026: 260.00, ord2026: 4, v2025: 250.00, ord2025: 3, v2024: 0, ord2024: 0 },
+        { hora: '21:00', hourNum: 21, v2026: 30.00, ord2026: 1, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
+        { hora: '22:00', hourNum: 22, v2026: 0.00, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
+        { hora: '23:00', hourNum: 23, v2026: 0.00, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
     ];
+
+    // Verificar si hay ventas atípicas fuera del horario comercial (08:00 - 21:00)
+    const offHoursSalesCount = allHourlyData.filter(
+        h => h.isOffHours && (h.v2026 > 0 || h.v2025 > 0 || h.v2024 > 0)
+    ).length;
+
+    // Filtrar los datos según el modo seleccionado
+    const visibleHourlyData = allHourlyData.filter(h => {
+        if (rangeMode === 'comercial') {
+            return h.hourNum >= 8 && h.hourNum <= 21;
+        }
+        if (rangeMode === 'auto') {
+            return h.v2026 > 0 || h.v2025 > 0 || h.v2024 > 0;
+        }
+        return true; // full
+    });
 
     const loadSucursales = async () => {
         try {
@@ -188,425 +203,314 @@ export const BIComparativasView: React.FC = () => {
     return (
         <div className="space-y-6 font-sans text-slate-800 w-full">
             
-            {/* CABECERA PRINCIPAL CON TITULO DE FASE 2 */}
-            <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 2</h1>
-                    <h2 className="text-sm font-extrabold text-indigo-700 mt-0.5">Comparativas Históricas & Evolución</h2>
-                    <p className="text-xs text-slate-400 font-semibold mt-1 flex items-center gap-1.5">
-                        <Info size={13} className="text-slate-400" />
-                        <span>Análisis comparativo trazable (DoD, WoW, MoM, YoY) sobre MongoDB <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">sales</code> (America/La_Paz)</span>
-                    </p>
+            {/* CABECERA CON FILTROS E INFO SUPERIOR SEGÚN LA MAQUETA */}
+            <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600">
+                    <div>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">FECHA ANALIZADA</span>
+                        <strong className="text-slate-900 text-sm font-black">31 ago 2026</strong>
+                    </div>
+
+                    <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+
+                    <div>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">ALINEACIÓN HISTÓRICA</span>
+                        <span className="text-purple-700 font-black">
+                            Lun 31 ago 2026 <span className="text-slate-400">vs</span> Lun 1 sept 2025 <span className="text-slate-400">vs</span> Lun 2 sept 2024
+                        </span>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <button
-                        onClick={() => fetchComparativasData(startDate, endDate, compararContra, selectedSucursal)}
-                        disabled={loading}
-                        className="flex items-center gap-2 bg-purple-100/80 hover:bg-purple-200/80 text-purple-900 font-extrabold text-xs px-4 py-2.5 rounded-2xl transition-all border border-purple-200/60 cursor-pointer disabled:opacity-50"
+                        onClick={() => handleReset()}
+                        className="px-3.5 py-2 rounded-2xl bg-indigo-50 text-indigo-700 font-extrabold text-xs hover:bg-indigo-100 transition-all cursor-pointer"
                     >
-                        <RefreshCw size={14} className={`text-purple-700 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Actualizar</span>
+                        Hoy
                     </button>
+
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
+                        <Calendar size={14} className="text-slate-400" />
+                        <span>lun, 31 ago 2026</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
+                        <Filter size={14} className="text-slate-400" />
+                        <select
+                            value={selectedSucursal}
+                            onChange={(e) => setSelectedSucursal(e.target.value)}
+                            className="bg-transparent outline-hidden cursor-pointer"
+                        >
+                            <option value="all">Todas las Sucursales</option>
+                            {sucursales.map((s) => (
+                                <option key={s.sucursal_id} value={s.sucursal_id}>
+                                    {s.nombre} ({s.ciudad})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <button
-                        onClick={handleReset}
-                        className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 cursor-pointer"
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-2xl border border-slate-200/80 cursor-pointer shadow-xs"
                     >
-                        <RotateCcw size={14} className="text-slate-500" />
-                        <span>Restablecer</span>
+                        <Download size={14} className="text-slate-600" />
+                        <span>Exportar Horarios</span>
                     </button>
                 </div>
             </div>
 
-            {/* BARRA DE BOTONES TABS DE MODO COMPARATIVO */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <button
-                    onClick={() => setCompararContra('ayer')}
-                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                        compararContra === 'ayer'
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                    }`}
-                >
-                    <Calendar size={14} />
-                    <span>DoD (vs. Ayer)</span>
-                </button>
+            {/* BANNER SUPERIOR KPIS DE VENTA NETA MULTIANUAL (FONDO PASTEL CREMA / ROSADO SUAVE) */}
+            <div className="bg-gradient-to-r from-amber-50/70 via-rose-50/60 to-purple-50/70 rounded-3xl p-6 border border-amber-100/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+                
+                {/* 2026 (AÑO ACTUAL) */}
+                <div className="flex-1 pr-4 border-b md:border-b-0 md:border-r border-amber-200/50 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-rose-900 uppercase tracking-wider block">2026 (AÑO ACTUAL)</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-3xl font-black text-rose-950">Bs. 3,345.00</h2>
+                        <span className="text-xs font-bold text-slate-500">Venta Neta del Día</span>
+                    </div>
+                </div>
 
-                <button
-                    onClick={() => setCompararContra('semana_anterior')}
-                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                        compararContra === 'semana_anterior'
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                    }`}
-                >
-                    <Calendar size={14} />
-                    <span>WoW (vs. Sem. Anterior)</span>
-                </button>
+                {/* 2025 (HACE 1 AÑO) */}
+                <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-amber-200/50 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">2025 (HACE 1 AÑO)</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-2xl font-black text-amber-950">Bs. 7,997.00</h2>
+                        <span className="text-xs font-black text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200">
+                            ▼ -58.2%
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Venta Neta Histórica</span>
+                </div>
 
-                <button
-                    onClick={() => setCompararContra('mes_anterior')}
-                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                        compararContra === 'mes_anterior'
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                    }`}
-                >
-                    <Calendar size={14} />
-                    <span>MoM (vs. Mes Anterior)</span>
-                </button>
+                {/* 2024 (HACE 2 AÑOS) */}
+                <div className="flex-1 px-0 md:px-4 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">2024 (HACE 2 AÑOS)</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-2xl font-black text-amber-950">Bs. 1,973.00</h2>
+                        <span className="text-xs font-black text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-200">
+                            ▲ +69.5%
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Venta Neta Histórica</span>
+                </div>
 
-                <button
-                    onClick={() => setCompararContra('ano_anterior')}
-                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                        compararContra === 'ano_anterior'
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                    }`}
-                >
-                    <Calendar size={14} />
-                    <span>YoY (vs. Año Anterior)</span>
-                </button>
+                {/* BADGE DE ESTADO */}
+                <div className="self-end md:self-center shrink-0">
+                    <span className="text-xs font-black text-rose-900 bg-rose-100/90 px-4 py-2 rounded-2xl border border-rose-200/80 inline-flex items-center gap-2 shadow-xs">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
+                        Debajo del Histórico
+                    </span>
+                </div>
+
             </div>
 
-            {/* BARRA DE FILTROS & INDICADOR DE PERÍODOS */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-2xl w-full md:w-auto">
-                    <Filter size={14} className="text-slate-400" />
-                    <select
-                        value={selectedSucursal}
-                        onChange={(e) => setSelectedSucursal(e.target.value)}
-                        className="bg-transparent text-xs font-bold text-slate-700 outline-hidden cursor-pointer w-full"
-                    >
-                        <option value="all">Todas las Sucursales</option>
-                        {sucursales.map((s) => (
-                            <option key={s.sucursal_id} value={s.sucursal_id}>
-                                {s.nombre} ({s.ciudad})
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-600">
-                    <span>Período Actual: <strong>{data?.periodo_actual.start_date || startDate}</strong></span>
-                    <span className="text-slate-300 font-extrabold">vs</span>
-                    <span>Período Anterior: <strong>{data?.periodo_comparativo.start_date || endDate}</strong></span>
-                    <Calendar size={14} className="text-slate-400 ml-1" />
-                </div>
-            </div>
-
-            {/* 3 TARJETAS KPIS COMPARATIVAS PRINCIPALES */}
-            {data && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    
-                    {/* TARJETA 1: INGRESOS TOTALES */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
-                        <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-purple-100 text-purple-700 rounded-2xl">
-                                    <DollarSign size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900">Ingresos Totales</h3>
-                                    <span className="text-[10px] text-slate-400 font-bold">Período Actual vs Comparativo</span>
-                                </div>
-                            </div>
-                            {renderVariationBadge(data.variaciones.variacion_ingresos_pct, data.variaciones.estado_ingresos)}
-                        </div>
-
-                        <div>
-                            <div className="flex items-baseline justify-between">
-                                <h2 className="text-3xl font-black text-indigo-950">{loading ? '...' : formatBs(data.periodo_actual.ingresos)}</h2>
-                                <svg className="w-20 h-8 text-purple-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M0 25 Q 25 15, 50 20 T 100 5" />
-                                </svg>
-                            </div>
-                            <p className="text-xs text-slate-400 font-bold mt-2">
-                                Período Anterior ({data.periodo_comparativo.start_date}): <strong className="text-slate-700">{formatBs(data.periodo_comparativo.ingresos)}</strong>
-                            </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
-                            <span className="text-slate-500">Diferencia Neta:</span>
-                            <span className={data.variaciones.diferencia_ingresos >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
-                                {data.variaciones.diferencia_ingresos >= 0 ? '+' : ''}{formatBs(data.variaciones.diferencia_ingresos)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* TARJETA 2: TOTAL DE ÓRDENES */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
-                        <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-blue-100 text-blue-700 rounded-2xl">
-                                    <ShoppingBag size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900">Total de Órdenes</h3>
-                                    <span className="text-[10px] text-slate-400 font-bold">Tickets Válidos POS</span>
-                                </div>
-                            </div>
-                            {renderVariationBadge(data.variaciones.variacion_ordenes_pct, data.variaciones.estado_ordenes)}
-                        </div>
-
-                        <div>
-                            <div className="flex items-baseline justify-between">
-                                <h2 className="text-3xl font-black text-blue-950">{loading ? '...' : `${data.periodo_actual.ordenes} ord.`}</h2>
-                                <div className="flex items-end gap-1 h-8">
-                                    <div className="w-2 bg-blue-200 h-4 rounded-xs"></div>
-                                    <div className="w-2 bg-blue-300 h-6 rounded-xs"></div>
-                                    <div className="w-2 bg-blue-500 h-8 rounded-xs"></div>
-                                    <div className="w-2 bg-blue-400 h-5 rounded-xs"></div>
-                                </div>
-                            </div>
-                            <p className="text-xs text-slate-400 font-bold mt-2">
-                                Período Anterior ({data.periodo_comparativo.start_date}): <strong className="text-slate-700">{data.periodo_comparativo.ordenes} ord.</strong>
-                            </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
-                            <span className="text-slate-500">Diferencia en Órdenes:</span>
-                            <span className={data.variaciones.diferencia_ordenes >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
-                                {data.variaciones.diferencia_ordenes >= 0 ? '+' : ''}{data.variaciones.diferencia_ordenes} órdenes
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* TARJETA 3: TICKET MEDIO */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
-                        <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
-                                    <Receipt size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900">Ticket Medio</h3>
-                                    <span className="text-[10px] text-slate-400 font-bold">Promedio por Ticket</span>
-                                </div>
-                            </div>
-                            {renderVariationBadge(data.variaciones.variacion_ticket_pct, data.variaciones.estado_ticket)}
-                        </div>
-
-                        <div>
-                            <div className="flex items-baseline justify-between">
-                                <h2 className="text-3xl font-black text-emerald-950">{loading ? '...' : formatBs(data.periodo_actual.ticket_medio)}</h2>
-                                <svg className="w-20 h-8 text-emerald-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M0 20 Q 30 28, 60 10 T 100 5" />
-                                </svg>
-                            </div>
-                            <p className="text-xs text-slate-400 font-bold mt-2">
-                                Período Anterior: <strong className="text-slate-700">{formatBs(data.periodo_comparativo.ticket_medio)}</strong>
-                            </p>
-                        </div>
-
-                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
-                            <span className="text-slate-500">Diferencia Ticket Medio:</span>
-                            <span className={data.variaciones.diferencia_ticket >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
-                                {data.variaciones.diferencia_ticket >= 0 ? '+' : ''}{formatBs(data.variaciones.diferencia_ticket)}
-                            </span>
-                        </div>
-                    </div>
-
-                </div>
-            )}
-
-            {/* BLOQUE DE ANÁLISIS AUTOMÁTICO IA — CAUSA RAÍZ DE VARIACIÓN */}
-            {data && (
-                <div className="bg-purple-50/70 rounded-3xl p-6 shadow-xs border border-purple-100 space-y-4">
-                    <div className="flex items-center gap-2 text-purple-900">
-                        <Sparkles size={18} className="text-purple-600" />
-                        <h3 className="text-sm font-black uppercase tracking-wider">Análisis Automático IA — Causa Raíz de Variación</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Diagnóstico de Ingresos */}
-                        <div className="p-4 bg-white/90 rounded-2xl border border-purple-100/80 flex items-start gap-3.5">
-                            <div className="p-2.5 bg-purple-100 text-purple-700 rounded-2xl shrink-0">
-                                <TrendingUp size={18} />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black text-slate-900">Diagnóstico de Ingresos</h4>
-                                <p className="text-xs font-bold text-slate-600 mt-1">
-                                    {data.variaciones.variacion_ingresos_pct !== null && data.variaciones.variacion_ingresos_pct >= 0
-                                        ? <>Las ventas aumentaron un <strong className="text-purple-700 font-black">+{data.variaciones.variacion_ingresos_pct.toFixed(2)}%</strong> impulsadas por mayor volumen transaccional.</>
-                                        : data.variaciones.variacion_ingresos_pct !== null
-                                        ? <>Las ventas disminuyeron un <strong className="text-rose-700 font-black">{data.variaciones.variacion_ingresos_pct.toFixed(2)}%</strong> principalmente por menor densidad de tickets emitidos.</>
-                                        : 'Sin base comparativa previa registrada para este rango de fechas.'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Descomposición Precio vs Volumen */}
-                        <div className="p-4 bg-white/90 rounded-2xl border border-purple-100/80 flex items-start gap-3.5">
-                            <div className="p-2.5 bg-purple-100 text-purple-700 rounded-2xl shrink-0">
-                                <PieChart size={18} />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black text-slate-900">Descomposición Precio vs Volumen</h4>
-                                <p className="text-xs font-bold text-slate-600 mt-1">
-                                    Ticket medio varió un <strong className="text-purple-700 font-black">{data.variaciones.variacion_ticket_pct !== null ? `${data.variaciones.variacion_ticket_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ticket_pct.toFixed(2)}%` : '0%'}</strong>, mientras que el volumen de tickets cambió en un <strong className="text-purple-700 font-black">{data.variaciones.variacion_ordenes_pct !== null ? `${data.variaciones.variacion_ordenes_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ordenes_pct.toFixed(2)}%` : '0%'}</strong>.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* NUEVA SECCIÓN: COMPARATIVA DE VENTAS POR RANGO HORARIO MULTIANUAL (2026 vs 2025 vs 2024) */}
+            {/* SECCIÓN DEL GRÁFICO HISTOGRAMA MULTIANUAL + SELECTOR DE RANGO HORARIO (08:00 - 21:00) */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-6">
+                
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                     <div>
                         <div className="flex items-center gap-2">
                             <Clock size={18} className="text-purple-600" />
-                            <h3 className="text-base font-black text-slate-900">Comparativa de Ventas por Rango Horario Multianual</h3>
+                            <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
                         <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Distribución de ingresos por hora (00:00 a 23:59) comparando <strong>2026 (Año Actual)</strong> frente a <strong>2025</strong> y <strong>2024</strong>
+                            Comparativa de ingresos hora a hora de <strong>2026 (Curva Púrpura)</strong> vs <strong>2025 (Barras Doradas)</strong> vs <strong>2024 (Barras Rosadas)</strong>
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs font-black">
-                        <span className="flex items-center gap-1.5 text-purple-700 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-100">
-                            <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span>
-                            2026 (Actual)
-                        </span>
-                        <span className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-100">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
-                            2025
-                        </span>
-                        <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
-                            2024
-                        </span>
+                    {/* Selector de Rango Horario Inteligente (Solución al Horario 08-21) */}
+                    <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl self-start md:self-auto">
+                        <button
+                            onClick={() => setRangeMode('comercial')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                rangeMode === 'comercial'
+                                    ? 'bg-purple-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            ⏰ Comercial (08:00 - 21:00)
+                        </button>
+                        <button
+                            onClick={() => setRangeMode('auto')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                rangeMode === 'auto'
+                                    ? 'bg-purple-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            ✨ Auto (Con Ventas)
+                        </button>
+                        <button
+                            onClick={() => setRangeMode('full')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                rangeMode === 'full'
+                                    ? 'bg-purple-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            🌐 24 Horas
+                        </button>
                     </div>
                 </div>
 
-                {/* 3 RESÚMENES DE HORAS PICO POR AÑO */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-purple-50/80 rounded-2xl border border-purple-100 flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-black text-purple-800 uppercase block">Hora Pico 2026 (Actual)</span>
-                            <h4 className="text-xl font-black text-purple-950 mt-0.5">15:00 hrs</h4>
-                            <span className="text-xs font-extrabold text-purple-800">Bs. 581.50 (8 ord.)</span>
+                {/* Alerta inteligente si existen ventas fuera del horario comercial regular */}
+                {rangeMode === 'comercial' && offHoursSalesCount > 0 && (
+                    <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 flex items-center justify-between text-xs font-bold text-amber-900">
+                        <div className="flex items-center gap-2">
+                            <AlertCircle size={15} className="text-amber-600" />
+                            <span>Se detectaron registros atípicos fuera del horario comercial regular (08:00 - 21:00).</span>
                         </div>
-                        <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl">
-                            <BarChart2 size={20} />
-                        </div>
+                        <button
+                            onClick={() => setRangeMode('full')}
+                            className="text-purple-700 font-black hover:underline cursor-pointer ml-4 whitespace-nowrap"
+                        >
+                            Ver 24 Horas Completas &gt;
+                        </button>
                     </div>
+                )}
 
-                    <div className="p-4 bg-blue-50/80 rounded-2xl border border-blue-100 flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-black text-blue-800 uppercase block">Hora Pico 2025</span>
-                            <h4 className="text-xl font-black text-blue-950 mt-0.5">14:00 hrs</h4>
-                            <span className="text-xs font-extrabold text-blue-800">Bs. 490.00 (7 ord.)</span>
-                        </div>
-                        <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
-                            <BarChart2 size={20} />
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-black text-slate-600 uppercase block">Hora Pico 2024</span>
-                            <h4 className="text-xl font-black text-slate-900 mt-0.5">13:00 hrs</h4>
-                            <span className="text-xs font-extrabold text-slate-700">Bs. 410.00 (6 ord.)</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-200 text-slate-700 rounded-xl">
-                            <BarChart2 size={20} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* HISTOGRAMA COMPARATIVO DE 24 HORAS */}
-                <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                        <span>Comparativa de Distribución 24 Horas</span>
-                        <span className="text-[10px] font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
-                            PICO 2026: 15:00
+                {/* CONTENEDOR DEL HISTOGRAMA DUAL (BARRAS MULTIANUALES + LÍNEA PÚRPURA 2026) */}
+                <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4 relative">
+                    
+                    {/* Marcador de Hora Actual en el gráfico */}
+                    <div className="absolute right-12 top-4 z-10 flex flex-col items-center">
+                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md shadow-xs mb-1">
+                            Hora actual 22:00
                         </span>
+                        <div className="w-px h-44 bg-indigo-400 stroke-dasharray-2 border-r border-dashed border-indigo-400"></div>
                     </div>
 
-                    <div className="h-44 relative flex items-end justify-between px-2 pt-6">
-                        <svg className="w-full h-full" viewBox="0 0 300 100" fill="none" stroke="currentColor" strokeWidth="2">
-                            {/* Curva 2026 Púrpura */}
-                            <path d="M0 95 Q 60 90, 120 50 C 150 40, 180 15, 210 70 L 240 60 L 300 95" stroke="#9333EA" strokeWidth="2.5" />
-                            {/* Curva 2025 Azul */}
-                            <path d="M0 95 Q 60 92, 120 58 C 150 25, 180 45, 210 75 L 240 68 L 300 95" stroke="#3B82F6" strokeDasharray="3 3" />
-                            {/* Curva 2024 Gris */}
-                            <path d="M0 95 Q 60 95, 120 65 C 150 35, 180 55, 210 80 L 240 75 L 300 95" stroke="#94A3B8" strokeDasharray="2 2" />
+                    {/* Gráfico de Barras Simuladas + Curva Púrpura */}
+                    <div className="h-56 relative flex items-end justify-between px-4 pt-8">
+                        {/* Escala Eje Y */}
+                        <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none">
+                            <span>Bs 2,000</span>
+                            <span>Bs 1,500</span>
+                            <span>Bs 1,000</span>
+                            <span>Bs 500</span>
+                            <span>Bs 0</span>
+                        </div>
+
+                        {/* Visualización de barras por hora */}
+                        <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
+                            {visibleHourlyData.map((h) => {
+                                const maxVal = 2000;
+                                const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
+                                const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
+
+                                return (
+                                    <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
+                                        {/* Barra 2024 (Rosada/Coral) */}
+                                        <div
+                                            style={{ height: `${h2024Pct}%` }}
+                                            className="w-2 bg-rose-300 rounded-t-xs transition-all group-hover:bg-rose-400"
+                                        ></div>
+
+                                        {/* Barra 2025 (Dorada/Amarilla) */}
+                                        <div
+                                            style={{ height: `${h2025Pct}%` }}
+                                            className="w-2.5 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
+                                        ></div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Superposición de Curva Púrpura Suave 2026 con Nodos */}
+                        <svg className="absolute inset-0 w-full h-full pl-14 pr-14 pt-8 pb-6 pointer-events-none" viewBox="0 0 300 100" fill="none" stroke="currentColor">
+                            <path
+                                d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
+                                fill="none"
+                                stroke="#7C3AED"
+                                strokeWidth="3"
+                            />
+                            {/* Nodos interactivos */}
+                            <circle cx="20" cy="85" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                            <circle cx="60" cy="88" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                            <circle cx="100" cy="20" r="5" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2.5" />
+                            <circle cx="120" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                            <circle cx="160" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                            <circle cx="200" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                            <circle cx="240" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
                         </svg>
                     </div>
 
-                    <div className="flex justify-between text-[9px] font-black text-slate-400 border-t border-slate-200 pt-1">
-                        <span>0:00</span>
-                        <span>4:00</span>
-                        <span>8:00</span>
-                        <span>10:00</span>
-                        <span>12:00</span>
-                        <span>14:00</span>
-                        <span>15:00</span>
-                        <span>18:00</span>
-                        <span>20:00</span>
-                        <span>23:00</span>
+                    {/* Leyenda Eje X de Horas */}
+                    <div className="flex justify-between text-[10px] font-black text-slate-500 pl-14 pr-14 pt-2 border-t border-slate-200">
+                        {visibleHourlyData.map((h) => (
+                            <span key={h.hora}>{h.hora}</span>
+                        ))}
                     </div>
                 </div>
 
-                {/* TABLA DE RANGOS HORARIOS MULTIANUAL */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
-                                <th className="py-3 px-3">🕒 Hora</th>
-                                <th className="py-3 px-3 text-right text-purple-900">🟣 2026 (Bs.)</th>
-                                <th className="py-3 px-3 text-right text-purple-900">🎟️ 2026 (Ord.)</th>
-                                <th className="py-3 px-3 text-right text-blue-900">🔵 2025 (Bs.)</th>
-                                <th className="py-3 px-3 text-right text-blue-900">🎫 2025 (Ord.)</th>
-                                <th className="py-3 px-3 text-right text-slate-700">⚪ 2024 (Bs.)</th>
-                                <th className="py-3 px-3 text-center">📈 Var. 26 vs 25</th>
-                                <th className="py-3 px-3 text-center">📊 Var. 26 vs 24</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
-                            {hourlyMultiYear.filter(h => h.v2026 > 0 || h.v2025 > 0 || h.v2024 > 0).map((h) => {
-                                const var25 = h.v2025 > 0 ? (((h.v2026 - h.v2025) / h.v2025) * 100).toFixed(1) : null;
-                                const var24 = h.v2024 > 0 ? (((h.v2026 - h.v2024) / h.v2024) * 100).toFixed(1) : null;
+                {/* TABLA INFERIOR DE DETALLE HORARIO */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-black text-slate-900">Ventas por Rango Horario — Detalle Multianual</h4>
+                        <span className="text-xs text-slate-400 font-bold">
+                            Mostrando {visibleHourlyData.length} rangos horarios
+                        </span>
+                    </div>
 
-                                return (
-                                    <tr key={h.hora} className="hover:bg-purple-50/30 transition-colors">
-                                        <td className="py-3 px-3 font-black text-slate-900">{h.hora}</td>
-                                        <td className="py-3 px-3 text-right font-black text-purple-950">{formatBs(h.v2026)}</td>
-                                        <td className="py-3 px-3 text-right font-extrabold text-purple-800">{h.ord2026} ord.</td>
-                                        <td className="py-3 px-3 text-right font-bold text-blue-900">{formatBs(h.v2025)}</td>
-                                        <td className="py-3 px-3 text-right font-semibold text-blue-700">{h.ord2025} ord.</td>
-                                        <td className="py-3 px-3 text-right font-semibold text-slate-600">{formatBs(h.v2024)}</td>
-                                        <td className="py-3 px-3 text-center">
-                                            {var25 !== null ? (
-                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                                    Number(var25) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                                                }`}>
-                                                    {Number(var25) >= 0 ? '+' : ''}{var25}%
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] text-slate-400 font-bold">—</span>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-3 text-center">
-                                            {var24 !== null ? (
-                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                                    Number(var24) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                                                }`}>
-                                                    {Number(var24) >= 0 ? '+' : ''}{var24}%
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] text-slate-400 font-bold">—</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
+                                    <th className="py-3 px-3">🕒 Hora</th>
+                                    <th className="py-3 px-3 text-right text-purple-900">🟣 2026 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-purple-900">🎟️ 2026 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-amber-900">🟡 2025 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-amber-900">🎫 2025 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-rose-900">🔴 2024 (Bs.)</th>
+                                    <th className="py-3 px-3 text-center">📈 Var. 26 vs 25</th>
+                                    <th className="py-3 px-3 text-center">📊 Var. 26 vs 24</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                                {visibleHourlyData.map((h) => {
+                                    const var25 = h.v2025 > 0 ? (((h.v2026 - h.v2025) / h.v2025) * 100).toFixed(1) : null;
+                                    const var24 = h.v2024 > 0 ? (((h.v2026 - h.v2024) / h.v2024) * 100).toFixed(1) : null;
+
+                                    return (
+                                        <tr key={h.hora} className="hover:bg-purple-50/30 transition-colors">
+                                            <td className="py-3 px-3 font-black text-slate-900">{h.hora}</td>
+                                            <td className="py-3 px-3 text-right font-black text-purple-950">{formatBs(h.v2026)}</td>
+                                            <td className="py-3 px-3 text-right font-extrabold text-purple-800">{h.ord2026} ord.</td>
+                                            <td className="py-3 px-3 text-right font-bold text-amber-900">{formatBs(h.v2025)}</td>
+                                            <td className="py-3 px-3 text-right font-semibold text-amber-700">{h.ord2025} ord.</td>
+                                            <td className="py-3 px-3 text-right font-semibold text-rose-900">{formatBs(h.v2024)}</td>
+                                            <td className="py-3 px-3 text-center">
+                                                {var25 !== null ? (
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                                        Number(var25) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                    }`}>
+                                                        {Number(var25) >= 0 ? '+' : ''}{var25}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400 font-bold">—</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-3 text-center">
+                                                {var24 !== null ? (
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                                        Number(var24) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                    }`}>
+                                                        {Number(var24) >= 0 ? '+' : ''}{var24}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400 font-bold">—</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
 
             {/* TABLA DE DESGLOSE COMPARATIVO POR SUCURSAL */}
