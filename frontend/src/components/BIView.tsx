@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     BarChart3, Clock, RefreshCw, Download, Maximize2, Settings,
-    Activity, TrendingUp, Radio, Sparkles, DollarSign, Package,
+    Activity, TrendingUp, Sparkles, DollarSign, Package,
     Boxes, Crown, Users, Building2, UserCheck, Tag
 } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
@@ -15,6 +15,7 @@ import { BIDescuentosView } from './bi/BIDescuentosView';
 import { BIProductividadView } from './bi/BIProductividadView';
 import { BIEjecutivoView } from './bi/BIEjecutivoView';
 import { BIIAAnalyticaView } from './bi/BIIAAnalyticaView';
+import { BIDiagnosticoIAView } from './bi/BIDiagnosticoIAView';
 
 type ModuleId = 'panel' | 'rentabilidad' | 'catalogo' | 'inventario' | 'ia' | 'ejecutivo';
 
@@ -242,19 +243,6 @@ export default function BIView() {
                             }`}
                         >
                             <TrendingUp size={15} className={subTab === 'comparativas' ? 'text-white' : 'text-sky-600'} />
-                            <span>Comparativas Multitemporales (DoD/WoW/MoM)</span>
-                        </button>
-
-                        <button
-                            onClick={() => setSubTab('monitor')}
-                            className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
-                                subTab === 'monitor'
-                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
-                                    : 'text-sky-950 hover:bg-white/80'
-                            }`}
-                        >
-                            <Radio size={15} className={subTab === 'monitor' ? 'text-white' : 'text-sky-600'} />
-                            <span>Monitor POS & Conexiones</span>
                         </button>
 
                         <button
@@ -406,7 +394,9 @@ export default function BIView() {
                     }`}
                 >
                     {activeModule === 'panel' && (
-                        subTab === 'comparativas' ? <BIComparativasView /> : <BIPanelGeneralView />
+                        subTab === 'comparativas' ? <BIComparativasView /> :
+                        subTab === 'diagnostico' ? <BIDiagnosticoIAView /> :
+                        <BIPanelGeneralView />
                     )}
 
                     {activeModule === 'rentabilidad' && (
