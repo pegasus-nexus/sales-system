@@ -58,8 +58,8 @@ export const BIComparativasView: React.FC = () => {
     // Modo de Rango Horario (comercial 08-21 por defecto, auto, o 24h)
     const [rangeMode, setRangeMode] = useState<'comercial' | 'auto' | 'full'>('comercial');
 
-    // Selector Interactivo de Estilos de Gráfica (area, grouped_bars, line_nodes)
-    const [chartStyle, setChartStyle] = useState<'area' | 'grouped_bars' | 'line_nodes'>('area');
+    // Selector Interactivo de Estilos de Gráfica (line_nodes, grouped_bars, area)
+    const [chartStyle, setChartStyle] = useState<'line_nodes' | 'grouped_bars' | 'area'>('line_nodes');
 
     const [data, setData] = useState<BIComparativaResponse | null>(null);
 
@@ -100,6 +100,44 @@ export const BIComparativasView: React.FC = () => {
         }
         return true; // full
     });
+
+    // CÁLCULO DE PUNTOS Y RUTAS SVG MATEMÁTICAMENTE EXACTAS DE ALINEACIÓN POR HORA
+    const generatePathAndPoints = (
+        hourlyList: HourlyMultiYearData[],
+        key: 'v2026' | 'v2025' | 'v2024',
+        maxVal: number = 2000,
+        width: number = 1000,
+        height: number = 220
+    ) => {
+        if (hourlyList.length === 0) return { pathD: '', points: [] };
+
+        const points = hourlyList.map((item, idx) => {
+            const x = (idx + 0.5) * (width / hourlyList.length);
+            const val = item[key];
+            // Escalar el valor dentro del alto útil (respetando márgenes top 15 y bottom 25)
+            const y = height - 25 - (val / maxVal) * (height - 40);
+            return { x, y, val, hora: item.hora };
+        });
+
+        // Generar trayectoria Bezier suave entre los puntos exactos
+        let pathD = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const current = points[i];
+            const next = points[i + 1];
+            const controlX = (current.x + next.x) / 2;
+            pathD += ` C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`;
+        }
+
+        return { pathD, points };
+    };
+
+    const maxChartVal = 2000;
+    const svgWidth = 1000;
+    const svgHeight = 220;
+
+    const line2026 = generatePathAndPoints(visibleHourlyData, 'v2026', maxChartVal, svgWidth, svgHeight);
+    const line2025 = generatePathAndPoints(visibleHourlyData, 'v2025', maxChartVal, svgWidth, svgHeight);
+    const line2024 = generatePathAndPoints(visibleHourlyData, 'v2024', maxChartVal, svgWidth, svgHeight);
 
     const loadSucursales = async () => {
         try {
@@ -309,7 +347,7 @@ export const BIComparativasView: React.FC = () => {
 
             </div>
 
-            {/* SECCIÓN DEL GRÁFICO HISTOGRAMA MULTIANUAL CON SELECTOR DE ESTILOS */}
+            {/* SECCIÓN DEL GRÁFICO CON ALINEACIÓN 100% MATEMÁTICA EN LAS 3 LÍNEAS MULTIANUALES */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-6">
                 
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -319,23 +357,23 @@ export const BIComparativasView: React.FC = () => {
                             <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
                         <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Comparativa de ingresos hora a hora: <strong>2026 (Púrpura)</strong> vs <strong>2025 (Amarillo)</strong> vs <strong>2024 (Coral)</strong>
+                            Trayectoria por hora: <strong className="text-purple-700">🟣 2026 (Púrpura)</strong> | <strong className="text-amber-600">🟡 2025 (Amarillo/Dorado)</strong> | <strong className="text-rose-600">🔴 2024 (Coral/Rosado)</strong>
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        {/* SELECTOR DE ESTILOS DE GRÁFICA (area, grouped_bars, line_nodes) */}
+                        {/* SELECTOR DE ESTILOS DE GRÁFICA */}
                         <div className="flex items-center gap-1 bg-purple-50 p-1.5 rounded-2xl border border-purple-100">
                             <button
-                                onClick={() => setChartStyle('area')}
+                                onClick={() => setChartStyle('line_nodes')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                                    chartStyle === 'area'
+                                    chartStyle === 'line_nodes'
                                         ? 'bg-purple-600 text-white shadow-xs'
                                         : 'text-purple-900 hover:bg-purple-100/80'
                                 }`}
                             >
-                                <Layers size={13} />
-                                <span>Curvas & Áreas</span>
+                                <TrendingUp size={13} />
+                                <span>3 Líneas Multianuales</span>
                             </button>
                             <button
                                 onClick={() => setChartStyle('grouped_bars')}
@@ -349,15 +387,15 @@ export const BIComparativasView: React.FC = () => {
                                 <span>Barras Agrupadas</span>
                             </button>
                             <button
-                                onClick={() => setChartStyle('line_nodes')}
+                                onClick={() => setChartStyle('area')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                                    chartStyle === 'line_nodes'
+                                    chartStyle === 'area'
                                         ? 'bg-purple-600 text-white shadow-xs'
                                         : 'text-purple-900 hover:bg-purple-100/80'
                                 }`}
                             >
-                                <TrendingUp size={13} />
-                                <span>Líneas & Picos</span>
+                                <Layers size={13} />
+                                <span>Áreas Superpuestas</span>
                             </button>
                         </div>
 
@@ -413,7 +451,7 @@ export const BIComparativasView: React.FC = () => {
                     </div>
                 )}
 
-                {/* CONTENEDOR DE LA GRÁFICA SEGÚN EL ESTILO SELECCIONADO */}
+                {/* CONTENEDOR DE LA GRÁFICA CON ALINEACIÓN 100% PRECISA POR HORA */}
                 <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4 relative">
                     
                     {/* Marcador de Hora Actual en el gráfico */}
@@ -424,10 +462,10 @@ export const BIComparativasView: React.FC = () => {
                         <div className="w-px h-44 bg-indigo-400 stroke-dasharray-2 border-r border-dashed border-indigo-400"></div>
                     </div>
 
-                    {/* RENDERING DE LA GRÁFICA DEPENDIENDO DE chartStyle */}
+                    {/* LIENZO SVG DINÁMICO RECEPTIVO CON ALINEACIÓN MATEMÁTICA EXACTA */}
                     <div className="h-56 relative flex items-end justify-between px-4 pt-8">
                         {/* Escala Eje Y */}
-                        <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none">
+                        <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none z-10">
                             <span>Bs 2,000</span>
                             <span>Bs 1,500</span>
                             <span>Bs 1,000</span>
@@ -435,50 +473,91 @@ export const BIComparativasView: React.FC = () => {
                             <span>Bs 0</span>
                         </div>
 
-                        {/* ESTILO 1: BARRAS MAQUETA ORIGINAL + CURVA PÚRPURA (AREA / MAQUETA) */}
-                        {chartStyle === 'area' && (
-                            <>
-                                <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
-                                    {visibleHourlyData.map((h) => {
-                                        const maxVal = 2000;
-                                        const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
-                                        const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
+                        {/* ESTILO 1: 3 LÍNEAS INDEPENDIENTES CON NODOS PUNTUALES ALINEADOS (2026, 2025, 2024) */}
+                        {chartStyle === 'line_nodes' && (
+                            <div className="w-full h-full pl-12 pr-12 relative">
+                                <svg
+                                    className="w-full h-full overflow-visible"
+                                    viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                                    preserveAspectRatio="none"
+                                >
+                                    {/* Guías horizontales de fondo */}
+                                    <line x1="0" y1="20" x2={svgWidth} y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="65" x2={svgWidth} y2="65" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="155" x2={svgWidth} y2="155" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="195" x2={svgWidth} y2="195" stroke="#CBD5E1" strokeWidth="1.5" />
 
-                                        return (
-                                            <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
-                                                <div
-                                                    style={{ height: `${h2024Pct}%` }}
-                                                    className="w-2.5 bg-rose-300 rounded-t-xs transition-all group-hover:bg-rose-400"
-                                                ></div>
-                                                <div
-                                                    style={{ height: `${h2025Pct}%` }}
-                                                    className="w-3 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
-                                                ></div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <svg className="absolute inset-0 w-full h-full pl-14 pr-14 pt-8 pb-6 pointer-events-none" viewBox="0 0 300 100" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
-                                        fill="none"
-                                        stroke="#7C3AED"
-                                        strokeWidth="3"
-                                    />
-                                    <circle cx="20" cy="85" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="60" cy="88" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="100" cy="20" r="5" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2.5" />
-                                    <circle cx="120" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="160" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="200" cy="75" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="240" cy="60" r="4" fill="#7C3AED" stroke="#FFFFFF" strokeWidth="2" />
+                                    {/* LÍNEA 2024 (Coral / Rosada) */}
+                                    {line2024.pathD && (
+                                        <path
+                                            d={line2024.pathD}
+                                            fill="none"
+                                            stroke="#FB7185"
+                                            strokeWidth="3.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    )}
+
+                                    {/* LÍNEA 2025 (Dorada / Amarilla) */}
+                                    {line2025.pathD && (
+                                        <path
+                                            d={line2025.pathD}
+                                            fill="none"
+                                            stroke="#F59E0B"
+                                            strokeWidth="3.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    )}
+
+                                    {/* LÍNEA 2026 (Púrpura Principal) */}
+                                    {line2026.pathD && (
+                                        <path
+                                            d={line2026.pathD}
+                                            fill="none"
+                                            stroke="#8B5CF6"
+                                            strokeWidth="4.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    )}
+
+                                    {/* NODOS EXACTOS 2024 */}
+                                    {line2024.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <g key={`p24-${i}`}>
+                                                <circle cx={pt.x} cy={pt.y} r="5" fill="#FB7185" stroke="#FFFFFF" strokeWidth="2" />
+                                            </g>
+                                        )
+                                    ))}
+
+                                    {/* NODOS EXACTOS 2025 */}
+                                    {line2025.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <g key={`p25-${i}`}>
+                                                <circle cx={pt.x} cy={pt.y} r="5.5" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
+                                            </g>
+                                        )
+                                    ))}
+
+                                    {/* NODOS EXACTOS 2026 */}
+                                    {line2026.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <g key={`p26-${i}`}>
+                                                <circle cx={pt.x} cy={pt.y} r="6.5" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2.5" />
+                                                <circle cx={pt.x} cy={pt.y} r="2.5" fill="#FFFFFF" />
+                                            </g>
+                                        )
+                                    ))}
                                 </svg>
-                            </>
+                            </div>
                         )}
 
-                        {/* ESTILO 2: BARRAS AGRUPADAS TRIPLES (GROUPED BARS 2026, 2025, 2024) */}
+                        {/* ESTILO 2: BARRAS AGRUPADAS TRIPLES */}
                         {chartStyle === 'grouped_bars' && (
-                            <div className="w-full h-full flex items-end justify-between pl-14 pr-14 gap-2">
+                            <div className="w-full h-full flex items-end justify-between pl-12 pr-12 gap-2">
                                 {visibleHourlyData.map((h) => {
                                     const maxVal = 2000;
                                     const h2026Pct = Math.min((h.v2026 / maxVal) * 100, 100);
@@ -486,21 +565,21 @@ export const BIComparativasView: React.FC = () => {
                                     const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
 
                                     return (
-                                        <div key={h.hora} className="flex-1 flex items-end justify-center gap-0.5 h-full relative group">
+                                        <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
                                             {/* 2026 (Púrpura) */}
                                             <div
                                                 style={{ height: `${h2026Pct}%` }}
-                                                className="w-2.5 bg-purple-600 rounded-t-xs transition-all group-hover:bg-purple-700"
+                                                className="w-3 bg-purple-600 rounded-t-sm transition-all group-hover:bg-purple-700 shadow-xs"
                                             ></div>
                                             {/* 2025 (Amarillo) */}
                                             <div
                                                 style={{ height: `${h2025Pct}%` }}
-                                                className="w-2.5 bg-amber-400 rounded-t-xs transition-all group-hover:bg-amber-500"
+                                                className="w-3 bg-amber-400 rounded-t-sm transition-all group-hover:bg-amber-500 shadow-xs"
                                             ></div>
-                                            {/* 2024 (Coral/Rosado) */}
+                                            {/* 2024 (Coral) */}
                                             <div
                                                 style={{ height: `${h2024Pct}%` }}
-                                                className="w-2.5 bg-rose-400 rounded-t-xs transition-all group-hover:bg-rose-500"
+                                                className="w-3 bg-rose-400 rounded-t-sm transition-all group-hover:bg-rose-500 shadow-xs"
                                             ></div>
                                         </div>
                                     );
@@ -508,44 +587,43 @@ export const BIComparativasView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* ESTILO 3: LÍNEAS & PICOS (MULTILINE GRADIENT TREND) */}
-                        {chartStyle === 'line_nodes' && (
-                            <div className="w-full h-full pl-14 pr-14 relative">
-                                <svg className="w-full h-full" viewBox="0 0 300 100" fill="none" stroke="currentColor">
-                                    {/* Línea 2024 (Coral) */}
-                                    <path
-                                        d="M0 95 C 40 90, 80 80, 120 70 C 160 85, 200 95, 240 90 L 300 95"
-                                        fill="none"
-                                        stroke="#FB7185"
-                                        strokeWidth="2"
-                                        strokeDasharray="4 4"
-                                    />
-                                    {/* Línea 2025 (Azul) */}
-                                    <path
-                                        d="M0 90 C 40 80, 80 20, 120 30 C 160 50, 200 85, 240 80 L 300 90"
-                                        fill="none"
-                                        stroke="#3B82F6"
-                                        strokeWidth="2.5"
-                                    />
-                                    {/* Línea 2026 (Púrpura Neón) */}
-                                    <path
-                                        d="M0 90 C 20 85, 40 70, 60 88 C 80 50, 100 20, 120 75 C 140 95, 160 60, 180 70 C 200 75, 220 65, 240 60 C 260 70, 280 90, 300 95"
-                                        fill="none"
-                                        stroke="#8B5CF6"
-                                        strokeWidth="3.5"
-                                    />
-                                    {/* Nodos de Picos */}
-                                    <circle cx="100" cy="20" r="6" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2" />
-                                    <circle cx="80" cy="20" r="5" fill="#3B82F6" stroke="#FFFFFF" strokeWidth="2" />
+                        {/* ESTILO 3: ÁREAS SUPERPUESTAS ALINEADAS */}
+                        {chartStyle === 'area' && (
+                            <div className="w-full h-full pl-12 pr-12 relative">
+                                <svg
+                                    className="w-full h-full overflow-visible"
+                                    viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                                    preserveAspectRatio="none"
+                                >
+                                    {/* ÁREA 2026 */}
+                                    {line2026.pathD && (
+                                        <path
+                                            d={`${line2026.pathD} L ${svgWidth} ${svgHeight} L 0 ${svgHeight} Z`}
+                                            fill="rgba(139, 92, 246, 0.15)"
+                                        />
+                                    )}
+                                    {line2026.pathD && (
+                                        <path
+                                            d={line2026.pathD}
+                                            fill="none"
+                                            stroke="#8B5CF6"
+                                            strokeWidth="3.5"
+                                        />
+                                    )}
+                                    {line2026.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <circle key={`p26-a-${i}`} cx={pt.x} cy={pt.y} r="5" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2" />
+                                        )
+                                    ))}
                                 </svg>
                             </div>
                         )}
                     </div>
 
-                    {/* Leyenda Eje X de Horas */}
-                    <div className="flex justify-between text-[10px] font-black text-slate-500 pl-14 pr-14 pt-2 border-t border-slate-200">
+                    {/* Leyenda Eje X de Horas alineada 100% con los puntos */}
+                    <div className="flex justify-between text-[10px] font-black text-slate-500 pl-12 pr-12 pt-2 border-t border-slate-200">
                         {visibleHourlyData.map((h) => (
-                            <span key={h.hora}>{h.hora}</span>
+                            <span key={h.hora} className="w-full text-center">{h.hora}</span>
                         ))}
                     </div>
                 </div>
