@@ -58,8 +58,8 @@ export const BIComparativasView: React.FC = () => {
     // Modo de Rango Horario (comercial 08-21 por defecto, auto, o 24h)
     const [rangeMode, setRangeMode] = useState<'comercial' | 'auto' | 'full'>('comercial');
 
-    // Selector Interactivo de Estilos de Gráfica (line_nodes, grouped_bars, area)
-    const [chartStyle, setChartStyle] = useState<'line_nodes' | 'grouped_bars' | 'area'>('line_nodes');
+    // Selector Interactivo de Estilos de Gráfica (grouped_bars, line_nodes, area)
+    const [chartStyle, setChartStyle] = useState<'grouped_bars' | 'line_nodes' | 'area'>('grouped_bars');
 
     const [data, setData] = useState<BIComparativaResponse | null>(null);
 
@@ -114,12 +114,10 @@ export const BIComparativasView: React.FC = () => {
         const points = hourlyList.map((item, idx) => {
             const x = (idx + 0.5) * (width / hourlyList.length);
             const val = item[key];
-            // Escalar el valor dentro del alto útil (respetando márgenes top 15 y bottom 25)
             const y = height - 25 - (val / maxVal) * (height - 40);
             return { x, y, val, hora: item.hora };
         });
 
-        // Generar trayectoria Bezier suave entre los puntos exactos
         let pathD = `M ${points[0].x} ${points[0].y}`;
         for (let i = 0; i < points.length - 1; i++) {
             const current = points[i];
@@ -256,7 +254,7 @@ export const BIComparativasView: React.FC = () => {
 
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">ALINEACIÓN HISTÓRICA</span>
-                        <span className="text-purple-700 font-black">
+                        <span className="text-indigo-700 font-black">
                             Lun 31 ago 2026 <span className="text-slate-400">vs</span> Lun 1 sept 2025 <span className="text-slate-400">vs</span> Lun 2 sept 2024
                         </span>
                     </div>
@@ -301,23 +299,23 @@ export const BIComparativasView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BANNER SUPERIOR KPIS DE VENTA NETA MULTIANUAL (FONDO PASTEL CREMA / ROSADO SUAVE) */}
-            <div className="bg-gradient-to-r from-amber-50/70 via-rose-50/60 to-purple-50/70 rounded-3xl p-6 border border-amber-100/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+            {/* BANNER SUPERIOR KPIS DE VENTA NETA MULTIANUAL (FONDO PASTEL ELEGANTE) */}
+            <div className="bg-gradient-to-r from-indigo-50/80 via-sky-50/70 to-slate-50/80 rounded-3xl p-6 border border-indigo-100/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
                 
                 {/* 2026 (AÑO ACTUAL) */}
-                <div className="flex-1 pr-4 border-b md:border-b-0 md:border-r border-amber-200/50 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-rose-900 uppercase tracking-wider block">2026 (AÑO ACTUAL)</span>
+                <div className="flex-1 pr-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">2026 (AÑO ACTUAL)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-3xl font-black text-rose-950">Bs. 3,345.00</h2>
+                        <h2 className="text-3xl font-black text-indigo-950">Bs. 3,345.00</h2>
                         <span className="text-xs font-bold text-slate-500">Venta Neta del Día</span>
                     </div>
                 </div>
 
                 {/* 2025 (HACE 1 AÑO) */}
-                <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-amber-200/50 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">2025 (HACE 1 AÑO)</span>
+                <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-sky-900 uppercase tracking-wider block">2025 (HACE 1 AÑO)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-2xl font-black text-amber-950">Bs. 7,997.00</h2>
+                        <h2 className="text-2xl font-black text-sky-950">Bs. 7,997.00</h2>
                         <span className="text-xs font-black text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200">
                             ▼ -58.2%
                         </span>
@@ -327,9 +325,9 @@ export const BIComparativasView: React.FC = () => {
 
                 {/* 2024 (HACE 2 AÑOS) */}
                 <div className="flex-1 px-0 md:px-4 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">2024 (HACE 2 AÑOS)</span>
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">2024 (HACE 2 AÑOS)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-2xl font-black text-amber-950">Bs. 1,973.00</h2>
+                        <h2 className="text-2xl font-black text-slate-800">Bs. 1,973.00</h2>
                         <span className="text-xs font-black text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-200">
                             ▲ +69.5%
                         </span>
@@ -347,51 +345,51 @@ export const BIComparativasView: React.FC = () => {
 
             </div>
 
-            {/* SECCIÓN DEL GRÁFICO CON ALINEACIÓN 100% MATEMÁTICA EN LAS 3 LÍNEAS MULTIANUALES */}
+            {/* SECCIÓN DEL GRÁFICO CON NUEVA PALETA CROMÁTICA ARMÓNICA Y EJECUTIVA */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-6">
                 
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                     <div>
                         <div className="flex items-center gap-2">
-                            <Clock size={18} className="text-purple-600" />
+                            <Clock size={18} className="text-indigo-600" />
                             <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
                         <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Trayectoria por hora: <strong className="text-purple-700">🟣 2026 (Púrpura)</strong> | <strong className="text-amber-600">🟡 2025 (Amarillo/Dorado)</strong> | <strong className="text-rose-600">🔴 2024 (Coral/Rosado)</strong>
+                            Trayectoria armónica: <strong className="text-indigo-600">🟣 2026 (Índigo Ejecutivo)</strong> | <strong className="text-sky-500">🩵 2025 (Cian Fresco)</strong> | <strong className="text-slate-400">🩶 2024 (Slate Neutro)</strong>
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
                         {/* SELECTOR DE ESTILOS DE GRÁFICA */}
-                        <div className="flex items-center gap-1 bg-purple-50 p-1.5 rounded-2xl border border-purple-100">
-                            <button
-                                onClick={() => setChartStyle('line_nodes')}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                                    chartStyle === 'line_nodes'
-                                        ? 'bg-purple-600 text-white shadow-xs'
-                                        : 'text-purple-900 hover:bg-purple-100/80'
-                                }`}
-                            >
-                                <TrendingUp size={13} />
-                                <span>3 Líneas Multianuales</span>
-                            </button>
+                        <div className="flex items-center gap-1 bg-indigo-50/70 p-1.5 rounded-2xl border border-indigo-100">
                             <button
                                 onClick={() => setChartStyle('grouped_bars')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                                     chartStyle === 'grouped_bars'
-                                        ? 'bg-purple-600 text-white shadow-xs'
-                                        : 'text-purple-900 hover:bg-purple-100/80'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
+                                        : 'text-indigo-900 hover:bg-indigo-100/80'
                                 }`}
                             >
                                 <BarChart3 size={13} />
                                 <span>Barras Agrupadas</span>
                             </button>
                             <button
+                                onClick={() => setChartStyle('line_nodes')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    chartStyle === 'line_nodes'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
+                                        : 'text-indigo-900 hover:bg-indigo-100/80'
+                                }`}
+                            >
+                                <TrendingUp size={13} />
+                                <span>3 Líneas Multianuales</span>
+                            </button>
+                            <button
                                 onClick={() => setChartStyle('area')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                                     chartStyle === 'area'
-                                        ? 'bg-purple-600 text-white shadow-xs'
-                                        : 'text-purple-900 hover:bg-purple-100/80'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
+                                        : 'text-indigo-900 hover:bg-indigo-100/80'
                                 }`}
                             >
                                 <Layers size={13} />
@@ -444,14 +442,14 @@ export const BIComparativasView: React.FC = () => {
                         </div>
                         <button
                             onClick={() => setRangeMode('full')}
-                            className="text-purple-700 font-black hover:underline cursor-pointer ml-4 whitespace-nowrap"
+                            className="text-indigo-700 font-black hover:underline cursor-pointer ml-4 whitespace-nowrap"
                         >
                             Ver 24 Horas Completas &gt;
                         </button>
                     </div>
                 )}
 
-                {/* CONTENEDOR DE LA GRÁFICA CON ALINEACIÓN 100% PRECISA POR HORA */}
+                {/* CONTENEDOR DE LA GRÁFICA CON LA NUEVA PALETA CROMÁTICA ARMÓNICA */}
                 <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4 relative">
                     
                     {/* Marcador de Hora Actual en el gráfico */}
@@ -462,7 +460,6 @@ export const BIComparativasView: React.FC = () => {
                         <div className="w-px h-44 bg-indigo-400 stroke-dasharray-2 border-r border-dashed border-indigo-400"></div>
                     </div>
 
-                    {/* LIENZO SVG DINÁMICO RECEPTIVO CON ALINEACIÓN MATEMÁTICA EXACTA */}
                     <div className="h-56 relative flex items-end justify-between px-4 pt-8">
                         {/* Escala Eje Y */}
                         <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none z-10">
@@ -473,89 +470,7 @@ export const BIComparativasView: React.FC = () => {
                             <span>Bs 0</span>
                         </div>
 
-                        {/* ESTILO 1: 3 LÍNEAS INDEPENDIENTES CON NODOS PUNTUALES ALINEADOS (2026, 2025, 2024) */}
-                        {chartStyle === 'line_nodes' && (
-                            <div className="w-full h-full pl-12 pr-12 relative">
-                                <svg
-                                    className="w-full h-full overflow-visible"
-                                    viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                                    preserveAspectRatio="none"
-                                >
-                                    {/* Guías horizontales de fondo */}
-                                    <line x1="0" y1="20" x2={svgWidth} y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-                                    <line x1="0" y1="65" x2={svgWidth} y2="65" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-                                    <line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-                                    <line x1="0" y1="155" x2={svgWidth} y2="155" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-                                    <line x1="0" y1="195" x2={svgWidth} y2="195" stroke="#CBD5E1" strokeWidth="1.5" />
-
-                                    {/* LÍNEA 2024 (Coral / Rosada) */}
-                                    {line2024.pathD && (
-                                        <path
-                                            d={line2024.pathD}
-                                            fill="none"
-                                            stroke="#FB7185"
-                                            strokeWidth="3.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    )}
-
-                                    {/* LÍNEA 2025 (Dorada / Amarilla) */}
-                                    {line2025.pathD && (
-                                        <path
-                                            d={line2025.pathD}
-                                            fill="none"
-                                            stroke="#F59E0B"
-                                            strokeWidth="3.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    )}
-
-                                    {/* LÍNEA 2026 (Púrpura Principal) */}
-                                    {line2026.pathD && (
-                                        <path
-                                            d={line2026.pathD}
-                                            fill="none"
-                                            stroke="#8B5CF6"
-                                            strokeWidth="4.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    )}
-
-                                    {/* NODOS EXACTOS 2024 */}
-                                    {line2024.points.map((pt, i) => (
-                                        pt.val > 0 && (
-                                            <g key={`p24-${i}`}>
-                                                <circle cx={pt.x} cy={pt.y} r="5" fill="#FB7185" stroke="#FFFFFF" strokeWidth="2" />
-                                            </g>
-                                        )
-                                    ))}
-
-                                    {/* NODOS EXACTOS 2025 */}
-                                    {line2025.points.map((pt, i) => (
-                                        pt.val > 0 && (
-                                            <g key={`p25-${i}`}>
-                                                <circle cx={pt.x} cy={pt.y} r="5.5" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
-                                            </g>
-                                        )
-                                    ))}
-
-                                    {/* NODOS EXACTOS 2026 */}
-                                    {line2026.points.map((pt, i) => (
-                                        pt.val > 0 && (
-                                            <g key={`p26-${i}`}>
-                                                <circle cx={pt.x} cy={pt.y} r="6.5" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2.5" />
-                                                <circle cx={pt.x} cy={pt.y} r="2.5" fill="#FFFFFF" />
-                                            </g>
-                                        )
-                                    ))}
-                                </svg>
-                            </div>
-                        )}
-
-                        {/* ESTILO 2: BARRAS AGRUPADAS TRIPLES */}
+                        {/* ESTILO 1: BARRAS AGRUPADAS TRIPLES (NUEVA PALETA ARMÓNICA) */}
                         {chartStyle === 'grouped_bars' && (
                             <div className="w-full h-full flex items-end justify-between pl-12 pr-12 gap-2">
                                 {visibleHourlyData.map((h) => {
@@ -566,20 +481,20 @@ export const BIComparativasView: React.FC = () => {
 
                                     return (
                                         <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
-                                            {/* 2026 (Púrpura) */}
+                                            {/* 2026 (Índigo Ejecutivo) */}
                                             <div
                                                 style={{ height: `${h2026Pct}%` }}
-                                                className="w-3 bg-purple-600 rounded-t-sm transition-all group-hover:bg-purple-700 shadow-xs"
+                                                className="w-3 bg-indigo-600 rounded-t-sm transition-all group-hover:bg-indigo-700 shadow-xs"
                                             ></div>
-                                            {/* 2025 (Amarillo) */}
+                                            {/* 2025 (Cian Fresco) */}
                                             <div
                                                 style={{ height: `${h2025Pct}%` }}
-                                                className="w-3 bg-amber-400 rounded-t-sm transition-all group-hover:bg-amber-500 shadow-xs"
+                                                className="w-3 bg-sky-400 rounded-t-sm transition-all group-hover:bg-sky-500 shadow-xs"
                                             ></div>
-                                            {/* 2024 (Coral) */}
+                                            {/* 2024 (Slate Neutro) */}
                                             <div
                                                 style={{ height: `${h2024Pct}%` }}
-                                                className="w-3 bg-rose-400 rounded-t-sm transition-all group-hover:bg-rose-500 shadow-xs"
+                                                className="w-3 bg-slate-300 rounded-t-sm transition-all group-hover:bg-slate-400 shadow-xs"
                                             ></div>
                                         </div>
                                     );
@@ -587,7 +502,81 @@ export const BIComparativasView: React.FC = () => {
                             </div>
                         )}
 
-                        {/* ESTILO 3: ÁREAS SUPERPUESTAS ALINEADAS */}
+                        {/* ESTILO 2: 3 LÍNEAS MULTIANUALES CON PUNTOS PUNTUALES ALINEADOS (PALETA ARMÓNICA) */}
+                        {chartStyle === 'line_nodes' && (
+                            <div className="w-full h-full pl-12 pr-12 relative">
+                                <svg
+                                    className="w-full h-full overflow-visible"
+                                    viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                                    preserveAspectRatio="none"
+                                >
+                                    <line x1="0" y1="20" x2={svgWidth} y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="65" x2={svgWidth} y2="65" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="110" x2={svgWidth} y2="110" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="155" x2={svgWidth} y2="155" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                                    <line x1="0" y1="195" x2={svgWidth} y2="195" stroke="#CBD5E1" strokeWidth="1.5" />
+
+                                    {/* LÍNEA 2024 (Slate Neutro) */}
+                                    {line2024.pathD && (
+                                        <path
+                                            d={line2024.pathD}
+                                            fill="none"
+                                            stroke="#94A3B8"
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                        />
+                                    )}
+
+                                    {/* LÍNEA 2025 (Cian Fresco) */}
+                                    {line2025.pathD && (
+                                        <path
+                                            d={line2025.pathD}
+                                            fill="none"
+                                            stroke="#0EA5E9"
+                                            strokeWidth="3.5"
+                                            strokeLinecap="round"
+                                        />
+                                    )}
+
+                                    {/* LÍNEA 2026 (Índigo Ejecutivo) */}
+                                    {line2026.pathD && (
+                                        <path
+                                            d={line2026.pathD}
+                                            fill="none"
+                                            stroke="#6366F1"
+                                            strokeWidth="4.5"
+                                            strokeLinecap="round"
+                                        />
+                                    )}
+
+                                    {/* NODOS 2024 */}
+                                    {line2024.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <circle key={`p24-${i}`} cx={pt.x} cy={pt.y} r="4.5" fill="#94A3B8" stroke="#FFFFFF" strokeWidth="2" />
+                                        )
+                                    ))}
+
+                                    {/* NODOS 2025 */}
+                                    {line2025.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <circle key={`p25-${i}`} cx={pt.x} cy={pt.y} r="5.5" fill="#0EA5E9" stroke="#FFFFFF" strokeWidth="2" />
+                                        )
+                                    ))}
+
+                                    {/* NODOS 2026 */}
+                                    {line2026.points.map((pt, i) => (
+                                        pt.val > 0 && (
+                                            <g key={`p26-${i}`}>
+                                                <circle cx={pt.x} cy={pt.y} r="6.5" fill="#6366F1" stroke="#FFFFFF" strokeWidth="2.5" />
+                                                <circle cx={pt.x} cy={pt.y} r="2.5" fill="#FFFFFF" />
+                                            </g>
+                                        )
+                                    ))}
+                                </svg>
+                            </div>
+                        )}
+
+                        {/* ESTILO 3: ÁREAS SUPERPUESTAS ALINEADAS (PALETA ARMÓNICA) */}
                         {chartStyle === 'area' && (
                             <div className="w-full h-full pl-12 pr-12 relative">
                                 <svg
@@ -599,20 +588,20 @@ export const BIComparativasView: React.FC = () => {
                                     {line2026.pathD && (
                                         <path
                                             d={`${line2026.pathD} L ${svgWidth} ${svgHeight} L 0 ${svgHeight} Z`}
-                                            fill="rgba(139, 92, 246, 0.15)"
+                                            fill="rgba(99, 102, 241, 0.18)"
                                         />
                                     )}
                                     {line2026.pathD && (
                                         <path
                                             d={line2026.pathD}
                                             fill="none"
-                                            stroke="#8B5CF6"
+                                            stroke="#6366F1"
                                             strokeWidth="3.5"
                                         />
                                     )}
                                     {line2026.points.map((pt, i) => (
                                         pt.val > 0 && (
-                                            <circle key={`p26-a-${i}`} cx={pt.x} cy={pt.y} r="5" fill="#8B5CF6" stroke="#FFFFFF" strokeWidth="2" />
+                                            <circle key={`p26-a-${i}`} cx={pt.x} cy={pt.y} r="5" fill="#6366F1" stroke="#FFFFFF" strokeWidth="2" />
                                         )
                                     ))}
                                 </svg>
@@ -628,7 +617,7 @@ export const BIComparativasView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* TABLA INFERIOR DE DETALLE HORARIO */}
+                {/* TABLA INFERIOR DE DETALLE HORARIO CON COLORES ARMÓNICOS */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                         <h4 className="text-sm font-black text-slate-900">Ventas por Rango Horario — Detalle Multianual</h4>
@@ -642,11 +631,11 @@ export const BIComparativasView: React.FC = () => {
                             <thead>
                                 <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
                                     <th className="py-3 px-3">🕒 Hora</th>
-                                    <th className="py-3 px-3 text-right text-purple-900">🟣 2026 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-purple-900">🎟️ 2026 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-amber-900">🟡 2025 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-amber-900">🎫 2025 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-rose-900">🔴 2024 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-indigo-900">🟣 2026 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-indigo-900">🎟️ 2026 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-sky-900">🩵 2025 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-sky-900">🎫 2025 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-slate-700">🩶 2024 (Bs.)</th>
                                     <th className="py-3 px-3 text-center">📈 Var. 26 vs 25</th>
                                     <th className="py-3 px-3 text-center">📊 Var. 26 vs 24</th>
                                 </tr>
@@ -657,13 +646,13 @@ export const BIComparativasView: React.FC = () => {
                                     const var24 = h.v2024 > 0 ? (((h.v2026 - h.v2024) / h.v2024) * 100).toFixed(1) : null;
 
                                     return (
-                                        <tr key={h.hora} className="hover:bg-purple-50/30 transition-colors">
+                                        <tr key={h.hora} className="hover:bg-indigo-50/40 transition-colors">
                                             <td className="py-3 px-3 font-black text-slate-900">{h.hora}</td>
-                                            <td className="py-3 px-3 text-right font-black text-purple-950">{formatBs(h.v2026)}</td>
-                                            <td className="py-3 px-3 text-right font-extrabold text-purple-800">{h.ord2026} ord.</td>
-                                            <td className="py-3 px-3 text-right font-bold text-amber-900">{formatBs(h.v2025)}</td>
-                                            <td className="py-3 px-3 text-right font-semibold text-amber-700">{h.ord2025} ord.</td>
-                                            <td className="py-3 px-3 text-right font-semibold text-rose-900">{formatBs(h.v2024)}</td>
+                                            <td className="py-3 px-3 text-right font-black text-indigo-950">{formatBs(h.v2026)}</td>
+                                            <td className="py-3 px-3 text-right font-extrabold text-indigo-800">{h.ord2026} ord.</td>
+                                            <td className="py-3 px-3 text-right font-bold text-sky-900">{formatBs(h.v2025)}</td>
+                                            <td className="py-3 px-3 text-right font-semibold text-sky-700">{h.ord2025} ord.</td>
+                                            <td className="py-3 px-3 text-right font-semibold text-slate-600">{formatBs(h.v2024)}</td>
                                             <td className="py-3 px-3 text-center">
                                                 {var25 !== null ? (
                                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
