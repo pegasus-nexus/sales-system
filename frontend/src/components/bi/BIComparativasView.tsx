@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Calendar, RefreshCw, Layers,
-    Filter, Maximize2, RotateCcw,
-    AlertTriangle, Store, Info, ArrowUpRight, ArrowDownRight, Minus
+    Calendar, RefreshCw, Filter, RotateCcw,
+    AlertTriangle, Store, Info, ArrowUpRight, ArrowDownRight, Minus,
+    Sparkles, DollarSign, ShoppingBag, Receipt, TrendingUp, PieChart, Clock
 } from 'lucide-react';
 import { getBIComparativas, getBISucursales } from '../../api/biApi';
 import type { BIComparativaResponse, BISucursalOption } from '../../api/biApi';
@@ -44,7 +44,6 @@ export const BIComparativasView: React.FC = () => {
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
 
     const [data, setData] = useState<BIComparativaResponse | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
     const loadSucursales = async () => {
         try {
@@ -94,42 +93,30 @@ export const BIComparativasView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            setIsFullscreen(true);
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                setIsFullscreen(false);
-            }
-        }
-    };
-
     const renderVariationBadge = (pct: number | null, estado: string) => {
         if (estado === 'SIN_BASE_COMPARATIVA' || pct === null) {
             return (
-                <span className="text-[10px] font-black text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200/80 inline-flex items-center gap-1">
-                    <Info size={10} /> Sin base comp.
+                <span className="text-[10px] font-black text-amber-800 bg-amber-100/90 px-2.5 py-1 rounded-xl border border-amber-200/80 inline-flex items-center gap-1">
+                    <Minus size={10} /> Sin base comp.
                 </span>
             );
         }
         if (pct > 0) {
             return (
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-200/80 inline-flex items-center gap-1">
-                    <ArrowUpRight size={12} /> +{pct}%
+                <span className="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-2.5 py-1 rounded-xl border border-emerald-200/80 inline-flex items-center gap-1">
+                    <ArrowUpRight size={12} /> ↑ {pct}%
                 </span>
             );
         }
         if (pct < 0) {
             return (
-                <span className="text-[10px] font-black text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-lg border border-rose-200/80 inline-flex items-center gap-1">
-                    <ArrowDownRight size={12} /> {pct}%
+                <span className="text-[10px] font-black text-rose-800 bg-rose-100/90 px-2.5 py-1 rounded-xl border border-rose-200/80 inline-flex items-center gap-1">
+                    <ArrowDownRight size={12} /> ↓ {pct}%
                 </span>
             );
         }
         return (
-            <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 inline-flex items-center gap-1">
+            <span className="text-[10px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200 inline-flex items-center gap-1">
                 <Minus size={10} /> 0.0%
             </span>
         );
@@ -161,20 +148,16 @@ export const BIComparativasView: React.FC = () => {
     }
 
     return (
-        <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
+        <div className="space-y-6 font-sans text-slate-800 w-full">
             
-            {/* CABECERA ESTILO PASTEL */}
-            <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/90 rounded-3xl p-6 shadow-sm border border-indigo-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
+            {/* CABECERA PRINCIPAL CON TITULO DE FASE 2 */}
+            <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <div className="flex items-center gap-2 text-indigo-600 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Layers size={14} className="text-indigo-600" />
-                        </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 2</span>
-                    </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Comparativas Históricas & Evolución</h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Análisis comparativo trazable (DoD, WoW, MoM, YoY) sobre MongoDB `sales` (<span className="text-emerald-700 font-black bg-emerald-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 2</h1>
+                    <h2 className="text-sm font-extrabold text-indigo-700 mt-0.5">Comparativas Históricas & Evolución</h2>
+                    <p className="text-xs text-slate-400 font-semibold mt-1 flex items-center gap-1.5">
+                        <Info size={13} className="text-slate-400" />
+                        <span>Análisis comparativo trazable (DoD, WoW, MoM, YoY) sobre MongoDB <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">sales</code> (America/La_Paz)</span>
                     </p>
                 </div>
 
@@ -182,188 +165,207 @@ export const BIComparativasView: React.FC = () => {
                     <button
                         onClick={() => fetchComparativasData(startDate, endDate, compararContra, selectedSucursal)}
                         disabled={loading}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 bg-purple-100/80 hover:bg-purple-200/80 text-purple-900 font-extrabold text-xs px-4 py-2.5 rounded-2xl transition-all border border-purple-200/60 cursor-pointer disabled:opacity-50"
                     >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                        <RefreshCw size={14} className={`text-purple-700 ${loading ? 'animate-spin' : ''}`} />
                         <span>Actualizar</span>
                     </button>
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 cursor-pointer"
                     >
                         <RotateCcw size={14} className="text-slate-500" />
                         <span>Restablecer</span>
                     </button>
-                    <button
-                        onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <Maximize2 size={14} className="text-slate-500" />
-                    </button>
                 </div>
             </div>
 
-            {/* BARRA DE CONTROLES DE COMPARACIÓN */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                
-                {/* Selector de Modo Comparativo */}
-                <div className="flex items-center gap-1.5 bg-slate-100/70 p-1.5 rounded-2xl overflow-x-auto">
-                    <button
-                        onClick={() => setCompararContra('ayer')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            compararContra === 'ayer' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
+            {/* BARRA DE BOTONES TABS DE MODO COMPARATIVO */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                    onClick={() => setCompararContra('ayer')}
+                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                        compararContra === 'ayer'
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    <span>DoD (vs. Ayer)</span>
+                </button>
+
+                <button
+                    onClick={() => setCompararContra('semana_anterior')}
+                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                        compararContra === 'semana_anterior'
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    <span>WoW (vs. Sem. Anterior)</span>
+                </button>
+
+                <button
+                    onClick={() => setCompararContra('mes_anterior')}
+                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                        compararContra === 'mes_anterior'
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    <span>MoM (vs. Mes Anterior)</span>
+                </button>
+
+                <button
+                    onClick={() => setCompararContra('ano_anterior')}
+                    className={`px-5 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                        compararContra === 'ano_anterior'
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    <span>YoY (vs. Año Anterior)</span>
+                </button>
+            </div>
+
+            {/* BARRA DE FILTROS & INDICADOR DE PERÍODOS */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-2xl w-full md:w-auto">
+                    <Filter size={14} className="text-slate-400" />
+                    <select
+                        value={selectedSucursal}
+                        onChange={(e) => setSelectedSucursal(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-slate-700 outline-hidden cursor-pointer w-full"
                     >
-                        DoD (vs. Ayer)
-                    </button>
-                    <button
-                        onClick={() => setCompararContra('semana_anterior')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            compararContra === 'semana_anterior' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        WoW (vs. Sem. Anterior)
-                    </button>
-                    <button
-                        onClick={() => setCompararContra('mes_anterior')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            compararContra === 'mes_anterior' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        MoM (vs. Mes Anterior)
-                    </button>
-                    <button
-                        onClick={() => setCompararContra('ano_anterior')}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                            compararContra === 'ano_anterior' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100'
-                        }`}
-                    >
-                        YoY (vs. Año Anterior)
-                    </button>
+                        <option value="all">Todas las Sucursales</option>
+                        {sucursales.map((s) => (
+                            <option key={s.sucursal_id} value={s.sucursal_id}>
+                                {s.nombre} ({s.ciudad})
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                {/* Selectores de Fechas y Sucursal */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Calendar size={14} className="text-slate-400" />
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                        <span className="text-slate-400 font-bold text-xs">a</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Filter size={14} className="text-slate-400" />
-                        <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales.map((s) => (
-                                <option key={s.sucursal_id} value={s.sucursal_id}>
-                                    {s.nombre} ({s.ciudad})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-600">
+                    <span>Período Actual: <strong>{data?.periodo_actual.start_date || startDate}</strong></span>
+                    <span className="text-slate-300 font-extrabold">vs</span>
+                    <span>Período Anterior: <strong>{data?.periodo_comparativo.start_date || endDate}</strong></span>
+                    <Calendar size={14} className="text-slate-400 ml-1" />
                 </div>
             </div>
 
-            {/* TARJETAS COMPARATIVAS (PERÍODO ACTUAL VS PERÍODO ANTERIOR) */}
+            {/* 3 TARJETAS KPIS COMPARATIVAS PRINCIPALES */}
             {data && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    {/* TARJETA 1: INGRESOS COMPARATIVOS */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-indigo-100 flex flex-col justify-between space-y-4">
+                    {/* TARJETA 1: INGRESOS TOTALES */}
+                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
                         <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-indigo-950 block">Ingresos Totales</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">Período Actual vs Comparativo</span>
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-purple-100 text-purple-700 rounded-2xl">
+                                    <DollarSign size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900">Ingresos Totales</h3>
+                                    <span className="text-[10px] text-slate-400 font-bold">Período Actual vs Comparativo</span>
+                                </div>
                             </div>
                             {renderVariationBadge(data.variaciones.variacion_ingresos_pct, data.variaciones.estado_ingresos)}
                         </div>
 
-                        <div className="space-y-2">
-                            <div>
-                                <span className="text-[10px] font-black uppercase text-slate-400">PERÍODO ACTUAL ({data.periodo_actual.start_date})</span>
-                                <h2 className="text-2xl font-black text-slate-900">{formatBs(data.periodo_actual.ingresos)}</h2>
+                        <div>
+                            <div className="flex items-baseline justify-between">
+                                <h2 className="text-3xl font-black text-indigo-950">{loading ? '...' : formatBs(data.periodo_actual.ingresos)}</h2>
+                                {/* Sparkline morado simulado */}
+                                <svg className="w-20 h-8 text-purple-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <path d="M0 25 Q 25 15, 50 20 T 100 5" />
+                                </svg>
                             </div>
-                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500">
-                                <span>Período Anterior ({data.periodo_comparativo.start_date}):</span>
-                                <span className="text-slate-800 font-black">{formatBs(data.periodo_comparativo.ingresos)}</span>
-                            </div>
+                            <p className="text-xs text-slate-400 font-bold mt-2">
+                                Período Anterior ({data.periodo_comparativo.start_date}): <strong className="text-slate-700">{formatBs(data.periodo_comparativo.ingresos)}</strong>
+                            </p>
                         </div>
 
-                        <div className="pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-600 flex justify-between items-center">
-                            <span>Diferencia Neta:</span>
+                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
+                            <span className="text-slate-500">Diferencia Neta:</span>
                             <span className={data.variaciones.diferencia_ingresos >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
                                 {data.variaciones.diferencia_ingresos >= 0 ? '+' : ''}{formatBs(data.variaciones.diferencia_ingresos)}
                             </span>
                         </div>
                     </div>
 
-                    {/* TARJETA 2: ÓRDENES COMPARATIVAS */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-blue-100 flex flex-col justify-between space-y-4">
+                    {/* TARJETA 2: TOTAL DE ÓRDENES */}
+                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
                         <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-blue-950 block">Total de Órdenes</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">Tickets Válidos POS</span>
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-blue-100 text-blue-700 rounded-2xl">
+                                    <ShoppingBag size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900">Total de Órdenes</h3>
+                                    <span className="text-[10px] text-slate-400 font-bold">Tickets Válidos POS</span>
+                                </div>
                             </div>
                             {renderVariationBadge(data.variaciones.variacion_ordenes_pct, data.variaciones.estado_ordenes)}
                         </div>
 
-                        <div className="space-y-2">
-                            <div>
-                                <span className="text-[10px] font-black uppercase text-slate-400">PERÍODO ACTUAL ({data.periodo_actual.start_date})</span>
-                                <h2 className="text-2xl font-black text-slate-900">{data.periodo_actual.ordenes} ord.</h2>
+                        <div>
+                            <div className="flex items-baseline justify-between">
+                                <h2 className="text-3xl font-black text-blue-950">{loading ? '...' : `${data.periodo_actual.ordenes} ord.`}</h2>
+                                {/* Bar sparkline azul */}
+                                <div className="flex items-end gap-1 h-8">
+                                    <div className="w-2 bg-blue-200 h-4 rounded-xs"></div>
+                                    <div className="w-2 bg-blue-300 h-6 rounded-xs"></div>
+                                    <div className="w-2 bg-blue-500 h-8 rounded-xs"></div>
+                                    <div className="w-2 bg-blue-400 h-5 rounded-xs"></div>
+                                </div>
                             </div>
-                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500">
-                                <span>Período Anterior ({data.periodo_comparativo.start_date}):</span>
-                                <span className="text-slate-800 font-black">{data.periodo_comparativo.ordenes} ord.</span>
-                            </div>
+                            <p className="text-xs text-slate-400 font-bold mt-2">
+                                Período Anterior ({data.periodo_comparativo.start_date}): <strong className="text-slate-700">{data.periodo_comparativo.ordenes} ord.</strong>
+                            </p>
                         </div>
 
-                        <div className="pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-600 flex justify-between items-center">
-                            <span>Diferencia en Órdenes:</span>
+                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
+                            <span className="text-slate-500">Diferencia en Órdenes:</span>
                             <span className={data.variaciones.diferencia_ordenes >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
                                 {data.variaciones.diferencia_ordenes >= 0 ? '+' : ''}{data.variaciones.diferencia_ordenes} órdenes
                             </span>
                         </div>
                     </div>
 
-                    {/* TARJETA 3: TICKET MEDIO COMPARATIVO */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-emerald-100 flex flex-col justify-between space-y-4">
+                    {/* TARJETA 3: TICKET MEDIO */}
+                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col justify-between space-y-4">
                         <div className="flex justify-between items-start pb-3 border-b border-slate-100">
-                            <div>
-                                <span className="text-xs font-black uppercase tracking-wider text-emerald-950 block">Ticket Medio</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">Promedio por Ticket</span>
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
+                                    <Receipt size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900">Ticket Medio</h3>
+                                    <span className="text-[10px] text-slate-400 font-bold">Promedio por Ticket</span>
+                                </div>
                             </div>
                             {renderVariationBadge(data.variaciones.variacion_ticket_pct, data.variaciones.estado_ticket)}
                         </div>
 
-                        <div className="space-y-2">
-                            <div>
-                                <span className="text-[10px] font-black uppercase text-slate-400">PERÍODO ACTUAL</span>
-                                <h2 className="text-2xl font-black text-slate-900">{formatBs(data.periodo_actual.ticket_medio)}</h2>
+                        <div>
+                            <div className="flex items-baseline justify-between">
+                                <h2 className="text-3xl font-black text-emerald-950">{loading ? '...' : formatBs(data.periodo_actual.ticket_medio)}</h2>
+                                {/* Sparkline verde simulado */}
+                                <svg className="w-20 h-8 text-emerald-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <path d="M0 20 Q 30 28, 60 10 T 100 5" />
+                                </svg>
                             </div>
-                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500">
-                                <span>Período Anterior:</span>
-                                <span className="text-slate-800 font-black">{formatBs(data.periodo_comparativo.ticket_medio)}</span>
-                            </div>
+                            <p className="text-xs text-slate-400 font-bold mt-2">
+                                Período Anterior: <strong className="text-slate-700">{formatBs(data.periodo_comparativo.ticket_medio)}</strong>
+                            </p>
                         </div>
 
-                        <div className="pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-600 flex justify-between items-center">
-                            <span>Diferencia Ticket Medio:</span>
+                        <div className="pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between">
+                            <span className="text-slate-500">Diferencia Ticket Medio:</span>
                             <span className={data.variaciones.diferencia_ticket >= 0 ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
                                 {data.variaciones.diferencia_ticket >= 0 ? '+' : ''}{formatBs(data.variaciones.diferencia_ticket)}
                             </span>
@@ -373,39 +375,49 @@ export const BIComparativasView: React.FC = () => {
                 </div>
             )}
 
-            {/* BLOQUE DE ANÁLISIS AUTOMÁTICO EXPLICATIVO CON IA */}
+            {/* BLOQUE DE ANÁLISIS AUTOMÁTICO IA — CAUSA RAÍZ DE VARIACIÓN */}
             {data && (
-                <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-6 text-white shadow-md border border-indigo-800/60 space-y-3">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-600/50 rounded-xl text-amber-300 border border-indigo-400/30">
-                            <Info size={18} />
-                        </div>
-                        <h3 className="text-sm font-black uppercase tracking-wider text-indigo-300">Análisis Automático IA — Causa Raíz de Variación</h3>
+                <div className="bg-purple-50/70 rounded-3xl p-6 shadow-xs border border-purple-100 space-y-4">
+                    <div className="flex items-center gap-2 text-purple-900">
+                        <Sparkles size={18} className="text-purple-600" />
+                        <h3 className="text-sm font-black uppercase tracking-wider">Análisis Automático IA — Causa Raíz de Variación</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold text-slate-200">
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                            <span className="text-[10px] font-black uppercase text-amber-300 block">Diagnóstico de Ingresos</span>
-                            <p className="text-sm font-bold text-white">
-                                {data.variaciones.variacion_ingresos_pct !== null && data.variaciones.variacion_ingresos_pct >= 0
-                                    ? `Las ventas aumentaron un +${data.variaciones.variacion_ingresos_pct.toFixed(2)}% impulsadas por mayor volumen transaccional.`
-                                    : data.variaciones.variacion_ingresos_pct !== null
-                                    ? `Las ventas disminuyeron un ${data.variaciones.variacion_ingresos_pct.toFixed(2)}% principalmente por menor densidad de tickets emitidos.`
-                                    : 'Sin base comparativa previa registrada para este rango de fechas.'}
-                            </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Diagnóstico de Ingresos */}
+                        <div className="p-4 bg-white/90 rounded-2xl border border-purple-100/80 flex items-start gap-3.5">
+                            <div className="p-2.5 bg-purple-100 text-purple-700 rounded-2xl shrink-0">
+                                <TrendingUp size={18} />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black text-slate-900">Diagnóstico de Ingresos</h4>
+                                <p className="text-xs font-bold text-slate-600 mt-1">
+                                    {data.variaciones.variacion_ingresos_pct !== null && data.variaciones.variacion_ingresos_pct >= 0
+                                        ? <>Las ventas aumentaron un <strong className="text-purple-700 font-black">+{data.variaciones.variacion_ingresos_pct.toFixed(2)}%</strong> impulsadas por mayor volumen transaccional.</>
+                                        : data.variaciones.variacion_ingresos_pct !== null
+                                        ? <>Las ventas disminuyeron un <strong className="text-rose-700 font-black">{data.variaciones.variacion_ingresos_pct.toFixed(2)}%</strong> principalmente por menor densidad de tickets emitidos.</>
+                                        : 'Sin base comparativa previa registrada para este rango de fechas.'}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-1">
-                            <span className="text-[10px] font-black uppercase text-indigo-300 block">Descomposición Precio vs Volumen</span>
-                            <p className="text-xs text-slate-200">
-                                Ticket medio varió un <strong>{data.variaciones.variacion_ticket_pct !== null ? `${data.variaciones.variacion_ticket_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ticket_pct.toFixed(2)}%` : '0%'}</strong>, mientras que el volumen de tickets cambió en un <strong>{data.variaciones.variacion_ordenes_pct !== null ? `${data.variaciones.variacion_ordenes_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ordenes_pct.toFixed(2)}%` : '0%'}</strong>.
-                            </p>
+                        {/* Descomposición Precio vs Volumen */}
+                        <div className="p-4 bg-white/90 rounded-2xl border border-purple-100/80 flex items-start gap-3.5">
+                            <div className="p-2.5 bg-purple-100 text-purple-700 rounded-2xl shrink-0">
+                                <PieChart size={18} />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black text-slate-900">Descomposición Precio vs Volumen</h4>
+                                <p className="text-xs font-bold text-slate-600 mt-1">
+                                    Ticket medio varió un <strong className="text-purple-700 font-black">{data.variaciones.variacion_ticket_pct !== null ? `${data.variaciones.variacion_ticket_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ticket_pct.toFixed(2)}%` : '0%'}</strong>, mientras que el volumen de tickets cambió en un <strong className="text-purple-700 font-black">{data.variaciones.variacion_ordenes_pct !== null ? `${data.variaciones.variacion_ordenes_pct >= 0 ? '+' : ''}${data.variaciones.variacion_ordenes_pct.toFixed(2)}%` : '0%'}</strong>.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* TABLA DE DESGLOSE POR SUCURSAL COMPARATIVA */}
+            {/* TABLA DE DESGLOSE COMPARATIVO POR SUCURSAL */}
             {data?.desglose_sucursales && data.desglose_sucursales.length > 0 && (
                 <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -413,39 +425,44 @@ export const BIComparativasView: React.FC = () => {
                             <h3 className="text-base font-black text-slate-900">Desglose Comparativo por Sucursal</h3>
                             <p className="text-xs text-slate-400 font-bold">Rendimiento individual de cada tienda contra el período equivalente</p>
                         </div>
-                        <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">
-                            {data.desglose_sucursales.length} Sucursales
+                        <span className="text-xs font-black text-purple-700 bg-purple-50 px-3 py-1 rounded-xl border border-purple-100">
+                            🏪 {data.desglose_sucursales.length} Sucursales
                         </span>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
+                        <table className="w-full text-left text-xs border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
-                                    <th className="py-3 px-3">Sucursal</th>
-                                    <th className="py-3 px-3 text-right">Ingresos Actual</th>
-                                    <th className="py-3 px-3 text-right">Ingresos Anterior</th>
-                                    <th className="py-3 px-3 text-center">Variación %</th>
-                                    <th className="py-3 px-3 text-right">Órdenes Actual</th>
-                                    <th className="py-3 px-3 text-right">Órdenes Anterior</th>
-                                    <th className="py-3 px-3 text-right">TM Actual</th>
+                                    <th className="py-3 px-4">🏪 Sucursal</th>
+                                    <th className="py-3 px-4 text-right">💰 Ingresos Actual</th>
+                                    <th className="py-3 px-4 text-right">💸 Ingresos Anterior</th>
+                                    <th className="py-3 px-4 text-center">📉 Variación %</th>
+                                    <th className="py-3 px-4 text-right">🎟️ Órdenes Actual</th>
+                                    <th className="py-3 px-4 text-right">🎫 Órdenes Anterior</th>
+                                    <th className="py-3 px-4 text-right">📊 TM Actual</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                                 {data.desglose_sucursales.map((s) => (
-                                    <tr key={s.sucursal_id} className="hover:bg-indigo-50/40 transition-colors">
-                                        <td className="py-3 px-3 font-black text-slate-900 flex items-center gap-2">
-                                            <Store size={14} className="text-purple-600" />
-                                            <span>{s.nombre_sucursal}</span>
+                                    <tr key={s.sucursal_id} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-3.5 px-4 font-black text-slate-900 flex items-center gap-3">
+                                            <div className="p-2 bg-purple-100/70 text-purple-700 rounded-xl shrink-0">
+                                                <Store size={14} />
+                                            </div>
+                                            <div>
+                                                <span className="block font-black text-slate-900">{s.nombre_sucursal}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold block">Cochabamba</span>
+                                            </div>
                                         </td>
-                                        <td className="py-3 px-3 text-right text-slate-900">{formatBs(s.ingresos_actual)}</td>
-                                        <td className="py-3 px-3 text-right text-slate-500">{formatBs(s.ingresos_comparativo)}</td>
-                                        <td className="py-3 px-3 text-center">
+                                        <td className="py-3.5 px-4 text-right font-black text-slate-900">{formatBs(s.ingresos_actual)}</td>
+                                        <td className="py-3.5 px-4 text-right text-slate-500 font-extrabold">{formatBs(s.ingresos_comparativo)}</td>
+                                        <td className="py-3.5 px-4 text-center">
                                             {renderVariationBadge(s.variacion_ingresos_pct, s.variacion_ingresos_pct === null ? 'SIN_BASE_COMPARATIVA' : 'OK')}
                                         </td>
-                                        <td className="py-3 px-3 text-right">{s.ordenes_actual} ord.</td>
-                                        <td className="py-3 px-3 text-right text-slate-500">{s.ordenes_comparativo} ord.</td>
-                                        <td className="py-3 px-3 text-right text-emerald-700">{formatBs(s.ticket_medio_actual)}</td>
+                                        <td className="py-3.5 px-4 text-right font-black text-slate-900">{s.ordenes_actual} ord.</td>
+                                        <td className="py-3.5 px-4 text-right text-slate-500 font-extrabold">{s.ordenes_comparativo} ord.</td>
+                                        <td className="py-3.5 px-4 text-right text-slate-900 font-black">{formatBs(s.ticket_medio_actual)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -453,6 +470,18 @@ export const BIComparativasView: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* PIE DE PÁGINA INFORMATIVO Y DE TRAZABILIDAD */}
+            <div className="bg-slate-100/80 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between text-xs font-bold text-slate-500 gap-2">
+                <div className="flex items-center gap-1.5">
+                    <Info size={14} className="text-slate-400" />
+                    <span>Los cálculos se realizan en zona horaria <strong>America/La_Paz</strong>. Los datos provienen de MongoDB colección <strong>'sales'</strong>.</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-600">
+                    <Clock size={14} className="text-slate-400" />
+                    <span>Última actualización: <strong>{data?.ultima_actualizacion || '31/08/2026 15:00:00'}</strong></span>
+                </div>
+            </div>
 
         </div>
     );
