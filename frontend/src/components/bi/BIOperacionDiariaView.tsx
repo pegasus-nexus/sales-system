@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Calendar, RefreshCw, TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
-    RotateCcw, Sparkles, ChevronRight, Activity, Store,
+    RotateCcw, Sparkles, ChevronRight, Store,
     Clock, UserCheck, PackageX, Mail, Printer, Download, Settings, BarChart2
 } from 'lucide-react';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
@@ -40,7 +40,6 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
     onRefresh,
     onOpenOperatingHours
 }) => {
-    const [activeSubTab, setActiveSubTab] = useState<'dia' | 'comparativas' | 'monitor' | 'diagnostico'>('dia');
     const [expandedCard, setExpandedCard] = useState<'ingresos' | 'margen' | 'ia' | 'ticket' | 'ordenes' | null>(null);
 
     const hasNoSales = data && data.cantidad_ordenes === 0;
@@ -100,57 +99,6 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
     return (
         <div className="space-y-6 w-full font-sans">
             
-            {/* SUB-NAVEGACIÓN DE PESTAÑAS (SUBTAB BAR) */}
-            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        onClick={() => setActiveSubTab('dia')}
-                        className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                            activeSubTab === 'dia'
-                                ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                        }`}
-                    >
-                        <span>Operación Diaria Día a Día</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSubTab('comparativas')}
-                        className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                            activeSubTab === 'comparativas'
-                                ? 'bg-sky-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                        }`}
-                    >
-                        <span>Comparativas Multitemporales (DoD/WoW/MoM)</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSubTab('monitor')}
-                        className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                            activeSubTab === 'monitor'
-                                ? 'bg-sky-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                        }`}
-                    >
-                        <Activity size={14} className="text-sky-500" />
-                        <span>Monitor POS & Conexiones</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSubTab('diagnostico')}
-                        className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                            activeSubTab === 'diagnostico'
-                                ? 'bg-sky-600 text-white shadow-md'
-                                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/70'
-                        }`}
-                    >
-                        <Sparkles size={14} className="text-amber-500 animate-pulse" />
-                        <span>Diagnóstico IA del Día</span>
-                    </button>
-                </div>
-            </div>
-
             {/* BARRA DE FILTROS Y CONTROLES */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
                 {/* Presets Rápidos */}
