@@ -116,23 +116,23 @@ export default function PedidosPage() {
 
     const createMut = useMutation({
         mutationFn: createPedido,
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ['pedidos'] }); setShowCreate(false); resetForm(); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ['pedidos'] }); qc.invalidateQueries({ queryKey: ['inventario'] }); qc.invalidateQueries({ queryKey: ['movimientos'] });; setShowCreate(false); resetForm(); },
         onError: (err: any) => toast.error(err?.response?.data?.detail || err.message || 'Error al crear pedido')
     });
     const despacharMut = useMutation({
         mutationFn: despacharPedido,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }); qc.invalidateQueries({ queryKey: ['inventario'] }); qc.invalidateQueries({ queryKey: ['movimientos'] });,
         onError: (err: any) => toast.error(err?.response?.data?.detail || err.message || 'Error al despachar pedido')
     });
 
     const cancelarMut = useMutation({
         mutationFn: cancelarPedido,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }); qc.invalidateQueries({ queryKey: ['inventario'] }); qc.invalidateQueries({ queryKey: ['movimientos'] });,
         onError: (err: any) => toast.error(err?.response?.data?.detail || err.message || 'Error al cancelar pedido')
     });
     const aceptarMut = useMutation({
         mutationFn: aceptarPedido,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['pedidos'] }); qc.invalidateQueries({ queryKey: ['inventario'] }); qc.invalidateQueries({ queryKey: ['movimientos'] });,
         onError: (err: any) => toast.error(err?.response?.data?.detail || err.message || 'Error al aceptar pedido')
     });
 
@@ -810,7 +810,7 @@ export default function PedidosPage() {
                     onClose={() => setReceptionModal({ isOpen: false, pedido: null })} 
                     onSuccess={() => {
                         setReceptionModal({ isOpen: false, pedido: null });
-                        qc.invalidateQueries({ queryKey: ['pedidos'] });
+                        qc.invalidateQueries({ queryKey: ['pedidos'] }); qc.invalidateQueries({ queryKey: ['inventario'] }); qc.invalidateQueries({ queryKey: ['movimientos'] });;
                     }}
                 />
             )}
@@ -893,3 +893,4 @@ function ReceptionModal({ pedido, onClose, onSuccess }: { pedido: any; onClose: 
         </div>
     );
 }
+
