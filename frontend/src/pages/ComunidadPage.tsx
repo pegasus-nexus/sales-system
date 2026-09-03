@@ -5,6 +5,7 @@ import { ClientCombobox } from '../components/ClientCombobox';
 import { toast } from 'sonner';
 import { Users, Gift, MousePointerClick, RefreshCcw } from 'lucide-react';
 import { client } from '../api/api';
+import Pagination from '../components/Pagination';
 
 export default function ComunidadPage() {
     const { data: stats, refetch: refetchStats } = useQuery({
@@ -23,10 +24,12 @@ export default function ComunidadPage() {
         }
     });
 
+    const [miembrosPage, setMiembrosPage] = useState(1);
     const { data: miembros, isLoading: miembrosLoading, refetch: refetchMiembros } = useQuery({
-        queryKey: ['comunidad-miembros'],
+        queryKey: ['comunidad-miembros', miembrosPage],
         queryFn: async () => {
-            const res = await client<any>('/comunidad/miembros?limit=50');
+            const skip = (miembrosPage - 1) * 10;
+            const res = await client<any>(`/comunidad/miembros?limit=10&skip=${skip}`);
             return res;
         }
     });
@@ -154,12 +157,12 @@ export default function ComunidadPage() {
                                 <tr>
                                     <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
                                 </tr>
-                            ) : miembros?.length === 0 ? (
+                            ) : miembros?.items?.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
                                 </tr>
                             ) : (
-                                miembros?.map((miembro: any) => (
+                                miembros?.items?.map((miembro: any) => (
                                     <tr key={miembro._id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-3">
                                             <div className="font-bold text-gray-900">{miembro.nombre}</div>
@@ -210,6 +213,16 @@ export default function ComunidadPage() {
                         </tbody>
                     </table>
                 </div>
+                {miembros?.total > 10 && (
+                    <div className="p-4 border-t border-gray-100 bg-white">
+                        <Pagination 
+                            currentPage={miembrosPage}
+                            totalPages={Math.ceil(miembros.total / 10)} totalItems={miembros.total} itemsPerPage={10}
+                            onPageChange={setMiembrosPage}
+                        />
+                    </div>
+                )}
+
             </div>
 
             {/* FEXCO Users Table */}
@@ -283,4 +296,5 @@ function PercentIcon() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
     )
 }
+
 

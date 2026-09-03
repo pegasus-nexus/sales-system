@@ -120,24 +120,16 @@ class ComunidadService:
 
     @staticmethod
     async def get_stats(tenant_id: str):
-        """
-        Obtiene estadísticas para el administrador.
-        """
-        total_registrados = await ComunidadUser.find(ComunidadUser.tenant_id == tenant_id).count()
-        total_reclamados = await ComunidadUser.find(
-            ComunidadUser.tenant_id == tenant_id, 
-            ComunidadUser.ha_reclamado == True
-        ).count()
-        
-        total_visitas_globales = await VisitaRegistro.find(VisitaRegistro.tenant_id == tenant_id).count()
-        
+        from app.domain.models.cliente import Cliente
+        total_registrados = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True}).count()
+        total_reclamados = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True, "datos_crm.premios_canjeados.0": {"": True}}).count()
+        total_visitas_globales = await VisitaRegistro.find({"tenant_id": tenant_id}).count()
         return {
             "total_registrados": total_registrados,
             "total_reclamados": total_reclamados,
             "total_visitas_globales": total_visitas_globales,
             "tasa_conversion": round((total_reclamados / total_registrados * 100), 2) if total_registrados > 0 else 0
         }
-
     @staticmethod
     async def get_users(tenant_id: str, limit: int = 100, skip: int = 0) -> List[ComunidadUser]:
         return await ComunidadUser.find(
@@ -197,4 +189,5 @@ class ComunidadService:
             
             result.append(m_dict)
             
-        return result
+        total_count = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True}).count()
+        return {"items": result, "total": total_count, "page": (skip // limit) + 1, "limit": limit}
