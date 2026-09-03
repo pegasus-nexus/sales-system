@@ -178,7 +178,7 @@ export default function ComunidadPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 font-medium text-gray-700">
-                                            {miembro.fecha_afiliacion ? new Date(miembro.fecha_afiliacion).toLocaleDateString() : '-'}
+                                            {miembro.fecha_afiliacion ? new Date(miembro.fecha_afiliacion).toLocaleDateString() : (miembro.created_at ? new Date(miembro.created_at).toLocaleDateString() : '-')}
                                         </td>
                                         <td className="px-6 py-3 font-medium text-gray-700">
                                             {miembro.ultima_compra_fecha ? new Date(miembro.ultima_compra_fecha).toLocaleDateString() : '-'}
@@ -283,3 +283,4 @@ function PercentIcon() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
     )
 }
+
