@@ -82,7 +82,20 @@ async def register_web_member(data: MiembroWebInput, request: Request, tenant_id
 
 # --- Endpoints Privados (Para el Administrador en SalesSystem) ---
 
+
+@router.get("/premios-uso")
+async def get_premios_uso(current_user: User = Depends(get_current_active_user)):
+    """
+    Devuelve un diccionario con el ID del premio y cuántas veces ha sido canjeado.
+    """
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+         raise HTTPException(status_code=403, detail="No tienes permisos")
+         
+    tenant_id = current_user.tenant_id or "default"
+    return await ComunidadService.get_premios_uso(tenant_id)
+
 @router.get("/stats")
+
 async def get_stats(current_user: User = Depends(get_current_active_user)):
     """
     Estadísticas del módulo de comunidad. Solo para administradores.
