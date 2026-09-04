@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Gift, Plus, Trash2, Edit2, Save, X, Eye, EyeOff } from 'lucide-react';
 import { client } from '../api/api';
@@ -18,6 +18,15 @@ export default function PremiosWebPage() {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<WebReward>>({});
+
+    
+    const { data: usage } = useQuery({
+        queryKey: ['premios-uso'],
+        queryFn: async () => {
+            const res = await client<Record<string, number>>('/comunidad/premios-uso');
+            return res;
+        }
+    });
 
     const { data: config, isLoading } = useQuery({
         queryKey: ['web-config'],
@@ -50,6 +59,23 @@ export default function PremiosWebPage() {
 
     const rewards: WebReward[] = config?.rewards || [];
 
+    
+    const handleEditClick = (reward: WebReward) => {
+        const usos = usage?.[reward.id] || 0;
+        if (usos > 0) {
+            const ok = confirm(`¡ATENCIÓN! Este premio ya ha sido canjeado por ${usos} cliente(s).
+
+Si cambias el título, descripción o condiciones, estarás modificando el premio para quienes ya lo tienen, lo que podría perjudicar la experiencia del cliente.
+
+Se recomienda OCULTAR este premio y crear uno nuevo en lugar de editarlo.
+
+¿Estás absolutamente seguro de que quieres editarlo?`);
+            if (!ok) return;
+        }
+        setIsEditing(reward.id);
+        setEditForm(reward);
+    };
+
     const handleSave = () => {
         const updatedRewards = rewards.map(r => r.id === isEditing ? { ...r, ...editForm } : r);
         mutation.mutate({ rewards: updatedRewards });
@@ -60,7 +86,7 @@ export default function PremiosWebPage() {
             id: `premio_${Date.now()}`,
             title: 'Nuevo Premio',
             tag: 'Etiqueta',
-            desc: 'Descripción del premio...',
+            desc: 'DescripciÃ³n del premio...',
             img: '/img/placeholder.webp',
             validity: '1 Mes',
             is_active: true
@@ -69,7 +95,20 @@ export default function PremiosWebPage() {
     };
 
     const handleDelete = (id: string) => {
-        if (!confirm('¿Estás seguro de eliminar este premio?')) return;
+        
+        const usos = usage?.[id] || 0;
+        if (usos > 0) {
+            const ok = confirm(`¡CUIDADO! Este premio ya ha sido canjeado por ${usos} cliente(s).
+
+Si lo eliminas, podría desaparecer de sus perfiles o causar errores.
+Lo recomendable es simplemente cambiar su estado a 'Oculto'.
+
+¿Estás seguro de ELIMINARLO permanentemente?`);
+            if (!ok) return;
+        } else {
+            if (!confirm('¿Estás seguro de eliminar este premio?')) return;
+        }
+
         const updatedRewards = rewards.filter(r => r.id !== id);
         mutation.mutate({ rewards: updatedRewards });
     };
@@ -87,7 +126,7 @@ export default function PremiosWebPage() {
                         <Gift className="text-indigo-600" />
                         Premios y Beneficios Web
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">Gestiona los regalos dinámicos que se muestran en la landing page.</p>
+                    <p className="text-sm text-gray-500 mt-1">Gestiona los regalos dinÃ¡micos que se muestran en la landing page.</p>
                 </div>
                 <button
                     onClick={handleAdd}
@@ -103,7 +142,7 @@ export default function PremiosWebPage() {
                     <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-500">
                         <tr>
                             <th className="py-4 px-6 font-semibold">Premio</th>
-                            <th className="py-4 px-6 font-semibold">Descripción</th>
+                            <th className="py-4 px-6 font-semibold">DescripciÃ³n</th>
                             <th className="py-4 px-6 font-semibold">Validez</th>
                             <th className="py-4 px-6 font-semibold">Estado</th>
                             <th className="py-4 px-6 font-semibold text-right">Acciones</th>
@@ -122,7 +161,7 @@ export default function PremiosWebPage() {
                                         <div className="flex flex-col gap-2">
                                             <input 
                                                 className="border border-gray-200 rounded px-2 py-1 text-sm font-bold"
-                                                value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="Título" />
+                                                value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="TÃ­tulo" />
                                             <input 
                                                 className="border border-gray-200 rounded px-2 py-1 text-xs"
                                                 value={editForm.tag} onChange={e => setEditForm({...editForm, tag: e.target.value})} placeholder="Etiqueta (ej: Regalo VIP)" />
@@ -144,7 +183,7 @@ export default function PremiosWebPage() {
                                     {isEditing === reward.id ? (
                                         <textarea 
                                             className="border border-gray-200 rounded px-2 py-1 text-sm w-full h-20 resize-none"
-                                            value={editForm.desc} onChange={e => setEditForm({...editForm, desc: e.target.value})} placeholder="Descripción del premio" />
+                                            value={editForm.desc} onChange={e => setEditForm({...editForm, desc: e.target.value})} placeholder="DescripciÃ³n del premio" />
                                     ) : (
                                         <p className="text-gray-500 line-clamp-2">{reward.desc}</p>
                                     )}
@@ -172,7 +211,7 @@ export default function PremiosWebPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => { setIsEditing(reward.id); setEditForm(reward); }} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"><Edit2 size={18} /></button>
+                                                <button onClick={() => handleEditClick(reward)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"><Edit2 size={18} /></button>
                                                 <button onClick={() => handleDelete(reward.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
                                             </>
                                         )}
@@ -186,3 +225,4 @@ export default function PremiosWebPage() {
         </div>
     );
 }
+
