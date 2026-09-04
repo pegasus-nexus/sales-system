@@ -118,7 +118,7 @@ async def get_users(limit: int = 100, skip: int = 0, current_user: User = Depend
     return await ComunidadService.get_users(tenant_id, limit, skip)
 
 @router.get("/miembros")
-async def get_miembros(limit: int = 100, skip: int = 0, current_user: User = Depends(get_current_active_user)):
+async def get_miembros(limit: int = 100, skip: int = 0, search: Optional[str] = None, current_user: User = Depends(get_current_active_user)):
     """
     Lista de clientes oficiales etiquetados como miembros de la comunidad web.
     """
@@ -126,7 +126,7 @@ async def get_miembros(limit: int = 100, skip: int = 0, current_user: User = Dep
          raise HTTPException(status_code=403, detail="No tienes permisos")
          
     tenant_id = current_user.tenant_id or "default"
-    return await ComunidadService.get_miembros_comunidad(tenant_id, limit, skip)
+    return await ComunidadService.get_miembros_comunidad(tenant_id, limit, skip, search)
 
 
 @router.post("/afiliar/{cliente_id}")

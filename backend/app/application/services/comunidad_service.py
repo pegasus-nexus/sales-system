@@ -143,7 +143,7 @@ class ComunidadService:
 
         from app.domain.models.cliente import Cliente
         total_registrados = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True}).count()
-        total_reclamados = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True, "datos_crm.premios_canjeados.0": {"": True}}).count()
+        total_reclamados = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True, "datos_crm.premios_canjeados.0": {"$exists": True}}).count()
         total_visitas_globales = await VisitaRegistro.find({"tenant_id": tenant_id}).count()
         return {
             "total_registrados": total_registrados,
@@ -158,20 +158,33 @@ class ComunidadService:
         ).sort("-created_at").skip(skip).limit(limit).to_list()
 
     @staticmethod
-    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0):
+    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0, search: Optional[str] = None):
         from app.domain.models.cliente import Cliente
         from app.domain.models.sale import Sale
         
-        miembros = await Cliente.find(
-            Cliente.tenant_id == tenant_id,
-            Cliente.is_miembro_comunidad == True
-        ).sort("-created_at").skip(skip).limit(limit).to_list()
+        query = {
+            "tenant_id": tenant_id,
+            "is_miembro_comunidad": True
+        }
+        
+        if search:
+            query["$or"] = [
+                {"nombre": {"$regex": search, "$options": "i"}},
+                {"numero_tarjeta": {"$regex": search, "$options": "i"}},
+                {"telefono": {"$regex": search, "$options": "i"}},
+                {"email": {"$regex": search, "$options": "i"}},
+                {"nit_ci": {"$regex": search, "$options": "i"}}
+            ]
+        
+        miembros = await Cliente.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
         
         # Manual Join for CRM metrics
         if not miembros:
-            return []
+            return {"items": [], "total": 0, "page": (skip // limit) + 1, "limit": limit}
             
         cliente_ids = [str(m.id) for m in miembros]
+        
+        from beanie.operators import In
         
         # Fetch matching sales
         sales = await Sale.find(
@@ -207,8 +220,9 @@ class ComunidadService:
             # Extraer premios_canjeados de datos_crm
             datos_crm = getattr(m, 'datos_crm', {}) or {}
             m_dict["premios_canjeados"] = datos_crm.get("premios_canjeados", [])
+            m_dict["premios_canjeados_fechas"] = datos_crm.get("premios_canjeados_fechas", {})
             
             result.append(m_dict)
             
-        total_count = await Cliente.find({"tenant_id": tenant_id, "is_miembro_comunidad": True}).count()
+        total_count = await Cliente.find(query).count()
         return {"items": result, "total": total_count, "page": (skip // limit) + 1, "limit": limit}
