@@ -244,20 +244,20 @@ Lo recomendable es simplemente cambiar su estado a 'Oculto'.
                             
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Título del Premio <span className="text-red-500">*</span></label>
-                                <input type="text" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                <input type="text" className="w-full border border-gray-200 bg-white text-gray-900 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
                                     value={editForm.title || ''} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="Ej: Trufas de Chocolate" />
                             </div>
 
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">Etiqueta</label>
-                                    <input type="text" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                    <input type="text" className="w-full border border-gray-200 bg-white text-gray-900 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
                                         value={editForm.tag || ''} onChange={e => setEditForm({...editForm, tag: e.target.value})} placeholder="Ej: EXCLUSIVO" />
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-sm font-semibold text-gray-700 mb-1">Días de Validez <span className="text-red-500">*</span></label>
                                     <div className="relative">
-                                        <input type="number" min="1" className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                        <input type="number" min="1" className="w-full border border-gray-200 bg-white text-gray-900 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
                                             value={editForm.validity_days || ''} onChange={e => setEditForm({...editForm, validity_days: parseInt(e.target.value) || 0})} placeholder="Ej: 14" />
                                         <Calendar size={16} className="absolute left-3 top-2.5 text-gray-400" />
                                     </div>
@@ -266,7 +266,7 @@ Lo recomendable es simplemente cambiar su estado a 'Oculto'.
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Descripción <span className="text-red-500">*</span></label>
-                                <textarea className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm h-20 resize-none focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                <textarea className="w-full border border-gray-200 bg-white text-gray-900 rounded-xl px-3 py-2 text-sm h-20 resize-none focus:ring-2 focus:ring-indigo-500 outline-none" 
                                     value={editForm.desc || ''} onChange={e => setEditForm({...editForm, desc: e.target.value})} placeholder="Condiciones del premio..." />
                             </div>
 
