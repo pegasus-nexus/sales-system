@@ -237,8 +237,9 @@ export default function ComunidadPage() {
                                                         
                                                         let expiresStr = '';
                                                         let isExpired = false;
-                                                        if (dateObj && rewardConfig?.validity_days) {
-                                                            const expiresDate = new Date(dateObj.getTime() + rewardConfig.validity_days * 24 * 60 * 60 * 1000);
+                                                        const validityDays = rewardConfig?.validity_days || 14;
+                                                        if (dateObj) {
+                                                            const expiresDate = new Date(dateObj.getTime() + validityDays * 24 * 60 * 60 * 1000);
                                                             expiresStr = expiresDate.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                                                             isExpired = new Date() > expiresDate;
                                                         }
