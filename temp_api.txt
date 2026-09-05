@@ -1,0 +1,9 @@
+﻿export const updateSaleDate = async (saleId: string, nueva_fecha: string) => {
+    const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api/v1';
+    const res = await fetch(API_URL + '/ventas/' + saleId + '/fecha', {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ nueva_fecha: new Date(nueva_fecha).toISOString() }),
+    });
+    return handleResponse(res);
+};

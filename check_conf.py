@@ -1,0 +1,10 @@
+﻿from pymongo import MongoClient
+
+client = MongoClient("mongodb+srv://admin_prod:VigKJWIIMV6CXKsH@sales-system.hh277gd.mongodb.net/?retryWrites=true&w=majority")
+db = client["sales_system_prod"]
+
+conf = db["web_configs"].find_one()
+if conf and "rewards" in conf:
+    print(conf["rewards"])
+else:
+    print("No rewards found in config")

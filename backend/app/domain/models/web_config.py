@@ -9,7 +9,8 @@ class WebReward(BaseModel):
     tag: str
     desc: str
     img: str
-    validity: str
+    validity: str = ''
+    validity_days: int = 14
     is_active: bool = True
 
 class WebConfig(Document):
