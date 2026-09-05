@@ -20,7 +20,7 @@ export default function ComunidadPage() {
 
     const handleEntregarPremio = async (clienteId: string, premioId: string) => {
         try {
-            const res = await client(`/comunidad/entregar-premio/${clienteId}/${premioId}`, { method: 'POST' });
+            const res = await client<any>(`/comunidad/entregar-premio/${clienteId}/${premioId}`, { method: 'POST' });
             if (res.status === 'ok') {
                 queryClient.invalidateQueries({ queryKey: ['miembros-comunidad'] });
             }
