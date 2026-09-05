@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClientCombobox } from '../components/ClientCombobox';
 import { toast } from 'sonner';
-import { Users, Gift, MousePointerClick, RefreshCcw, Search } from 'lucide-react';
+import { Users, Gift, MousePointerClick, RefreshCcw, Search, CheckCircle } from 'lucide-react';
 import { client } from '../api/api';
 import Pagination from '../components/Pagination';
 
@@ -15,6 +15,20 @@ export default function ComunidadPage() {
             return res;
         }
     });
+
+    const queryClient = useQueryClient();
+
+    const handleEntregarPremio = async (clienteId: string, premioId: string) => {
+        try {
+            const res = await client(`/comunidad/entregar-premio/${clienteId}/${premioId}`, { method: 'POST' });
+            if (res.status === 'ok') {
+                queryClient.invalidateQueries({ queryKey: ['miembros-comunidad'] });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
 
     const { data: stats, refetch: refetchStats } = useQuery({
         queryKey: ['comunidad-stats'],
@@ -244,13 +258,22 @@ export default function ComunidadPage() {
                                                             isExpired = new Date() > expiresDate;
                                                         }
 
+                                                        const isEntregado = miembro.datos_crm?.premios_entregados?.includes(p);
+                                                        
                                                         return (
-                                                            <div key={i} className="flex flex-col gap-0.5 mb-1 bg-gray-50/50 p-1.5 rounded-lg border border-gray-100">
+                                                            <div key={i} className={`flex flex-col gap-0.5 mb-1 p-2 rounded-lg border ${isEntregado ? 'bg-gray-100 border-gray-200 opacity-60' : 'bg-gray-50/50 border-gray-100'}`}>
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded text-[10px] font-bold w-fit whitespace-nowrap">
-                                                                        {prizeName}
-                                                                    </span>
-                                                                    {expiresStr && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded text-[10px] font-bold w-fit whitespace-nowrap">
+                                                                            {prizeName}
+                                                                        </span>
+                                                                        {isEntregado && (
+                                                                            <span className="flex items-center gap-1 text-[9px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded uppercase">
+                                                                                <CheckCircle size={10} /> Entregado
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    {expiresStr && !isEntregado && (
                                                                         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isExpired ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
                                                                             {isExpired ? 'VENCIDO' : 'VIGENTE'}
                                                                         </span>
@@ -259,6 +282,14 @@ export default function ComunidadPage() {
                                                                 <span className="text-[10px] text-gray-500 font-medium mt-0.5">Canjeado: {dateStr}</span>
                                                                 {expiresStr && (
                                                                     <span className="text-[10px] text-gray-400 font-medium">Válido hasta: {expiresStr}</span>
+                                                                )}
+                                                                {!isEntregado && (
+                                                                    <button 
+                                                                        onClick={() => handleEntregarPremio(miembro.id, p)}
+                                                                        className="mt-1 flex items-center justify-center gap-1 w-full py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[10px] font-bold transition-colors"
+                                                                    >
+                                                                        <CheckCircle size={12} /> Marcar como Entregado
+                                                                    </button>
                                                                 )}
                                                             </div>
                                                         );
