@@ -87,10 +87,6 @@ Se recomienda OCULTAR este premio y crear uno nuevo en lugar de editarlo.
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        const updatedRewards = rewards.map(r => r.id === isEditing ? { ...r, ...editForm } : r);
-        mutation.mutate({ rewards: updatedRewards });
-    };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
