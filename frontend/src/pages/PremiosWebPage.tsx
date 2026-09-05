@@ -19,6 +19,8 @@ export default function PremiosWebPage() {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<WebReward>>({});
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     
     const { data: usage } = useQuery({
@@ -88,8 +90,6 @@ Se recomienda OCULTAR este premio y crear uno nuevo en lugar de editarlo.
     };
 
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
