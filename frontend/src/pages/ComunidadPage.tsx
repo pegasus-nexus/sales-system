@@ -228,7 +228,7 @@ export default function ComunidadPage() {
                                             {miembro.premios_canjeados?.length > 0 ? (
                                                 <div className="flex flex-col gap-2">
                                                     {miembro.premios_canjeados.map((p: string, i: number) => {
-                                                        const dateIso = miembro.premios_canjeados_fechas?.[p];
+                                                        const dateIso = miembro.premios_canjeados_fechas?.[p] || miembro.fecha_afiliacion || miembro.created_at;
                                                         const dateObj = dateIso ? new Date(dateIso) : null;
                                                         const dateStr = dateObj ? dateObj.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no registrada';
                                                         
