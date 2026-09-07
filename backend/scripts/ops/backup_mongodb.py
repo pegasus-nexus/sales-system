@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import os
 import json
 import hashlib
@@ -7,14 +7,13 @@ from bson import json_util
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.infrastructure.core.config import settings
 
-
 async def run_mongodb_backup():
     print("=" * 90)
     print("EJECUTANDO SCRIPT OPERATIVO DE RESPALDO DE BASE DE DATOS MONGODB")
-    print("PEGASUS SALES SYSTEM — BASELINE CONGELADO (COMMIT afc8029)")
+    print("PEGASUS SALES SYSTEM ?" BASELINE CONGELADO (COMMIT afc8029)")
     print("=" * 90)
 
-    client = AsyncIOMotorClient("mongodb+srv://admin_prod:VigKJWIIMV6CXKsH@sales-system.hh277gd.mongodb.net/?retryWrites=true&w=majority")
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client["sales_system_prod"]
     db_name = db.name
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -55,14 +54,14 @@ async def run_mongodb_backup():
             "file_size_bytes": os.path.getsize(col_file_path)
         }
         total_docs_backed_up += doc_count
-        print(f"  [RESPALDO] Colección '{col_name:<15}': {doc_count:>6} docs | {os.path.getsize(col_file_path):>8} bytes -> ✓ HECHO")
+        print(f"  [RESPALDO] ColecciA3n '{col_name:<15}': {doc_count:>6} docs | {os.path.getsize(col_file_path):>8} bytes -> o" HECHO")
 
     manifest["total_documents"] = total_docs_backed_up
     manifest_path = os.path.join(target_backup_dir, "inventory_manifest.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    # Generación de CHECKSUM SHA-256
+    # GeneraciA3n de CHECKSUM SHA-256
     sha256_hash = hashlib.sha256()
     for root, _, files in os.walk(target_backup_dir):
         for names in sorted(files):
@@ -83,7 +82,7 @@ async def run_mongodb_backup():
     print(f"  Documentos Resguardados: {total_docs_backed_up} docs")
     print(f"  Checksum SHA-256:        {checksum_hex}")
     print(f"  Manifest JSON:           {manifest_path}")
-    print("✓ RESPALDO COMPLETADO CON CÓDIGO 0")
+    print("o" RESPALDO COMPLETADO CON CA"DIGO 0")
 
 if __name__ == "__main__":
     asyncio.run(run_mongodb_backup())
