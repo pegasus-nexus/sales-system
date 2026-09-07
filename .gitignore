@@ -1,4 +1,4 @@
-﻿# ==========================================
+# ==========================================
 # Archivos y Carpetas Globales (Monorepo)
 # ==========================================
 
@@ -9,8 +9,19 @@
 backend/.env
 .cache.sqlite
 
-# Exportaciones temporales
+# Scratch / Debug / Temporary scripts (NUNCA deben subirse al repo)
+scratch/
+backend/scratch/
+backend/scripts/ops/check_*.py
+backend/scripts/ops/fix_*.py
+backend/scripts/ops/rename_*.py
+backend/scripts/ops/revert_*.py
+backend/scripts/ops/restore_missing_*.py
+backend/scripts/ops/restore_tenant.py
+
+# Exportaciones y backups locales
 exports/
+backend/backups/
 
 # Sistemas Operativos
 .DS_Store

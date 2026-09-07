@@ -3,25 +3,37 @@ import os
 import json
 import hashlib
 from bson import json_util
-from app.db import get_raw_db
+from motor.motor_asyncio import AsyncIOMotorClient
+from app.infrastructure.core.config import settings
 
 
 async def run_mongodb_restore(target_db_name: str = "sales_system_restore_test"):
+    """
+    Restauración dinámica de MongoDB desde el backup más reciente.
+    Lee el manifest para descubrir qué colecciones respaldar,
+    en lugar de depender de una lista hardcodeada.
+    """
     print("=" * 90)
-    print("EJECUTANDO SCRIPT OPERATIVO DE RESTAURACIÓN DE MONGODB EN ENTORNO AISLADO")
+    print("PEGASUS SALES SYSTEM — RESTAURACIÓN DINÁMICA DE MONGODB")
     print(f"BASE DE DATOS OBJETIVO: {target_db_name}")
-    print("PEGASUS SALES SYSTEM — BASELINE CONGELADO (COMMIT afc8029)")
     print("=" * 90)
 
-    raw_db = await get_raw_db()
-    client = raw_db.client
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
     target_db = client[target_db_name]
 
-    backup_base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "backups")
+    backup_base_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "backups"
+    )
     if not os.path.exists(backup_base_dir):
-        raise FileNotFoundError(f"No existe el directorio de backups: {backup_base_dir}")
+        raise FileNotFoundError(
+            f"No existe el directorio de backups: {backup_base_dir}"
+        )
 
-    subdirs = [os.path.join(backup_base_dir, d) for d in os.listdir(backup_base_dir) if os.path.isdir(os.path.join(backup_base_dir, d))]
+    subdirs = [
+        os.path.join(backup_base_dir, d)
+        for d in os.listdir(backup_base_dir)
+        if os.path.isdir(os.path.join(backup_base_dir, d))
+    ]
     if not subdirs:
         raise FileNotFoundError("No se encontraron carpetas de backup.")
 
@@ -41,15 +53,18 @@ async def run_mongodb_restore(target_db_name: str = "sales_system_restore_test")
         for names in sorted(files):
             if names != "checksum_sha256.txt":
                 filepath = os.path.join(root, names)
-                with open(filepath, 'rb') as f:
+                with open(filepath, "rb") as f:
                     for byte_block in iter(lambda: f.read(65536), b""):
                         sha256_hash.update(byte_block)
 
     actual_checksum = sha256_hash.hexdigest()
     if actual_checksum != expected_checksum:
-        raise ValueError(f"CRÍTICO: El Checksum SHA-256 no coincide. Esperado: {expected_checksum}, Actual: {actual_checksum}")
+        raise ValueError(
+            f"CRÍTICO: Checksum SHA-256 no coincide. "
+            f"Esperado: {expected_checksum}, Actual: {actual_checksum}"
+        )
 
-    print(f"✓ CHECKSUM SHA-256 VERIFICADO INTRACTABLE: {actual_checksum}\n")
+    print(f"CHECKSUM SHA-256 VERIFICADO: {actual_checksum}\n")
 
     # 2. Carga de Manifest
     manifest_path = os.path.join(latest_backup_dir, "inventory_manifest.json")
@@ -59,13 +74,14 @@ async def run_mongodb_restore(target_db_name: str = "sales_system_restore_test")
     restored_summary = {}
     total_docs_restored = 0
 
-    # 3. Restauración Colección por Colección en la BD Aislada
+    # 3. Restauración dinámica: lee TODAS las colecciones del manifest
     for col_name, info in manifest["collections"].items():
         col_file_path = os.path.join(latest_backup_dir, f"{col_name}.jsonl")
         if not os.path.exists(col_file_path):
+            print(f"  [ADVERTENCIA] Archivo {col_name}.jsonl no encontrado, saltando.")
             continue
 
-        # Limpiar colección de prueba en la BD restaurada
+        # Limpiar colección en la BD objetivo
         await target_db[col_name].drop()
 
         docs_to_insert = []
@@ -80,10 +96,13 @@ async def run_mongodb_restore(target_db_name: str = "sales_system_restore_test")
         restored_cnt = await target_db[col_name].count_documents({})
         restored_summary[col_name] = restored_cnt
         total_docs_restored += restored_cnt
-        print(f"  [RESTAURACIÓN] Colección '{col_name:<15}': {restored_cnt:>6} docs en {target_db_name} -> ✓ RESTAURADO")
+        print(
+            f"  [RESTAURACIÓN] '{col_name:<30}': {restored_cnt:>6} docs "
+            f"en {target_db_name} -> RESTAURADO"
+        )
 
     print("\n" + "=" * 90)
-    print("EVALUACIÓN DE EQUIVALENCIA DE DOCUMENTOS (ORIGEN vs. RESTAURADO)")
+    print("EVALUACIÓN DE EQUIVALENCIA (ORIGEN vs. RESTAURADO)")
     print("=" * 90)
 
     mismatch = False
@@ -93,14 +112,23 @@ async def run_mongodb_restore(target_db_name: str = "sales_system_restore_test")
         diff = abs(orig_cnt - rest_cnt)
         if diff != 0:
             mismatch = True
-            print(f"  ❌ Discrepancia en '{col_name}': Origen={orig_cnt}, Restaurado={rest_cnt}, Dif={diff}")
+            print(
+                f"  DISCREPANCIA en '{col_name}': "
+                f"Origen={orig_cnt}, Restaurado={rest_cnt}, Dif={diff}"
+            )
         else:
-            print(f"  ✓ Equivalencia 1:1 en '{col_name:<15}': {orig_cnt} docs == {rest_cnt} docs (Diferencia = 0)")
+            print(
+                f"  Equivalencia 1:1 en '{col_name:<30}': "
+                f"{orig_cnt} docs == {rest_cnt} docs"
+            )
 
     if not mismatch:
-        print("\n🏆 RESULTADO RESTAURACIÓN: ✓ PASS — CERO PÉRDIDA DE DATOS Y CONTEOS 1:1 EQUIVALENTES")
+        print(
+            "\nRESULTADO: PASS — CERO PÉRDIDA DE DATOS, CONTEOS 1:1 EQUIVALENTES"
+        )
     else:
-        print("\n❌ RESULTADO RESTAURACIÓN: FAIL — DISCREPANCIA EN DOCUMENTOS RESTAURADOS")
+        print("\nRESULTADO: FAIL — DISCREPANCIA EN DOCUMENTOS RESTAURADOS")
+
 
 if __name__ == "__main__":
     asyncio.run(run_mongodb_restore())
