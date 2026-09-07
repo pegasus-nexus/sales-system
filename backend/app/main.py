@@ -41,8 +41,11 @@ app = FastAPI(
 from app.infrastructure.middleware.tenant_context import TenantContextMiddleware
 from app.middleware.request_logging import ObservabilityRequestLoggingMiddleware
 
+from app.infrastructure.middleware.security_headers import SecurityHeadersMiddleware
+
 app.add_middleware(ObservabilityRequestLoggingMiddleware)
 app.add_middleware(TenantContextMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -55,15 +58,10 @@ async def global_exception_handler(request: Request, exc: Exception):
     error_id = f"ERR-{uuid.uuid4().hex[:8].upper()}"
     print(f"[{error_id}] Unhandled Exception on {request.method} {request.url.path}")
     traceback.print_exc()
-    origin = request.headers.get("origin", "*")
     response = JSONResponse(
         status_code=500,
-        content={"detail": "Tuvimos un problema procesando tu solicitud. Por favor intenta de nuevo mÃ¡s tarde.", "error_id": error_id}
+        content={"detail": "Tuvimos un problema procesando tu solicitud. Por favor intenta de nuevo más tarde.", "error_id": error_id}
     )
-    response.headers["Access-Control-Allow-Origin"] = origin
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 
@@ -73,7 +71,7 @@ def index():
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
-    """Real-time health check â€” verifies API status and MongoDB connection."""
+    """Real-time health check — verifies API status and MongoDB connection."""
     try:
         from app.infrastructure.db import get_client
         client = get_client()
@@ -97,13 +95,12 @@ if not origins or settings.ENVIRONMENT != "production":
         if local_origin not in origins:
             origins.append(local_origin)
 
-# Permitir siempre dominios de producciÃ³n Pegasus y landing pages
+# Permitir siempre dominios de producción Pegasus y landing pages
 for extra_origin in [
     "https://app.pegasus-nexus.com",
     "https://chocolatestaboada.pro",
     "https://www.chocolatestaboada.pro",
-    "https://taboada-fexco.vercel.app",
-    "http://localhost:4321"
+    "https://taboada-fexco.vercel.app"
 ]:
     if extra_origin not in origins:
         origins.append(extra_origin)
@@ -111,9 +108,8 @@ for extra_origin in [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://.*|http://localhost:.*", # Permitir cualquier origen HTTPS o localhost para evitar bloqueos CORS 400 Bad Request
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
