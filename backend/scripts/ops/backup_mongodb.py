@@ -10,7 +10,7 @@ from app.infrastructure.core.config import settings
 async def run_mongodb_backup():
     print("=" * 90)
     print("EJECUTANDO SCRIPT OPERATIVO DE RESPALDO DE BASE DE DATOS MONGODB")
-    print("PEGASUS SALES SYSTEM ?" BASELINE CONGELADO (COMMIT afc8029)")
+    print("PEGASUS SALES SYSTEM - BASELINE CONGELADO (COMMIT afc8029)")
     print("=" * 90)
 
     client = AsyncIOMotorClient(settings.MONGODB_URL)
@@ -23,7 +23,7 @@ async def run_mongodb_backup():
     os.makedirs(target_backup_dir, exist_ok=True)
 
     collections_to_backup = [
-        "sales", "products", "inventario", "clientes", "sale_item_analytics", "caja_movimientos", "inventory_logs", "compras", "comprobantes_compra",
+        "sales", "products", "inventario", "clientes", "sale_item_analytics", "caja_movimientos", "caja_gasto_categorias", "caja_sesiones", "inventory_logs", "compras", "comprobantes_compra",
         "sucursales", "descuentos", "audit_logs", "users", "tenants"
     ]
 
@@ -54,14 +54,14 @@ async def run_mongodb_backup():
             "file_size_bytes": os.path.getsize(col_file_path)
         }
         total_docs_backed_up += doc_count
-        print(f"  [RESPALDO] ColecciA3n '{col_name:<15}': {doc_count:>6} docs | {os.path.getsize(col_file_path):>8} bytes -> o" HECHO")
+        print(f"  [RESPALDO] Coleccion '{col_name:<20}': {doc_count:>6} docs | {os.path.getsize(col_file_path):>8} bytes -> [PASS] HECHO")
 
     manifest["total_documents"] = total_docs_backed_up
     manifest_path = os.path.join(target_backup_dir, "inventory_manifest.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    # GeneraciA3n de CHECKSUM SHA-256
+    # Generacion de CHECKSUM SHA-256
     sha256_hash = hashlib.sha256()
     for root, _, files in os.walk(target_backup_dir):
         for names in sorted(files):
@@ -82,7 +82,7 @@ async def run_mongodb_backup():
     print(f"  Documentos Resguardados: {total_docs_backed_up} docs")
     print(f"  Checksum SHA-256:        {checksum_hex}")
     print(f"  Manifest JSON:           {manifest_path}")
-    print("o" RESPALDO COMPLETADO CON CA"DIGO 0")
+    print("[PASS] RESPALDO COMPLETADO CON CODIGO 0")
 
 if __name__ == "__main__":
     asyncio.run(run_mongodb_backup())
