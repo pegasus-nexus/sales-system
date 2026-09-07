@@ -158,3 +158,33 @@ async def afiliar_cliente(cliente_id: str, current_user: User = Depends(get_curr
         
     await cliente.save()
     return {"status": "success", "message": "Cliente afiliado exitosamente", "numero_tarjeta": cliente.numero_tarjeta}
+
+
+@router.post("/entregar-premio/{cliente_id}/{premio_id}")
+async def entregar_premio(cliente_id: str, premio_id: str, current_user: User = Depends(get_current_active_user)):
+    """
+    Marca un premio como físicamente entregado por el cajero.
+    """
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    tenant_id = current_user.tenant_id or "default"
+    
+    from app.domain.models.cliente import Cliente
+    from bson import ObjectId
+    
+    cliente = await Cliente.find_one(Cliente.id == ObjectId(cliente_id), Cliente.tenant_id == tenant_id)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        
+    if not cliente.datos_crm:
+        cliente.datos_crm = {}
+        
+    if "premios_entregados" not in cliente.datos_crm:
+        cliente.datos_crm["premios_entregados"] = []
+        
+    if premio_id not in cliente.datos_crm["premios_entregados"]:
+        cliente.datos_crm["premios_entregados"].append(premio_id)
+        
+    await cliente.save()
+    return {"status": "ok", "premios_entregados": cliente.datos_crm["premios_entregados"]}

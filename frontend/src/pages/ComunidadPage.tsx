@@ -283,7 +283,7 @@ export default function ComunidadPage() {
                                                                 {expiresStr && (
                                                                     <span className="text-[10px] text-gray-400 font-medium">Válido hasta: {expiresStr}</span>
                                                                 )}
-                                                                {!isEntregado && (
+                                                                {!isEntregado && !isExpired && (
                                                                     <button 
                                                                         onClick={() => handleEntregarPremio(miembro.id, p)}
                                                                         className="mt-1 flex items-center justify-center gap-1 w-full py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[10px] font-bold transition-colors"
