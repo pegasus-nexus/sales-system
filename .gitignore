@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Archivos y Carpetas Globales (Monorepo)
 # ==========================================
 
@@ -35,7 +35,7 @@ venv/
 env/
 .env_venv/
 
-# Cachés y compilados
+# CachÃ©s y compilados
 __pycache__/
 *.py[cod]
 *$py.class
