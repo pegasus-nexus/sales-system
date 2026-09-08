@@ -5,8 +5,9 @@ import {
 
 import type {
     StoreKey, MetricKey, DayDetailData, StoreBenchmarkConfig,
-    MonthTrendPoint, CriticalHourSummary
+    MonthTrendPoint, CriticalHourSummary, YoYComparisonPoint
 } from './benchmark/BenchmarkTypes';
+import { METRIC_TITLES } from './benchmark/BenchmarkTypes';
 import { BenchmarkTopCards } from './benchmark/BenchmarkTopCards';
 import { BenchmarkDistribucionChart } from './benchmark/BenchmarkDistribucionChart';
 import { BenchmarkCalendarSection } from './benchmark/BenchmarkCalendarSection';
@@ -14,6 +15,7 @@ import { BenchmarkDiasEquivalentesView } from './benchmark/BenchmarkDiasEquivale
 import { BenchmarkRankingTable } from './benchmark/BenchmarkRankingTable';
 import { BenchmarkHorarioSummaryCard } from './benchmark/BenchmarkHorarioSummaryCard';
 import { BenchmarkIADiagnosisCard } from './benchmark/BenchmarkIADiagnosisCard';
+import { BenchmarkYoYComparisonCard } from './benchmark/BenchmarkYoYComparisonCard';
 import { BenchmarkDayDetailModal } from './benchmark/BenchmarkDayDetailModal';
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
@@ -122,7 +124,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             const ticketMedio = orders > 0 ? Number((rawSales / orders).toFixed(2)) : 55;
             const unidadesPorOrden = orders > 0 ? Number((unidades / orders).toFixed(1)) : 2.5;
 
-            // Pick active target value based on selectedMetric
+            // Select active target value matching metric
             let activeVal = rawSales;
             if (selectedMetric === 'ordenes') activeVal = orders;
             if (selectedMetric === 'ticket') activeVal = ticketMedio;
@@ -232,6 +234,18 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
         { month: 'Ago', value: 6627, pctChange: 8.6 },
     ];
 
+    // YoY Comparison 2026 vs 2025 Data
+    const yoyData: YoYComparisonPoint[] = [
+        { month: 'Ene', val2025: 4100, val2026: 4900, pctGrowth: 19.5 },
+        { month: 'Feb', val2025: 4300, val2026: 5100, pctGrowth: 18.6 },
+        { month: 'Mar', val2025: 4400, val2026: 5300, pctGrowth: 20.4 },
+        { month: 'Abr', val2025: 4500, val2026: 5200, pctGrowth: 15.5 },
+        { month: 'May', val2025: 4700, val2026: 5600, pctGrowth: 19.1 },
+        { month: 'Jun', val2025: 4900, val2026: 5800, pctGrowth: 18.3 },
+        { month: 'Jul', val2025: 5100, val2026: 6100, pctGrowth: 19.6 },
+        { month: 'Ago', val2025: 5400, val2026: 6627, pctGrowth: 22.7 },
+    ];
+
     // Critical hours summary
     const criticalHours: CriticalHourSummary[] = [
         { hora: '12:00', historico: 1500.00, hoy: 1850.00, status: 'alto', label: 'Sobre esperado' },
@@ -251,7 +265,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
     return (
         <div className="space-y-6 font-sans text-slate-800 w-full bg-slate-50/50 p-3 sm:p-5 rounded-3xl">
-            {/* 1. ENCABEZADO SUPERIOR Y FILTROS (SIN EMOJIS, CON ICONOS LUCIDE) */}
+            {/* 1. ENCABEZADO SUPERIOR Y FILTROS */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
@@ -301,7 +315,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Filtros Row */}
+                {/* Filtros Row con Títulos Claros */}
                 <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
                         <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
@@ -312,7 +326,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
                                 className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
                             >
-                                <option value="consolidado">Todas (Consolidado)</option>
+                                <option value="consolidado">Todas las Sucursales (Consolidado)</option>
                                 <option value="heroinas">Heroínas (Cochabamba)</option>
                                 <option value="recoleta">Recoleta (Cochabamba)</option>
                                 <option value="calacoto">Calacoto (La Paz)</option>
@@ -323,16 +337,17 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
                         <Filter className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="w-full">
-                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Métrica:</label>
+                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Métrica Evaluada:</label>
                             <select
                                 value={selectedMetric}
                                 onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
                                 className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
                             >
-                                <option value="ventas">Ventas Totales</option>
-                                <option value="ordenes">Órdenes / Pedidos</option>
-                                <option value="ticket">Ticket Promedio</option>
-                                <option value="unidades">Unidades Vendidas</option>
+                                <option value="ventas">💰 {METRIC_TITLES.ventas}</option>
+                                <option value="ordenes">🧾 {METRIC_TITLES.ordenes}</option>
+                                <option value="ticket">💳 {METRIC_TITLES.ticket}</option>
+                                <option value="unidades">📦 {METRIC_TITLES.unidades}</option>
+                                <option value="unidades_por_orden">📊 {METRIC_TITLES.unidades_por_orden}</option>
                             </select>
                         </div>
                     </div>
@@ -340,14 +355,14 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
                         <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="w-full">
-                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Periodo:</label>
+                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Periodo Temporal:</label>
                             <select
                                 value={periodMode}
                                 onChange={(e) => setPeriodMode(e.target.value as 'mes' | 'semana')}
                                 className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
                             >
-                                <option value="mes">Mes</option>
-                                <option value="semana">Semana</option>
+                                <option value="mes">Vista Mensual</option>
+                                <option value="semana">Vista Semanal</option>
                             </select>
                         </div>
                     </div>
@@ -365,14 +380,16 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 formatValue={currentPercentile.format}
             />
 
-            {/* 3. DISTRIBUCIÓN BENCHMARK (365 DÍAS) */}
+            {/* 3. DISTRIBUCIÓN BENCHMARK (GAUSSIANA 365 DÍAS) MATCHING MEDIA_1788901753233.PNG */}
             <BenchmarkDistribucionChart
+                selectedMetric={selectedMetric}
                 p25={currentPercentile.p25}
                 p50={currentPercentile.p50}
                 p75={currentPercentile.p75}
                 todaySales={todayDayData.sales}
                 percentilePositionPct={todayDayData.posPct}
                 formatValue={currentPercentile.format}
+                unitName={currentPercentile.unit}
             />
 
             {/* 4 & 5. CALENDARIO BENCHMARK (8 COLS) + PANEL RESUMEN LATERAL (4 COLS) */}
@@ -384,25 +401,31 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 formatValue={currentPercentile.format}
             />
 
-            {/* 6. COMPARACIÓN CONTRA DÍAS EQUIVALENTES */}
+            {/* 6. NUEVO: COMPARATIVA INTERANUAL DE VENTAS (2026 vs 2025) */}
+            <BenchmarkYoYComparisonCard
+                data={yoyData}
+                formatValue={(v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 0 })}`}
+            />
+
+            {/* 7. COMPARACIÓN CONTRA DÍAS EQUIVALENTES */}
             <BenchmarkDiasEquivalentesView
                 todayData={todayDayData}
                 formatValue={currentPercentile.format}
             />
 
-            {/* 7. RANKING DE SUCURSALES */}
+            {/* 8. RANKING DE SUCURSALES */}
             <BenchmarkRankingTable
                 formatValue={currentPercentile.format}
                 onSelectStore={(storeId) => setSelectedStore(storeId)}
             />
 
-            {/* 8. BENCHMARK POR HORARIO (HORAS CRÍTICAS) */}
+            {/* 9. BENCHMARK POR HORARIO (HORAS CRÍTICAS) */}
             <BenchmarkHorarioSummaryCard
                 criticalHours={criticalHours}
                 formatValue={currentPercentile.format}
             />
 
-            {/* 9. DIAGNÓSTICO IA DEL BENCHMARK */}
+            {/* 10. DIAGNÓSTICO IA DEL BENCHMARK */}
             <BenchmarkIADiagnosisCard
                 todaySales={todayDayData.sales}
                 p50={currentPercentile.p50}

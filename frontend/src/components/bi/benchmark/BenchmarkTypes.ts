@@ -2,6 +2,14 @@ export type StoreKey = 'consolidado' | 'heroinas' | 'recoleta' | 'calacoto';
 
 export type MetricKey = 'ventas' | 'ordenes' | 'ticket' | 'unidades' | 'unidades_por_orden';
 
+export const METRIC_TITLES: Record<MetricKey, string> = {
+    ventas: 'Ventas por día (Bs.)',
+    ordenes: 'Número de clientes / Órdenes por día',
+    ticket: 'Ticket promedio por día (Bs.)',
+    unidades: 'Cantidad de productos vendidos por día',
+    unidades_por_orden: 'Cantidad de productos comprados en promedio por transacción por día'
+};
+
 export type HorizonKey = '30dias' | '90dias' | '365dias';
 
 export type RankingSortKey = 'rendimiento' | 'caida' | 'oportunidad';
@@ -77,4 +85,11 @@ export interface CriticalHourSummary {
     hoy: number;
     status: 'alto' | 'bajo' | 'normal';
     label: string;
+}
+
+export interface YoYComparisonPoint {
+    month: string;
+    val2025: number;
+    val2026: number;
+    pctGrowth: number;
 }
