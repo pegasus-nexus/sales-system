@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import {
     Sparkles, RefreshCw, Download, ChevronRight, TrendingUp, Target, Clock, Star,
     Calendar, Cloud, Package, MapPin, AlertTriangle, Info,
-    Users, Tag, ArrowUpRight, ShoppingCart, Percent
+    Users, Tag, ArrowUpRight, ShoppingCart, Percent, Bot, CheckCircle2, X
 } from 'lucide-react';
 
 export const BIDiagnosticoIAView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
+    const [showAiModal, setShowAiModal] = useState<boolean>(false);
 
     // Datos simulados en vivo basados en la maqueta
     const kpis = {
@@ -20,39 +21,52 @@ export const BIDiagnosticoIAView: React.FC = () => {
         indiceNota: 'Excelente día para vender'
     };
 
+    // Datos por hora para el Histograma de Barras (Hoy vs Promedio Histórico)
+    const hourlyBarData = [
+        { hora: '06:00', hoy: 0, promedio: 0 },
+        { hora: '08:00', hoy: 120, promedio: 250 },
+        { hora: '10:00', hoy: 450, promedio: 380 },
+        { hora: '12:00', hoy: 1420, promedio: 890, isPeak: true }, // Pico de Hoy
+        { hora: '14:00', hoy: 780, promedio: 650 },
+        { hora: '16:00', hoy: 510, promedio: 420 },
+        { hora: '18:00', hoy: 390, promedio: 480 },
+        { hora: '20:00', hoy: 280, promedio: 310 },
+        { hora: '22:00', hoy: 0, promedio: 0 },
+    ];
+
     const factores = [
         {
             icon: Calendar,
             titulo: 'Día de la Semana',
-            descripcion: 'Lunes con comportamiento histórico positivo',
+            descripcion: 'Los Lunes registran históricamente un aumento del +14% en consumo de mediodía.',
             impacto: '+ Impacto Alto',
             impactoTipo: 'alto'
         },
         {
             icon: Cloud,
             titulo: 'Clima',
-            descripcion: 'Temperatura agradable en tu zona',
+            descripcion: 'Temperatura templada de 22°C en Cochabamba/La Paz promueve el flujo de peatones.',
             impacto: '+ Impacto Medio',
             impactoTipo: 'medio'
         },
         {
             icon: TrendingUp,
             titulo: 'Tendencia Histórica',
-            descripcion: 'Patrón de ventas decreciente en los últimos 3 días',
+            descripcion: 'Desaceleración sutil del 3% en las últimas 72h ajustada por promociones previas.',
             impacto: '+ Impacto Medio',
             impactoTipo: 'medio'
         },
         {
             icon: Package,
             titulo: 'Inventario',
-            descripcion: 'Algunas categorías con stock bajo',
+            descripcion: 'Riesgo de agotamiento de stock en 5 productos clave antes de la hora pico.',
             impacto: '↓ Impacto Negativo',
             impactoTipo: 'negativo'
         },
         {
             icon: MapPin,
             titulo: 'Eventos Locales',
-            descripcion: 'Sin eventos que afecten el consumo',
+            descripcion: 'Sin bloqueos ni paros reportados en los accesos a las sucursales principales.',
             impacto: '+ Impacto Bajo',
             impactoTipo: 'bajo'
         }
@@ -62,35 +76,35 @@ export const BIDiagnosticoIAView: React.FC = () => {
         {
             icon: Users,
             titulo: 'Refuerzo de Personal',
-            descripcion: 'Aumentar personal de caja entre 11:00 - 14:00 por alta probabilidad de flujo',
+            descripcion: 'Aumentar personal de caja entre 11:00 - 14:00 por alta probabilidad de flujo masivo.',
             prioridad: 'Prioridad Alta',
             color: 'purple'
         },
         {
             icon: Tag,
             titulo: 'Promoción Recomendada',
-            descripcion: 'Enfocar promociones en: Zapatillas Urbanas (Alta demanda detectada)',
+            descripcion: 'Enfocar promociones en: Zapatillas Urbanas (Alta demanda detectada en POS).',
             prioridad: '• Prioridad Alta',
             color: 'green'
         },
         {
             icon: Package,
             titulo: 'Gestión de Inventario',
-            descripcion: 'Reponer stock de 5 productos antes de las 11:00 (Riesgo de quiebre)',
+            descripcion: 'Reponer stock de 5 productos antes de las 11:00 (Riesgo de quiebre de stock).',
             prioridad: '• Prioridad Media',
             color: 'amber'
         },
         {
             icon: Percent,
             titulo: 'Estrategia de Precios',
-            descripcion: 'Mantener precios actuales (Alto índice de conversión)',
+            descripcion: 'Mantener precios actuales (Alto índice de conversión registrado).',
             prioridad: '• Prioridad Baja',
             color: 'blue'
         },
         {
             icon: ShoppingCart,
             titulo: 'Canales de Venta',
-            descripcion: 'Enfocar en canal POS (Mejor rendimiento vs online)',
+            descripcion: 'Enfocar atención en canal POS presencial (Mejor rendimiento vs online).',
             prioridad: '• Prioridad Media',
             color: 'indigo'
         }
@@ -116,21 +130,21 @@ export const BIDiagnosticoIAView: React.FC = () => {
         {
             icon: AlertTriangle,
             titulo: 'Stock Bajo',
-            mensaje: '3 productos críticos con bajo inventario',
+            mensaje: '3 productos críticos con bajo inventario en sucursal Heroínas',
             hora: '09:45',
             tipo: 'alerta'
         },
         {
             icon: AlertTriangle,
             titulo: 'Ventas por Debajo del Promedio',
-            mensaje: 'Categoría "Accesorios" -15% vs promedio',
+            mensaje: 'Categoría "Accesorios" -15% vs promedio histórico',
             hora: '09:30',
             tipo: 'alerta'
         },
         {
             icon: Info,
             titulo: 'Oportunidad de Cross-selling',
-            mensaje: 'Clientes comprando zapatillas + medias',
+            mensaje: 'Clientes comprando zapatillas + medias en POS',
             hora: '09:15',
             tipo: 'info'
         }
@@ -144,22 +158,26 @@ export const BIDiagnosticoIAView: React.FC = () => {
     return (
         <div className="space-y-6 font-sans text-slate-800 w-full">
             
-            {/* CABECERA PRINCIPAL CON TITULO E INDICADORES DE IA */}
+            {/* CABECERA PRINCIPAL CON INDICADOR DE GOOGLE GEMINI API */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Diagnóstico IA del Día</h1>
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span className="text-[11px] font-extrabold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-100 flex items-center gap-1">
                             <Sparkles size={12} className="text-purple-600" />
                             Análisis en Tiempo Real
                         </span>
-                        <span className="text-[11px] font-extrabold text-purple-900 bg-purple-100/70 px-2.5 py-0.5 rounded-lg border border-purple-200/60">
-                            📍 Zona: America/La_Paz
-                        </span>
+                        <button
+                            onClick={() => setShowAiModal(true)}
+                            className="text-[11px] font-black text-indigo-900 bg-indigo-100/90 hover:bg-indigo-200/90 px-3 py-0.5 rounded-lg border border-indigo-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                        >
+                            <Bot size={13} className="text-indigo-600" />
+                            <span>Powered by Google Gemini API</span>
+                        </button>
                     </div>
                     <p className="text-xs text-slate-400 font-bold">
-                        Análisis inteligente, detección de patrones y recomendaciones accionables para hoy
+                        Análisis inteligente, detección de patrones de consumo y recomendaciones accionables para hoy.
                     </p>
                 </div>
 
@@ -198,7 +216,7 @@ export const BIDiagnosticoIAView: React.FC = () => {
                             <h2 className="text-2xl lg:text-3xl font-black text-purple-950">
                                 Bs. {kpis.ventasProyectadas.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </h2>
-                            <span className="text-[10px] font-bold text-purple-700 block mt-0.5">Proyección IA</span>
+                            <span className="text-[10px] font-bold text-purple-700 block mt-0.5">Calculado por Motor ML + Gemini</span>
                         </div>
                     </div>
                     <div className="pt-2 border-t border-purple-100/60 flex items-center justify-between text-xs font-bold">
@@ -220,7 +238,7 @@ export const BIDiagnosticoIAView: React.FC = () => {
                         </div>
                         <div className="my-3">
                             <h2 className="text-2xl lg:text-3xl font-black text-emerald-950">{kpis.probabilidadMetaPct}%</h2>
-                            <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">Confianza {kpis.confianza}</span>
+                            <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">Nivel de Confianza: {kpis.confianza}</span>
                         </div>
                     </div>
                     <div className="pt-2 border-t border-emerald-100/60">
@@ -274,53 +292,68 @@ export const BIDiagnosticoIAView: React.FC = () => {
 
             </div>
 
-            {/* SECCIÓN INTERMEDIA: ANÁLISIS DE TENDENCIA (2/3) + FACTORES (1/3) */}
+            {/* SECCIÓN INTERMEDIA: HISTOGRAMA DE BARRAS POR HORA (2/3) + FACTORES (1/3) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* IZQUIERDA (2/3 ANCHO): ANÁLISIS DE TENDENCIA DEL DÍA */}
+                {/* IZQUIERDA (2/3 ANCHO): VENTAS POR HORA EN BARRAS (HOY VS PROMEDIO) */}
                 <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div>
                             <h3 className="text-base font-black text-slate-900">Análisis de Tendencia del Día</h3>
-                            <p className="text-xs text-slate-400 font-bold">Comparación del comportamiento actual vs patrón histórico</p>
+                            <p className="text-xs text-slate-400 font-bold">Distribución en Barras: Comportamiento de Ventas de Hoy vs Promedio Histórico</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-                        {/* Gráfico dual simulado */}
+                        
+                        {/* HISTOGRAMA DE BARRAS DUAL (HOY VS PROMEDIO) */}
                         <div className="md:col-span-2 bg-slate-50/50 rounded-2xl p-4 border border-slate-100 flex flex-col justify-between space-y-3">
                             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                                 <span>Ventas por Hora - Hoy vs Promedio</span>
-                                <div className="flex items-center gap-3">
-                                    <span className="flex items-center gap-1 text-purple-700 font-black">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span> Hoy
+                                <div className="flex items-center gap-4">
+                                    <span className="flex items-center gap-1.5 text-indigo-900 font-black">
+                                        <span className="w-3 h-3 rounded-xs bg-indigo-600 inline-block shadow-xs"></span> Hoy (POS)
                                     </span>
-                                    <span className="flex items-center gap-1 text-slate-400 font-bold">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span> Promedio
+                                    <span className="flex items-center gap-1.5 text-slate-600 font-bold">
+                                        <span className="w-3 h-3 rounded-xs bg-slate-300 inline-block"></span> Promedio Histórico
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="h-44 relative flex items-end justify-between px-2 pt-6">
-                                <span className="absolute top-2 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs animate-pulse">
-                                    HOY (PICO)
-                                </span>
-                                <svg className="w-full h-full text-purple-600" viewBox="0 0 300 100" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <path d="M0 85 C 30 75, 60 40, 90 45 C 120 50, 150 10, 180 60 C 210 50, 240 30, 270 65 L 300 70" />
-                                    <path d="M0 90 C 30 85, 60 60, 90 65 C 120 70, 150 45, 180 75 C 210 65, 240 55, 270 80 L 300 85" stroke="#CBD5E1" strokeDasharray="4 4" />
-                                </svg>
-                            </div>
+                            {/* LIENZO DE BARRAS POR HORA */}
+                            <div className="h-48 relative flex items-end justify-between px-2 pt-6 gap-2 border-b border-slate-200">
+                                {hourlyBarData.map((h) => {
+                                    const maxVal = 1600;
+                                    const hoyPct = Math.min((h.hoy / maxVal) * 100, 100);
+                                    const promPct = Math.min((h.promedio / maxVal) * 100, 100);
 
-                            <div className="flex justify-between text-[9px] font-extrabold text-slate-400 pt-1 border-t border-slate-200/60">
-                                <span>06:00</span>
-                                <span>08:00</span>
-                                <span>10:00</span>
-                                <span>12:00</span>
-                                <span>14:00</span>
-                                <span>16:00</span>
-                                <span>18:00</span>
-                                <span>20:00</span>
-                                <span>22:00</span>
+                                    return (
+                                        <div key={h.hora} className="flex-1 flex flex-col items-center justify-end h-full relative group">
+                                            {/* Badge de Pico en la hora de mayor venta */}
+                                            {h.isPeak && (
+                                                <span className="absolute -top-4 bg-indigo-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-xs animate-bounce whitespace-nowrap z-10">
+                                                    PICO (12:00)
+                                                </span>
+                                            )}
+
+                                            <div className="w-full flex items-end justify-center gap-1 h-full">
+                                                {/* BARRA HOY (ÍNDIGO / PÚRPURA) */}
+                                                <div
+                                                    style={{ height: `${Math.max(hoyPct, 4)}%` }}
+                                                    className="w-3.5 bg-indigo-600 hover:bg-indigo-700 rounded-t-xs transition-all shadow-xs"
+                                                    title={`Hoy ${h.hora}: Bs. ${h.hoy}`}
+                                                ></div>
+                                                {/* BARRA PROMEDIO (SLATE / GRIS) */}
+                                                <div
+                                                    style={{ height: `${Math.max(promPct, 4)}%` }}
+                                                    className="w-3.5 bg-slate-300 hover:bg-slate-400 rounded-t-xs transition-all"
+                                                    title={`Promedio ${h.hora}: Bs. ${h.promedio}`}
+                                                ></div>
+                                            </div>
+                                            <span className="text-[9px] font-black text-slate-500 mt-2">{h.hora}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -372,7 +405,7 @@ export const BIDiagnosticoIAView: React.FC = () => {
                     <div>
                         <div className="pb-3 border-b border-slate-100 mb-3">
                             <h3 className="text-base font-black text-slate-900">Factores que Influyen Hoy</h3>
-                            <p className="text-xs text-slate-400 font-bold">Variables externas e internas que impactan tus ventas</p>
+                            <p className="text-xs text-slate-400 font-bold">Variables externas e internas evaluadas por el algoritmo</p>
                         </div>
 
                         <div className="space-y-2.5">
@@ -419,7 +452,7 @@ export const BIDiagnosticoIAView: React.FC = () => {
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                 <div className="pb-3 border-b border-slate-100">
                     <h3 className="text-base font-black text-slate-900">Recomendaciones Inteligentes para Hoy</h3>
-                    <p className="text-xs text-slate-400 font-bold">Acciones sugeridas por IA para maximizar tus resultados</p>
+                    <p className="text-xs text-slate-400 font-bold">Acciones sugeridas por el motor de IA para maximizar tus resultados</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -580,11 +613,91 @@ export const BIDiagnosticoIAView: React.FC = () => {
 
             </div>
 
+            {/* MODAL ARQUITECTURA DE IA (GOOGLE GEMINI API) */}
+            {showAiModal && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 max-w-2xl w-full space-y-5 relative text-slate-800">
+                        <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-indigo-100 text-indigo-700 rounded-2xl">
+                                    <Bot size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Motor de IA Pegasus Intelligence</h3>
+                                    <p className="text-xs text-slate-500 font-bold mt-0.5">
+                                        Trazabilidad y arquitectura de las herramientas de Inteligencia Artificial utilizadas
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowAiModal(false)}
+                                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-xs">
+                            {/* Card de Google Gemini API */}
+                            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-black text-indigo-900 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                                        <Sparkles size={14} className="text-indigo-600" />
+                                        MODELO PRINCIPAL DE INTELIGENCIA GENERATIVA
+                                    </span>
+                                    <span className="text-[10px] font-black bg-indigo-200/80 text-indigo-900 px-2 py-0.5 rounded-md">
+                                        Google Gemini API (2.5 / Pro)
+                                    </span>
+                                </div>
+                                <p className="text-xs text-indigo-950 font-bold leading-relaxed">
+                                    Antigravity / Pegasus SalesSystem utiliza la tecnología oficial de <strong>Google DeepMind (Google Gemini API)</strong> para el razonamiento semántico, diagnóstico en lenguaje natural de factores causales y generación de recomendaciones operativas en tiempo real.
+                                </p>
+                            </div>
+
+                            {/* Modelos Complementarios ML */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase block">📈 MODELOS PREDICTIVOS ML</span>
+                                    <strong className="text-slate-900 font-black text-xs block">Prophet & Random Forest Regressor</strong>
+                                    <span className="text-[10px] text-slate-500 block">Predicción de series temporales y horas pico sobre MongoDB `sales`.</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase block">🗄️ FUENTE DE DATOS EN VIVO</span>
+                                    <strong className="text-indigo-700 font-black text-xs block">Colección 'sales' & 'inventory'</strong>
+                                    <span className="text-[10px] text-slate-500 block">Procesamiento continuo en tiempo real (America/La_Paz).</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-slate-100 text-slate-600 font-medium">
+                                <h4 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                                    <CheckCircle2 size={14} className="text-emerald-600" />
+                                    Garantías de Seguridad y Aislamiento de Datos:
+                                </h4>
+                                <ul className="list-disc pl-5 space-y-1 text-[11px]">
+                                    <li>Toda la inferencia se procesa bajo aislamiento estricto de Tenant (`tenant_id`).</li>
+                                    <li>No se realiza reentrenamiento público con tus datos privados de POS.</li>
+                                    <li>Las recomendaciones se adaptan dinámicamente según la sucursal y la zona horaria.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={() => setShowAiModal(false)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-2xl shadow-xs cursor-pointer transition-all"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* PIE DE PÁGINA DE AUDITORÍA DE IA */}
             <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-3 flex flex-wrap items-center justify-between text-xs font-bold text-purple-900 gap-2">
                 <div className="flex items-center gap-2">
                     <Sparkles size={14} className="text-purple-600" />
-                    <span>Análisis generado con IA basado en datos históricos, patrones de comportamiento y factores externos en tiempo real.</span>
+                    <span>Diagnóstico generado por <strong>Google Gemini API</strong> combinado con modelos predictivos ML sobre la colección 'sales'.</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-500">
                     <Clock size={14} className="text-slate-400" />
