@@ -43,35 +43,35 @@ export const BenchmarkIADiagnosisCard: React.FC<Props> = ({
         switch (statusCategory) {
             case 'excelente':
                 return {
-                    bg: 'bg-emerald-950/40 border-emerald-500/30',
-                    icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
-                    titleColor: 'text-emerald-300',
+                    bg: 'bg-emerald-50/60 border-emerald-200/80',
+                    icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />,
+                    titleColor: 'text-emerald-900',
                     title: 'Desempeño Sobresaliente (Por encima del Percentil 75)',
-                    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    badge: 'bg-emerald-100 text-emerald-800 border-emerald-300'
                 };
             case 'normal':
                 return {
-                    bg: 'bg-blue-950/40 border-blue-500/30',
-                    icon: <Sparkles className="w-5 h-5 text-blue-400" />,
-                    titleColor: 'text-blue-300',
+                    bg: 'bg-sky-50/60 border-sky-200/80',
+                    icon: <Sparkles className="w-5 h-5 text-sky-600" />,
+                    titleColor: 'text-sky-900',
                     title: 'Rendimiento Alineado a la Mediana Histórica (P50)',
-                    badge: 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                    badge: 'bg-sky-100 text-sky-800 border-sky-300'
                 };
             case 'bajo':
                 return {
-                    bg: 'bg-amber-950/40 border-amber-500/30',
-                    icon: <AlertTriangle className="w-5 h-5 text-amber-400" />,
-                    titleColor: 'text-amber-300',
+                    bg: 'bg-amber-50/60 border-amber-200/80',
+                    icon: <AlertTriangle className="w-5 h-5 text-amber-600" />,
+                    titleColor: 'text-amber-900',
                     title: 'Rendimiento Moderado (Por debajo de la Mediana)',
-                    badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    badge: 'bg-amber-100 text-amber-800 border-amber-300'
                 };
             case 'critico':
                 return {
-                    bg: 'bg-rose-950/40 border-rose-500/30',
-                    icon: <ShieldAlert className="w-5 h-5 text-rose-400" />,
-                    titleColor: 'text-rose-300',
+                    bg: 'bg-rose-50/60 border-rose-200/80',
+                    icon: <ShieldAlert className="w-5 h-5 text-rose-600" />,
+                    titleColor: 'text-rose-900',
                     title: 'Alerta Operativa (Por debajo del Percentil 25 Crítico)',
-                    badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    badge: 'bg-rose-100 text-rose-800 border-rose-300'
                 };
         }
     };
@@ -79,29 +79,29 @@ export const BenchmarkIADiagnosisCard: React.FC<Props> = ({
     const theme = getStatusTheme();
 
     return (
-        <div className={`border rounded-xl p-5 backdrop-blur shadow-xl ${theme.bg}`}>
+        <div className={`bg-white border rounded-2xl p-5 shadow-sm space-y-4 ${theme.bg}`}>
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-800/80 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 pb-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30 text-indigo-400">
+                    <div className="p-2 bg-indigo-100 rounded-xl border border-indigo-200 text-indigo-700">
                         <Bot className="w-5 h-5" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="text-base font-bold text-white tracking-wide">
+                            <h3 className="text-base font-bold text-slate-900">
                                 Diagnóstico Inteligente de Rendimiento (IA Engine)
                             </h3>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold uppercase">
+                            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold uppercase">
                                 BI Executive
                             </span>
                         </div>
-                        <p className="text-xs text-slate-400">
-                            Evaluación analítica en tiempo real para {storeName} • Métrica: {metricLabels[selectedMetric]}
+                        <p className="text-xs text-slate-500">
+                            Evaluación analítica explicativa para <strong>{storeName}</strong> • Métrica: <strong>{metricLabels[selectedMetric]}</strong>
                         </p>
                     </div>
                 </div>
 
-                <div className={`px-3 py-1 rounded-full border text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto ${theme.badge}`}>
+                <div className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto ${theme.badge}`}>
                     {theme.icon}
                     <span>{pctVsP50 >= 0 ? `+${pctVsP50.toFixed(1)}%` : `${pctVsP50.toFixed(1)}%`} vs Mediana</span>
                 </div>
@@ -110,42 +110,42 @@ export const BenchmarkIADiagnosisCard: React.FC<Props> = ({
             {/* Diagnosis Body */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Column 1: Resumen del Desempeño */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-3.5 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-                        <ArrowUpRight className="w-4 h-4 text-indigo-400" />
-                        <span>Evaluación de Variación</span>
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700">
+                        <ArrowUpRight className="w-4 h-4" />
+                        <span>1. ¿QUÉ está pasando?</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                        El nivel actual de <strong className="text-white font-mono">{selectedMetric === 'ventas' || selectedMetric === 'ticket' ? `${currencySymbol} ${currentValue.toFixed(2)}` : currentValue}</strong> se sitúa {' '}
-                        {statusCategory === 'excelente' && 'en el tramo superior de ventas (cuartil 4), superando la meta P75.'}
-                        {statusCategory === 'normal' && 'dentro de la banda normal de operación esperada para este período.'}
-                        {statusCategory === 'bajo' && 'un poco por debajo de la mediana esperada, requiriendo empuje comercial.'}
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                        El nivel de <strong className="text-slate-900 font-mono">{selectedMetric === 'ventas' || selectedMetric === 'ticket' ? `${currencySymbol} ${currentValue.toFixed(2)}` : currentValue}</strong> se ubica {' '}
+                        {statusCategory === 'excelente' && 'en el tramo superior de ventas (cuartil 4), superando holgadamente la meta P75.'}
+                        {statusCategory === 'normal' && 'dentro de la banda esperada de operación regular según el histórico.'}
+                        {statusCategory === 'bajo' && 'un poco por debajo de la mediana esperada, requiriendo impulso en caja.'}
                         {statusCategory === 'critico' && 'en zona de contracción severa, requiriendo revisión de caja e inventario.'}
                     </p>
                 </div>
 
                 {/* Column 2: Factores Clave Operativos */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-3.5 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
-                        <span>Factores Explicativos</span>
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+                        <Sparkles className="w-4 h-4" />
+                        <span>2. ¿POR QUÉ ocurre este resultado?</span>
                     </div>
-                    <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                    <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
                         {statusCategory === 'excelente' && (
                             <>
-                                <li>Alta conversión en hora pico y buen ticket promedio.</li>
-                                <li>Disponibilidad de stock en productos de rotación estrella.</li>
+                                <li>Alta conversión en hora pico y buen ticket promedio por cliente.</li>
+                                <li>Disponibilidad continua de stock en productos estrella de alta rotación.</li>
                             </>
                         )}
                         {statusCategory === 'normal' && (
                             <>
                                 <li>Flujo de clientes estable y consistente con patrones de la sucursal.</li>
-                                <li>Cumplimiento de objetivos operativos regulares.</li>
+                                <li>Cumplimiento regular de metas de venta del día.</li>
                             </>
                         )}
                         {(statusCategory === 'bajo' || statusCategory === 'critico') && (
                             <>
-                                <li>Caída en la afluencia de tráfico de compradores en franja vespertina.</li>
+                                <li>Caída en la afluencia de clientes durante la franja vespertina.</li>
                                 <li>Posible desabastecimiento temporal de ítems clave de alta demanda.</li>
                             </>
                         )}
@@ -153,26 +153,26 @@ export const BenchmarkIADiagnosisCard: React.FC<Props> = ({
                 </div>
 
                 {/* Column 3: Recomendaciones Accionables */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-3.5 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-                        <Lightbulb className="w-4 h-4 text-emerald-400" />
-                        <span>Sugerencias Tácticas</span>
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                        <Lightbulb className="w-4 h-4" />
+                        <span>3. ¿CÓMO actuar ahora?</span>
                     </div>
-                    <ul className="text-xs text-slate-300 space-y-1.5">
+                    <ul className="text-xs text-slate-600 space-y-1.5">
                         {statusCategory === 'excelente' ? (
                             <li className="flex items-start gap-1.5">
-                                <span className="text-emerald-400 font-bold">•</span>
-                                <span>Blindar stock de SKUs de alta rotación para evitar desabastecimiento nocturno.</span>
+                                <span className="text-emerald-600 font-bold">•</span>
+                                <span>Blindar stock de SKUs estrella para evitar desabastecimiento en franja nocturna.</span>
                             </li>
                         ) : (
                             <li className="flex items-start gap-1.5">
-                                <span className="text-amber-400 font-bold">•</span>
+                                <span className="text-amber-600 font-bold">•</span>
                                 <span>Activar promociones relámpago o venta sugerida en caja para elevar ticket promedio.</span>
                             </li>
                         )}
                         <li className="flex items-start gap-1.5">
-                            <span className="text-indigo-400 font-bold">•</span>
-                            <span>Ajustar distribución de personal durante la hora de mayor concurrencia detectada.</span>
+                            <span className="text-indigo-600 font-bold">•</span>
+                            <span>Ajustar distribución de personal en las horas de mayor concurrencia detectadas.</span>
                         </li>
                     </ul>
                 </div>

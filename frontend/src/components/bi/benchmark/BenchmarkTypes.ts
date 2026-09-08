@@ -17,13 +17,16 @@ export interface DayDetailData {
     unidades: number;
     unidadesPorOrden: number;
     vsP50: number;
-    status: 'critico' | 'bajo' | 'normal' | 'alto' | 'sin_ventas';
+    status: 'critico' | 'bajo' | 'normal' | 'alto' | 'sin_ventas' | 'pronostico';
     posPct: number;
     horaPico: string;
     productoEstrella: string;
     equivalenteP50: number;
     vsEquivalentePct: number;
     causalFactor: string;
+    isPronostico?: boolean;
+    minSales?: number;
+    maxSales?: number;
 }
 
 export interface StoreBenchmarkConfig {

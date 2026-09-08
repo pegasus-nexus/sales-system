@@ -11,70 +11,68 @@ export const BenchmarkHorarioCard: React.FC<Props> = ({
     hourlyData,
     currencySymbol = 'Bs.'
 }) => {
-    // Find peak hour
     const maxVentaItem = hourlyData.reduce((prev, current) => (prev.ventaHoy > current.ventaHoy) ? prev : current, hourlyData[0]);
-    
-    const peakHour = maxVentaItem?.hora || '13:00';
+    const peakHour = maxVentaItem?.hora || '12:00 - 13:00';
     const weakHoursCount = hourlyData.filter(h => h.isDebil).length;
     const totalHoy = hourlyData.reduce((acc, h) => acc + h.ventaHoy, 0);
     const totalProm = hourlyData.reduce((acc, h) => acc + h.promedioHistorico, 0);
 
     return (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 backdrop-blur shadow-lg">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5 border-b border-slate-800 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
-                    <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-lg font-bold text-white tracking-wide">
-                            Benchmark Horario Operativo (08:00 - 22:00)
+                    <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
+                        <Clock className="w-5 h-5 text-indigo-600" />
+                        <h3 className="text-base font-bold text-slate-900">
+                            Módulo 6: Benchmark Horario Operativo (08:00 - 22:00)
                         </h3>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Comparativa por franja horaria: Promedio Histórico vs Venta Real de Hoy
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Comparativa por hora: Promedio Histórico vs Venta Real de Hoy (Horas Pico 🔥 & Franjas Débiles ⚠️)
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-full text-indigo-300 text-xs font-semibold flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" /> Hora Pico Hoy: <strong className="text-white font-mono">{peakHour}</strong>
+                <div>
+                    <span className="px-3 py-1 bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-bold rounded-full flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> Hora Pico Hoy: <strong className="text-slate-900 font-mono">{peakHour}</strong>
                     </span>
                 </div>
             </div>
 
             {/* Main Hourly Grid / Chart Bars */}
-            <div className="space-y-2.5 mb-5">
+            <div className="space-y-2 mb-4">
                 {hourlyData.map((item) => {
                     const maxVal = Math.max(...hourlyData.map(h => Math.max(h.promedioHistorico, h.ventaHoy)), 1);
                     const hoyPct = Math.min((item.ventaHoy / maxVal) * 100, 100);
                     const promPct = Math.min((item.promedioHistorico / maxVal) * 100, 100);
 
                     return (
-                        <div key={item.hora} className="group p-2.5 rounded-lg hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700">
-                            <div className="flex items-center justify-between text-xs mb-1.5">
-                                <div className="flex items-center gap-2 font-mono text-slate-300 font-medium">
+                        <div key={item.hora} className="p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                                <div className="flex items-center gap-2 font-mono text-slate-700 font-semibold">
                                     <span>{item.hora}</span>
                                     {item.isPico && (
-                                        <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded">
+                                        <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-amber-100 text-amber-800 border border-amber-300 rounded">
                                             🔥 Pico
                                         </span>
                                     )}
                                     {item.isDebil && (
-                                        <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded">
+                                        <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-rose-100 text-rose-800 border border-rose-300 rounded">
                                             ⚠️ Débil
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs font-mono">
-                                    <span className="text-slate-400">
-                                        Prom: <span className="text-slate-200">{currencySymbol} {item.promedioHistorico.toFixed(2)}</span>
+                                <div className="flex items-center gap-3 text-xs font-mono">
+                                    <span className="text-slate-500">
+                                        Prom: <span className="text-slate-700">{currencySymbol} {item.promedioHistorico.toFixed(2)}</span>
                                     </span>
-                                    <span className="font-semibold text-white">
-                                        Hoy: <span className={item.ventaHoy >= item.promedioHistorico ? 'text-emerald-400' : 'text-amber-400'}>{currencySymbol} {item.ventaHoy.toFixed(2)}</span>
+                                    <span className="font-bold text-slate-900">
+                                        Hoy: <span className={item.ventaHoy >= item.promedioHistorico ? 'text-emerald-700' : 'text-amber-700'}>{currencySymbol} {item.ventaHoy.toFixed(2)}</span>
                                     </span>
                                     <span className={`px-1.5 py-0.5 rounded font-bold text-[11px] ${
                                         item.variacionPct >= 0 
-                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                                     }`}>
                                         {item.variacionPct >= 0 ? '+' : ''}{item.variacionPct.toFixed(1)}%
                                     </span>
@@ -84,11 +82,11 @@ export const BenchmarkHorarioCard: React.FC<Props> = ({
                             {/* Dual Bar Display */}
                             <div className="space-y-1">
                                 {/* Hoy Bar */}
-                                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex items-center">
+                                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden flex items-center">
                                     <div 
                                         className={`h-full transition-all duration-500 rounded-full ${
                                             item.isPico 
-                                                ? 'bg-gradient-to-r from-amber-500 to-emerald-400' 
+                                                ? 'bg-gradient-to-r from-amber-500 to-emerald-500' 
                                                 : item.ventaHoy >= item.promedioHistorico 
                                                     ? 'bg-emerald-500' 
                                                     : 'bg-indigo-500'
@@ -97,9 +95,9 @@ export const BenchmarkHorarioCard: React.FC<Props> = ({
                                     />
                                 </div>
                                 {/* Historical Ref Bar */}
-                                <div className="w-full bg-slate-800/40 rounded-full h-1 overflow-hidden">
+                                <div className="w-full bg-slate-200/60 rounded-full h-1 overflow-hidden">
                                     <div 
-                                        className="h-full bg-slate-500/50 rounded-full"
+                                        className="h-full bg-slate-400/60 rounded-full"
                                         style={{ width: `${Math.max(promPct, 2)}%` }}
                                     />
                                 </div>
@@ -110,17 +108,17 @@ export const BenchmarkHorarioCard: React.FC<Props> = ({
             </div>
 
             {/* Footer Summary / Insight */}
-            <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 text-slate-300">
-                    <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-slate-700 font-medium">
+                    <TrendingUp className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>
-                        Acumulado del Día: <strong className="text-white font-mono">{currencySymbol} {totalHoy.toFixed(2)}</strong> vs Promedio Histórico <span className="font-mono text-slate-400">{currencySymbol} {totalProm.toFixed(2)}</span>
+                        Acumulado del Día: <strong className="text-slate-900 font-mono">{currencySymbol} {totalHoy.toFixed(2)}</strong> vs Promed. Histórico <span className="font-mono text-slate-500">{currencySymbol} {totalProm.toFixed(2)}</span>
                     </span>
                 </div>
                 {weakHoursCount > 0 && (
-                    <div className="flex items-center gap-1.5 text-amber-400 font-medium">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>Se detectaron {weakHoursCount} franjas de rendimiento bajo el esperado.</span>
+                    <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                        <span>{weakHoursCount} franjas detectadas bajo el esperado.</span>
                     </div>
                 )}
             </div>
