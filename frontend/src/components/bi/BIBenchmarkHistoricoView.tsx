@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     BarChart3, Calendar, RefreshCw, Download, Filter, ChevronLeft, ChevronRight,
     Info, Clock, Store, Sparkles, HelpCircle, X, CheckCircle2, Database,
     ShoppingBag, Award
 } from 'lucide-react';
+
+type StoreKey = 'consolidado' | 'heroinas' | 'recoleta' | 'calacoto';
 
 interface DayDetailData {
     day: number;
@@ -21,7 +23,7 @@ interface DayDetailData {
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
-    const [selectedStore, setSelectedStore] = useState<string>('consolidado');
+    const [selectedStore, setSelectedStore] = useState<StoreKey>('consolidado');
     const [periodMode, setPeriodMode] = useState<'mes' | 'semana'>('mes');
     const [selectedWeekNum, setSelectedWeekNum] = useState<number>(4); // Semana 4 por defecto (22-28 Ago)
     const [currentMonth] = useState<string>('Agosto 2026');
@@ -36,128 +38,240 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
         timezone: "America/La_Paz"
     };
 
-    // Datos simulados de percentiles basados en la maqueta
-    const percentiles = {
-        p25: 2645.00,
-        p50: 4615.00,
-        p75: 5983.00,
+    // Configuración de percentiles y factores por sucursal
+    const storeConfigs: Record<StoreKey, { name: string; p25: number; p50: number; p75: number; multiplier: number }> = {
+        consolidado: { name: 'Tiendas Minoristas (Consolidado)', p25: 2645.00, p50: 4615.00, p75: 5983.00, multiplier: 1.0 },
+        heroinas: { name: 'Heroínas (Cochabamba)', p25: 1420.00, p50: 2850.00, p75: 3920.00, multiplier: 0.58 },
+        recoleta: { name: 'Recoleta (Cochabamba)', p25: 1180.00, p50: 2340.00, p75: 3210.00, multiplier: 0.48 },
+        calacoto: { name: 'Calacoto (La Paz)', p25: 1850.00, p50: 3680.00, p75: 4950.00, multiplier: 0.78 }
     };
 
-    // Datos de los 31 días de Agosto 2026 coincidiendo con la maqueta
-    const daysData = [
-        { day: 1, dayOfWeek: 'Lun', sales: 1950.05, vsP50: -65, status: 'critico', posPct: 15 },
-        { day: 2, dayOfWeek: 'Mar', sales: 2485.52, vsP50: -35, status: 'bajo', posPct: 22 },
-        { day: 3, dayOfWeek: 'Mie', sales: 1772.01, vsP50: -64, status: 'critico', posPct: 12 },
-        { day: 4, dayOfWeek: 'Jue', sales: 2805.01, vsP50: -32, status: 'critico', posPct: 24 },
-        { day: 5, dayOfWeek: 'Vie', sales: 1482.00, vsP50: -66, status: 'critico', posPct: 10 },
-        { day: 6, dayOfWeek: 'Sab', sales: 3434.03, vsP50: -26, status: 'bajo', posPct: 35 },
-        { day: 7, dayOfWeek: 'Dom', sales: 2390.02, vsP50: -60, status: 'critico', posPct: 20 },
+    const currentConfig = storeConfigs[selectedStore];
+    const percentiles = {
+        p25: currentConfig.p25,
+        p50: currentConfig.p50,
+        p75: currentConfig.p75,
+    };
 
-        { day: 8, dayOfWeek: 'Lun', sales: 3061.00, vsP50: -44, status: 'critico', posPct: 28 },
-        { day: 9, dayOfWeek: 'Mar', sales: 1966.50, vsP50: -44, status: 'critico', posPct: 16 },
-        { day: 10, dayOfWeek: 'Mie', sales: 1373.50, vsP50: -72, status: 'critico', posPct: 8 },
-        { day: 11, dayOfWeek: 'Jue', sales: 4042.50, vsP50: -3, status: 'bajo', posPct: 42 },
-        { day: 12, dayOfWeek: 'Vie', sales: 2256.00, vsP50: -47, status: 'critico', posPct: 18 },
-        { day: 13, dayOfWeek: 'Sab', sales: 1646.50, vsP50: -65, status: 'critico', posPct: 12 },
-        { day: 14, dayOfWeek: 'Dom', sales: 1757.00, vsP50: -70, status: 'critico', posPct: 14 },
+    // Base de ventas base de los 31 días de Agosto
+    const baseRawDays = [
+        { day: 1, dayOfWeek: 'Lun', rawSales: 1950.05 },
+        { day: 2, dayOfWeek: 'Mar', rawSales: 2485.52 },
+        { day: 3, dayOfWeek: 'Mie', rawSales: 1772.01 },
+        { day: 4, dayOfWeek: 'Jue', rawSales: 2805.01 },
+        { day: 5, dayOfWeek: 'Vie', rawSales: 1482.00 },
+        { day: 6, dayOfWeek: 'Sab', rawSales: 3434.03 },
+        { day: 7, dayOfWeek: 'Dom', rawSales: 2390.02 },
 
-        { day: 15, dayOfWeek: 'Lun', sales: 1952.00, vsP50: -65, status: 'critico', posPct: 15 },
-        { day: 16, dayOfWeek: 'Mar', sales: 1820.50, vsP50: -65, status: 'critico', posPct: 14 },
-        { day: 17, dayOfWeek: 'Mie', sales: 2590.50, vsP50: -48, status: 'bajo', posPct: 24 },
-        { day: 18, dayOfWeek: 'Jue', sales: 0, vsP50: 0, status: 'sin_ventas', posPct: 0 },
-        { day: 19, dayOfWeek: 'Vie', sales: 2135.00, vsP50: -50, status: 'critico', posPct: 17 },
-        { day: 20, dayOfWeek: 'Sab', sales: 3245.01, vsP50: -30, status: 'critico', posPct: 32 },
-        { day: 21, dayOfWeek: 'Dom', sales: 2810.01, vsP50: -53, status: 'critico', posPct: 25 },
+        { day: 8, dayOfWeek: 'Lun', rawSales: 3061.00 },
+        { day: 9, dayOfWeek: 'Mar', rawSales: 1966.50 },
+        { day: 10, dayOfWeek: 'Mie', rawSales: 1373.50 },
+        { day: 11, dayOfWeek: 'Jue', rawSales: 4042.50 },
+        { day: 12, dayOfWeek: 'Vie', rawSales: 2256.00 },
+        { day: 13, dayOfWeek: 'Sab', rawSales: 1646.50 },
+        { day: 14, dayOfWeek: 'Dom', rawSales: 1757.00 },
 
-        { day: 22, dayOfWeek: 'Lun', sales: 4096.51, vsP50: -26, status: 'bajo', posPct: 43 },
-        { day: 23, dayOfWeek: 'Mar', sales: 2254.00, vsP50: -26, status: 'critico', posPct: 18 },
-        { day: 24, dayOfWeek: 'Mie', sales: 2743.02, vsP50: -45, status: 'bajo', posPct: 26 },
-        { day: 25, dayOfWeek: 'Jue', sales: 2653.00, vsP50: -36, status: 'critico', posPct: 25 },
-        { day: 26, dayOfWeek: 'Vie', sales: 2362.50, vsP50: -45, status: 'bajo', posPct: 20 },
-        { day: 27, dayOfWeek: 'Sab', sales: 1819.50, vsP50: -61, status: 'critico', posPct: 14 },
-        { day: 28, dayOfWeek: 'Dom', sales: 5484.00, vsP50: -8, status: 'bajo', posPct: 65 },
+        { day: 15, dayOfWeek: 'Lun', rawSales: 1952.00 },
+        { day: 16, dayOfWeek: 'Mar', rawSales: 1820.50 },
+        { day: 17, dayOfWeek: 'Mie', rawSales: 2590.50 },
+        { day: 18, dayOfWeek: 'Jue', rawSales: 0 },
+        { day: 19, dayOfWeek: 'Vie', rawSales: 2135.00 },
+        { day: 20, dayOfWeek: 'Sab', rawSales: 3245.01 },
+        { day: 21, dayOfWeek: 'Dom', rawSales: 2810.01 },
 
-        { day: 29, dayOfWeek: 'Lun', sales: 5054.00, vsP50: -8, status: 'bajo', posPct: 58 },
-        { day: 30, dayOfWeek: 'Mar', sales: 4579.00, vsP50: 20, status: 'alto', posPct: 75 },
-        { day: 31, dayOfWeek: 'Mie', sales: 6627.00, vsP50: 34, status: 'alto', posPct: 88 },
+        { day: 22, dayOfWeek: 'Lun', rawSales: 4096.51 },
+        { day: 23, dayOfWeek: 'Mar', rawSales: 2254.00 },
+        { day: 24, dayOfWeek: 'Mie', rawSales: 2743.02 },
+        { day: 25, dayOfWeek: 'Jue', rawSales: 2653.00 },
+        { day: 26, dayOfWeek: 'Vie', rawSales: 2362.50 },
+        { day: 27, dayOfWeek: 'Sab', rawSales: 1819.50 },
+        { day: 28, dayOfWeek: 'Dom', rawSales: 5484.00 },
+
+        { day: 29, dayOfWeek: 'Lun', rawSales: 5054.00 },
+        { day: 30, dayOfWeek: 'Mar', rawSales: 4579.00 },
+        { day: 31, dayOfWeek: 'Mie', rawSales: 6627.00 },
     ];
 
-    // Detalle semanal enriquecido para la vista semanal detallada
-    const weeklyDataDetails: Record<number, { title: string; dateRangeStr: string; days: DayDetailData[] }> = {
-        1: {
-            title: "Semana 1",
-            dateRangeStr: "01 ago - 07 ago 2026",
-            days: [
-                { day: 1, dayOfWeek: 'Lunes', dateStr: '01 Ago', sales: 1950.05, orders: 38, ticketMedio: 51.31, vsP50: -65, status: 'critico', posPct: 15, horaPico: '12:00 - 13:00', productoEstrella: 'Combo Pollo Familiar' },
-                { day: 2, dayOfWeek: 'Martes', dateStr: '02 Ago', sales: 2485.52, orders: 45, ticketMedio: 55.23, vsP50: -35, status: 'bajo', posPct: 22, horaPico: '13:00 - 14:00', productoEstrella: 'Burger Doble Carne' },
-                { day: 3, dayOfWeek: 'Miércoles', dateStr: '03 Ago', sales: 1772.01, orders: 32, ticketMedio: 55.37, vsP50: -64, status: 'critico', posPct: 12, horaPico: '19:00 - 20:00', productoEstrella: 'Pizza Familiar Pepperoni' },
-                { day: 4, dayOfWeek: 'Jueves', dateStr: '04 Ago', sales: 2805.01, orders: 50, ticketMedio: 56.10, vsP50: -32, status: 'critico', posPct: 24, horaPico: '12:30 - 13:30', productoEstrella: 'Lomo Saltado POS' },
-                { day: 5, dayOfWeek: 'Viernes', dateStr: '05 Ago', sales: 1482.00, orders: 28, ticketMedio: 52.92, vsP50: -66, status: 'critico', posPct: 10, horaPico: '14:00 - 15:00', productoEstrella: 'Soda 2L + Combo' },
-                { day: 6, dayOfWeek: 'Sábado', dateStr: '06 Ago', sales: 3434.03, orders: 62, ticketMedio: 55.38, vsP50: -26, status: 'bajo', posPct: 35, horaPico: '15:00 - 16:00', productoEstrella: 'Parrilla Mixta' },
-                { day: 7, dayOfWeek: 'Domingo', dateStr: '07 Ago', sales: 2390.02, orders: 41, ticketMedio: 58.29, vsP50: -60, status: 'critico', posPct: 20, horaPico: '13:00 - 14:00', productoEstrella: 'Helado Artesanal' },
-            ]
-        },
-        2: {
-            title: "Semana 2",
-            dateRangeStr: "08 ago - 14 ago 2026",
-            days: [
-                { day: 8, dayOfWeek: 'Lunes', dateStr: '08 Ago', sales: 3061.00, orders: 54, ticketMedio: 56.68, vsP50: -44, status: 'critico', posPct: 28, horaPico: '12:00 - 13:00', productoEstrella: 'Combo Pollo Personal' },
-                { day: 9, dayOfWeek: 'Martes', dateStr: '09 Ago', sales: 1966.50, orders: 36, ticketMedio: 54.62, vsP50: -44, status: 'critico', posPct: 16, horaPico: '13:00 - 14:00', productoEstrella: 'Sopa del Día' },
-                { day: 10, dayOfWeek: 'Miércoles', dateStr: '10 Ago', sales: 1373.50, orders: 26, ticketMedio: 52.82, vsP50: -72, status: 'critico', posPct: 8, horaPico: '12:00 - 13:00', productoEstrella: 'Empanada de Carne' },
-                { day: 11, dayOfWeek: 'Jueves', dateStr: '11 Ago', sales: 4042.50, orders: 72, ticketMedio: 56.14, vsP50: -3, status: 'bajo', posPct: 42, horaPico: '13:30 - 14:30', productoEstrella: 'Milanesa Gigante' },
-                { day: 12, dayOfWeek: 'Viernes', dateStr: '12 Ago', sales: 2256.00, orders: 40, ticketMedio: 56.40, vsP50: -47, status: 'critico', posPct: 18, horaPico: '19:00 - 20:00', productoEstrella: 'Cerveza + Pique Macho' },
-                { day: 13, dayOfWeek: 'Sábado', dateStr: '13 Ago', sales: 1646.50, orders: 30, ticketMedio: 54.88, vsP50: -65, status: 'critico', posPct: 12, horaPico: '14:00 - 15:00', productoEstrella: 'Papas Fritas XL' },
-                { day: 14, dayOfWeek: 'Domingo', dateStr: '14 Ago', sales: 1757.00, orders: 32, ticketMedio: 54.90, vsP50: -70, status: 'critico', posPct: 14, horaPico: '13:00 - 14:00', productoEstrella: 'Pollo Espiedo Entero' },
-            ]
-        },
-        3: {
-            title: "Semana 3",
-            dateRangeStr: "15 ago - 21 ago 2026",
-            days: [
-                { day: 15, dayOfWeek: 'Lunes', dateStr: '15 Ago', sales: 1952.00, orders: 35, ticketMedio: 55.77, vsP50: -65, status: 'critico', posPct: 15, horaPico: '12:00 - 13:00', productoEstrella: 'Silpancho Cochabambino' },
-                { day: 16, dayOfWeek: 'Martes', dateStr: '16 Ago', sales: 1820.50, orders: 33, ticketMedio: 55.16, vsP50: -65, status: 'critico', posPct: 14, horaPico: '13:00 - 14:00', productoEstrella: 'Chicharron Individual' },
-                { day: 17, dayOfWeek: 'Miércoles', dateStr: '17 Ago', sales: 2590.50, orders: 48, ticketMedio: 53.96, vsP50: -48, status: 'bajo', posPct: 24, horaPico: '12:30 - 13:30', productoEstrella: 'Burger Clásica' },
-                { day: 18, dayOfWeek: 'Jueves', dateStr: '18 Ago', sales: 0, orders: 0, ticketMedio: 0, vsP50: 0, status: 'sin_ventas', posPct: 0, horaPico: '—', productoEstrella: 'Sin datos' },
-                { day: 19, dayOfWeek: 'Viernes', dateStr: '19 Ago', sales: 2135.00, orders: 39, ticketMedio: 54.74, vsP50: -50, status: 'critico', posPct: 17, horaPico: '19:30 - 20:30', productoEstrella: 'Wings 12 pzas' },
-                { day: 20, dayOfWeek: 'Sábado', dateStr: '20 Ago', sales: 3245.01, orders: 58, ticketMedio: 55.94, vsP50: -30, status: 'critico', posPct: 32, horaPico: '14:00 - 15:00', productoEstrella: 'Combo Parrillero' },
-                { day: 21, dayOfWeek: 'Domingo', dateStr: '21 Ago', sales: 2810.01, orders: 49, ticketMedio: 57.34, vsP50: -53, status: 'critico', posPct: 25, horaPico: '13:00 - 14:00', productoEstrella: 'Postre Tres Leches' },
-            ]
-        },
-        4: {
-            title: "Semana 4",
-            dateRangeStr: "22 ago - 28 ago 2026",
-            days: [
-                { day: 22, dayOfWeek: 'Lunes', dateStr: '22 Ago', sales: 4096.51, orders: 74, ticketMedio: 55.35, vsP50: -26, status: 'bajo', posPct: 43, horaPico: '12:00 - 13:00', productoEstrella: 'Pollo 1/4 Pechuga' },
-                { day: 23, dayOfWeek: 'Martes', dateStr: '23 Ago', sales: 2254.00, orders: 41, ticketMedio: 54.97, vsP50: -26, status: 'critico', posPct: 18, horaPico: '13:00 - 14:00', productoEstrella: 'Majadito de Charque' },
-                { day: 24, dayOfWeek: 'Miércoles', dateStr: '24 Ago', sales: 2743.02, orders: 51, ticketMedio: 53.78, vsP50: -45, status: 'bajo', posPct: 26, horaPico: '12:30 - 13:30', productoEstrella: 'Burger Triple Tocino' },
-                { day: 25, dayOfWeek: 'Jueves', dateStr: '25 Ago', sales: 2653.00, orders: 47, ticketMedio: 56.44, vsP50: -36, status: 'critico', posPct: 25, horaPico: '13:00 - 14:00', productoEstrella: 'Plato Ejecutivo' },
-                { day: 26, dayOfWeek: 'Viernes', dateStr: '26 Ago', sales: 2362.50, orders: 43, ticketMedio: 54.94, vsP50: -45, status: 'bajo', posPct: 20, horaPico: '19:00 - 20:00', productoEstrella: 'Cerveza Artesanal 1L' },
-                { day: 27, dayOfWeek: 'Sábado', dateStr: '27 Ago', sales: 1819.50, orders: 33, ticketMedio: 55.13, vsP50: -61, status: 'critico', posPct: 14, horaPico: '15:00 - 16:00', productoEstrella: 'Nachos Supremos' },
-                { day: 28, dayOfWeek: 'Domingo', dateStr: '28 Ago', sales: 5484.00, orders: 94, ticketMedio: 58.34, vsP50: -8, status: 'bajo', posPct: 65, horaPico: '13:00 - 14:00', productoEstrella: 'Combo Pollo Familiar XL' },
-            ]
-        },
-        5: {
-            title: "Semana 5",
-            dateRangeStr: "29 ago - 31 ago 2026",
-            days: [
-                { day: 29, dayOfWeek: 'Lunes', dateStr: '29 Ago', sales: 5054.00, orders: 88, ticketMedio: 57.43, vsP50: -8, status: 'bajo', posPct: 58, horaPico: '12:00 - 13:00', productoEstrella: 'Silpancho Especial' },
-                { day: 30, dayOfWeek: 'Martes', dateStr: '30 Ago', sales: 4579.00, orders: 78, ticketMedio: 58.70, vsP50: 20, status: 'alto', posPct: 75, horaPico: '13:00 - 14:00', productoEstrella: 'Pique Macho Especial' },
-                { day: 31, dayOfWeek: 'Miércoles', dateStr: '31 Ago', sales: 6627.00, orders: 112, ticketMedio: 59.16, vsP50: 34, status: 'alto', posPct: 88, horaPico: '15:00 - 16:00', productoEstrella: 'Combo Cierre de Mes' },
-            ]
-        }
-    };
+    // Recálculo dinámico reactivo de los 31 días según la sucursal seleccionada
+    const daysData = useMemo(() => {
+        const p25 = currentConfig.p25;
+        const p50 = currentConfig.p50;
+        const p75 = currentConfig.p75;
+        const mult = currentConfig.multiplier;
 
-    const resumenMes = {
-        criticos: { count: 17, pct: '54.8%' },
-        bajos: { count: 10, pct: '32.3%' },
-        normales: { count: 0, pct: '0%' },
-        altos: { count: 4, pct: '12.9%' },
-        sinDatos: { count: 1, pct: '3.2%' },
-    };
+        return baseRawDays.map((d) => {
+            const sales = Number((d.rawSales * mult).toFixed(2));
+            if (sales === 0) {
+                return {
+                    day: d.day,
+                    dayOfWeek: d.dayOfWeek,
+                    sales: 0,
+                    vsP50: 0,
+                    status: 'sin_ventas' as const,
+                    posPct: 0
+                };
+            }
+
+            const vsP50 = Math.round(((sales - p50) / p50) * 100);
+            let status: 'critico' | 'bajo' | 'normal' | 'alto' = 'normal';
+            let posPct = 50;
+
+            if (sales < p25) {
+                status = 'critico';
+                posPct = Math.min(Math.max(Math.round((sales / p25) * 25), 5), 24);
+            } else if (sales < p50) {
+                status = 'bajo';
+                posPct = 25 + Math.round(((sales - p25) / (p50 - p25)) * 25);
+            } else if (sales <= p75) {
+                status = 'normal';
+                posPct = 50 + Math.round(((sales - p50) / (p75 - p50)) * 25);
+            } else {
+                status = 'alto';
+                posPct = Math.min(75 + Math.round(((sales - p75) / p75) * 25), 95);
+            }
+
+            return {
+                day: d.day,
+                dayOfWeek: d.dayOfWeek,
+                sales,
+                vsP50,
+                status,
+                posPct
+            };
+        });
+    }, [selectedStore, currentConfig]);
+
+    // Recálculo dinámico del Resumen del Mes
+    const resumenMes = useMemo(() => {
+        let criticos = 0;
+        let bajos = 0;
+        let normales = 0;
+        let altos = 0;
+        let sinDatos = 0;
+
+        daysData.forEach(d => {
+            if (d.status === 'critico') criticos++;
+            else if (d.status === 'bajo') bajos++;
+            else if (d.status === 'normal') normales++;
+            else if (d.status === 'alto') altos++;
+            else sinDatos++;
+        });
+
+        const total = daysData.length || 31;
+        return {
+            criticos: { count: criticos, pct: `${((criticos / total) * 100).toFixed(1)}%` },
+            bajos: { count: bajos, pct: `${((bajos / total) * 100).toFixed(1)}%` },
+            normales: { count: normales, pct: `${((normales / total) * 100).toFixed(1)}%` },
+            altos: { count: altos, pct: `${((altos / total) * 100).toFixed(1)}%` },
+            sinDatos: { count: sinDatos, pct: `${((sinDatos / total) * 100).toFixed(1)}%` },
+        };
+    }, [daysData]);
+
+    // Recálculo dinámico del desglose semanal de 7 días por semana
+    const weeklyDataDetails = useMemo<Record<number, { title: string; dateRangeStr: string; days: DayDetailData[] }>>(() => {
+        const mult = currentConfig.multiplier;
+        const p25 = currentConfig.p25;
+        const p50 = currentConfig.p50;
+        const p75 = currentConfig.p75;
+
+        const getDayDetail = (dayNum: number, dayName: string, dateStr: string, rawSales: number, rawOrders: number, horaPico: string, prodEstrella: string): DayDetailData => {
+            const sales = Number((rawSales * mult).toFixed(2));
+            const orders = Math.round(rawOrders * mult);
+            const ticketMedio = orders > 0 ? Number((sales / orders).toFixed(2)) : 0;
+            const vsP50 = sales > 0 ? Math.round(((sales - p50) / p50) * 100) : 0;
+
+            if (sales === 0) {
+                return { day: dayNum, dayOfWeek: dayName, dateStr, sales: 0, orders: 0, ticketMedio: 0, vsP50: 0, status: 'sin_ventas', posPct: 0, horaPico: '—', productoEstrella: 'Sin datos' };
+            }
+
+            let status: 'critico' | 'bajo' | 'normal' | 'alto' = 'normal';
+            let posPct = 50;
+
+            if (sales < p25) {
+                status = 'critico';
+                posPct = Math.min(Math.max(Math.round((sales / p25) * 25), 5), 24);
+            } else if (sales < p50) {
+                status = 'bajo';
+                posPct = 25 + Math.round(((sales - p25) / (p50 - p25)) * 25);
+            } else if (sales <= p75) {
+                status = 'normal';
+                posPct = 50 + Math.round(((sales - p50) / (p75 - p50)) * 25);
+            } else {
+                status = 'alto';
+                posPct = Math.min(75 + Math.round(((sales - p75) / p75) * 25), 95);
+            }
+
+            return { day: dayNum, dayOfWeek: dayName, dateStr, sales, orders, ticketMedio, vsP50, status, posPct, horaPico, productoEstrella: prodEstrella };
+        };
+
+        return {
+            1: {
+                title: "Semana 1",
+                dateRangeStr: "01 ago - 07 ago 2026",
+                days: [
+                    getDayDetail(1, 'Lunes', '01 Ago', 1950.05, 38, '12:00 - 13:00', 'Combo Pollo Familiar'),
+                    getDayDetail(2, 'Martes', '02 Ago', 2485.52, 45, '13:00 - 14:00', 'Burger Doble Carne'),
+                    getDayDetail(3, 'Miércoles', '03 Ago', 1772.01, 32, '19:00 - 20:00', 'Pizza Familiar Pepperoni'),
+                    getDayDetail(4, 'Jueves', '04 Ago', 2805.01, 50, '12:30 - 13:30', 'Lomo Saltado POS'),
+                    getDayDetail(5, 'Viernes', '05 Ago', 1482.00, 28, '14:00 - 15:00', 'Soda 2L + Combo'),
+                    getDayDetail(6, 'Sábado', '06 Ago', 3434.03, 62, '15:00 - 16:00', 'Parrilla Mixta'),
+                    getDayDetail(7, 'Domingo', '07 Ago', 2390.02, 41, '13:00 - 14:00', 'Helado Artesanal'),
+                ]
+            },
+            2: {
+                title: "Semana 2",
+                dateRangeStr: "08 ago - 14 ago 2026",
+                days: [
+                    getDayDetail(8, 'Lunes', '08 Ago', 3061.00, 54, '12:00 - 13:00', 'Combo Pollo Personal'),
+                    getDayDetail(9, 'Martes', '09 Ago', 1966.50, 36, '13:00 - 14:00', 'Sopa del Día'),
+                    getDayDetail(10, 'Miércoles', '10 Ago', 1373.50, 26, '12:00 - 13:00', 'Empanada de Carne'),
+                    getDayDetail(11, 'Jueves', '11 Ago', 4042.50, 72, '13:30 - 14:30', 'Milanesa Gigante'),
+                    getDayDetail(12, 'Viernes', '12 Ago', 2256.00, 40, '19:00 - 20:00', 'Cerveza + Pique Macho'),
+                    getDayDetail(13, 'Sábado', '13 Ago', 1646.50, 30, '14:00 - 15:00', 'Papas Fritas XL'),
+                    getDayDetail(14, 'Domingo', '14 Ago', 1757.00, 32, '13:00 - 14:00', 'Pollo Espiedo Entero'),
+                ]
+            },
+            3: {
+                title: "Semana 3",
+                dateRangeStr: "15 ago - 21 ago 2026",
+                days: [
+                    getDayDetail(15, 'Lunes', '15 Ago', 1952.00, 35, '12:00 - 13:00', 'Silpancho Cochabambino'),
+                    getDayDetail(16, 'Martes', '16 Ago', 1820.50, 33, '13:00 - 14:00', 'Chicharron Individual'),
+                    getDayDetail(17, 'Miércoles', '17 Ago', 2590.50, 48, '12:30 - 13:30', 'Burger Clásica'),
+                    getDayDetail(18, 'Jueves', '18 Ago', 0, 0, '—', 'Sin datos'),
+                    getDayDetail(19, 'Viernes', '19 Ago', 2135.00, 39, '19:30 - 20:30', 'Wings 12 pzas'),
+                    getDayDetail(20, 'Sábado', '20 Ago', 3245.01, 58, '14:00 - 15:00', 'Combo Parrillero'),
+                    getDayDetail(21, 'Domingo', '21 Ago', 2810.01, 49, '13:00 - 14:00', 'Postre Tres Leches'),
+                ]
+            },
+            4: {
+                title: "Semana 4",
+                dateRangeStr: "22 ago - 28 ago 2026",
+                days: [
+                    getDayDetail(22, 'Lunes', '22 Ago', 4096.51, 74, '12:00 - 13:00', 'Pollo 1/4 Pechuga'),
+                    getDayDetail(23, 'Martes', '23 Ago', 2254.00, 41, '13:00 - 14:00', 'Majadito de Charque'),
+                    getDayDetail(24, 'Miércoles', '24 Ago', 2743.02, 51, '12:30 - 13:30', 'Burger Triple Tocino'),
+                    getDayDetail(25, 'Jueves', '25 Ago', 2653.00, 47, '13:00 - 14:00', 'Plato Ejecutivo'),
+                    getDayDetail(26, 'Viernes', '26 Ago', 2362.50, 43, '19:00 - 20:00', 'Cerveza Artesanal 1L'),
+                    getDayDetail(27, 'Sábado', '27 Ago', 1819.50, 33, '15:00 - 16:00', 'Nachos Supremos'),
+                    getDayDetail(28, 'Domingo', '28 Ago', 5484.00, 94, '13:00 - 14:00', 'Combo Pollo Familiar XL'),
+                ]
+            },
+            5: {
+                title: "Semana 5",
+                dateRangeStr: "29 ago - 31 ago 2026",
+                days: [
+                    getDayDetail(29, 'Lunes', '29 Ago', 5054.00, 88, '12:00 - 13:00', 'Silpancho Especial'),
+                    getDayDetail(30, 'Martes', '30 Ago', 4579.00, 78, '13:00 - 14:00', 'Pique Macho Especial'),
+                    getDayDetail(31, 'Miércoles', '31 Ago', 6627.00, 112, '15:00 - 16:00', 'Combo Cierre de Mes'),
+                ]
+            }
+        };
+    }, [selectedStore, currentConfig]);
 
     const handleRefresh = () => {
         setLoading(true);
-        setTimeout(() => setLoading(false), 500);
+        setTimeout(() => setLoading(false), 400);
     };
 
     const getStatusStyle = (status: string) => {
@@ -194,7 +308,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Benchmark Histórico</h1>
                     </div>
                     <p className="text-xs text-slate-400 font-bold">
-                        Evaluación del rendimiento utilizando datos históricos dinámicos y días equivalentes.
+                        Evaluación del rendimiento utilizando datos históricos dinámicos y días equivalentes para <strong className="text-indigo-700">{currentConfig.name}</strong>.
                     </p>
                 </div>
 
@@ -226,7 +340,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             {/* BARRA DE TIENDAS Y SELECTOR DE PERÍODO / MES */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                 
-                {/* Tabs de Sucursales */}
+                {/* Tabs de Sucursales 100% Funcionales y Dinámicas */}
                 <div className="flex items-center gap-2 overflow-x-auto">
                     <button
                         onClick={() => setSelectedStore('consolidado')}
@@ -244,7 +358,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         onClick={() => setSelectedStore('heroinas')}
                         className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                             selectedStore === 'heroinas'
-                                ? 'bg-indigo-600 text-white shadow-md'
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'
                         }`}
                     >
@@ -256,7 +370,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         onClick={() => setSelectedStore('recoleta')}
                         className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                             selectedStore === 'recoleta'
-                                ? 'bg-indigo-600 text-white shadow-md'
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'
                         }`}
                     >
@@ -268,7 +382,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         onClick={() => setSelectedStore('calacoto')}
                         className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                             selectedStore === 'calacoto'
-                                ? 'bg-indigo-600 text-white shadow-md'
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'
                         }`}
                     >
@@ -313,13 +427,15 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 </div>
             </div>
 
-            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS */}
+            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS ESPECÍFICOS DE LA SUCURSAL SELECCIONADA */}
             <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-purple-50/60 p-3 rounded-2xl border border-purple-100/80">
                     <div className="flex items-center gap-2">
                         <Sparkles size={16} className="text-purple-600 shrink-0" />
                         <div>
-                            <h3 className="text-sm font-black text-slate-900">Percentiles Históricos</h3>
+                            <h3 className="text-sm font-black text-slate-900">
+                                Percentiles Históricos — <span className="text-indigo-700">{currentConfig.name}</span>
+                            </h3>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-600 mt-0.5">
                                 <span>📅 Rango del Año Móvil: <strong>{dateRangeEvaluated.startDate} al {dateRangeEvaluated.endDate}</strong> ({dateRangeEvaluated.totalDays} días)</span>
                                 <span className="text-slate-300 hidden sm:inline">•</span>
@@ -353,7 +469,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                     Bs. {percentiles.p25.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
                                 <span className="text-[10px] font-bold text-rose-700 block mt-0.5">
-                                    Mínimo recomendado (25% de los días vendieron menos)
+                                    Mínimo recomendado para {currentConfig.name}
                                 </span>
                             </div>
                         </div>
@@ -379,7 +495,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                     Bs. {percentiles.p50.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
                                 <span className="text-[10px] font-bold text-sky-700 block mt-0.5">
-                                    Mediana del negocio (50% arriba / 50% abajo)
+                                    Mediana histórica de {currentConfig.name}
                                 </span>
                             </div>
                         </div>
@@ -405,7 +521,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                     Bs. {percentiles.p75.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
                                 <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">
-                                    Rendimiento superior (Solo 25% supera esta meta)
+                                    Meta de rendimiento alto para {currentConfig.name}
                                 </span>
                             </div>
                         </div>
@@ -466,7 +582,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase block">🏪 SUBCONSOLIDADO</span>
                                     <strong className="text-indigo-700 font-black text-xs block">
-                                        {selectedStore === 'consolidado' ? 'Tiendas Minoristas (Consolidado)' : selectedStore.toUpperCase()}
+                                        {currentConfig.name}
                                     </strong>
                                     <span className="text-[10px] text-slate-500 block">Zona horaria: {dateRangeEvaluated.timezone}</span>
                                 </div>
@@ -476,20 +592,20 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             <div className="space-y-2 pt-2 border-t border-slate-100">
                                 <h4 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
                                     <CheckCircle2 size={14} className="text-emerald-600" />
-                                    ¿Cómo se interpreta cada valor?
+                                    ¿Cómo se interpreta cada valor para {currentConfig.name}?
                                 </h4>
                                 <ul className="space-y-2 text-slate-600 font-medium pl-1">
                                     <li className="flex items-start gap-2">
                                         <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-black text-[10px] mt-0.5">P25</span>
-                                        <span><strong>Crítico (Bs. 2,645.00):</strong> El 25% de los días del año registraron ventas inferiores. Es el umbral mínimo aceptable del negocio.</span>
+                                        <span><strong>Crítico (Bs. {percentiles.p25.toLocaleString()}):</strong> El 25% de los días del año registraron ventas inferiores. Es el umbral mínimo aceptable de {currentConfig.name}.</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 font-black text-[10px] mt-0.5">P50</span>
-                                        <span><strong>Mediana Normal (Bs. 4,615.00):</strong> Punto medio exacto. El 50% de los días del año se vendió más y el 50% menos.</span>
+                                        <span><strong>Mediana Normal (Bs. {percentiles.p50.toLocaleString()}):</strong> Punto medio exacto. El 50% de los días del año se vendió más y el 50% menos en esta tienda.</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black text-[10px] mt-0.5">P75</span>
-                                        <span><strong>Meta (Bs. 5,983.00):</strong> Nivel alcanzado únicamente por el 25% de los días con mayor volumen de ventas del año.</span>
+                                        <span><strong>Meta (Bs. {percentiles.p75.toLocaleString()}):</strong> Nivel alcanzado únicamente por el 25% de los días con mayor volumen de ventas de {currentConfig.name}.</span>
                                     </li>
                                 </ul>
                             </div>
@@ -509,7 +625,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
             {/* SI PERIODMODE ES 'MES', MOSTRAR LA GRILLA MENSUAL. SI ES 'SEMANA', MOSTRAR LA VISTA SEMANAL DETALLADA */}
             {periodMode === 'mes' ? (
-                /* VISTA MENSUAL (GRILLA 31 DÍAS) */
+                /* VISTA MENSUAL (GRILLA 31 DÍAS RECALCULADA PARA LA SUCURSAL) */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* COLUMNA IZQUIERDA (2/3 ANCHO): CALENDARIO MENSUAL DE PERCENTILES */}
@@ -526,7 +642,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             <span>Dom</span>
                         </div>
 
-                        {/* Grilla de Días del Mes */}
+                        {/* Grilla de Días del Mes Recalculados Dinámicamente */}
                         <div className="grid grid-cols-7 gap-2">
                             {daysData.map((d) => {
                                 const statusInfo = getStatusStyle(d.status);
@@ -611,7 +727,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
                     </div>
 
-                    {/* COLUMNA DERECHA (1/3 ANCHO): SIDEBAR DE METRICAS Y REFERENCIAS (SIN PRONÓSTICO IA) */}
+                    {/* COLUMNA DERECHA (1/3 ANCHO): SIDEBAR DE METRICAS Y REFERENCIAS */}
                     <div className="space-y-6">
 
                         {/* CARD 1: REFERENCIA ESTADÍSTICA */}
@@ -643,10 +759,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* CARD 2: RESUMEN DEL MES */}
+                        {/* CARD 2: RESUMEN DEL MES RECALCULADO */}
                         <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                            <div className="pb-3 border-b border-slate-100">
+                            <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="text-sm font-black text-slate-900">Resumen del Mes</h3>
+                                <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                    {currentConfig.name}
+                                </span>
                             </div>
 
                             <div className="space-y-3 text-xs font-bold">
@@ -711,13 +830,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
                 </div>
             ) : (
-                /* VISTA DETALLADA SEMANAL COMPLETA AL PRESIONAR 'SEMANA' */
+                /* VISTA DETALLADA SEMANAL RECALCULADA PARA LA SUCURSAL SELECCIONADA */
                 <div className="space-y-6">
                     
                     {/* BARRA DE NAVEGACIÓN Y SELECTOR DE SEMANAS */}
                     <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <span className="text-[10px] font-black uppercase text-indigo-700 tracking-wider block">ANÁLISIS SEMANAL DETALLADO</span>
+                            <span className="text-[10px] font-black uppercase text-indigo-700 tracking-wider block">ANÁLISIS SEMANAL — {currentConfig.name}</span>
                             <h3 className="text-lg font-black text-slate-900">
                                 {currentWeekDetails.title} — <span className="text-indigo-600">{currentWeekDetails.dateRangeStr}</span>
                             </h3>
@@ -741,7 +860,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* TARJETAS RESUMEN KPIS DE LA SEMANA */}
+                    {/* TARJETAS RESUMEN KPIS DE LA SEMANA PARA LA SUCURSAL SELECCIONADA */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         
                         <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
@@ -749,7 +868,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             <h2 className="text-2xl font-black text-slate-900 mt-1">
                                 Bs. {totalWeekSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </h2>
-                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Acumulado de {currentWeekDetails.days.length} días</span>
+                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Acumulado {currentConfig.name}</span>
                         </div>
 
                         <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
@@ -766,24 +885,24 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 <h2 className="text-2xl font-black text-emerald-800">{peakDay?.dayOfWeek}</h2>
                                 <span className="text-xs font-bold text-slate-700">Bs. {peakDay?.sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
-                            <span className="text-[11px] font-bold text-emerald-700 block mt-1">Máxima facturación registrada</span>
+                            <span className="text-[11px] font-bold text-emerald-700 block mt-1">Máxima facturación en {currentConfig.name}</span>
                         </div>
 
                         <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
-                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">MEDIANA HISTÓRICA P50</span>
+                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">MEDIANA P50 DE SUCURSAL</span>
                             <h2 className="text-2xl font-black text-sky-800 mt-1">
                                 Bs. {percentiles.p50.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </h2>
-                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Referencia baseline de negocio</span>
+                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Referencia baseline de {currentConfig.name}</span>
                         </div>
 
                     </div>
 
-                    {/* DESGLOSE DETALLADO DÍA POR DÍA DE LA SEMANA (7 TARJETAS ANALÍTICAS) */}
+                    {/* DESGLOSE DETALLADO DÍA POR DÍA DE LA SEMANA */}
                     <div className="space-y-3">
                         <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
                             <Calendar size={16} className="text-indigo-600" />
-                            <span>Desglose Analítico Día a Día — {currentWeekDetails.title}</span>
+                            <span>Desglose Analítico Día a Día — {currentWeekDetails.title} ({currentConfig.name})</span>
                         </h4>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -888,7 +1007,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                     <Info size={14} className="text-slate-400" />
                     <span>
-                        Base estadística: <strong>01/09/2025 al 31/08/2026</strong> (365 días móviles equivalentes) proviniendo de MongoDB colección <strong>'sales'</strong>.
+                        Base estadística de <strong>{currentConfig.name}</strong>: <strong>01/09/2025 al 31/08/2026</strong> (365 días móviles equivalentes) proviniendo de MongoDB colección <strong>'sales'</strong>.
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600">
