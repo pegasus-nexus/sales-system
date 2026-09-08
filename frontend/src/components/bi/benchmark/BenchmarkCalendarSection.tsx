@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, Calendar as CalendarIcon, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Calendar as CalendarIcon, Sparkles, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 import type { DayDetailData, MonthTrendPoint } from './BenchmarkTypes';
 
 interface Props {
@@ -68,28 +68,34 @@ export const BenchmarkCalendarSection: React.FC<Props> = ({
                     {processedDays.map((d) => {
                         let cardStyle = 'bg-slate-50 border-slate-200 text-slate-800';
                         let badgeStyle = 'bg-slate-200 text-slate-700';
-                        let statusText = '⚪ Sin datos';
+                        let statusText = 'Sin datos';
+                        let StatusIcon = Info;
 
                         if (d.isPronostico) {
                             cardStyle = 'bg-indigo-50/40 border-indigo-200/80 border-dashed text-indigo-950';
                             badgeStyle = 'bg-indigo-100 text-indigo-700 border border-indigo-200';
-                            statusText = '🪄 Pronóstico';
+                            statusText = 'Pronóstico';
+                            StatusIcon = Sparkles;
                         } else if (d.status === 'alto') {
                             cardStyle = 'bg-emerald-50/60 border-emerald-300 text-emerald-950';
                             badgeStyle = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-                            statusText = '🟢 Alto';
+                            statusText = 'Alto';
+                            StatusIcon = CheckCircle2;
                         } else if (d.status === 'normal') {
                             cardStyle = 'bg-blue-50/60 border-blue-300 text-blue-950';
                             badgeStyle = 'bg-blue-100 text-blue-800 border border-blue-200';
-                            statusText = '🔵 Normal';
+                            statusText = 'Normal';
+                            StatusIcon = CheckCircle2;
                         } else if (d.status === 'bajo') {
                             cardStyle = 'bg-amber-50/60 border-amber-300 text-amber-950';
                             badgeStyle = 'bg-amber-100 text-amber-800 border border-amber-200';
-                            statusText = '🟡 Bajo';
+                            statusText = 'Bajo';
+                            StatusIcon = AlertTriangle;
                         } else if (d.status === 'critico') {
                             cardStyle = 'bg-rose-50/60 border-rose-300 text-rose-950';
                             badgeStyle = 'bg-rose-100 text-rose-800 border border-rose-200';
-                            statusText = '🔴 Crítico';
+                            statusText = 'Crítico';
+                            StatusIcon = XCircle;
                         }
 
                         return (
@@ -103,8 +109,9 @@ export const BenchmarkCalendarSection: React.FC<Props> = ({
                                     <span className="font-bold text-slate-900 font-mono text-xs">
                                         {d.day} <span className="text-[10px] text-slate-500 font-normal uppercase">{d.dayOfWeek}</span>
                                     </span>
-                                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${badgeStyle}`}>
-                                        {statusText}
+                                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md flex items-center gap-1 ${badgeStyle}`}>
+                                        <StatusIcon className="w-2.5 h-2.5" />
+                                        <span>{statusText}</span>
                                     </span>
                                 </div>
 
@@ -166,28 +173,28 @@ export const BenchmarkCalendarSection: React.FC<Props> = ({
                     <div className="space-y-2 pt-1 text-xs">
                         <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200">
                             <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] inline-block"></span> 🟢 Alto
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Alto
                             </span>
                             <span className="font-mono font-extrabold text-emerald-900">{resumenMes.altos.count} días</span>
                         </div>
 
                         <div className="flex items-center justify-between p-2 rounded-xl bg-blue-50 border border-blue-200">
                             <span className="font-bold text-blue-800 flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6] inline-block"></span> 🔵 Normal
+                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> Normal
                             </span>
                             <span className="font-mono font-extrabold text-blue-900">{resumenMes.normales.count} días</span>
                         </div>
 
                         <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50 border border-amber-200">
                             <span className="font-bold text-amber-800 flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] inline-block"></span> 🟡 Bajo
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Bajo
                             </span>
                             <span className="font-mono font-extrabold text-amber-900">{resumenMes.bajos.count} días</span>
                         </div>
 
                         <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50 border border-rose-200">
                             <span className="font-bold text-rose-800 flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444] inline-block"></span> 🔴 Crítico
+                                <XCircle className="w-3.5 h-3.5 text-rose-600" /> Crítico
                             </span>
                             <span className="font-mono font-extrabold text-rose-900">{resumenMes.criticos.count} días</span>
                         </div>
@@ -201,7 +208,7 @@ export const BenchmarkCalendarSection: React.FC<Props> = ({
                             B) Tendencia Histórica
                         </h4>
                         <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                            <TrendingUp className="w-3.5 h-3.5" /> ↑ +18% crecimiento
+                            <TrendingUp className="w-3.5 h-3.5" /> +18% crecimiento
                         </span>
                     </div>
 
@@ -221,7 +228,7 @@ export const BenchmarkCalendarSection: React.FC<Props> = ({
                                         <div 
                                             className="w-full bg-indigo-600 group-hover:bg-indigo-500 transition-all rounded-t-md"
                                             style={{ height: `${barPct}%` }}
-                                            title={`${pt.month}: Bs. ${pt.value}`}
+                                            title={`${pt.month}: ${pt.value}`}
                                         />
                                     </div>
                                     <span className="text-[9px] font-mono font-bold text-slate-500">{pt.month}</span>

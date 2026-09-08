@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertTriangle, XCircle, Activity } from 'lucide-react';
 
 interface Props {
     p25: number;
@@ -20,16 +20,21 @@ export const BenchmarkTopCards: React.FC<Props> = ({
     percentilePositionPct,
     formatValue
 }) => {
-    let statusText = '🟢 Alto rendimiento';
+    let statusText = 'Alto rendimiento';
+    let StatusIcon = CheckCircle2;
     let statusBg = 'bg-emerald-50 border-emerald-200 text-emerald-800';
+
     if (todaySales < p25) {
-        statusText = '🔴 Crítico operativo';
+        statusText = 'Crítico operativo';
+        StatusIcon = XCircle;
         statusBg = 'bg-rose-50 border-rose-200 text-rose-800';
     } else if (todaySales < p50) {
-        statusText = '🟡 Bajo la mediana';
+        statusText = 'Bajo la mediana';
+        StatusIcon = AlertTriangle;
         statusBg = 'bg-amber-50 border-amber-200 text-amber-800';
     } else if (todaySales <= p75) {
-        statusText = '🔵 Normal (Esperado)';
+        statusText = 'Normal (Esperado)';
+        StatusIcon = Activity;
         statusBg = 'bg-blue-50 border-blue-200 text-blue-800';
     }
 
@@ -39,7 +44,7 @@ export const BenchmarkTopCards: React.FC<Props> = ({
             <div className="bg-rose-50/60 border border-rose-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444] inline-block"></span> P25
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> P25
                     </span>
                     <span className="bg-rose-100 text-rose-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-rose-200">
                         CRÍTICO
@@ -62,7 +67,7 @@ export const BenchmarkTopCards: React.FC<Props> = ({
             <div className="bg-blue-50/60 border border-blue-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6] inline-block"></span> P50
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> P50
                     </span>
                     <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-blue-200">
                         NORMAL
@@ -85,7 +90,7 @@ export const BenchmarkTopCards: React.FC<Props> = ({
             <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] inline-block"></span> P75
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> P75
                     </span>
                     <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-emerald-200">
                         META
@@ -110,8 +115,9 @@ export const BenchmarkTopCards: React.FC<Props> = ({
                     <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5 uppercase tracking-wider">
                         <Sparkles className="w-4 h-4 text-indigo-600" /> POSICIÓN ACTUAL
                     </span>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${statusBg}`}>
-                        {statusText}
+                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${statusBg}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        <span>{statusText}</span>
                     </span>
                 </div>
                 <div className="my-2">

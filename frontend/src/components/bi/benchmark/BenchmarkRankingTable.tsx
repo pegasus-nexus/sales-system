@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ArrowRight } from 'lucide-react';
+import { Store, ArrowRight, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import type { StoreKey, StoreRankingItem } from './BenchmarkTypes';
 
 interface Props {
@@ -19,7 +19,7 @@ export const BenchmarkRankingTable: React.FC<Props> = ({
             p50Historico: 3568.00,
             variacionPct: 18.0,
             status: 'alto',
-            statusEmoji: '🟢',
+            statusEmoji: 'alto',
             opportunityText: 'Líder en ventas del período'
         },
         {
@@ -29,7 +29,7 @@ export const BenchmarkRankingTable: React.FC<Props> = ({
             p50Historico: 2340.00,
             variacionPct: -5.0,
             status: 'bajo',
-            statusEmoji: '🟡',
+            statusEmoji: 'bajo',
             opportunityText: 'Ligera contracción respecto a mediana P50'
         },
         {
@@ -39,7 +39,7 @@ export const BenchmarkRankingTable: React.FC<Props> = ({
             p50Historico: 3680.00,
             variacionPct: -21.0,
             status: 'critico',
-            statusEmoji: '🔴',
+            statusEmoji: 'critico',
             opportunityText: 'Bajo el límite inferior de P25'
         }
     ];
@@ -69,37 +69,49 @@ export const BenchmarkRankingTable: React.FC<Props> = ({
 
             {/* Branch List */}
             <div className="space-y-2.5">
-                {stores.map((item) => (
-                    <div 
-                        key={item.id}
-                        onClick={() => onSelectStore && onSelectStore(item.id)}
-                        className="p-3.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl flex items-center justify-between transition-all cursor-pointer group"
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-lg">{item.statusEmoji}</span>
-                            <div>
-                                <span className="font-bold text-slate-900 text-xs block group-hover:text-indigo-600 transition-colors">
-                                    {item.nombre}
-                                </span>
-                                <span className="text-[11px] text-slate-500 font-mono">
-                                    Actual: {formatValue(item.ventaActual)} (P50: {formatValue(item.p50Historico)})
+                {stores.map((item) => {
+                    let StatusIcon = CheckCircle2;
+                    let iconColor = 'text-emerald-600';
+                    if (item.status === 'bajo') {
+                        StatusIcon = AlertTriangle;
+                        iconColor = 'text-amber-600';
+                    } else if (item.status === 'critico') {
+                        StatusIcon = XCircle;
+                        iconColor = 'text-rose-600';
+                    }
+
+                    return (
+                        <div 
+                            key={item.id}
+                            onClick={() => onSelectStore && onSelectStore(item.id)}
+                            className="p-3.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl flex items-center justify-between transition-all cursor-pointer group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <StatusIcon className={`w-5 h-5 ${iconColor}`} />
+                                <div>
+                                    <span className="font-bold text-slate-900 text-xs block group-hover:text-indigo-600 transition-colors">
+                                        {item.nombre}
+                                    </span>
+                                    <span className="text-[11px] text-slate-500 font-mono">
+                                        Actual: {formatValue(item.ventaActual)} (P50: {formatValue(item.p50Historico)})
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="text-right">
+                                <span className={`text-sm font-black font-mono px-2.5 py-1 rounded-lg border ${
+                                    item.variacionPct >= 0 
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                        : item.variacionPct >= -10
+                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                                }`}>
+                                    {item.variacionPct >= 0 ? `+${item.variacionPct}%` : `${item.variacionPct}%`}
                                 </span>
                             </div>
                         </div>
-
-                        <div className="text-right">
-                            <span className={`text-sm font-black font-mono px-2.5 py-1 rounded-lg border ${
-                                item.variacionPct >= 0 
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                    : item.variacionPct >= -10
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                    : 'bg-rose-50 text-rose-700 border-rose-200'
-                            }`}>
-                                {item.variacionPct >= 0 ? `+${item.variacionPct}%` : `${item.variacionPct}%`}
-                            </span>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

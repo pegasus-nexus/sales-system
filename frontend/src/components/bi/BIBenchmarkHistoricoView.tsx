@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    RefreshCw, Download, Sparkles, Settings, Database, Calendar
+    RefreshCw, Download, Sparkles, Settings, Database, Calendar, Building2, Filter
 } from 'lucide-react';
 
 import type {
@@ -32,7 +32,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 ventas: { p25: 2600.00, p50: 4600.00, p75: 6000.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
                 ordenes: { p25: 42, p50: 75, p75: 98, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
                 ticket: { p25: 48.50, p50: 61.50, p75: 78.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
-                unidades: { p25: 110, p50: 195, p75: 260, unit: 'unidades', format: (v) => `${Math.round(v)} un.` },
+                unidades: { p25: 110, p50: 195, p75: 260, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.1, p50: 2.6, p75: 3.2, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
             }
         },
@@ -43,7 +43,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 ventas: { p25: 1500.00, p50: 2668.00, p75: 3480.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
                 ordenes: { p25: 25, p50: 48, p75: 64, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
                 ticket: { p25: 44.00, p50: 59.30, p75: 72.50, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
-                unidades: { p25: 65, p50: 120, p75: 165, unit: 'unidades', format: (v) => `${Math.round(v)} un.` },
+                unidades: { p25: 65, p50: 120, p75: 165, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.0, p50: 2.5, p75: 3.1, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
             }
         },
@@ -54,7 +54,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 ventas: { p25: 1248.00, p50: 2208.00, p75: 2880.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
                 ordenes: { p25: 20, p50: 38, p75: 52, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
                 ticket: { p25: 42.00, p50: 61.50, p75: 76.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
-                unidades: { p25: 50, p50: 95, p75: 135, unit: 'unidades', format: (v) => `${Math.round(v)} un.` },
+                unidades: { p25: 50, p50: 95, p75: 135, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 1.9, p50: 2.4, p75: 3.0, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
             }
         },
@@ -65,7 +65,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 ventas: { p25: 2028.00, p50: 3588.00, p75: 4680.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
                 ordenes: { p25: 31, p50: 58, p75: 78, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
                 ticket: { p25: 52.00, p50: 63.40, p75: 82.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
-                unidades: { p25: 85, p50: 150, p75: 205, unit: 'unidades', format: (v) => `${Math.round(v)} un.` },
+                unidades: { p25: 85, p50: 150, p75: 205, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.2, p50: 2.7, p75: 3.3, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
             }
         }
@@ -74,39 +74,39 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const currentConfig = storeConfigs[selectedStore];
     const currentPercentile = currentConfig.percentiles[selectedMetric];
 
-    // Days data for current month (Agosto)
+    // Base raw days data for current month (Agosto)
     const baseRawDays = [
-        { day: 1, dayOfWeek: 'Lun', fullDateStr: '01 Ago 2026', rawSales: 1950.05, orders: 38, prod: 'Combo Pollo Familiar', hora: '12:00-13:00' },
-        { day: 2, dayOfWeek: 'Mar', fullDateStr: '02 Ago 2026', rawSales: 2485.52, orders: 45, prod: 'Burger Doble Carne', hora: '13:00-14:00' },
-        { day: 3, dayOfWeek: 'Mie', fullDateStr: '03 Ago 2026', rawSales: 1772.01, orders: 32, prod: 'Pizza Familiar Pepperoni', hora: '19:00-20:00' },
-        { day: 4, dayOfWeek: 'Jue', fullDateStr: '04 Ago 2026', rawSales: 2805.01, orders: 50, prod: 'Lomo Saltado POS', hora: '12:30-13:30' },
-        { day: 5, dayOfWeek: 'Vie', fullDateStr: '05 Ago 2026', rawSales: 1482.00, orders: 28, prod: 'Soda 2L + Combo', hora: '14:00-15:00' },
-        { day: 6, dayOfWeek: 'Sab', fullDateStr: '06 Ago 2026', rawSales: 3434.03, orders: 62, prod: 'Parrilla Mixta', hora: '15:00-16:00' },
-        { day: 7, dayOfWeek: 'Dom', fullDateStr: '07 Ago 2026', rawSales: 2390.02, orders: 41, prod: 'Helado Artesanal', hora: '13:00-14:00' },
-        { day: 8, dayOfWeek: 'Lun', fullDateStr: '08 Ago 2026', rawSales: 3061.00, orders: 54, prod: 'Combo Pollo Personal', hora: '12:00-13:00' },
-        { day: 9, dayOfWeek: 'Mar', fullDateStr: '09 Ago 2026', rawSales: 1966.50, orders: 36, prod: 'Sopa del Día', hora: '13:00-14:00' },
-        { day: 10, dayOfWeek: 'Mie', fullDateStr: '10 Ago 2026', rawSales: 1373.50, orders: 26, prod: 'Empanada de Carne', hora: '12:00-13:00' },
-        { day: 11, dayOfWeek: 'Jue', fullDateStr: '11 Ago 2026', rawSales: 4042.50, orders: 72, prod: 'Milanesa Gigante', hora: '13:30-14:30' },
-        { day: 12, dayOfWeek: 'Vie', fullDateStr: '12 Ago 2026', rawSales: 2256.00, orders: 40, prod: 'Cerveza + Pique Macho', hora: '19:00-20:00' },
-        { day: 13, dayOfWeek: 'Sab', fullDateStr: '13 Ago 2026', rawSales: 1646.50, orders: 30, prod: 'Papas Fritas XL', hora: '14:00-15:00' },
-        { day: 14, dayOfWeek: 'Dom', fullDateStr: '14 Ago 2026', rawSales: 1757.00, orders: 32, prod: 'Pollo Espiedo Entero', hora: '13:00-14:00' },
-        { day: 15, dayOfWeek: 'Lun', fullDateStr: '15 Ago 2026', rawSales: 1952.00, orders: 35, prod: 'Silpancho Cochabambino', hora: '12:00-13:00' },
-        { day: 16, dayOfWeek: 'Mar', fullDateStr: '16 Ago 2026', rawSales: 1820.50, orders: 33, prod: 'Chicharron Individual', hora: '13:00-14:00' },
-        { day: 17, dayOfWeek: 'Mie', fullDateStr: '17 Ago 2026', rawSales: 2590.50, orders: 48, prod: 'Burger Clásica', hora: '12:30-13:30' },
-        { day: 18, dayOfWeek: 'Jue', fullDateStr: '18 Ago 2026', rawSales: 0, orders: 0, prod: 'Sin datos', hora: '—' },
-        { day: 19, dayOfWeek: 'Vie', fullDateStr: '19 Ago 2026', rawSales: 2135.00, orders: 39, prod: 'Wings 12 pzas', hora: '19:30-20:30' },
-        { day: 20, dayOfWeek: 'Sab', fullDateStr: '20 Ago 2026', rawSales: 3245.01, orders: 58, prod: 'Combo Parrillero', hora: '14:00-15:00' },
-        { day: 21, dayOfWeek: 'Dom', fullDateStr: '21 Ago 2026', rawSales: 2810.01, orders: 49, prod: 'Postre Tres Leches', hora: '13:00-14:00' },
-        { day: 22, dayOfWeek: 'Lun', fullDateStr: '22 Ago 2026', rawSales: 4096.51, orders: 74, prod: 'Pollo 1/4 Pechuga', hora: '12:00-13:00' },
-        { day: 23, dayOfWeek: 'Mar', fullDateStr: '23 Ago 2026', rawSales: 2254.00, orders: 41, prod: 'Majadito de Charque', hora: '13:00-14:00' },
-        { day: 24, dayOfWeek: 'Mie', fullDateStr: '24 Ago 2026', rawSales: 2743.02, orders: 51, prod: 'Burger Triple Tocino', hora: '12:30-13:30' },
-        { day: 25, dayOfWeek: 'Jue', fullDateStr: '25 Ago 2026', rawSales: 2653.00, orders: 47, prod: 'Plato Ejecutivo', hora: '13:00-14:00' },
-        { day: 26, dayOfWeek: 'Vie', fullDateStr: '26 Ago 2026', rawSales: 2362.50, orders: 43, prod: 'Cerveza Artesanal 1L', hora: '19:00-20:00' },
-        { day: 27, dayOfWeek: 'Sab', fullDateStr: '27 Ago 2026', rawSales: 1819.50, orders: 33, prod: 'Nachos Supremos', hora: '15:00-16:00' },
-        { day: 28, dayOfWeek: 'Dom', fullDateStr: '28 Ago 2026', rawSales: 5484.00, orders: 94, prod: 'Combo Pollo XL', hora: '13:00-14:00' },
-        { day: 29, dayOfWeek: 'Lun', fullDateStr: '29 Ago 2026', rawSales: 5054.00, orders: 88, prod: 'Silpancho Especial', hora: '12:00-13:00' },
-        { day: 30, dayOfWeek: 'Mar', fullDateStr: '30 Ago 2026', rawSales: 4579.00, orders: 78, prod: 'Pique Macho Especial', hora: '13:00-14:00' },
-        { day: 31, dayOfWeek: 'Lun', fullDateStr: '31 Ago 2026', rawSales: 6627.00, orders: 120, prod: 'Combo Cierre de Mes', hora: '15:00-16:00' },
+        { day: 1, dayOfWeek: 'Lun', fullDateStr: '01 Ago 2026', rawSales: 1950.05, orders: 38, units: 95, prod: 'Combo Pollo Familiar', hora: '12:00-13:00' },
+        { day: 2, dayOfWeek: 'Mar', fullDateStr: '02 Ago 2026', rawSales: 2485.52, orders: 45, units: 112, prod: 'Burger Doble Carne', hora: '13:00-14:00' },
+        { day: 3, dayOfWeek: 'Mie', fullDateStr: '03 Ago 2026', rawSales: 1772.01, orders: 32, units: 80, prod: 'Pizza Familiar Pepperoni', hora: '19:00-20:00' },
+        { day: 4, dayOfWeek: 'Jue', fullDateStr: '04 Ago 2026', rawSales: 2805.01, orders: 50, units: 125, prod: 'Lomo Saltado POS', hora: '12:30-13:30' },
+        { day: 5, dayOfWeek: 'Vie', fullDateStr: '05 Ago 2026', rawSales: 1482.00, orders: 28, units: 70, prod: 'Soda 2L + Combo', hora: '14:00-15:00' },
+        { day: 6, dayOfWeek: 'Sab', fullDateStr: '06 Ago 2026', rawSales: 3434.03, orders: 62, units: 155, prod: 'Parrilla Mixta', hora: '15:00-16:00' },
+        { day: 7, dayOfWeek: 'Dom', fullDateStr: '07 Ago 2026', rawSales: 2390.02, orders: 41, units: 102, prod: 'Helado Artesanal', hora: '13:00-14:00' },
+        { day: 8, dayOfWeek: 'Lun', fullDateStr: '08 Ago 2026', rawSales: 3061.00, orders: 54, units: 135, prod: 'Combo Pollo Personal', hora: '12:00-13:00' },
+        { day: 9, dayOfWeek: 'Mar', fullDateStr: '09 Ago 2026', rawSales: 1966.50, orders: 36, units: 90, prod: 'Sopa del Día', hora: '13:00-14:00' },
+        { day: 10, dayOfWeek: 'Mie', fullDateStr: '10 Ago 2026', rawSales: 1373.50, orders: 26, units: 65, prod: 'Empanada de Carne', hora: '12:00-13:00' },
+        { day: 11, dayOfWeek: 'Jue', fullDateStr: '11 Ago 2026', rawSales: 4042.50, orders: 72, units: 180, prod: 'Milanesa Gigante', hora: '13:30-14:30' },
+        { day: 12, dayOfWeek: 'Vie', fullDateStr: '12 Ago 2026', rawSales: 2256.00, orders: 40, units: 100, prod: 'Cerveza + Pique Macho', hora: '19:00-20:00' },
+        { day: 13, dayOfWeek: 'Sab', fullDateStr: '13 Ago 2026', rawSales: 1646.50, orders: 30, units: 75, prod: 'Papas Fritas XL', hora: '14:00-15:00' },
+        { day: 14, dayOfWeek: 'Dom', fullDateStr: '14 Ago 2026', rawSales: 1757.00, orders: 32, units: 80, prod: 'Pollo Espiedo Entero', hora: '13:00-14:00' },
+        { day: 15, dayOfWeek: 'Lun', fullDateStr: '15 Ago 2026', rawSales: 1952.00, orders: 35, units: 88, prod: 'Silpancho Cochabambino', hora: '12:00-13:00' },
+        { day: 16, dayOfWeek: 'Mar', fullDateStr: '16 Ago 2026', rawSales: 1820.50, orders: 33, units: 82, prod: 'Chicharron Individual', hora: '13:00-14:00' },
+        { day: 17, dayOfWeek: 'Mie', fullDateStr: '17 Ago 2026', rawSales: 2590.50, orders: 48, units: 120, prod: 'Burger Clásica', hora: '12:30-13:30' },
+        { day: 18, dayOfWeek: 'Jue', fullDateStr: '18 Ago 2026', rawSales: 0, orders: 0, units: 0, prod: 'Sin datos', hora: '—' },
+        { day: 19, dayOfWeek: 'Vie', fullDateStr: '19 Ago 2026', rawSales: 2135.00, orders: 39, units: 98, prod: 'Wings 12 pzas', hora: '19:30-20:30' },
+        { day: 20, dayOfWeek: 'Sab', fullDateStr: '20 Ago 2026', rawSales: 3245.01, orders: 58, units: 145, prod: 'Combo Parrillero', hora: '14:00-15:00' },
+        { day: 21, dayOfWeek: 'Dom', fullDateStr: '21 Ago 2026', rawSales: 2810.01, orders: 49, units: 122, prod: 'Postre Tres Leches', hora: '13:00-14:00' },
+        { day: 22, dayOfWeek: 'Lun', fullDateStr: '22 Ago 2026', rawSales: 4096.51, orders: 74, units: 185, prod: 'Pollo 1/4 Pechuga', hora: '12:00-13:00' },
+        { day: 23, dayOfWeek: 'Mar', fullDateStr: '23 Ago 2026', rawSales: 2254.00, orders: 41, units: 102, prod: 'Majadito de Charque', hora: '13:00-14:00' },
+        { day: 24, dayOfWeek: 'Mie', fullDateStr: '24 Ago 2026', rawSales: 2743.02, orders: 51, units: 128, prod: 'Burger Triple Tocino', hora: '12:30-13:30' },
+        { day: 25, dayOfWeek: 'Jue', fullDateStr: '25 Ago 2026', rawSales: 2653.00, orders: 47, units: 118, prod: 'Plato Ejecutivo', hora: '13:00-14:00' },
+        { day: 26, dayOfWeek: 'Vie', fullDateStr: '26 Ago 2026', rawSales: 2362.50, orders: 43, units: 108, prod: 'Cerveza Artesanal 1L', hora: '19:00-20:00' },
+        { day: 27, dayOfWeek: 'Sab', fullDateStr: '27 Ago 2026', rawSales: 1819.50, orders: 33, units: 82, prod: 'Nachos Supremos', hora: '15:00-16:00' },
+        { day: 28, dayOfWeek: 'Dom', fullDateStr: '28 Ago 2026', rawSales: 5484.00, orders: 94, units: 235, prod: 'Combo Pollo XL', hora: '13:00-14:00' },
+        { day: 29, dayOfWeek: 'Lun', fullDateStr: '29 Ago 2026', rawSales: 5054.00, orders: 88, units: 220, prod: 'Silpancho Especial', hora: '12:00-13:00' },
+        { day: 30, dayOfWeek: 'Mar', fullDateStr: '30 Ago 2026', rawSales: 4579.00, orders: 78, units: 195, prod: 'Pique Macho Especial', hora: '13:00-14:00' },
+        { day: 31, dayOfWeek: 'Lun', fullDateStr: '31 Ago 2026', rawSales: 6627.00, orders: 120, units: 285, prod: 'Combo Cierre de Mes', hora: '15:00-16:00' },
     ];
 
     const processedDays = useMemo<DayDetailData[]>(() => {
@@ -116,13 +116,20 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
         const p75 = currentPercentile.p75;
 
         return baseRawDays.map(d => {
-            const sales = Number((d.rawSales * mult).toFixed(2));
+            const rawSales = Number((d.rawSales * mult).toFixed(2));
             const orders = Math.round(d.orders * mult);
-            const ticketMedio = orders > 0 ? Number((sales / orders).toFixed(2)) : 55;
-            const unidades = Math.round(orders * 2.5);
-            const unidadesPorOrden = orders > 0 ? Number((unidades / orders).toFixed(1)) : 0;
+            const unidades = Math.round(d.units * mult);
+            const ticketMedio = orders > 0 ? Number((rawSales / orders).toFixed(2)) : 55;
+            const unidadesPorOrden = orders > 0 ? Number((unidades / orders).toFixed(1)) : 2.5;
 
-            if (sales === 0) {
+            // Pick active target value based on selectedMetric
+            let activeVal = rawSales;
+            if (selectedMetric === 'ordenes') activeVal = orders;
+            if (selectedMetric === 'ticket') activeVal = ticketMedio;
+            if (selectedMetric === 'unidades') activeVal = unidades;
+            if (selectedMetric === 'unidades_por_orden') activeVal = unidadesPorOrden;
+
+            if (rawSales === 0) {
                 return {
                     day: d.day,
                     dayOfWeek: d.dayOfWeek,
@@ -144,33 +151,33 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 };
             }
 
-            const vsP50 = Math.round(((sales - p50) / p50) * 100);
+            const vsP50 = Math.round(((activeVal - p50) / p50) * 100);
             let status: 'critico' | 'bajo' | 'normal' | 'alto' = 'normal';
             let posPct = 50;
 
-            if (sales < p25) {
+            if (activeVal < p25) {
                 status = 'critico';
-                posPct = Math.min(Math.max(Math.round((sales / p25) * 25), 5), 24);
-            } else if (sales < p50) {
+                posPct = Math.min(Math.max(Math.round((activeVal / p25) * 25), 5), 24);
+            } else if (activeVal < p50) {
                 status = 'bajo';
-                posPct = 25 + Math.round(((sales - p25) / (p50 - p25)) * 25);
-            } else if (sales <= p75) {
+                posPct = 25 + Math.round(((activeVal - p25) / (p50 - p25)) * 25);
+            } else if (activeVal <= p75) {
                 status = 'normal';
-                posPct = 50 + Math.round(((sales - p50) / (p75 - p50)) * 25);
+                posPct = 50 + Math.round(((activeVal - p50) / (p75 - p50)) * 25);
             } else {
                 status = 'alto';
-                posPct = 82; // Position from user spec
+                posPct = 82;
             }
 
-            const equivalenteP50 = 5840.00 * mult;
-            const vsEquivalentePct = ((sales - equivalenteP50) / equivalenteP50) * 100;
+            const equivalenteP50 = p50 * 0.95;
+            const vsEquivalentePct = ((activeVal - equivalenteP50) / equivalenteP50) * 100;
 
             return {
                 day: d.day,
                 dayOfWeek: d.dayOfWeek,
                 dateStr: `${d.day} Ago`,
                 fullDateStr: d.fullDateStr,
-                sales,
+                sales: activeVal,
                 orders,
                 ticketMedio,
                 unidades,
@@ -183,13 +190,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 equivalenteP50,
                 vsEquivalentePct,
                 causalFactor: status === 'alto' 
-                    ? `Día con excelente tráfíco impulsado por ${d.prod} en franja ${d.hora}.`
+                    ? `Día con excelente rendimiento impulsado por ${d.prod} en franja ${d.hora}.`
                     : status === 'critico'
                     ? 'Baja conversión en caja respecto a días equivalentes.'
                     : 'Operación dentro del flujo normal esperado.'
             };
         });
-    }, [selectedStore, currentConfig, currentPercentile]);
+    }, [selectedStore, selectedMetric, currentConfig, currentPercentile]);
 
     // Resumen del Mes
     const resumenMes = useMemo(() => {
@@ -227,8 +234,8 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
     // Critical hours summary
     const criticalHours: CriticalHourSummary[] = [
-        { hora: '12:00', historico: 1500.00, hoy: 1850.00, status: 'alto', label: '🟢 Sobre esperado' },
-        { hora: '18:00', historico: 900.00, hoy: 400.00, status: 'bajo', label: '🔴 Bajo' },
+        { hora: '12:00', historico: 1500.00, hoy: 1850.00, status: 'alto', label: 'Sobre esperado' },
+        { hora: '18:00', historico: 900.00, hoy: 400.00, status: 'bajo', label: 'Bajo' },
     ];
 
     const todayDayData = processedDays[processedDays.length - 1];
@@ -244,7 +251,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
     return (
         <div className="space-y-6 font-sans text-slate-800 w-full bg-slate-50/50 p-3 sm:p-5 rounded-3xl">
-            {/* 1. ENCABEZADO SUPERIOR Y FILTROS */}
+            {/* 1. ENCABEZADO SUPERIOR Y FILTROS (SIN EMOJIS, CON ICONOS LUCIDE) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
@@ -258,80 +265,91 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             Evaluación del rendimiento contra comportamiento histórico y días equivalentes del negocio.
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-4 mt-3 text-xs">
-                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                                <Calendar className="w-3.5 h-3.5 text-indigo-600" /> 📅 <strong>Año móvil:</strong> 01 Sept 2025 - 31 Agosto 2026
+                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                                <span><strong>Año móvil:</strong> 01 Sept 2025 - 31 Agosto 2026</span>
                             </span>
-                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                                <Database className="w-3.5 h-3.5 text-emerald-600" /> 🗄️ <strong>Fuente:</strong> MongoDB → sales
+                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                                <Database className="w-3.5 h-3.5 text-emerald-600" />
+                                <span><strong>Fuente:</strong> MongoDB → sales</span>
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
                         <button
                             onClick={handleRefresh}
                             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors border border-slate-200 flex items-center gap-1.5 text-xs font-bold"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            <span>🔄 Actualizar</span>
+                            <span>Actualizar</span>
                         </button>
                         <button
                             onClick={handleExportPDF}
                             className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
                         >
                             <Download className="w-4 h-4" />
-                            <span>📤 Exportar</span>
+                            <span>Exportar</span>
                         </button>
                         <button
                             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
                         >
                             <Settings className="w-4 h-4" />
-                            <span>⚙ Configurar Benchmark</span>
+                            <span>Configurar Benchmark</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Filtros Row */}
                 <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 block mb-1">Sucursal:</label>
-                        <select
-                            value={selectedStore}
-                            onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold rounded-xl p-2.5 focus:border-indigo-500 focus:outline-none"
-                        >
-                            <option value="consolidado">🏢 Todas (Consolidado)</option>
-                            <option value="heroinas">📍 Heroínas (Cochabamba)</option>
-                            <option value="recoleta">📍 Recoleta (Cochabamba)</option>
-                            <option value="calacoto">📍 Calacoto (La Paz)</option>
-                        </select>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="w-full">
+                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Sucursal:</label>
+                            <select
+                                value={selectedStore}
+                                onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
+                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
+                            >
+                                <option value="consolidado">Todas (Consolidado)</option>
+                                <option value="heroinas">Heroínas (Cochabamba)</option>
+                                <option value="recoleta">Recoleta (Cochabamba)</option>
+                                <option value="calacoto">Calacoto (La Paz)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 block mb-1">Métrica:</label>
-                        <select
-                            value={selectedMetric}
-                            onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold rounded-xl p-2.5 focus:border-indigo-500 focus:outline-none"
-                        >
-                            <option value="ventas">💰 Ventas</option>
-                            <option value="ordenes">🧾 Órdenes</option>
-                            <option value="ticket">💳 Ticket Promedio</option>
-                            <option value="unidades">📦 Unidades Vendidas</option>
-                        </select>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                        <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="w-full">
+                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Métrica:</label>
+                            <select
+                                value={selectedMetric}
+                                onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
+                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
+                            >
+                                <option value="ventas">Ventas Totales</option>
+                                <option value="ordenes">Órdenes / Pedidos</option>
+                                <option value="ticket">Ticket Promedio</option>
+                                <option value="unidades">Unidades Vendidas</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 block mb-1">Periodo:</label>
-                        <select
-                            value={periodMode}
-                            onChange={(e) => setPeriodMode(e.target.value as 'mes' | 'semana')}
-                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold rounded-xl p-2.5 focus:border-indigo-500 focus:outline-none"
-                        >
-                            <option value="mes">📅 Mes</option>
-                            <option value="semana">📆 Semana</option>
-                        </select>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="w-full">
+                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Periodo:</label>
+                            <select
+                                value={periodMode}
+                                onChange={(e) => setPeriodMode(e.target.value as 'mes' | 'semana')}
+                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
+                            >
+                                <option value="mes">Mes</option>
+                                <option value="semana">Semana</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>

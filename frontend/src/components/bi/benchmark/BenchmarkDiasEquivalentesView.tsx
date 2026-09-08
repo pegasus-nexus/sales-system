@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarCheck, TrendingUp, CheckCircle2, Info } from 'lucide-react';
+import { CalendarCheck, TrendingUp, CheckCircle2, Info, Calendar } from 'lucide-react';
 import type { DayDetailData } from './BenchmarkTypes';
 
 interface Props {
@@ -11,7 +11,6 @@ export const BenchmarkDiasEquivalentesView: React.FC<Props> = ({
     todayData,
     formatValue
 }) => {
-    // 12 Equivalent Days Calculation
     const equivalentDayName = todayData.dayOfWeek || 'Lunes';
     const evaluatedWeeksCount = 12;
     const promedioEquivalente = todayData.equivalenteP50 || 5840.00;
@@ -36,8 +35,9 @@ export const BenchmarkDiasEquivalentesView: React.FC<Props> = ({
                     </div>
                 </div>
 
-                <div className="px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-full text-slate-800 text-xs font-bold self-start sm:self-auto font-mono">
-                    📅 {todayData.fullDateStr || 'Lunes 31 Agosto 2026'}
+                <div className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-slate-800 text-xs font-bold self-start sm:self-auto font-mono flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>{todayData.fullDateStr || '31 Ago 2026'}</span>
                 </div>
             </div>
 
