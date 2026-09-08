@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Sparkles, Package, Target, RefreshCw, Info, Search
+    Sparkles, Package, Target, RefreshCw, Info, Search,
+    Star, Crown, HelpCircle, PackageX
 } from 'lucide-react';
 import type { TopProductoItemBI } from '../../api/biApi';
 import { BIMatrizBCGPlot } from './BIMatrizBCGPlot';
@@ -160,10 +161,10 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
 
-            {/* TARJETAS RESUMEN DE LOS 4 CUADRANTES CON RECAUDACIÓN TOTAL */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-50/50 p-4 rounded-3xl border border-amber-200/80">
+            {/* BARRA RESUMEN CON VALORES DE CORTE */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-yellow-500/10 p-4 rounded-3xl border border-amber-200/80">
                 <div className="flex items-center gap-2">
-                    <span className="bg-amber-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <span className="bg-amber-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
                         Matriz Boston Consulting Group
                     </span>
                     <span className="text-xs font-extrabold text-slate-700">
@@ -176,6 +177,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 </div>
             </div>
 
+            {/* TARJETAS RESUMEN DE LOS 4 CUADRANTES CON ICONOS PROFESIONALES */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
                 {/* 1. ESTRELLAS ⭐ */}
@@ -189,7 +191,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 >
                     <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
                         <span className="text-xs font-black text-amber-950 uppercase flex items-center gap-1.5">
-                            ⭐ Estrellas
+                            <Star size={15} className="text-amber-600 fill-amber-400" /> Estrellas
                         </span>
                         <span className="text-xs font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-lg">
                             {bcgAnalysis.stats.star.count} SKUs
@@ -218,7 +220,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 >
                     <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
                         <span className="text-xs font-black text-emerald-950 uppercase flex items-center gap-1.5">
-                            🐄 Vacas Lecheras
+                            <Crown size={15} className="text-emerald-600 fill-emerald-400" /> Vacas Lecheras
                         </span>
                         <span className="text-xs font-extrabold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-lg">
                             {bcgAnalysis.stats.cow.count} SKUs
@@ -247,7 +249,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 >
                     <div className="flex items-center justify-between pb-2 border-b border-sky-200/60">
                         <span className="text-xs font-black text-sky-950 uppercase flex items-center gap-1.5">
-                            ❓ Interrogantes
+                            <HelpCircle size={15} className="text-sky-600 fill-sky-400" /> Interrogantes
                         </span>
                         <span className="text-xs font-extrabold bg-sky-200 text-sky-900 px-2 py-0.5 rounded-lg">
                             {bcgAnalysis.stats.question.count} SKUs
@@ -276,7 +278,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 >
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                         <span className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
-                            🐕 Mascotas / Perros
+                            <PackageX size={15} className="text-slate-600 fill-slate-400" /> Mascotas / Perros
                         </span>
                         <span className="text-xs font-extrabold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg">
                             {bcgAnalysis.stats.dog.count} SKUs
@@ -296,7 +298,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
 
             </div>
 
-            {/* GRÁFICO DE DISPERSIÓN 2D CON EJES Y NODOS BURBUJA (FORMATO SOLICITADO) */}
+            {/* GRÁFICO DE DISPERSIÓN 2D CON NODOS BURBUJA E ICONOS */}
             <BIMatrizBCGPlot
                 products={bcgAnalysis.bcgProducts}
                 medianUnits={bcgAnalysis.medianUnits}
@@ -304,7 +306,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 onSelectProduct={(prod) => setSearchTerm(prod.nombre)}
             />
 
-            {/* CUADRANTE VISUAL BCG 2X2 */}
+            {/* CUADRANTE VISUAL BCG 2X2 CON ICONOS LUCIDE */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/70 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                     <div>
@@ -326,14 +328,14 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                     )}
                 </div>
 
-                {/* MATRIZ DE 2 FILAS X 2 COLUMNAS */}
+                {/* MATRIZ DE 2 FILAS X 2 COLUMNAS CON ICONOS LUCIDE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     {/* CUADRANTE ALTO INGRESO / ALTO VOLUMEN (ESTRELLAS ⭐) */}
                     <div className="bg-amber-50/70 rounded-3xl p-5 border-2 border-amber-200/80 space-y-3">
                         <div className="flex justify-between items-center pb-2 border-b border-amber-200/80">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg">⭐</span>
+                                <Star size={18} className="text-amber-500 fill-amber-400" />
                                 <div>
                                     <h4 className="text-sm font-black text-amber-950">ESTRELLAS (Stars)</h4>
                                     <span className="text-[10px] font-bold text-amber-700">Alto Volumen & Alto Ingreso</span>
@@ -363,7 +365,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                     <div className="bg-sky-50/70 rounded-3xl p-5 border-2 border-sky-200/80 space-y-3">
                         <div className="flex justify-between items-center pb-2 border-b border-sky-200/80">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg">❓</span>
+                                <HelpCircle size={18} className="text-sky-600 fill-sky-400" />
                                 <div>
                                     <h4 className="text-sm font-black text-sky-950">INTERROGANTES (Question Marks)</h4>
                                     <span className="text-[10px] font-bold text-sky-700">Bajo Volumen & Alto Ingreso</span>
@@ -393,7 +395,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                     <div className="bg-emerald-50/70 rounded-3xl p-5 border-2 border-emerald-200/80 space-y-3">
                         <div className="flex justify-between items-center pb-2 border-b border-emerald-200/80">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg">🐄</span>
+                                <Crown size={18} className="text-emerald-600 fill-emerald-400" />
                                 <div>
                                     <h4 className="text-sm font-black text-emerald-950">VACAS LECHERAS (Cash Cows)</h4>
                                     <span className="text-[10px] font-bold text-emerald-700">Alto Volumen & Ingreso Moderado</span>
@@ -423,7 +425,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                     <div className="bg-slate-100/70 rounded-3xl p-5 border-2 border-slate-300/80 space-y-3">
                         <div className="flex justify-between items-center pb-2 border-b border-slate-300/80">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg">🐕</span>
+                                <PackageX size={18} className="text-slate-600 fill-slate-400" />
                                 <div>
                                     <h4 className="text-sm font-black text-slate-900">PERROS / MASCOTAS (Dogs)</h4>
                                     <span className="text-[10px] font-bold text-slate-500">Bajo Volumen & Bajo Ingreso</span>
@@ -452,7 +454,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 </div>
             </div>
 
-            {/* TABLA PRINCIPAL DE CLASIFICACIÓN DETALLADA MATRIZ BCG */}
+            {/* TABLA PRINCIPAL DE CLASIFICACIÓN DETALLADA MATRIZ BCG CON ICONOS */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/70 shadow-xs space-y-4">
                 <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 pb-3 border-b border-slate-100">
                     <div>
@@ -463,7 +465,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                         <p className="text-xs text-slate-400 font-bold">Clasificación individual y acciones sugeridas para cada SKU</p>
                     </div>
 
-                    {/* CONTROLES DE FILTRADO Y BUSCADOR */}
+                    {/* CONTROLES DE FILTRADO Y BUSCADOR CON ICONOS LUCIDE */}
                     <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                         
                         {/* Selector de Cuadrante Pill */}
@@ -476,27 +478,27 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                             </button>
                             <button
                                 onClick={() => setSelectedQuadrant('star')}
-                                className={`px-3 py-1 rounded-xl transition-all ${selectedQuadrant === 'star' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                className={`px-3 py-1 rounded-xl transition-all flex items-center gap-1 ${selectedQuadrant === 'star' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                             >
-                                ⭐ Estrellas ({bcgAnalysis.stats.star.count})
+                                <Star size={12} className={selectedQuadrant === 'star' ? 'text-white fill-white' : 'text-amber-500 fill-amber-400'} /> Estrellas ({bcgAnalysis.stats.star.count})
                             </button>
                             <button
                                 onClick={() => setSelectedQuadrant('cow')}
-                                className={`px-3 py-1 rounded-xl transition-all ${selectedQuadrant === 'cow' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                className={`px-3 py-1 rounded-xl transition-all flex items-center gap-1 ${selectedQuadrant === 'cow' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                             >
-                                🐄 Vacas ({bcgAnalysis.stats.cow.count})
+                                <Crown size={12} className={selectedQuadrant === 'cow' ? 'text-white fill-white' : 'text-emerald-600 fill-emerald-500'} /> Vacas ({bcgAnalysis.stats.cow.count})
                             </button>
                             <button
                                 onClick={() => setSelectedQuadrant('question')}
-                                className={`px-3 py-1 rounded-xl transition-all ${selectedQuadrant === 'question' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                className={`px-3 py-1 rounded-xl transition-all flex items-center gap-1 ${selectedQuadrant === 'question' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                             >
-                                ❓ Interrogantes ({bcgAnalysis.stats.question.count})
+                                <HelpCircle size={12} className={selectedQuadrant === 'question' ? 'text-white fill-white' : 'text-sky-600 fill-sky-500'} /> Interrogantes ({bcgAnalysis.stats.question.count})
                             </button>
                             <button
                                 onClick={() => setSelectedQuadrant('dog')}
-                                className={`px-3 py-1 rounded-xl transition-all ${selectedQuadrant === 'dog' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                className={`px-3 py-1 rounded-xl transition-all flex items-center gap-1 ${selectedQuadrant === 'dog' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                             >
-                                🐕 Mascotas ({bcgAnalysis.stats.dog.count})
+                                <PackageX size={12} className={selectedQuadrant === 'dog' ? 'text-white fill-white' : 'text-slate-500 fill-slate-400'} /> Mascotas ({bcgAnalysis.stats.dog.count})
                             </button>
                         </div>
 
@@ -537,8 +539,11 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                                         <div className="text-[10px] text-slate-400 font-bold">{p.categoria_nombre}</div>
                                     </td>
                                     <td className="py-3.5 px-3 text-center">
-                                        <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-xl border ${p.actionColor}`}>
-                                            <span>{p.quadrantEmoji}</span>
+                                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-xl border ${p.actionColor}`}>
+                                            {p.quadrant === 'star' && <Star size={13} className="text-amber-600 fill-amber-500" />}
+                                            {p.quadrant === 'cow' && <Crown size={13} className="text-emerald-600 fill-emerald-500" />}
+                                            {p.quadrant === 'question' && <HelpCircle size={13} className="text-sky-600 fill-sky-500" />}
+                                            {p.quadrant === 'dog' && <PackageX size={13} className="text-slate-600 fill-slate-500" />}
                                             <span>{p.quadrantLabel}</span>
                                         </span>
                                     </td>
