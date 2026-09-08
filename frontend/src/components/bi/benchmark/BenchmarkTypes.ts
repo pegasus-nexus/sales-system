@@ -55,3 +55,26 @@ export interface StoreRankingItem {
     statusEmoji: string;
     opportunityText: string;
 }
+
+export interface EquivalentDayBenchmark {
+    dayName: string;
+    fullDate: string;
+    evaluatedWeeks: number;
+    averageSales: number;
+    todaySales: number;
+    variationPct: number;
+}
+
+export interface MonthTrendPoint {
+    month: string;
+    value: number;
+    pctChange: number;
+}
+
+export interface CriticalHourSummary {
+    hora: string;
+    historico: number;
+    hoy: number;
+    status: 'alto' | 'bajo' | 'normal';
+    label: string;
+}

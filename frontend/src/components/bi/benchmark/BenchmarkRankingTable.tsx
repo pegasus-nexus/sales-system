@@ -1,169 +1,105 @@
-import React, { useState, useMemo } from 'react';
-import { Store, ArrowUpDown } from 'lucide-react';
-import type { StoreKey, RankingSortKey, StoreRankingItem } from './BenchmarkTypes';
+import React from 'react';
+import { Store, ArrowRight } from 'lucide-react';
+import type { StoreKey, StoreRankingItem } from './BenchmarkTypes';
 
-interface BenchmarkRankingTableProps {
+interface Props {
     formatValue: (val: number) => string;
     onSelectStore?: (storeKey: StoreKey) => void;
-    sortKey?: RankingSortKey;
-    onSortChange?: (key: RankingSortKey) => void;
 }
 
-export const BenchmarkRankingTable: React.FC<BenchmarkRankingTableProps> = ({
+export const BenchmarkRankingTable: React.FC<Props> = ({
     formatValue,
-    onSelectStore,
-    sortKey: externalSortKey,
-    onSortChange
+    onSelectStore
 }) => {
-    const [internalSortKey, setInternalSortKey] = useState<RankingSortKey>('rendimiento');
-    const sortKey = externalSortKey || internalSortKey;
-
-    const handleSort = (key: RankingSortKey) => {
-        if (onSortChange) onSortChange(key);
-        else setInternalSortKey(key);
-    };
-
-    const storesData = useMemo<StoreRankingItem[]>(() => {
-        return [
-            {
-                id: 'heroinas',
-                nombre: 'Heroínas (Cochabamba)',
-                ventaActual: 3843.00,
-                p50Historico: 2850.00,
-                variacionPct: 34.8,
-                status: 'alto',
-                statusEmoji: '🟢',
-                opportunityText: 'Líder en volumen transaccional diario. Potenciar ventas cruzadas.'
-            },
-            {
-                id: 'calacoto',
-                nombre: 'Calacoto (La Paz)',
-                ventaActual: 5169.00,
-                p50Historico: 3680.00,
-                variacionPct: 40.5,
-                status: 'alto',
-                statusEmoji: '🟢',
-                opportunityText: 'Alto rendimiento. Blindar inventario estrella.'
-            },
-            {
-                id: 'recoleta',
-                nombre: 'Recoleta (Cochabamba)',
-                ventaActual: 1920.00,
-                p50Historico: 2340.00,
-                variacionPct: -17.9,
-                status: 'bajo',
-                statusEmoji: '🟠',
-                opportunityText: 'Bajo la mediana. Activar promociones relámpago.'
-            }
-        ];
-    }, []);
-
-    const sortedStores = useMemo(() => {
-        const copy = [...storesData];
-        if (sortKey === 'rendimiento') {
-            return copy.sort((a, b) => b.variacionPct - a.variacionPct);
-        } else if (sortKey === 'caida') {
-            return copy.sort((a, b) => a.variacionPct - b.variacionPct);
-        } else {
-            return copy.sort((a, b) => a.ventaActual - b.ventaActual);
+    const stores: StoreRankingItem[] = [
+        {
+            id: 'heroinas',
+            nombre: 'Heroínas (Cochabamba)',
+            ventaActual: 4210.00,
+            p50Historico: 3568.00,
+            variacionPct: 18.0,
+            status: 'alto',
+            statusEmoji: '🟢',
+            opportunityText: 'Líder en ventas del período'
+        },
+        {
+            id: 'recoleta',
+            nombre: 'Recoleta (Cochabamba)',
+            ventaActual: 2223.00,
+            p50Historico: 2340.00,
+            variacionPct: -5.0,
+            status: 'bajo',
+            statusEmoji: '🟡',
+            opportunityText: 'Ligera contracción respecto a mediana P50'
+        },
+        {
+            id: 'calacoto',
+            nombre: 'Calacoto (La Paz)',
+            ventaActual: 2907.00,
+            p50Historico: 3680.00,
+            variacionPct: -21.0,
+            status: 'critico',
+            statusEmoji: '🔴',
+            opportunityText: 'Bajo el límite inferior de P25'
         }
-    }, [storesData, sortKey]);
+    ];
 
     return (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div>
-                    <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
-                        <Store size={18} />
-                        <span>Módulo 4: Ranking Comparativo de Sucursales</span>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                    <Store className="w-5 h-5 text-indigo-600" />
+                    <div>
+                        <h3 className="text-base font-bold text-slate-900">
+                            Rendimiento por Sucursal
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                            Variación porcentual de ventas frente a la mediana histórica por sucursal.
+                        </p>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        Comparación de ventas y nivel de desviación vs mediana P50 histórica por tienda.
-                    </p>
                 </div>
 
-                {/* Filtros de Ordenamiento */}
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                    <button
-                        onClick={() => handleSort('rendimiento')}
-                        className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
-                            sortKey === 'rendimiento' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        <ArrowUpDown size={12} /> Mejor Rendimiento
-                    </button>
-                    <button
-                        onClick={() => handleSort('caida')}
-                        className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
-                            sortKey === 'caida' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        Mayor Caída
-                    </button>
-                    <button
-                        onClick={() => handleSort('oportunidad')}
-                        className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
-                            sortKey === 'oportunidad' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        Oportunidad
-                    </button>
-                </div>
+                <button 
+                    onClick={() => onSelectStore && onSelectStore('consolidado')}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors"
+                >
+                    <span>Ver detalle</span> <ArrowRight className="w-3.5 h-3.5" />
+                </button>
             </div>
 
-            {/* Tabla de Ranking */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                    <thead>
-                        <tr className="border-b border-slate-200 text-slate-500 font-mono uppercase text-[10px]">
-                            <th className="py-2.5 px-3">Sucursal</th>
-                            <th className="py-2.5 px-3">Venta Actual</th>
-                            <th className="py-2.5 px-3">Mediana P50</th>
-                            <th className="py-2.5 px-3">Variación %</th>
-                            <th className="py-2.5 px-3">Estado</th>
-                            <th className="py-2.5 px-3">Diagnóstico Táctico</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {sortedStores.map((item) => (
-                            <tr
-                                key={item.id}
-                                onClick={() => onSelectStore && onSelectStore(item.id)}
-                                className="hover:bg-slate-50 transition-colors cursor-pointer"
-                            >
-                                <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
-                                    <span>{item.statusEmoji}</span>
-                                    <span>{item.nombre}</span>
-                                </td>
-                                <td className="py-3 px-3 font-mono font-bold text-slate-800">
-                                    {formatValue(item.ventaActual)}
-                                </td>
-                                <td className="py-3 px-3 font-mono text-slate-500">
-                                    {formatValue(item.p50Historico)}
-                                </td>
-                                <td className="py-3 px-3 font-mono font-bold">
-                                    <span className={item.variacionPct >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
-                                        {item.variacionPct >= 0 ? '+' : ''}{item.variacionPct}%
-                                    </span>
-                                </td>
-                                <td className="py-3 px-3">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                        item.status === 'alto'
-                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                            : item.status === 'normal'
-                                            ? 'bg-sky-100 text-sky-800 border border-sky-300'
-                                            : 'bg-amber-100 text-amber-800 border border-amber-300'
-                                    }`}>
-                                        {item.status}
-                                    </span>
-                                </td>
-                                <td className="py-3 px-3 text-slate-600 text-[11px] max-w-xs">
-                                    {item.opportunityText}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            {/* Branch List */}
+            <div className="space-y-2.5">
+                {stores.map((item) => (
+                    <div 
+                        key={item.id}
+                        onClick={() => onSelectStore && onSelectStore(item.id)}
+                        className="p-3.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl flex items-center justify-between transition-all cursor-pointer group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-lg">{item.statusEmoji}</span>
+                            <div>
+                                <span className="font-bold text-slate-900 text-xs block group-hover:text-indigo-600 transition-colors">
+                                    {item.nombre}
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-mono">
+                                    Actual: {formatValue(item.ventaActual)} (P50: {formatValue(item.p50Historico)})
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <span className={`text-sm font-black font-mono px-2.5 py-1 rounded-lg border ${
+                                item.variacionPct >= 0 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                    : item.variacionPct >= -10
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}>
+                                {item.variacionPct >= 0 ? `+${item.variacionPct}%` : `${item.variacionPct}%`}
+                            </span>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
