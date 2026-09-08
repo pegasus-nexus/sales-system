@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle, Search, X,
     Package, DollarSign, AlertCircle, CheckCircle2, XCircle, Building2,
-    ShoppingCart, Sparkles, Clock, ShieldAlert
+    ShoppingCart, Sparkles, Clock, ShieldAlert, HelpCircle, Target, TrendingUp, Calculator
 } from 'lucide-react';
 import { getBIInventarioControl, getBISucursales } from '../../api/biApi';
 import type { BIInventarioControlResponse, BISucursalOption } from '../../api/biApi';
@@ -470,6 +470,74 @@ export const BIInventarioView: React.FC<BIInventarioViewProps> = ({
                             </div>
                         </div>
                     )}
+
+                    {/* GUÍA EXPLICATIVA DEL ALGORITMO: POR QUÉ, CÓMO Y PARA QUÉ */}
+                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-indigo-100 space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-indigo-50">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-indigo-100/70 text-indigo-700 rounded-2xl">
+                                    <HelpCircle size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                                        ¿Cómo se calculan y para qué sirven estas sugerencias?
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-semibold">
+                                        Metodología analítica del modelo predictivo para la toma de decisiones de inventario
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
+                            {/* POR QUÉ */}
+                            <div className="bg-gradient-to-br from-indigo-50/60 to-purple-50/40 rounded-2xl p-4 border border-indigo-100/80 space-y-2">
+                                <div className="flex items-center gap-2 text-indigo-900 font-black text-xs uppercase">
+                                    <Target size={16} className="text-indigo-600 shrink-0" />
+                                    <span>1. ¿POR QUÉ sugerimos estas compras?</span>
+                                </div>
+                                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                                    Para <strong>evitar quiebres de inventario</strong> (quedarte sin productos clave y perder ventas) y al mismo tiempo <strong>prevenir la sobrecompra</strong> (evitando capital estancado en productos con baja demanda).
+                                </p>
+                            </div>
+
+                            {/* CÓMO */}
+                            <div className="bg-gradient-to-br from-purple-50/60 to-violet-50/40 rounded-2xl p-4 border border-purple-100/80 space-y-2">
+                                <div className="flex items-center gap-2 text-purple-900 font-black text-xs uppercase">
+                                    <Calculator size={16} className="text-purple-600 shrink-0" />
+                                    <span>2. ¿CÓMO se calcula el algoritmo?</span>
+                                </div>
+                                <ul className="text-[11px] text-slate-600 space-y-1.5 font-medium">
+                                    <li>• <strong>Velocidad Diaria:</strong> <code className="bg-purple-100/70 text-purple-900 px-1 py-0.5 rounded font-mono">Ventas 30d / 30 días</code></li>
+                                    <li>• <strong>Días Cobertura:</strong> <code className="bg-purple-100/70 text-purple-900 px-1 py-0.5 rounded font-mono">Stock Actual / Velocidad</code></li>
+                                    <li>• <strong>Unidades Sugeridas:</strong> <code className="bg-purple-100/70 text-purple-900 px-1 py-0.5 rounded font-mono">(Velocidad × 30d) - Stock</code></li>
+                                    <li>• <strong>Presupuesto (Bs.):</strong> <code className="bg-purple-100/70 text-purple-900 px-1 py-0.5 rounded font-mono">Unidades × Costo Unit.</code></li>
+                                </ul>
+                            </div>
+
+                            {/* PARA QUÉ / NIVELES */}
+                            <div className="bg-gradient-to-br from-amber-50/60 to-rose-50/40 rounded-2xl p-4 border border-amber-100/80 space-y-2">
+                                <div className="flex items-center gap-2 text-amber-900 font-black text-xs uppercase">
+                                    <TrendingUp size={16} className="text-amber-600 shrink-0" />
+                                    <span>3. ¿PARA QUÉ sirven las alertas?</span>
+                                </div>
+                                <div className="space-y-1.5 text-[11px]">
+                                    <div className="flex items-center gap-1.5 font-bold text-rose-700">
+                                        <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                                        <span><strong>CRÍTICO (&lt; 15 días):</strong> Generar orden de compra hoy</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-bold text-amber-700">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                        <span><strong>ALERTA (15-25 días):</strong> Planificar compra semana próxima</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-bold text-emerald-700">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                        <span><strong>SALUDABLE (&gt; 25 días):</strong> Cobertura adecuada</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* TABLA DETALLADA DE SUGERENCIAS DE PEDIDO A FUTURO */}
                     <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">

@@ -458,7 +458,7 @@ export default function BIView() {
                     )}
 
                     {activeModule === 'inventario' && (
-                        <BIInventarioView initialSubTab={subTab === 'demanda' ? 'demanda' : subTab === 'kardex' ? 'kardex' : 'valorizacion'} />
+                        <BIInventarioView initialSubTab={subTab === 'demanda' ? 'demanda' : subTab === 'kardex' ? 'kardex' : 'valorizacion'} hideHeader={true} />
                     )}
 
                     {activeModule === 'ia' && (
