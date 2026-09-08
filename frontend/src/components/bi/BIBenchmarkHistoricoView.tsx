@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import {
     BarChart3, Calendar, RefreshCw, Download, Filter, ChevronLeft, ChevronRight,
-    Info, Clock, Store, Sparkles, HelpCircle, X, CheckCircle2, Database
+    Info, Clock, Store, Sparkles, HelpCircle, X, CheckCircle2, Database,
+    ShoppingBag, Award
 } from 'lucide-react';
+
+interface DayDetailData {
+    day: number;
+    dayOfWeek: string;
+    dateStr: string;
+    sales: number;
+    orders: number;
+    ticketMedio: number;
+    vsP50: number;
+    status: 'critico' | 'bajo' | 'normal' | 'alto' | 'sin_ventas';
+    posPct: number;
+    horaPico: string;
+    productoEstrella: string;
+}
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedStore, setSelectedStore] = useState<string>('consolidado');
     const [periodMode, setPeriodMode] = useState<'mes' | 'semana'>('mes');
+    const [selectedWeekNum, setSelectedWeekNum] = useState<number>(4); // Semana 4 por defecto (22-28 Ago)
     const [currentMonth] = useState<string>('Agosto 2026');
     const [showModal, setShowModal] = useState<boolean>(false);
 
@@ -66,6 +82,71 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
         { day: 31, dayOfWeek: 'Mie', sales: 6627.00, vsP50: 34, status: 'alto', posPct: 88 },
     ];
 
+    // Detalle semanal enriquecido para la vista semanal detallada
+    const weeklyDataDetails: Record<number, { title: string; dateRangeStr: string; days: DayDetailData[] }> = {
+        1: {
+            title: "Semana 1",
+            dateRangeStr: "01 ago - 07 ago 2026",
+            days: [
+                { day: 1, dayOfWeek: 'Lunes', dateStr: '01 Ago', sales: 1950.05, orders: 38, ticketMedio: 51.31, vsP50: -65, status: 'critico', posPct: 15, horaPico: '12:00 - 13:00', productoEstrella: 'Combo Pollo Familiar' },
+                { day: 2, dayOfWeek: 'Martes', dateStr: '02 Ago', sales: 2485.52, orders: 45, ticketMedio: 55.23, vsP50: -35, status: 'bajo', posPct: 22, horaPico: '13:00 - 14:00', productoEstrella: 'Burger Doble Carne' },
+                { day: 3, dayOfWeek: 'Miércoles', dateStr: '03 Ago', sales: 1772.01, orders: 32, ticketMedio: 55.37, vsP50: -64, status: 'critico', posPct: 12, horaPico: '19:00 - 20:00', productoEstrella: 'Pizza Familiar Pepperoni' },
+                { day: 4, dayOfWeek: 'Jueves', dateStr: '04 Ago', sales: 2805.01, orders: 50, ticketMedio: 56.10, vsP50: -32, status: 'critico', posPct: 24, horaPico: '12:30 - 13:30', productoEstrella: 'Lomo Saltado POS' },
+                { day: 5, dayOfWeek: 'Viernes', dateStr: '05 Ago', sales: 1482.00, orders: 28, ticketMedio: 52.92, vsP50: -66, status: 'critico', posPct: 10, horaPico: '14:00 - 15:00', productoEstrella: 'Soda 2L + Combo' },
+                { day: 6, dayOfWeek: 'Sábado', dateStr: '06 Ago', sales: 3434.03, orders: 62, ticketMedio: 55.38, vsP50: -26, status: 'bajo', posPct: 35, horaPico: '15:00 - 16:00', productoEstrella: 'Parrilla Mixta' },
+                { day: 7, dayOfWeek: 'Domingo', dateStr: '07 Ago', sales: 2390.02, orders: 41, ticketMedio: 58.29, vsP50: -60, status: 'critico', posPct: 20, horaPico: '13:00 - 14:00', productoEstrella: 'Helado Artesanal' },
+            ]
+        },
+        2: {
+            title: "Semana 2",
+            dateRangeStr: "08 ago - 14 ago 2026",
+            days: [
+                { day: 8, dayOfWeek: 'Lunes', dateStr: '08 Ago', sales: 3061.00, orders: 54, ticketMedio: 56.68, vsP50: -44, status: 'critico', posPct: 28, horaPico: '12:00 - 13:00', productoEstrella: 'Combo Pollo Personal' },
+                { day: 9, dayOfWeek: 'Martes', dateStr: '09 Ago', sales: 1966.50, orders: 36, ticketMedio: 54.62, vsP50: -44, status: 'critico', posPct: 16, horaPico: '13:00 - 14:00', productoEstrella: 'Sopa del Día' },
+                { day: 10, dayOfWeek: 'Miércoles', dateStr: '10 Ago', sales: 1373.50, orders: 26, ticketMedio: 52.82, vsP50: -72, status: 'critico', posPct: 8, horaPico: '12:00 - 13:00', productoEstrella: 'Empanada de Carne' },
+                { day: 11, dayOfWeek: 'Jueves', dateStr: '11 Ago', sales: 4042.50, orders: 72, ticketMedio: 56.14, vsP50: -3, status: 'bajo', posPct: 42, horaPico: '13:30 - 14:30', productoEstrella: 'Milanesa Gigante' },
+                { day: 12, dayOfWeek: 'Viernes', dateStr: '12 Ago', sales: 2256.00, orders: 40, ticketMedio: 56.40, vsP50: -47, status: 'critico', posPct: 18, horaPico: '19:00 - 20:00', productoEstrella: 'Cerveza + Pique Macho' },
+                { day: 13, dayOfWeek: 'Sábado', dateStr: '13 Ago', sales: 1646.50, orders: 30, ticketMedio: 54.88, vsP50: -65, status: 'critico', posPct: 12, horaPico: '14:00 - 15:00', productoEstrella: 'Papas Fritas XL' },
+                { day: 14, dayOfWeek: 'Domingo', dateStr: '14 Ago', sales: 1757.00, orders: 32, ticketMedio: 54.90, vsP50: -70, status: 'critico', posPct: 14, horaPico: '13:00 - 14:00', productoEstrella: 'Pollo Espiedo Entero' },
+            ]
+        },
+        3: {
+            title: "Semana 3",
+            dateRangeStr: "15 ago - 21 ago 2026",
+            days: [
+                { day: 15, dayOfWeek: 'Lunes', dateStr: '15 Ago', sales: 1952.00, orders: 35, ticketMedio: 55.77, vsP50: -65, status: 'critico', posPct: 15, horaPico: '12:00 - 13:00', productoEstrella: 'Silpancho Cochabambino' },
+                { day: 16, dayOfWeek: 'Martes', dateStr: '16 Ago', sales: 1820.50, orders: 33, ticketMedio: 55.16, vsP50: -65, status: 'critico', posPct: 14, horaPico: '13:00 - 14:00', productoEstrella: 'Chicharron Individual' },
+                { day: 17, dayOfWeek: 'Miércoles', dateStr: '17 Ago', sales: 2590.50, orders: 48, ticketMedio: 53.96, vsP50: -48, status: 'bajo', posPct: 24, horaPico: '12:30 - 13:30', productoEstrella: 'Burger Clásica' },
+                { day: 18, dayOfWeek: 'Jueves', dateStr: '18 Ago', sales: 0, orders: 0, ticketMedio: 0, vsP50: 0, status: 'sin_ventas', posPct: 0, horaPico: '—', productoEstrella: 'Sin datos' },
+                { day: 19, dayOfWeek: 'Viernes', dateStr: '19 Ago', sales: 2135.00, orders: 39, ticketMedio: 54.74, vsP50: -50, status: 'critico', posPct: 17, horaPico: '19:30 - 20:30', productoEstrella: 'Wings 12 pzas' },
+                { day: 20, dayOfWeek: 'Sábado', dateStr: '20 Ago', sales: 3245.01, orders: 58, ticketMedio: 55.94, vsP50: -30, status: 'critico', posPct: 32, horaPico: '14:00 - 15:00', productoEstrella: 'Combo Parrillero' },
+                { day: 21, dayOfWeek: 'Domingo', dateStr: '21 Ago', sales: 2810.01, orders: 49, ticketMedio: 57.34, vsP50: -53, status: 'critico', posPct: 25, horaPico: '13:00 - 14:00', productoEstrella: 'Postre Tres Leches' },
+            ]
+        },
+        4: {
+            title: "Semana 4",
+            dateRangeStr: "22 ago - 28 ago 2026",
+            days: [
+                { day: 22, dayOfWeek: 'Lunes', dateStr: '22 Ago', sales: 4096.51, orders: 74, ticketMedio: 55.35, vsP50: -26, status: 'bajo', posPct: 43, horaPico: '12:00 - 13:00', productoEstrella: 'Pollo 1/4 Pechuga' },
+                { day: 23, dayOfWeek: 'Martes', dateStr: '23 Ago', sales: 2254.00, orders: 41, ticketMedio: 54.97, vsP50: -26, status: 'critico', posPct: 18, horaPico: '13:00 - 14:00', productoEstrella: 'Majadito de Charque' },
+                { day: 24, dayOfWeek: 'Miércoles', dateStr: '24 Ago', sales: 2743.02, orders: 51, ticketMedio: 53.78, vsP50: -45, status: 'bajo', posPct: 26, horaPico: '12:30 - 13:30', productoEstrella: 'Burger Triple Tocino' },
+                { day: 25, dayOfWeek: 'Jueves', dateStr: '25 Ago', sales: 2653.00, orders: 47, ticketMedio: 56.44, vsP50: -36, status: 'critico', posPct: 25, horaPico: '13:00 - 14:00', productoEstrella: 'Plato Ejecutivo' },
+                { day: 26, dayOfWeek: 'Viernes', dateStr: '26 Ago', sales: 2362.50, orders: 43, ticketMedio: 54.94, vsP50: -45, status: 'bajo', posPct: 20, horaPico: '19:00 - 20:00', productoEstrella: 'Cerveza Artesanal 1L' },
+                { day: 27, dayOfWeek: 'Sábado', dateStr: '27 Ago', sales: 1819.50, orders: 33, ticketMedio: 55.13, vsP50: -61, status: 'critico', posPct: 14, horaPico: '15:00 - 16:00', productoEstrella: 'Nachos Supremos' },
+                { day: 28, dayOfWeek: 'Domingo', dateStr: '28 Ago', sales: 5484.00, orders: 94, ticketMedio: 58.34, vsP50: -8, status: 'bajo', posPct: 65, horaPico: '13:00 - 14:00', productoEstrella: 'Combo Pollo Familiar XL' },
+            ]
+        },
+        5: {
+            title: "Semana 5",
+            dateRangeStr: "29 ago - 31 ago 2026",
+            days: [
+                { day: 29, dayOfWeek: 'Lunes', dateStr: '29 Ago', sales: 5054.00, orders: 88, ticketMedio: 57.43, vsP50: -8, status: 'bajo', posPct: 58, horaPico: '12:00 - 13:00', productoEstrella: 'Silpancho Especial' },
+                { day: 30, dayOfWeek: 'Martes', dateStr: '30 Ago', sales: 4579.00, orders: 78, ticketMedio: 58.70, vsP50: 20, status: 'alto', posPct: 75, horaPico: '13:00 - 14:00', productoEstrella: 'Pique Macho Especial' },
+                { day: 31, dayOfWeek: 'Miércoles', dateStr: '31 Ago', sales: 6627.00, orders: 112, ticketMedio: 59.16, vsP50: 34, status: 'alto', posPct: 88, horaPico: '15:00 - 16:00', productoEstrella: 'Combo Cierre de Mes' },
+            ]
+        }
+    };
+
     const resumenMes = {
         criticos: { count: 17, pct: '54.8%' },
         bajos: { count: 10, pct: '32.3%' },
@@ -93,6 +174,12 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 return { bg: 'bg-slate-50 border-slate-200/60', text: 'text-slate-500 bg-slate-100 border-slate-200', label: 'Sin datos' };
         }
     };
+
+    // Cálculos resumen de la semana seleccionada
+    const currentWeekDetails = weeklyDataDetails[selectedWeekNum];
+    const totalWeekSales = currentWeekDetails.days.reduce((acc, d) => acc + d.sales, 0);
+    const avgWeekSales = totalWeekSales / (currentWeekDetails.days.length || 1);
+    const peakDay = [...currentWeekDetails.days].sort((a, b) => b.sales - a.sales)[0];
 
     return (
         <div className="space-y-6 font-sans text-slate-800 w-full">
@@ -226,7 +313,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 </div>
             </div>
 
-            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS CON FECHAS Y ORIGEN DE DATOS EXPLÍCITOS */}
+            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS */}
             <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-purple-50/60 p-3 rounded-2xl border border-purple-100/80">
                     <div className="flex items-center gap-2">
@@ -420,235 +507,381 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 </div>
             )}
 
-            {/* SECCIÓN PRINCIPAL: CALENDARIO DE PERCENTILES (LEFT 2/3) + SIDEBAR DERECHO (RIGHT 1/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* SI PERIODMODE ES 'MES', MOSTRAR LA GRILLA MENSUAL. SI ES 'SEMANA', MOSTRAR LA VISTA SEMANAL DETALLADA */}
+            {periodMode === 'mes' ? (
+                /* VISTA MENSUAL (GRILLA 31 DÍAS) */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* COLUMNA IZQUIERDA (2/3 ANCHO): CALENDARIO MENSUAL DE PERCENTILES */}
-                <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                    
-                    {/* Encabezado Días de la Semana */}
-                    <div className="grid grid-cols-7 gap-2 text-center text-xs font-black text-slate-400 border-b border-slate-100 pb-2">
-                        <span>Lun</span>
-                        <span>Mar</span>
-                        <span>Mie</span>
-                        <span>Jue</span>
-                        <span>Vie</span>
-                        <span>Sab</span>
-                        <span>Dom</span>
+                    {/* COLUMNA IZQUIERDA (2/3 ANCHO): CALENDARIO MENSUAL DE PERCENTILES */}
+                    <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                        
+                        {/* Encabezado Días de la Semana */}
+                        <div className="grid grid-cols-7 gap-2 text-center text-xs font-black text-slate-400 border-b border-slate-100 pb-2">
+                            <span>Lun</span>
+                            <span>Mar</span>
+                            <span>Mie</span>
+                            <span>Jue</span>
+                            <span>Vie</span>
+                            <span>Sab</span>
+                            <span>Dom</span>
+                        </div>
+
+                        {/* Grilla de Días del Mes */}
+                        <div className="grid grid-cols-7 gap-2">
+                            {daysData.map((d) => {
+                                const statusInfo = getStatusStyle(d.status);
+                                const isSinVentas = d.status === 'sin_ventas';
+
+                                return (
+                                    <div
+                                        key={d.day}
+                                        className={`p-2.5 rounded-2xl border transition-all flex flex-col justify-between min-h-[90px] ${statusInfo.bg}`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-black text-slate-800 text-xs">{d.day}</span>
+                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md border ${statusInfo.text}`}>
+                                                {statusInfo.label}
+                                            </span>
+                                        </div>
+
+                                        {!isSinVentas ? (
+                                            <div className="my-1 space-y-0.5">
+                                                <span className="font-black text-slate-900 text-[11px] block leading-tight">
+                                                    Bs. {d.sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </span>
+                                                <span className={`text-[9px] font-extrabold block ${d.vsP50 >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                                    {d.vsP50 >= 0 ? '▲' : '↓'} {d.vsP50}% vs P50
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="my-2 text-center">
+                                                <span className="text-[10px] font-bold text-slate-400 block">Sin ventas</span>
+                                                <span className="text-[9px] text-slate-400 font-bold block">—</span>
+                                            </div>
+                                        )}
+
+                                        {/* Indicador de percentil P25 P50 P75 */}
+                                        <div className="pt-1 border-t border-black/5">
+                                            <div className="flex justify-between text-[7px] font-black text-slate-400">
+                                                <span>P25</span>
+                                                <span>P50</span>
+                                                <span>P75</span>
+                                            </div>
+                                            <div className="h-1 bg-slate-200/80 rounded-full mt-0.5 relative">
+                                                {!isSinVentas && (
+                                                    <div
+                                                        style={{ left: `${Math.min(Math.max(d.posPct, 5), 95)}%` }}
+                                                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full border border-white ${
+                                                            d.status === 'critico' ? 'bg-rose-500' :
+                                                            d.status === 'bajo' ? 'bg-amber-500' :
+                                                            d.status === 'normal' ? 'bg-sky-500' : 'bg-emerald-500'
+                                                        }`}
+                                                    ></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Leyenda del Calendario */}
+                        <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs font-bold text-slate-600 gap-2">
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                                Crítico (&lt; P25)
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                                Bajo (P25 - P50)
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span>
+                                Normal (P50 - P75)
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                                Alto (&gt; P75)
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>
+                                Sin datos
+                            </span>
+                        </div>
+
                     </div>
 
-                    {/* Grilla de Días del Mes */}
-                    <div className="grid grid-cols-7 gap-2">
-                        {daysData.map((d) => {
-                            const statusInfo = getStatusStyle(d.status);
-                            const isSinVentas = d.status === 'sin_ventas';
+                    {/* COLUMNA DERECHA (1/3 ANCHO): SIDEBAR DE METRICAS Y REFERENCIAS (SIN PRONÓSTICO IA) */}
+                    <div className="space-y-6">
 
-                            return (
-                                <div
-                                    key={d.day}
-                                    className={`p-2.5 rounded-2xl border transition-all flex flex-col justify-between min-h-[90px] ${statusInfo.bg}`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-black text-slate-800 text-xs">{d.day}</span>
-                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md border ${statusInfo.text}`}>
-                                            {statusInfo.label}
-                                        </span>
-                                    </div>
+                        {/* CARD 1: REFERENCIA ESTADÍSTICA */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                            <div className="pb-3 border-b border-slate-100">
+                                <h3 className="text-sm font-black text-slate-900">Referencia Estadística</h3>
+                            </div>
 
-                                    {!isSinVentas ? (
-                                        <div className="my-1 space-y-0.5">
-                                            <span className="font-black text-slate-900 text-[11px] block leading-tight">
-                                                Bs. {d.sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                            </span>
-                                            <span className={`text-[9px] font-extrabold block ${d.vsP50 >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                                {d.vsP50 >= 0 ? '▲' : '↓'} {d.vsP50}% vs P50
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <div className="my-2 text-center">
-                                            <span className="text-[10px] font-bold text-slate-400 block">Sin ventas</span>
-                                            <span className="text-[9px] text-slate-400 font-bold block">—</span>
-                                        </div>
-                                    )}
+                            {/* Curva Gaussiana simulada */}
+                            <div className="h-32 relative bg-purple-50/30 rounded-2xl border border-purple-100/60 p-2 flex flex-col justify-between">
+                                <svg className="w-full h-full text-purple-500" viewBox="0 0 200 80" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M 0 75 Q 60 75, 100 10 Q 140 75, 200 75" fill="rgba(168, 85, 247, 0.1)" />
+                                    <line x1="60" y1="10" x2="60" y2="75" stroke="#F43F5E" strokeDasharray="3 3" strokeWidth="1.5" />
+                                    <line x1="100" y1="10" x2="100" y2="75" stroke="#0284C7" strokeDasharray="3 3" strokeWidth="1.5" />
+                                    <line x1="140" y1="10" x2="140" y2="75" stroke="#10B981" strokeDasharray="3 3" strokeWidth="1.5" />
+                                </svg>
 
-                                    {/* Indicador de percentil P25 P50 P75 */}
-                                    <div className="pt-1 border-t border-black/5">
-                                        <div className="flex justify-between text-[7px] font-black text-slate-400">
-                                            <span>P25</span>
-                                            <span>P50</span>
-                                            <span>P75</span>
-                                        </div>
-                                        <div className="h-1 bg-slate-200/80 rounded-full mt-0.5 relative">
-                                            {!isSinVentas && (
-                                                <div
-                                                    style={{ left: `${Math.min(Math.max(d.posPct, 5), 95)}%` }}
-                                                    className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full border border-white ${
-                                                        d.status === 'critico' ? 'bg-rose-500' :
-                                                        d.status === 'bajo' ? 'bg-amber-500' :
-                                                        d.status === 'normal' ? 'bg-sky-500' : 'bg-emerald-500'
-                                                    }`}
-                                                ></div>
-                                            )}
-                                        </div>
+                                <div className="flex justify-between text-[9px] font-black px-8">
+                                    <span className="text-rose-600">P25</span>
+                                    <span className="text-sky-600">P50</span>
+                                    <span className="text-emerald-600">P75</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                <p><strong className="text-rose-600">P25:</strong> 25% de los días están por debajo</p>
+                                <p><strong className="text-sky-600">P50:</strong> 50% de los días están por debajo</p>
+                                <p><strong className="text-emerald-600">P75:</strong> 75% de los días están por debajo</p>
+                            </div>
+                        </div>
+
+                        {/* CARD 2: RESUMEN DEL MES */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                            <div className="pb-3 border-b border-slate-100">
+                                <h3 className="text-sm font-black text-slate-900">Resumen del Mes</h3>
+                            </div>
+
+                            <div className="space-y-3 text-xs font-bold">
+                                <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/50 border border-rose-100">
+                                    <span className="flex items-center gap-2 text-rose-900">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                        Días Críticos
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-black text-slate-900">{resumenMes.criticos.count}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{resumenMes.criticos.pct}</span>
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </div>
 
-                    {/* Leyenda del Calendario */}
-                    <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs font-bold text-slate-600 gap-2">
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
-                            Crítico (&lt; P25)
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                            Bajo (P25 - P50)
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span>
-                            Normal (P50 - P75)
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                            Alto (&gt; P75)
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>
-                            Sin datos
-                        </span>
+                                <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100">
+                                    <span className="flex items-center gap-2 text-amber-900">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                        Días Bajos
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-black text-slate-900">{resumenMes.bajos.count}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{resumenMes.bajos.pct}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 rounded-xl bg-sky-50/50 border border-sky-100">
+                                    <span className="flex items-center gap-2 text-sky-900">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                        Días Normales
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-black text-slate-900">{resumenMes.normales.count}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{resumenMes.normales.pct}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                                    <span className="flex items-center gap-2 text-emerald-900">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                        Días Altos
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-black text-slate-900">{resumenMes.altos.count}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{resumenMes.altos.pct}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span className="flex items-center gap-2 text-slate-700">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                                        Sin datos
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-black text-slate-900">{resumenMes.sinDatos.count}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{resumenMes.sinDatos.pct}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
-
-                {/* COLUMNA DERECHA (1/3 ANCHO): SIDEBAR DE METRICAS Y REFERENCIAS */}
+            ) : (
+                /* VISTA DETALLADA SEMANAL COMPLETA AL PRESIONAR 'SEMANA' */
                 <div className="space-y-6">
-
-                    {/* CARD 1: REFERENCIA ESTADÍSTICA */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                        <div className="pb-3 border-b border-slate-100">
-                            <h3 className="text-sm font-black text-slate-900">Referencia Estadística</h3>
+                    
+                    {/* BARRA DE NAVEGACIÓN Y SELECTOR DE SEMANAS */}
+                    <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <span className="text-[10px] font-black uppercase text-indigo-700 tracking-wider block">ANÁLISIS SEMANAL DETALLADO</span>
+                            <h3 className="text-lg font-black text-slate-900">
+                                {currentWeekDetails.title} — <span className="text-indigo-600">{currentWeekDetails.dateRangeStr}</span>
+                            </h3>
                         </div>
 
-                        {/* Curva Gaussiana simulada */}
-                        <div className="h-32 relative bg-purple-50/30 rounded-2xl border border-purple-100/60 p-2 flex flex-col justify-between">
-                            <svg className="w-full h-full text-purple-500" viewBox="0 0 200 80" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M 0 75 Q 60 75, 100 10 Q 140 75, 200 75" fill="rgba(168, 85, 247, 0.1)" />
-                                {/* Líneas discontinuas P25, P50, P75 */}
-                                <line x1="60" y1="10" x2="60" y2="75" stroke="#F43F5E" strokeDasharray="3 3" strokeWidth="1.5" />
-                                <line x1="100" y1="10" x2="100" y2="75" stroke="#0284C7" strokeDasharray="3 3" strokeWidth="1.5" />
-                                <line x1="140" y1="10" x2="140" y2="75" stroke="#10B981" strokeDasharray="3 3" strokeWidth="1.5" />
-                            </svg>
-
-                            <div className="flex justify-between text-[9px] font-black px-8">
-                                <span className="text-rose-600">P25</span>
-                                <span className="text-sky-600">P50</span>
-                                <span className="text-emerald-600">P75</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2 text-xs font-semibold text-slate-600">
-                            <p><strong className="text-rose-600">P25:</strong> 25% de los días están por debajo</p>
-                            <p><strong className="text-sky-600">P50:</strong> 50% de los días están por debajo</p>
-                            <p><strong className="text-emerald-600">P75:</strong> 75% de los días están por debajo</p>
+                        {/* Pestañas de Semanas 1 a 5 */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto bg-slate-100/80 p-1.5 rounded-2xl w-full sm:w-auto">
+                            {[1, 2, 3, 4, 5].map((wk) => (
+                                <button
+                                    key={wk}
+                                    onClick={() => setSelectedWeekNum(wk)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                                        selectedWeekNum === wk
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                    }`}
+                                >
+                                    Semana {wk}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* CARD 2: RESUMEN DEL MES */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                        <div className="pb-3 border-b border-slate-100">
-                            <h3 className="text-sm font-black text-slate-900">Resumen del Mes</h3>
+                    {/* TARJETAS RESUMEN KPIS DE LA SEMANA */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        
+                        <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">VENTA TOTAL SEMANAL</span>
+                            <h2 className="text-2xl font-black text-slate-900 mt-1">
+                                Bs. {totalWeekSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </h2>
+                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Acumulado de {currentWeekDetails.days.length} días</span>
                         </div>
 
-                        <div className="space-y-3 text-xs font-bold">
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/50 border border-rose-100">
-                                <span className="flex items-center gap-2 text-rose-900">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                                    Días Críticos
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-black text-slate-900">{resumenMes.criticos.count}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold">{resumenMes.criticos.pct}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/50 border border-amber-100">
-                                <span className="flex items-center gap-2 text-amber-900">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                                    Días Bajos
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-black text-slate-900">{resumenMes.bajos.count}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold">{resumenMes.bajos.pct}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-sky-50/50 border border-sky-100">
-                                <span className="flex items-center gap-2 text-sky-900">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-                                    Días Normales
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-black text-slate-900">{resumenMes.normales.count}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold">{resumenMes.normales.pct}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                                <span className="flex items-center gap-2 text-emerald-900">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                    Días Altos
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-black text-slate-900">{resumenMes.altos.count}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold">{resumenMes.altos.pct}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60">
-                                <span className="flex items-center gap-2 text-slate-700">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                                    Sin datos
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-black text-slate-900">{resumenMes.sinDatos.count}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold">{resumenMes.sinDatos.pct}</span>
-                                </div>
-                            </div>
+                        <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">PROMEDIO DIARIO SEMANAL</span>
+                            <h2 className="text-2xl font-black text-indigo-700 mt-1">
+                                Bs. {avgWeekSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </h2>
+                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Por jornada operativa</span>
                         </div>
+
+                        <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">DÍA PICO DE LA SEMANA</span>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <h2 className="text-2xl font-black text-emerald-800">{peakDay?.dayOfWeek}</h2>
+                                <span className="text-xs font-bold text-slate-700">Bs. {peakDay?.sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <span className="text-[11px] font-bold text-emerald-700 block mt-1">Máxima facturación registrada</span>
+                        </div>
+
+                        <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">MEDIANA HISTÓRICA P50</span>
+                            <h2 className="text-2xl font-black text-sky-800 mt-1">
+                                Bs. {percentiles.p50.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </h2>
+                            <span className="text-[11px] font-bold text-slate-500 block mt-1">Referencia baseline de negocio</span>
+                        </div>
+
                     </div>
 
-                    {/* CARD 3: PRONÓSTICO IA (PRÓXIMOS 7 DÍAS) */}
-                    <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
-                        <div className="pb-3 border-b border-slate-100">
-                            <h3 className="text-sm font-black text-slate-900">Pronóstico IA (Próximos 7 días)</h3>
-                        </div>
+                    {/* DESGLOSE DETALLADO DÍA POR DÍA DE LA SEMANA (7 TARJETAS ANALÍTICAS) */}
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                            <Calendar size={16} className="text-indigo-600" />
+                            <span>Desglose Analítico Día a Día — {currentWeekDetails.title}</span>
+                        </h4>
 
-                        <div className="h-20 bg-purple-50/40 rounded-2xl p-2 border border-purple-100 relative">
-                            <svg className="w-full h-full text-purple-600" viewBox="0 0 150 50" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M0 35 Q 30 15, 60 25 T 100 10" />
-                                <path d="M100 10 Q 125 5, 150 20" strokeDasharray="3 3" stroke="#A855F7" />
-                            </svg>
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {currentWeekDetails.days.map((d) => {
+                                const statusInfo = getStatusStyle(d.status);
+                                const isSinVentas = d.status === 'sin_ventas';
 
-                        <div className="space-y-2 text-xs font-bold">
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-500">Tendencia Esperada</span>
-                                <span className="text-purple-700 font-black">Estable</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-500">Confianza del Modelo</span>
-                                <span className="text-purple-700 font-black bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200">
-                                    82%
-                                </span>
-                            </div>
+                                return (
+                                    <div
+                                        key={d.day}
+                                        className={`bg-white rounded-3xl p-5 shadow-xs border transition-all space-y-4 ${
+                                            d.status === 'critico' ? 'border-rose-200 hover:border-rose-300' :
+                                            d.status === 'bajo' ? 'border-amber-200 hover:border-amber-300' :
+                                            d.status === 'normal' ? 'border-sky-200 hover:border-sky-300' :
+                                            d.status === 'alto' ? 'border-emerald-200 hover:border-emerald-300' : 'border-slate-200'
+                                        }`}
+                                    >
+                                        {/* Encabezado del Día */}
+                                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                            <div>
+                                                <h5 className="font-black text-slate-900 text-sm">{d.dayOfWeek}</h5>
+                                                <span className="text-[10px] font-bold text-slate-400 block">{d.dateStr}</span>
+                                            </div>
+                                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-xl border ${statusInfo.text}`}>
+                                                {statusInfo.label}
+                                            </span>
+                                        </div>
+
+                                        {!isSinVentas ? (
+                                            <div className="space-y-3">
+                                                {/* Venta & Variación */}
+                                                <div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">VENTA NETA DEL DÍA</span>
+                                                    <h3 className="text-2xl font-black text-slate-950 mt-0.5">
+                                                        Bs. {d.sales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </h3>
+                                                    <span className={`text-xs font-black inline-flex items-center gap-1 mt-1 ${d.vsP50 >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                                        {d.vsP50 >= 0 ? '▲ +' : '↓ '}{d.vsP50}% vs Mediana P50
+                                                    </span>
+                                                </div>
+
+                                                {/* Gauge de Percentil */}
+                                                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-1">
+                                                    <div className="flex justify-between text-[9px] font-black text-slate-500">
+                                                        <span>P25 (Crítico)</span>
+                                                        <span>P50 (Mediana)</span>
+                                                        <span>P75 (Meta)</span>
+                                                    </div>
+                                                    <div className="h-2 bg-slate-200/80 rounded-full relative overflow-hidden">
+                                                        <div
+                                                            style={{ width: `${Math.min(Math.max(d.posPct, 5), 100)}%` }}
+                                                            className={`h-full rounded-full transition-all ${
+                                                                d.status === 'critico' ? 'bg-rose-500' :
+                                                                d.status === 'bajo' ? 'bg-amber-500' :
+                                                                d.status === 'normal' ? 'bg-sky-500' : 'bg-emerald-500'
+                                                            }`}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Detalles Operativos */}
+                                                <div className="space-y-1.5 pt-1 text-xs font-bold text-slate-600">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                                            <ShoppingBag size={12} /> Ticket Medio:
+                                                        </span>
+                                                        <span className="text-slate-900 font-black">Bs. {d.ticketMedio.toFixed(2)} ({d.orders} ord.)</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                                            <Clock size={12} /> Hora Pico:
+                                                        </span>
+                                                        <span className="text-purple-700 font-black">{d.horaPico}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+                                                        <span className="text-slate-400 text-[10px] flex items-center gap-1 shrink-0">
+                                                            <Award size={12} /> Estrella:
+                                                        </span>
+                                                        <span className="text-slate-800 font-black text-[11px] truncate max-w-[130px]" title={d.productoEstrella}>
+                                                            {d.productoEstrella}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-8 text-center space-y-1">
+                                                <span className="text-xs font-black text-slate-400 block">Sin actividad de ventas</span>
+                                                <span className="text-[10px] text-slate-400 font-bold block">No se registraron transacciones en POS</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
                 </div>
-
-            </div>
+            )}
 
             {/* PIE DE PÁGINA INFORMATIVO CON RANGO DE FECHAS */}
             <div className="bg-slate-100/80 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between text-xs font-bold text-slate-500 gap-2">
