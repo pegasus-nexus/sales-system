@@ -293,6 +293,17 @@ export interface SucursalDesempenoItemBI {
     participacion_pct: number;
 }
 
+export interface EmpleadoDesempenoItemBI {
+    empleado_nombre: string;
+    sucursal_id: string;
+    sucursal_nombre: string;
+    ciudad: string;
+    tickets_conteo: number;
+    ingresos_bs: number;
+    ticket_medio: number;
+    participacion_pct: number;
+}
+
 export interface BISucursalesDesempenoResponse {
     status: string;
     fecha_inicio_bolivia: string;
@@ -302,6 +313,7 @@ export interface BISucursalesDesempenoResponse {
 
     kpis: KPISucursalesBI;
     sucursales: SucursalDesempenoItemBI[];
+    empleados: EmpleadoDesempenoItemBI[];
     trazabilidad: Record<string, unknown>;
 }
 
@@ -436,6 +448,8 @@ export interface KPIProductividadBI {
 
 export interface CajeroProductividadItemBI {
     cajero_nombre: string;
+    sucursal_id?: string;
+    sucursal_nombre?: string;
     tickets_conteo: number;
     ingresos_bs: number;
     ticket_medio: number;

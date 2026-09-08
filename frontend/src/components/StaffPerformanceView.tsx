@@ -66,6 +66,33 @@ export default function StaffPerformanceView() {
         return null;
     };
 
+    const setQuickRange = (type: 'today' | 'yesterday' | '7days' | 'month') => {
+        const now = new Date();
+        const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(now);
+        if (type === 'today') {
+            setDateType('single');
+            setDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yestObj = new Date();
+            yestObj.setDate(yestObj.getDate() - 1);
+            const yestStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(yestObj);
+            setDateType('single');
+            setDate(yestStr);
+        } else if (type === '7days') {
+            const d7Obj = new Date();
+            d7Obj.setDate(d7Obj.getDate() - 6);
+            const d7Str = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(d7Obj);
+            setDateType('range');
+            setStartDate(d7Str);
+            setEndDate(todayStr);
+        } else if (type === 'month') {
+            const firstMonthStr = `${todayStr.substring(0, 7)}-01`;
+            setDateType('range');
+            setStartDate(firstMonthStr);
+            setEndDate(todayStr);
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center gap-3">
@@ -91,7 +118,35 @@ export default function StaffPerformanceView() {
                 </div>
             {/* Header Filters */}
             <div className="bg-white p-5 rounded-[24px] shadow-sm border border-gray-100 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
-                <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                    {/* Botones de Rango Rápido */}
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        <button
+                            onClick={() => setQuickRange('today')}
+                            className="px-3 py-1 rounded-lg text-xs font-bold text-gray-700 hover:text-indigo-600 hover:bg-white transition-all"
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('yesterday')}
+                            className="px-3 py-1 rounded-lg text-xs font-bold text-gray-700 hover:text-indigo-600 hover:bg-white transition-all"
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('7days')}
+                            className="px-3 py-1 rounded-lg text-xs font-bold text-gray-700 hover:text-indigo-600 hover:bg-white transition-all"
+                        >
+                            7 Días
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('month')}
+                            className="px-3 py-1 rounded-lg text-xs font-bold text-gray-700 hover:text-indigo-600 hover:bg-white transition-all"
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
                     {/* Selector de Tipo de Fecha */}
                     <div className="flex bg-gray-100 p-1 rounded-xl">
                         <button 

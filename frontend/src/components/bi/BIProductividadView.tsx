@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle,
-    UserCheck, DollarSign, Trophy, Info, Activity
+    UserCheck, DollarSign, Trophy, Info, Activity, MapPin
 } from 'lucide-react';
 import { getBIProductividadDesempeno, getBISucursales } from '../../api/biApi';
 import type { BIProductividadDesempenoResponse, BISucursalOption } from '../../api/biApi';
@@ -91,6 +91,38 @@ export const BIProductividadView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
+    const setQuickRange = (type: 'today' | 'yesterday' | '7days' | 'month') => {
+        const todayStr = getFormattedBoliviaDate(0);
+        if (type === 'today') {
+            setStartDate(todayStr);
+            setEndDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yest = getFormattedBoliviaDate(-1);
+            setStartDate(yest);
+            setEndDate(yest);
+        } else if (type === '7days') {
+            const d7 = getFormattedBoliviaDate(-6);
+            setStartDate(d7);
+            setEndDate(todayStr);
+        } else if (type === 'month') {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            setStartDate(`${y}-${m}-01`);
+            setEndDate(todayStr);
+        }
+    };
+
+    const todayStr = getFormattedBoliviaDate(0);
+    const yestStr = getFormattedBoliviaDate(-1);
+    const d7Str = getFormattedBoliviaDate(-6);
+    const firstMonthStr = `${todayStr.substring(0, 7)}-01`;
+
+    const isTodayActive = startDate === todayStr && endDate === todayStr;
+    const isYesterdayActive = startDate === yestStr && endDate === yestStr;
+    const is7DaysActive = startDate === d7Str && endDate === todayStr;
+    const isMonthActive = startDate === firstMonthStr && endDate === todayStr;
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -131,7 +163,6 @@ export const BIProductividadView: React.FC = () => {
     return (
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
-            {/* CABECERA ESTILO PASTEL */}
             <div className="bg-gradient-to-r from-violet-50/90 via-purple-50/70 to-fuchsia-50/90 rounded-3xl p-6 shadow-sm border border-purple-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
                 <div>
                     <div className="flex items-center gap-2 text-violet-700 font-extrabold text-xs tracking-wider uppercase mb-1">
@@ -171,7 +202,6 @@ export const BIProductividadView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA TRANSPARENTE SOBRE HORAS TRABAJADAS, EFICIENCIA Y FRAUDE NO DISPONIBLES */}
             <div className="bg-purple-50/80 border border-purple-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-purple-900 text-xs font-bold shadow-xs">
                 <Info size={18} className="text-purple-600 shrink-0" />
                 <span>
@@ -179,9 +209,51 @@ export const BIProductividadView: React.FC = () => {
                 </span>
             </div>
 
-            {/* CONTROLES DE FILTRADO */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                    <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/70">
+                        <button
+                            onClick={() => setQuickRange('today')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isTodayActive
+                                    ? 'bg-violet-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('yesterday')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isYesterdayActive
+                                    ? 'bg-violet-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('7days')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                is7DaysActive
+                                    ? 'bg-violet-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Últimos 7 Días
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('month')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isMonthActive
+                                    ? 'bg-violet-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
@@ -217,21 +289,19 @@ export const BIProductividadView: React.FC = () => {
                 </div>
 
                 {data && (
-                    <div className="text-xs font-bold text-slate-500">
+                    <div className="text-xs font-bold text-slate-500 shrink-0">
                         <span>Última Sincronización POS: <strong className="text-violet-700">{data.ultima_actualizacion}</strong></span>
                     </div>
                 )}
             </div>
 
-            {/* TARJETAS KPIS PRINCIPALES */}
             {data && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     
-                    {/* KPI 1: INGRESOS TOTALES Y TICKETS */}
-                    <div className="bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white rounded-3xl p-5 shadow-xs border border-violet-100 flex flex-col justify-between">
-                        <div className="flex justify-between items-start pb-2 border-b border-violet-100/60">
-                            <span className="text-xs font-black uppercase text-violet-950">Facturación Cobrada</span>
-                            <div className="p-2 bg-violet-100/70 text-violet-600 rounded-2xl">
+                    <div className="bg-gradient-to-br from-purple-50/90 via-violet-50/40 to-white rounded-3xl p-5 shadow-xs border border-purple-100 flex flex-col justify-between">
+                        <div className="flex justify-between items-start pb-2 border-b border-purple-100/60">
+                            <span className="text-xs font-black uppercase text-purple-950">Ingresos Procesados</span>
+                            <div className="p-2 bg-purple-100/70 text-purple-600 rounded-2xl">
                                 <DollarSign size={18} />
                             </div>
                         </div>
@@ -239,37 +309,17 @@ export const BIProductividadView: React.FC = () => {
                             <h2 className="text-3xl font-black text-slate-900 leading-none">
                                 {formatBs(data.kpis.ingresos_totales)}
                             </h2>
-                            <p className="text-xs font-extrabold text-violet-700 mt-1">
-                                {data.kpis.total_tickets} tickets procesados en caja
+                            <p className="text-xs font-extrabold text-purple-700 mt-1">
+                                {data.kpis.total_tickets} tickets | {data.kpis.cajeros_activos_con_venta} cajeros activos
                             </p>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400">SUM(sales.total)</span>
+                        <span className="text-[10px] font-bold text-slate-400">SUM(sales.total) por cajero</span>
                     </div>
 
-                    {/* KPI 2: CAJEROS ACTIVOS CON VENTA */}
-                    <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white rounded-3xl p-5 shadow-xs border border-blue-100 flex flex-col justify-between">
-                        <div className="flex justify-between items-start pb-2 border-b border-blue-100/60">
-                            <span className="text-xs font-black uppercase text-blue-950">Cajeros Activos</span>
-                            <div className="p-2 bg-blue-100/70 text-blue-600 rounded-2xl">
-                                <UserCheck size={18} />
-                            </div>
-                        </div>
-                        <div className="my-3">
-                            <h2 className="text-3xl font-black text-slate-900 leading-none">
-                                {data.kpis.cajeros_activos_con_venta} cajeros
-                            </h2>
-                            <p className="text-xs font-extrabold text-blue-700 mt-1">
-                                Operadores con ventas en el período
-                            </p>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-400">DISTINCT(cashier_name)</span>
-                    </div>
-
-                    {/* KPI 3: CAJERO LÍDER EN FACTURACIÓN */}
-                    <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100 flex flex-col justify-between">
-                        <div className="flex justify-between items-start pb-2 border-b border-emerald-100/60">
-                            <span className="text-xs font-black uppercase text-emerald-950">Cajero Líder</span>
-                            <div className="p-2 bg-emerald-100/70 text-emerald-600 rounded-2xl">
+                    <div className="bg-gradient-to-br from-amber-50/90 via-yellow-50/40 to-white rounded-3xl p-5 shadow-xs border border-amber-100 flex flex-col justify-between">
+                        <div className="flex justify-between items-start pb-2 border-b border-amber-100/60">
+                            <span className="text-xs font-black uppercase text-amber-950">Cajero Líder en Ventas</span>
+                            <div className="p-2 bg-amber-100/70 text-amber-600 rounded-2xl">
                                 <Trophy size={18} />
                             </div>
                         </div>
@@ -277,18 +327,35 @@ export const BIProductividadView: React.FC = () => {
                             <h2 className="text-xl font-black text-slate-900 line-clamp-1 leading-tight">
                                 {data.kpis.cajero_lider_nombre}
                             </h2>
-                            <p className="text-xs font-extrabold text-emerald-700 mt-1">
-                                {formatBs(data.kpis.cajero_lider_ingresos)} cobrados
+                            <p className="text-xs font-extrabold text-amber-700 mt-1">
+                                {formatBs(data.kpis.cajero_lider_ingresos)} procesados
                             </p>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400">Mayor facturación individual</span>
+                        <span className="text-[10px] font-bold text-slate-400">Mayor volumen facturado</span>
                     </div>
 
-                    {/* KPI 4: AUDITORÍA DE EVENTOS SISTEMA */}
-                    <div className="bg-gradient-to-br from-fuchsia-50/90 via-pink-50/40 to-white rounded-3xl p-5 shadow-xs border border-fuchsia-100 flex flex-col justify-between">
-                        <div className="flex justify-between items-start pb-2 border-b border-fuchsia-100/60">
-                            <span className="text-xs font-black uppercase text-fuchsia-950">Auditoría Operacional</span>
-                            <div className="p-2 bg-fuchsia-100/70 text-fuchsia-600 rounded-2xl">
+                    <div className="bg-gradient-to-br from-sky-50/90 via-blue-50/40 to-white rounded-3xl p-5 shadow-xs border border-sky-100 flex flex-col justify-between">
+                        <div className="flex justify-between items-start pb-2 border-b border-sky-100/60">
+                            <span className="text-xs font-black uppercase text-sky-950">Mayor Ticket Medio</span>
+                            <div className="p-2 bg-sky-100/70 text-sky-600 rounded-2xl">
+                                <UserCheck size={18} />
+                            </div>
+                        </div>
+                        <div className="my-3">
+                            <h2 className="text-xl font-black text-slate-900 line-clamp-1 leading-tight">
+                                {data.kpis.cajero_mayor_ticket_medio_nombre}
+                            </h2>
+                            <p className="text-xs font-extrabold text-sky-700 mt-1">
+                                {formatBs(data.kpis.cajero_mayor_ticket_medio_monto)} / ticket
+                            </p>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400">Promedio de venta por transacción</span>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-50/90 via-fuchsia-50/40 to-white rounded-3xl p-5 shadow-xs border border-indigo-100 flex flex-col justify-between">
+                        <div className="flex justify-between items-start pb-2 border-b border-indigo-100/60">
+                            <span className="text-xs font-black uppercase text-indigo-950">Logs de Auditoría</span>
+                            <div className="p-2 bg-indigo-100/70 text-indigo-600 rounded-2xl">
                                 <Activity size={18} />
                             </div>
                         </div>
@@ -296,25 +363,24 @@ export const BIProductividadView: React.FC = () => {
                             <h2 className="text-3xl font-black text-slate-900 leading-none">
                                 {data.kpis.total_eventos_auditoria}
                             </h2>
-                            <p className="text-xs font-extrabold text-fuchsia-700 mt-1">
-                                Eventos registrados en `db.audit_logs`
+                            <p className="text-xs font-extrabold text-indigo-700 mt-1">
+                                Eventos registrados
                             </p>
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400">Trazabilidad de modificaciones</span>
+                        <span className="text-[10px] font-bold text-slate-400">COUNT(db.audit_logs)</span>
                     </div>
 
                 </div>
             )}
 
-            {/* TABLA PRINCIPAL DESGLOSE DE DESEMPEÑO DE CAJEROS */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
-                        <h3 className="text-base font-black text-slate-900">Desempeño y Facturación por Cajero / Operador</h3>
-                        <p className="text-xs text-slate-400 font-bold">Ordenados por monto total cobrado en caja</p>
+                        <h3 className="text-base font-black text-slate-900">Ranking y Desempeño por Cajero / Operador POS</h3>
+                        <p className="text-xs text-slate-400 font-bold">Ventas consolidadas agrupadas por `sales.cashier_name` y sucursal</p>
                     </div>
                     <span className="text-xs font-black text-violet-700 bg-violet-50 px-3 py-1 rounded-xl">
-                        {data?.cajeros.length || 0} Cajeros
+                        {data?.cajeros.length || 0} Cajeros Activos
                     </span>
                 </div>
 
@@ -323,6 +389,7 @@ export const BIProductividadView: React.FC = () => {
                         <thead>
                             <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
                                 <th className="py-3 px-3">Cajero / Operador</th>
+                                <th className="py-3 px-3">Sucursal / Tienda</th>
                                 <th className="py-3 px-3 text-right">Tickets Emitidos</th>
                                 <th className="py-3 px-3 text-right">Facturación Total</th>
                                 <th className="py-3 px-3 text-right">Ticket Medio</th>
@@ -334,6 +401,12 @@ export const BIProductividadView: React.FC = () => {
                                 <tr key={idx} className="hover:bg-violet-50/40 transition-colors">
                                     <td className="py-3.5 px-3 font-black text-slate-900">
                                         {c.cajero_nombre}
+                                    </td>
+                                    <td className="py-3.5 px-3">
+                                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-100 font-extrabold text-[11px]">
+                                            <MapPin size={11} className="text-violet-500" />
+                                            <span>{c.sucursal_nombre || 'Sucursal Central'}</span>
+                                        </div>
                                     </td>
                                     <td className="py-3.5 px-3 text-right text-slate-800">{c.tickets_conteo} tks</td>
                                     <td className="py-3.5 px-3 text-right font-black text-slate-900">{formatBs(c.ingresos_bs)}</td>

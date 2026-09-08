@@ -8,7 +8,8 @@ from app.infrastructure.bi.mongo_sucursales_repository import MongoSucursalesRep
 from app.schemas.bi_sucursales import (
     BISucursalesDesempenoResponse,
     KPISucursalesBI,
-    SucursalDesempenoItemBI
+    SucursalDesempenoItemBI,
+    EmpleadoDesempenoItemBI
 )
 from app.domain.models.user import User
 
@@ -53,19 +54,22 @@ class SucursalesBIService:
                 timezone=BUSINESS_TIMEZONE,
                 ultima_actualizacion=now_bolivia_str,
                 kpis=KPISucursalesBI(),
-                sucursales=[]
+                sucursales=[],
+                empleados=[]
             )
 
-        # 2. DataFrame de Ventas por Sucursal
+        # 2. DataFrame de Ventas por Sucursal y por Empleado
         sales_rows = []
         for sale in raw_sales:
             s_total = safe_float_bi(sale.get("total"))
             s_id = str(sale.get("_id"))
             suc_id = str(sale.get("sucursal_id") or "SIN_SUCURSAL")
+            c_name = str(sale.get("cashier_name") or sale.get("usuario_nombre") or sale.get("vendedor_name") or "Cajero No Especificado").strip()
 
             sales_rows.append({
                 "ticket_id": s_id,
                 "sucursal_id": suc_id,
+                "cajero_nombre": c_name,
                 "total": s_total
             })
 
@@ -117,7 +121,37 @@ class SucursalesBIService:
                 )
             )
 
-        # 5. Cálculo de KPIs
+        # 5. Agregación y Desglose por Empleado / Cajero (vincular sucursal)
+        grp_emp = df_sales.groupby(["cajero_nombre", "sucursal_id"]).agg(
+            tickets_conteo=("ticket_id", "count"),
+            ingresos_bs=("total", "sum")
+        ).reset_index()
+
+        grp_emp["ingresos_bs"] = grp_emp["ingresos_bs"].round(2)
+        grp_emp["ticket_medio"] = (grp_emp["ingresos_bs"] / grp_emp["tickets_conteo"]).round(2).fillna(0.0)
+        grp_emp["participacion_pct"] = (grp_emp["ingresos_bs"] / ingresos_totales_global * 100.0).round(2) if ingresos_totales_global > 0 else 0.0
+
+        df_emp_merged = pd.merge(grp_emp, df_suc_dim, on="sucursal_id", how="left")
+        df_emp_merged["nombre"] = df_emp_merged["nombre"].fillna("Sucursal No Asignada")
+        df_emp_merged["ciudad"] = df_emp_merged["ciudad"].fillna("Sin Ciudad")
+        df_emp_merged = df_emp_merged.sort_values(by="ingresos_bs", ascending=False)
+
+        empleados_list: List[EmpleadoDesempenoItemBI] = []
+        for _, r in df_emp_merged.iterrows():
+            empleados_list.append(
+                EmpleadoDesempenoItemBI(
+                    empleado_nombre=str(r["cajero_nombre"]),
+                    sucursal_id=str(r["sucursal_id"]),
+                    sucursal_nombre=str(r["nombre"]),
+                    ciudad=str(r["ciudad"]),
+                    tickets_conteo=int(r["tickets_conteo"]),
+                    ingresos_bs=float(r["ingresos_bs"]),
+                    ticket_medio=float(r["ticket_medio"]),
+                    participacion_pct=float(r["participacion_pct"])
+                )
+            )
+
+        # 6. Cálculo de KPIs
         sucursal_lider_nom = "Sin datos"
         sucursal_lider_ing = 0.0
         sucursal_top_tm_nom = "Sin datos"
@@ -151,6 +185,7 @@ class SucursalesBIService:
             ultima_actualizacion=now_bolivia_str,
             kpis=kpis,
             sucursales=sucursales_list,
+            empleados=empleados_list,
             trazabilidad={
                 "coleccion": "sales & db.sucursales",
                 "servicio": "SucursalesBIService (Clean Native)",
@@ -158,6 +193,7 @@ class SucursalesBIService:
                 "filtro_anuladas": "anulada != True",
                 "total_tickets_procesados": total_tickets_global,
                 "suma_ingresos_sucursales": round(sum(s.ingresos_bs for s in sucursales_list), 2),
-                "suma_sales_total": ingresos_totales_global
+                "suma_sales_total": ingresos_totales_global,
+                "total_empleados_activos": len(empleados_list)
             }
         )
