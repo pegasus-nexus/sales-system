@@ -251,12 +251,12 @@ export const BenchmarkDistribucionChart: React.FC<Props> = ({
                 <div className="flex items-center gap-1.5">
                     <Info className="w-4 h-4 text-indigo-600 shrink-0" />
                     <span>
-                        La posición percentil <strong>{percentilePositionPct.toFixed(0)}</strong> indica que el resultado actual es superior al <strong>{percentilePositionPct.toFixed(0)}%</strong> de todas las jornadas registradas en los últimos 365 días.
+                        <strong>Origen de Datos & Fórmula:</strong> Colección MongoDB <strong className="font-mono text-indigo-700">sales</strong> (filtro fecha y sucursal). La posición percentil <strong>{percentilePositionPct.toFixed(0)}%</strong> indica que el resultado actual superó al <strong>{percentilePositionPct.toFixed(0)}%</strong> de las jornadas de los últimos 365 días.
                     </span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono shrink-0">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Última actualización: 31/08/2026 19:50:22</span>
+                    <span>Sincro: 31/08/2026 19:50:22</span>
                 </div>
             </div>
         </div>

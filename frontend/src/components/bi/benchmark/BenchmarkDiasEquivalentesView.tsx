@@ -75,7 +75,7 @@ export const BenchmarkDiasEquivalentesView: React.FC<Props> = ({
                 }`}>
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                            Resultado
+                            Resultado vs Mediana
                         </span>
                         {isPositive ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Info className="w-4 h-4 text-rose-600" />}
                     </div>
@@ -85,10 +85,8 @@ export const BenchmarkDiasEquivalentesView: React.FC<Props> = ({
                         <TrendingUp className={`w-5 h-5 ${isPositive ? '' : 'rotate-180'}`} />
                         <span>{isPositive ? '+' : ''}{diffPct.toFixed(1)}%</span>
                     </div>
-                    <span className="text-[11px] text-slate-600 font-medium">
-                        {isPositive 
-                            ? `Desempeño superior al promedio de ${equivalentDayName}s` 
-                            : `Desempeño por debajo del promedio de ${equivalentDayName}s`}
+                    <span className="text-[10px] text-slate-600 font-medium">
+                        Fórmula: <span className="font-mono text-slate-700">((Hoy - Mediana {equivalentDayName}) / Mediana) × 100</span>
                     </span>
                 </div>
             </div>

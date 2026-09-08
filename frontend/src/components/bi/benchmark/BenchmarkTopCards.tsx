@@ -130,8 +130,9 @@ export const BenchmarkTopCards: React.FC<Props> = ({
                     <div className="text-xs font-semibold text-indigo-700 mt-1">
                         Sobre el <strong>{percentilePositionPct.toFixed(0)}%</strong> del histórico
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                        Situación operacional de hoy
+                    <div className="text-[10px] text-slate-500 mt-1 bg-slate-50 border border-slate-200/80 rounded-lg p-1.5 leading-tight">
+                        <span className="font-semibold text-slate-700 block">Origen & Fórmula:</span>
+                        MongoDB <span className="font-mono text-indigo-700">sales</span> • Fórmula: <span className="font-mono text-slate-700">((Hoy - P50) / P50) × 100</span>
                     </div>
                 </div>
             </div>
