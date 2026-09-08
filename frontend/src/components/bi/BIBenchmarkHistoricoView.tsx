@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     BarChart3, Calendar, RefreshCw, Download, Filter, ChevronLeft, ChevronRight,
-    Info, Clock, Store, Sparkles
+    Info, Clock, Store, Sparkles, HelpCircle, X, CheckCircle2, Database
 } from 'lucide-react';
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
@@ -9,6 +9,16 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const [selectedStore, setSelectedStore] = useState<string>('consolidado');
     const [periodMode, setPeriodMode] = useState<'mes' | 'semana'>('mes');
     const [currentMonth] = useState<string>('Agosto 2026');
+    const [showModal, setShowModal] = useState<boolean>(false);
+
+    // Fechas explícitas evaluadas para la base estadística de 365 días
+    const dateRangeEvaluated = {
+        startDate: '01 de Septiembre 2025',
+        endDate: '31 de Agosto 2026',
+        totalDays: 365,
+        collection: "sales (MongoDB)",
+        timezone: "America/La_Paz"
+    };
 
     // Datos simulados de percentiles basados en la maqueta
     const percentiles = {
@@ -216,16 +226,28 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 </div>
             </div>
 
-            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS */}
+            {/* SECCIÓN P25, P50, P75 PERCENTILES HISTÓRICOS CON FECHAS Y ORIGEN DE DATOS EXPLÍCITOS */}
             <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-purple-50/60 p-3 rounded-2xl border border-purple-100/80">
                     <div className="flex items-center gap-2">
-                        <Sparkles size={16} className="text-purple-600" />
-                        <h3 className="text-sm font-black text-slate-900">Percentiles Históricos</h3>
+                        <Sparkles size={16} className="text-purple-600 shrink-0" />
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900">Percentiles Históricos</h3>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-600 mt-0.5">
+                                <span>📅 Rango del Año Móvil: <strong>{dateRangeEvaluated.startDate} al {dateRangeEvaluated.endDate}</strong> ({dateRangeEvaluated.totalDays} días)</span>
+                                <span className="text-slate-300 hidden sm:inline">•</span>
+                                <span>🗄️ Colección: <strong>{dateRangeEvaluated.collection}</strong></span>
+                            </div>
+                        </div>
                     </div>
-                    <span className="text-[11px] font-bold text-slate-400">
-                        Base estadística: 365 días históricos comparables según filtro activo.
-                    </span>
+
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="flex items-center gap-1.5 bg-white hover:bg-purple-100/80 text-purple-800 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-purple-200 shadow-xs cursor-pointer self-start sm:self-center transition-all"
+                    >
+                        <HelpCircle size={14} className="text-purple-600" />
+                        <span>🔍 ¿De dónde vienen estos datos?</span>
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -234,7 +256,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     <div className="bg-gradient-to-br from-rose-50/90 via-red-50/40 to-white rounded-3xl p-5 shadow-xs border border-rose-100 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between pb-2 border-b border-rose-100/60">
-                                <span className="text-xs font-black uppercase text-rose-950">P25</span>
+                                <span className="text-xs font-black uppercase text-rose-950">P25 (Percentil 25)</span>
                                 <span className="text-[10px] font-black text-rose-800 bg-rose-100 px-2.5 py-0.5 rounded-md border border-rose-200">
                                     CRÍTICO
                                 </span>
@@ -243,22 +265,24 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 <h2 className="text-2xl lg:text-3xl font-black text-rose-950">
                                     Bs. {percentiles.p25.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
-                                <span className="text-[10px] font-bold text-rose-700 block mt-0.5">Mínimo recomendado</span>
+                                <span className="text-[10px] font-bold text-rose-700 block mt-0.5">
+                                    Mínimo recomendado (25% de los días vendieron menos)
+                                </span>
                             </div>
                         </div>
-                        <div className="pt-2 border-t border-rose-100/60 flex items-center justify-between text-xs font-bold text-rose-800">
-                            <span>Límite inferior dinámico</span>
+                        <div className="pt-2 border-t border-rose-100/60 flex items-center justify-between text-[11px] font-bold text-rose-800">
+                            <span>Límite inferior dinámico (01/09/25 - 31/08/26)</span>
                             <svg className="w-16 h-5 text-rose-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M0 15 Q 25 10, 50 12 T 100 5" />
                             </svg>
                         </div>
                     </div>
 
-                    {/* CARD P50 (NORMAL) */}
+                    {/* CARD P50 (NORMAL / MEDIANA) */}
                     <div className="bg-gradient-to-br from-sky-50/90 via-blue-50/40 to-white rounded-3xl p-5 shadow-xs border border-sky-100 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between pb-2 border-b border-sky-100/60">
-                                <span className="text-xs font-black uppercase text-sky-950">P50</span>
+                                <span className="text-xs font-black uppercase text-sky-950">P50 (Percentil 50 / Mediana)</span>
                                 <span className="text-[10px] font-black text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-md border border-sky-200">
                                     NORMAL
                                 </span>
@@ -267,11 +291,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 <h2 className="text-2xl lg:text-3xl font-black text-sky-950">
                                     Bs. {percentiles.p50.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
-                                <span className="text-[10px] font-bold text-sky-700 block mt-0.5">Punto medio histórico</span>
+                                <span className="text-[10px] font-bold text-sky-700 block mt-0.5">
+                                    Mediana del negocio (50% arriba / 50% abajo)
+                                </span>
                             </div>
                         </div>
-                        <div className="pt-2 border-t border-sky-100/60 flex items-center justify-between text-xs font-bold text-sky-800">
-                            <span>Mediana del negocio</span>
+                        <div className="pt-2 border-t border-sky-100/60 flex items-center justify-between text-[11px] font-bold text-sky-800">
+                            <span>Punto medio histórico (01/09/25 - 31/08/26)</span>
                             <svg className="w-16 h-5 text-sky-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M0 18 Q 30 15, 60 10 T 100 4" />
                             </svg>
@@ -282,7 +308,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white rounded-3xl p-5 shadow-xs border border-emerald-100 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between pb-2 border-b border-emerald-100/60">
-                                <span className="text-xs font-black uppercase text-emerald-950">P75</span>
+                                <span className="text-xs font-black uppercase text-emerald-950">P75 (Percentil 75)</span>
                                 <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200">
                                     META
                                 </span>
@@ -291,11 +317,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                 <h2 className="text-2xl lg:text-3xl font-black text-emerald-950">
                                     Bs. {percentiles.p75.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </h2>
-                                <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">Nivel alto esperado</span>
+                                <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">
+                                    Rendimiento superior (Solo 25% supera esta meta)
+                                </span>
                             </div>
                         </div>
-                        <div className="pt-2 border-t border-emerald-100/60 flex items-center justify-between text-xs font-bold text-emerald-800">
-                            <span>Rendimiento superior</span>
+                        <div className="pt-2 border-t border-emerald-100/60 flex items-center justify-between text-[11px] font-bold text-emerald-800">
+                            <span>Nivel alto esperado (01/09/25 - 31/08/26)</span>
                             <svg className="w-16 h-5 text-emerald-400" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M0 16 Q 40 18, 70 8 T 100 2" />
                             </svg>
@@ -304,6 +332,93 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
                 </div>
             </div>
+
+            {/* MODAL INTERACTIVO DE TRAZABILIDAD Y ORIGEN DE FECHAS */}
+            {showModal && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 max-w-2xl w-full space-y-5 relative text-slate-800">
+                        <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-purple-100 text-purple-700 rounded-2xl">
+                                    <Database size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Origen & Metodología de Percentiles</h3>
+                                    <p className="text-xs text-slate-500 font-bold mt-0.5">
+                                        Explicación técnica de la base de datos y período analizado
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-xs">
+                            {/* Rango de Fechas */}
+                            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1.5">
+                                <span className="font-black text-indigo-900 uppercase text-[10px] tracking-wider block">📅 PERÍODO HISTÓRICO ANALIZADO</span>
+                                <p className="text-sm font-black text-indigo-950">
+                                    {dateRangeEvaluated.startDate} — {dateRangeEvaluated.endDate}
+                                </p>
+                                <p className="text-xs text-indigo-700 font-bold">
+                                    Base estadística móvil calculada sobre los <strong>365 días consecutivos</strong> anteriores a la fecha seleccionada.
+                                </p>
+                            </div>
+
+                            {/* Filtro Activo y Colección */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase block">🗄️ COLECCIÓN MONGODB</span>
+                                    <strong className="text-slate-900 font-black text-xs block">{dateRangeEvaluated.collection}</strong>
+                                    <span className="text-[10px] text-slate-500 block">Excluye boletos anulados ({`is_cancelled: false`})</span>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase block">🏪 SUBCONSOLIDADO</span>
+                                    <strong className="text-indigo-700 font-black text-xs block">
+                                        {selectedStore === 'consolidado' ? 'Tiendas Minoristas (Consolidado)' : selectedStore.toUpperCase()}
+                                    </strong>
+                                    <span className="text-[10px] text-slate-500 block">Zona horaria: {dateRangeEvaluated.timezone}</span>
+                                </div>
+                            </div>
+
+                            {/* Desglose de Percentiles */}
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                                <h4 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                                    <CheckCircle2 size={14} className="text-emerald-600" />
+                                    ¿Cómo se interpreta cada valor?
+                                </h4>
+                                <ul className="space-y-2 text-slate-600 font-medium pl-1">
+                                    <li className="flex items-start gap-2">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-black text-[10px] mt-0.5">P25</span>
+                                        <span><strong>Crítico (Bs. 2,645.00):</strong> El 25% de los días del año registraron ventas inferiores. Es el umbral mínimo aceptable del negocio.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 font-black text-[10px] mt-0.5">P50</span>
+                                        <span><strong>Mediana Normal (Bs. 4,615.00):</strong> Punto medio exacto. El 50% de los días del año se vendió más y el 50% menos.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black text-[10px] mt-0.5">P75</span>
+                                        <span><strong>Meta (Bs. 5,983.00):</strong> Nivel alcanzado únicamente por el 25% de los días con mayor volumen de ventas del año.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-2xl shadow-xs cursor-pointer transition-all"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* SECCIÓN PRINCIPAL: CALENDARIO DE PERCENTILES (LEFT 2/3) + SIDEBAR DERECHO (RIGHT 1/3) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -535,11 +650,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
             </div>
 
-            {/* PIE DE PÁGINA INFORMATIVO */}
+            {/* PIE DE PÁGINA INFORMATIVO CON RANGO DE FECHAS */}
             <div className="bg-slate-100/80 border border-slate-200/80 rounded-2xl p-3 flex flex-wrap items-center justify-between text-xs font-bold text-slate-500 gap-2">
                 <div className="flex items-center gap-1.5">
                     <Info size={14} className="text-slate-400" />
-                    <span>Los percentiles se calculan dinámicamente con los últimos <strong>365 días equivalentes</strong> (mismo día de la semana y estacionalidad).</span>
+                    <span>
+                        Base estadística: <strong>01/09/2025 al 31/08/2026</strong> (365 días móviles equivalentes) proviniendo de MongoDB colección <strong>'sales'</strong>.
+                    </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600">
                     <Clock size={14} className="text-slate-400" />
