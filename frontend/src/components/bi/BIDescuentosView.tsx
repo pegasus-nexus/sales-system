@@ -95,6 +95,38 @@ export const BIDescuentosView: React.FC<BIDescuentosViewProps> = ({ hideHeader =
         setSelectedSucursal('all');
     };
 
+    const setQuickRange = (type: 'today' | 'yesterday' | '7days' | 'month') => {
+        const todayStr = getFormattedBoliviaDate(0);
+        if (type === 'today') {
+            setStartDate(todayStr);
+            setEndDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yest = getFormattedBoliviaDate(-1);
+            setStartDate(yest);
+            setEndDate(yest);
+        } else if (type === '7days') {
+            const d7 = getFormattedBoliviaDate(-6);
+            setStartDate(d7);
+            setEndDate(todayStr);
+        } else if (type === 'month') {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            setStartDate(`${y}-${m}-01`);
+            setEndDate(todayStr);
+        }
+    };
+
+    const todayStr = getFormattedBoliviaDate(0);
+    const yestStr = getFormattedBoliviaDate(-1);
+    const d7Str = getFormattedBoliviaDate(-6);
+    const firstMonthStr = `${todayStr.substring(0, 7)}-01`;
+
+    const isTodayActive = startDate === todayStr && endDate === todayStr;
+    const isYesterdayActive = startDate === yestStr && endDate === yestStr;
+    const is7DaysActive = startDate === d7Str && endDate === todayStr;
+    const isMonthActive = startDate === firstMonthStr && endDate === todayStr;
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -185,9 +217,58 @@ export const BIDescuentosView: React.FC<BIDescuentosViewProps> = ({ hideHeader =
                 </span>
             </div>
 
-            {/* CONTROLES DE FILTRADO */}
+            {/* CONTROLES DE FILTRADO Y RANGOS RÁPIDOS */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* BOTONES DE FILTRO RÁPIDO DE FECHAS */}
+                    <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/80">
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('today')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isTodayActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('yesterday')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isYesterdayActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('7days')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                is7DaysActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Últimos 7 Días
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('month')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isMonthActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
+                    {/* SELECTOR MANUAL DE FECHA */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
@@ -205,6 +286,7 @@ export const BIDescuentosView: React.FC<BIDescuentosViewProps> = ({ hideHeader =
                         />
                     </div>
 
+                    {/* FILTRO SUCURSALES */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Filter size={14} className="text-slate-400" />
                         <select

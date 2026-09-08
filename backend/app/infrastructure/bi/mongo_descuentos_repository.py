@@ -55,6 +55,31 @@ class MongoDescuentosRepository:
                 "uso_actual": int(d.get("uso_actual") or 0),
                 "uso_maximo": int(d.get("uso_maximo") or 0)
             })
+
+        # También incluir promociones y premios de Comunidad Taboada (comunidad_users)
+        try:
+            comunidad_cursor = db.comunidad_users.find({"ha_reclamado": True})
+            comunidad_users = await comunidad_cursor.to_list(length=None)
+            if comunidad_users:
+                premios_cnt: Dict[str, int] = {}
+                for u in comunidad_users:
+                    premio = str(u.get("premio_reclamado") or "RECOMPENSA_TABOADA")
+                    premios_cnt[premio] = premios_cnt.get(premio, 0) + 1
+
+                for premio_code, count in premios_cnt.items():
+                    nombre_promo = f"Comunidad Taboada - {premio_code.replace('_', ' ').title()}"
+                    res.append({
+                        "_id": f"comunidad_{premio_code.lower()}",
+                        "nombre": nombre_promo,
+                        "tipo": "PORCENTAJE" if "DESCUENTO" in premio_code else "REGALO",
+                        "valor": 7.0 if "7" in premio_code else (5.0 if "5" in premio_code else (3.0 if "3" in premio_code else 2.0)),
+                        "is_active": True,
+                        "uso_actual": count,
+                        "uso_maximo": 1000
+                    })
+        except Exception:
+            pass
+
         return res
 
     async def get_raw_sales_with_discounts(
@@ -67,7 +92,15 @@ class MongoDescuentosRepository:
         db = await get_raw_db()
         query: Dict[str, Any] = {
             "anulada": {"$ne": True},
-            "descuento": {"$exists": True, "$ne": None}
+            "$or": [
+                {"descuento": {"$exists": True, "$ne": None}},
+                {"descuento_monto": {"$gt": 0}},
+                {"monto_descuento": {"$gt": 0}},
+                {"cupon": {"$exists": True, "$ne": None}},
+                {"cupon_descuento": {"$gt": 0}},
+                {"items.descuento_unitario": {"$gt": 0}},
+                {"cliente.is_miembro_comunidad": True}
+            ]
         }
 
         if start_date_str and end_date_str:
@@ -98,3 +131,4 @@ class MongoDescuentosRepository:
 
         cursor = db.sales.find(query)
         return await cursor.to_list(length=None)
+
