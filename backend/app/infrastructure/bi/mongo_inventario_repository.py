@@ -109,7 +109,8 @@ class MongoInventarioRepository:
         days: int = 30
     ) -> Dict[str, float]:
         """
-        Calcula la velocidad promedio diaria de ventas (unidades/día) por producto en los últimos N días.
+        Calcula la velocidad promedio diaria de ventas (unidades/día) por producto.
+        Soporta fallback histórico para asegurar que todos los productos reciban su velocidad proyectada.
         """
         from datetime import timezone, timedelta
         db = await get_raw_db()
@@ -150,6 +151,44 @@ class MongoInventarioRepository:
             pid = str(d["_id"])
             total_qty = safe_float_bi(d.get("total_unidades"))
             res[pid] = round(total_qty / float(days), 3)
+
+        # Fallback histórico sin límite rígido de fecha si las ventas en 30 días son escasas
+        if len(res) < 5:
+            query_all: Dict[str, Any] = {"anulada": {"$ne": True}}
+            if user.tenant_id and str(user.tenant_id) not in ["all", "default", ""]:
+                t_cond = [str(user.tenant_id)]
+                if ObjectId.is_valid(user.tenant_id):
+                    t_cond.append(ObjectId(user.tenant_id))
+                query_all["tenant_id"] = {"$in": t_cond}
+            if sucursal_id and sucursal_id not in ["all", "None", ""]:
+                s_cond = [str(sucursal_id)]
+                if ObjectId.is_valid(sucursal_id):
+                    s_cond.append(ObjectId(sucursal_id))
+                query_all["sucursal_id"] = {"$in": s_cond}
+
+            pipeline_all = [
+                {"$match": query_all},
+                {"$unwind": "$items"},
+                {
+                    "$group": {
+                        "_id": "$items.producto_id",
+                        "total_unidades": {"$sum": "$items.cantidad"},
+                        "primera_venta": {"$min": "$created_at"},
+                        "ultima_venta": {"$max": "$created_at"}
+                    }
+                }
+            ]
+            docs_all = await db.sales.aggregate(pipeline_all).to_list(length=None)
+            for d in docs_all:
+                pid = str(d["_id"])
+                if pid not in res or res[pid] == 0:
+                    total_qty = safe_float_bi(d.get("total_unidades"))
+                    fv = d.get("primera_venta")
+                    lv = d.get("ultima_venta")
+                    span_days = 30
+                    if isinstance(fv, datetime) and isinstance(lv, datetime):
+                        span_days = max(1, (lv - fv).days)
+                    res[pid] = round(total_qty / float(span_days), 3)
 
         return res
 

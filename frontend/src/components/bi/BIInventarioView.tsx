@@ -10,14 +10,28 @@ import type { BIInventarioControlResponse, BISucursalOption } from '../../api/bi
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const BIInventarioView: React.FC = () => {
+export interface BIInventarioViewProps {
+    initialSubTab?: 'valorizacion' | 'demanda' | 'kardex';
+    hideHeader?: boolean;
+}
+
+export const BIInventarioView: React.FC<BIInventarioViewProps> = ({
+    initialSubTab = 'valorizacion',
+    hideHeader = false
+}) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursalesOptions, setSucursalesOptions] = useState<BISucursalOption[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [activeSubTab, setActiveSubTab] = useState<'valorizacion' | 'demanda' | 'kardex'>('valorizacion');
+    const [activeSubTab, setActiveSubTab] = useState<'valorizacion' | 'demanda' | 'kardex'>(initialSubTab);
+
+    useEffect(() => {
+        if (initialSubTab) {
+            setActiveSubTab(initialSubTab);
+        }
+    }, [initialSubTab]);
 
     const [data, setData] = useState<BIInventarioControlResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -119,48 +133,50 @@ export const BIInventarioView: React.FC = () => {
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
             {/* CABECERA DINÁMICA SEGÚN PESTAÑA */}
-            <div className="bg-gradient-to-r from-purple-50/90 via-violet-50/70 to-indigo-50/90 rounded-3xl p-6 shadow-sm border border-purple-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
-                <div>
-                    <div className="flex items-center gap-2 text-purple-700 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Package size={14} className="text-purple-700" />
+            {!hideHeader && (
+                <div className="bg-gradient-to-r from-purple-50/90 via-violet-50/70 to-indigo-50/90 rounded-3xl p-6 shadow-sm border border-purple-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
+                    <div>
+                        <div className="flex items-center gap-2 text-purple-700 font-extrabold text-xs tracking-wider uppercase mb-1">
+                            <div className="p-1 bg-white rounded-lg shadow-xs">
+                                <Package size={14} className="text-purple-700" />
+                            </div>
+                            <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 6</span>
                         </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 6</span>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                            {activeSubTab === 'valorizacion' && 'Inventario, Stock & Valorización'}
+                            {activeSubTab === 'demanda' && 'Demanda Predictiva & Pedidos a Futuro'}
+                            {activeSubTab === 'kardex' && 'Historial de Movimientos Kárdex'}
+                        </h1>
+                        <p className="text-xs text-slate-500 font-semibold mt-1">
+                            Modelo Estrella (`FACT_INVENTARIO`) sobre MongoDB `inventario`, `products` y `sales` (<span className="text-purple-700 font-black bg-purple-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                        </p>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                        {activeSubTab === 'valorizacion' && 'Inventario, Stock & Valorización'}
-                        {activeSubTab === 'demanda' && 'Demanda Predictiva & Pedidos a Futuro'}
-                        {activeSubTab === 'kardex' && 'Historial de Movimientos Kárdex'}
-                    </h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Modelo Estrella (`FACT_INVENTARIO`) sobre MongoDB `inventario`, `products` y `sales` (<span className="text-purple-700 font-black bg-purple-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
-                    </p>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => fetchInventarioData(selectedSucursal)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        <span>Actualizar</span>
-                    </button>
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <RotateCcw size={14} className="text-slate-500" />
-                        <span>Restablecer</span>
-                    </button>
-                    <button
-                        onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <Maximize2 size={14} className="text-slate-500" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fetchInventarioData(selectedSucursal)}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                        >
+                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                            <span>Actualizar</span>
+                        </button>
+                        <button
+                            onClick={handleReset}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <RotateCcw size={14} className="text-slate-500" />
+                            <span>Restablecer</span>
+                        </button>
+                        <button
+                            onClick={toggleFullscreen}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <Maximize2 size={14} className="text-slate-500" />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* SECTOR DE NAVEGACIÓN POR SUB-PESTAÑAS */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2 rounded-3xl border border-slate-200/70 shadow-xs">

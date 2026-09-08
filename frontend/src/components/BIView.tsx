@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     BarChart3, Clock, RefreshCw, Download, Maximize2, Settings,
     Activity, TrendingUp, Sparkles, DollarSign, Package,
-    Boxes, Crown, Users, Building2, UserCheck, Tag
+    Boxes, Crown, Users, Building2, UserCheck, Tag, History
 } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
@@ -370,7 +370,29 @@ export default function BIView() {
                             }`}
                         >
                             <Boxes size={15} className={subTab === 'default' ? 'text-white' : 'text-orange-600'} />
-                            <span>Stock Actual & Demanda Predictiva IA</span>
+                            <span>1. Valorización & Stock General</span>
+                        </button>
+                        <button
+                            onClick={() => setSubTab('demanda')}
+                            className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
+                                subTab === 'demanda'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-orange-950 hover:bg-white/80'
+                            }`}
+                        >
+                            <Sparkles size={15} className={subTab === 'demanda' ? 'text-yellow-300' : 'text-orange-600'} />
+                            <span>2. Demanda Predictiva & Pedidos a Futuro</span>
+                        </button>
+                        <button
+                            onClick={() => setSubTab('kardex')}
+                            className={`px-4 py-2 rounded-full transition-all flex items-center gap-2 cursor-pointer ${
+                                subTab === 'kardex'
+                                    ? `${currentModConfig.subTabActiveBg} font-black shadow-xs`
+                                    : 'text-orange-950 hover:bg-white/80'
+                            }`}
+                        >
+                            <History size={15} className={subTab === 'kardex' ? 'text-white' : 'text-orange-600'} />
+                            <span>3. Movimientos Kárdex</span>
                         </button>
                     </div>
                 )}
@@ -436,7 +458,7 @@ export default function BIView() {
                     )}
 
                     {activeModule === 'inventario' && (
-                        <BIInventarioView />
+                        <BIInventarioView initialSubTab={subTab === 'demanda' ? 'demanda' : subTab === 'kardex' ? 'kardex' : 'valorizacion'} />
                     )}
 
                     {activeModule === 'ia' && (
