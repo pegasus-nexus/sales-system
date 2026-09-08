@@ -380,9 +380,14 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 formatValue={currentPercentile.format}
             />
 
-            {/* 3. DISTRIBUCIÓN BENCHMARK (GAUSSIANA 365 DÍAS) MATCHING MEDIA_1788901753233.PNG */}
+            {/* 3. DISTRIBUCIÓN BENCHMARK (365 DÍAS) MATCHING MEDIA_1788908977159.PNG */}
             <BenchmarkDistribucionChart
+                selectedStore={selectedStore}
+                onChangeStore={(st) => setSelectedStore(st)}
                 selectedMetric={selectedMetric}
+                onChangeMetric={(mt) => setSelectedMetric(mt)}
+                periodMode={periodMode}
+                onChangePeriod={(pm) => setPeriodMode(pm)}
                 p25={currentPercentile.p25}
                 p50={currentPercentile.p50}
                 p75={currentPercentile.p75}
