@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     Sparkles, Package, Target, RefreshCw, Info, Search,
-    Star, Crown, HelpCircle, PackageX
+    Star, Crown, HelpCircle, PackageX, Filter, Tag, X
 } from 'lucide-react';
 import type { TopProductoItemBI } from '../../api/biApi';
 import { BIMatrizBCGPlot } from './BIMatrizBCGPlot';
@@ -26,6 +26,7 @@ interface BIMatrizBCGViewProps {
 
 export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, loading }) => {
     const [selectedQuadrant, setSelectedQuadrant] = useState<QuadrantType>('all');
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
 
     // Cálculo dinámico de Mediana para Ejes de Matriz BCG
@@ -127,15 +128,36 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
         };
     }, [products]);
 
-    // Filtrado por cuadrante y por término de búsqueda
+    // Categorías únicas con conteo de productos
+    const categoriesList = useMemo(() => {
+        if (!products || products.length === 0) return [];
+        const catsMap: Record<string, number> = {};
+        products.forEach(p => {
+            const catName = p.categoria_nombre || 'Sin Categoría';
+            catsMap[catName] = (catsMap[catName] || 0) + 1;
+        });
+        return Object.entries(catsMap)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [products]);
+
+    // Filtrado por cuadrante, categoría y por término de búsqueda
     const filteredProducts = useMemo(() => {
         return bcgAnalysis.bcgProducts.filter(p => {
             const matchesQuadrant = selectedQuadrant === 'all' || p.quadrant === selectedQuadrant;
+            const matchesCategory = selectedCategory === 'all' || (p.categoria_nombre || 'Sin Categoría') === selectedCategory;
             const term = searchTerm.toLowerCase().trim();
-            const matchesSearch = !term || p.nombre.toLowerCase().includes(term) || p.categoria_nombre.toLowerCase().includes(term);
-            return matchesQuadrant && matchesSearch;
+            const matchesSearch = !term || p.nombre.toLowerCase().includes(term) || (p.categoria_nombre || '').toLowerCase().includes(term);
+            return matchesQuadrant && matchesCategory && matchesSearch;
         });
-    }, [bcgAnalysis.bcgProducts, selectedQuadrant, searchTerm]);
+    }, [bcgAnalysis.bcgProducts, selectedQuadrant, selectedCategory, searchTerm]);
+
+    // Coincidencias de búsqueda para banner informativo de ubicación en cuadrante
+    const searchMatchInfo = useMemo(() => {
+        if (!searchTerm.trim()) return [];
+        const term = searchTerm.toLowerCase().trim();
+        return bcgAnalysis.bcgProducts.filter(p => p.nombre.toLowerCase().includes(term) || (p.categoria_nombre || '').toLowerCase().includes(term));
+    }, [bcgAnalysis.bcgProducts, searchTerm]);
 
     if (loading) {
         return (
@@ -175,6 +197,90 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                     <Target size={15} className="text-amber-600" />
                     <span>Recaudación Analizada: <strong className="text-slate-900 font-black">{formatBs(bcgAnalysis.totalRevenue)}</strong></span>
                 </div>
+            </div>
+
+            {/* CONTROLES PRINCIPALES DE FILTRADO POR CATEGORÍA Y BÚSQUEDA GLOBAL */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 space-y-3">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        
+                        {/* SELECTOR DE CATEGORÍA */}
+                        <div className="flex items-center gap-2 bg-amber-50/80 border border-amber-200/80 px-3.5 py-2 rounded-2xl w-full sm:w-auto">
+                            <Filter size={15} className="text-amber-700 shrink-0" />
+                            <span className="text-xs font-black text-amber-950">Categoría:</span>
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="bg-transparent text-xs font-black text-amber-900 outline-none cursor-pointer pr-2 max-w-[220px] truncate"
+                            >
+                                <option value="all">Todas las Categorías ({products.length})</option>
+                                {categoriesList.map(cat => (
+                                    <option key={cat.name} value={cat.name}>
+                                        {cat.name} ({cat.count} SKUs)
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* BUSCADOR CON ICONO Y BOTÓN LIMPIAR */}
+                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-2xl w-full sm:w-80">
+                            <Search size={15} className="text-slate-400 shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Buscar producto o categoría (Ej: Cocoa, Caja...)..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-slate-800 outline-none w-full placeholder:text-slate-400"
+                            />
+                            {searchTerm && (
+                                <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* RESETEAR FILTROS */}
+                        {(selectedCategory !== 'all' || searchTerm !== '' || selectedQuadrant !== 'all') && (
+                            <button
+                                onClick={() => {
+                                    setSelectedCategory('all');
+                                    setSearchTerm('');
+                                    setSelectedQuadrant('all');
+                                }}
+                                className="flex items-center gap-1 text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-2xl border border-rose-200 transition-all cursor-pointer"
+                            >
+                                <X size={14} /> Limpiar Filtros
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="text-xs font-black text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
+                        Filtrados: <strong className="text-amber-700 font-extrabold">{filteredProducts.length}</strong> de {products.length} SKUs
+                    </div>
+                </div>
+
+                {/* BANNER INFORMATIVO DE UBICACIÓN EN LA MATRIZ BCG */}
+                {searchMatchInfo.length > 0 && (
+                    <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-300 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+                        <div className="flex items-center gap-2">
+                            <Sparkles size={16} className="text-amber-600 shrink-0 animate-pulse" />
+                            <span className="font-extrabold text-slate-800">
+                                Ubicación de <strong>"{searchTerm}"</strong> en la Matriz BCG:
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {searchMatchInfo.slice(0, 6).map(p => (
+                                <span key={p.producto_id} className={`font-black text-[11px] px-2.5 py-1 rounded-xl border flex items-center gap-1.5 shadow-2xs ${p.actionColor}`}>
+                                    <span className="truncate max-w-[150px]">{p.nombre}:</span>
+                                    <span>{p.quadrantEmoji} {p.quadrantLabel}</span>
+                                </span>
+                            ))}
+                            {searchMatchInfo.length > 6 && (
+                                <span className="text-[10px] font-black text-slate-500">+{searchMatchInfo.length - 6} productos más</span>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* TARJETAS RESUMEN DE LOS 4 CUADRANTES CON ICONOS PROFESIONALES */}
@@ -300,7 +406,7 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
 
             {/* GRÁFICO DE DISPERSIÓN 2D CON NODOS BURBUJA E ICONOS */}
             <BIMatrizBCGPlot
-                products={bcgAnalysis.bcgProducts}
+                products={filteredProducts}
                 medianUnits={bcgAnalysis.medianUnits}
                 medianRevenue={bcgAnalysis.medianRevenue}
                 onSelectProduct={(prod) => setSearchTerm(prod.nombre)}
@@ -342,21 +448,37 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                                 </div>
                             </div>
                             <span className="text-xs font-black text-amber-900 bg-amber-200/80 px-2.5 py-1 rounded-xl">
-                                {bcgAnalysis.stats.star.count} Productos
+                                {filteredProducts.filter(p => p.quadrant === 'star').length} Productos
                             </span>
                         </div>
-                        <div className="max-h-48 overflow-y-auto pr-1 space-y-1.5 text-xs font-bold">
-                            {bcgAnalysis.bcgProducts.filter(p => p.quadrant === 'star').map(p => (
-                                <div key={p.producto_id} className="bg-white p-2.5 rounded-2xl border border-amber-200/70 shadow-2xs flex justify-between items-center">
-                                    <span className="text-slate-900 font-extrabold truncate max-w-[180px]">{p.nombre}</span>
-                                    <div className="text-right shrink-0">
-                                        <span className="block font-black text-amber-800">{formatBs(p.ingresos_bs)}</span>
-                                        <span className="text-[10px] text-slate-400 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                        <div className="max-h-56 overflow-y-auto pr-1 space-y-2 text-xs font-bold">
+                            {filteredProducts.filter(p => p.quadrant === 'star').map(p => {
+                                const isMatch = searchTerm.trim() && p.nombre.toLowerCase().includes(searchTerm.toLowerCase().trim());
+                                return (
+                                    <div
+                                        key={p.producto_id}
+                                        onClick={() => setSearchTerm(p.nombre)}
+                                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${
+                                            isMatch
+                                                ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-300 shadow-md scale-[1.01]'
+                                                : 'bg-white border-amber-200/70 shadow-2xs hover:border-amber-400'
+                                        }`}
+                                    >
+                                        <div className="space-y-0.5">
+                                            <span className="text-slate-900 font-extrabold block truncate max-w-[200px]">{p.nombre}</span>
+                                            <span className="text-[9px] font-black text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                                <Tag size={9} /> {p.categoria_nombre}
+                                            </span>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <span className="block font-black text-amber-900">{formatBs(p.ingresos_bs)}</span>
+                                            <span className="text-[10px] text-slate-500 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            {bcgAnalysis.stats.star.count === 0 && (
-                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos en este cuadrante</p>
+                                );
+                            })}
+                            {filteredProducts.filter(p => p.quadrant === 'star').length === 0 && (
+                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos coincidentes en este cuadrante</p>
                             )}
                         </div>
                     </div>
@@ -372,21 +494,37 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                                 </div>
                             </div>
                             <span className="text-xs font-black text-sky-900 bg-sky-200/80 px-2.5 py-1 rounded-xl">
-                                {bcgAnalysis.stats.question.count} Productos
+                                {filteredProducts.filter(p => p.quadrant === 'question').length} Productos
                             </span>
                         </div>
-                        <div className="max-h-48 overflow-y-auto pr-1 space-y-1.5 text-xs font-bold">
-                            {bcgAnalysis.bcgProducts.filter(p => p.quadrant === 'question').map(p => (
-                                <div key={p.producto_id} className="bg-white p-2.5 rounded-2xl border border-sky-200/70 shadow-2xs flex justify-between items-center">
-                                    <span className="text-slate-900 font-extrabold truncate max-w-[180px]">{p.nombre}</span>
-                                    <div className="text-right shrink-0">
-                                        <span className="block font-black text-sky-800">{formatBs(p.ingresos_bs)}</span>
-                                        <span className="text-[10px] text-slate-400 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                        <div className="max-h-56 overflow-y-auto pr-1 space-y-2 text-xs font-bold">
+                            {filteredProducts.filter(p => p.quadrant === 'question').map(p => {
+                                const isMatch = searchTerm.trim() && p.nombre.toLowerCase().includes(searchTerm.toLowerCase().trim());
+                                return (
+                                    <div
+                                        key={p.producto_id}
+                                        onClick={() => setSearchTerm(p.nombre)}
+                                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${
+                                            isMatch
+                                                ? 'bg-sky-100 border-sky-400 ring-2 ring-sky-300 shadow-md scale-[1.01]'
+                                                : 'bg-white border-sky-200/70 shadow-2xs hover:border-sky-400'
+                                        }`}
+                                    >
+                                        <div className="space-y-0.5">
+                                            <span className="text-slate-900 font-extrabold block truncate max-w-[200px]">{p.nombre}</span>
+                                            <span className="text-[9px] font-black text-sky-800 bg-sky-100/90 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                                <Tag size={9} /> {p.categoria_nombre}
+                                            </span>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <span className="block font-black text-sky-900">{formatBs(p.ingresos_bs)}</span>
+                                            <span className="text-[10px] text-slate-500 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            {bcgAnalysis.stats.question.count === 0 && (
-                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos en este cuadrante</p>
+                                );
+                            })}
+                            {filteredProducts.filter(p => p.quadrant === 'question').length === 0 && (
+                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos coincidentes en este cuadrante</p>
                             )}
                         </div>
                     </div>
@@ -402,21 +540,37 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                                 </div>
                             </div>
                             <span className="text-xs font-black text-emerald-900 bg-emerald-200/80 px-2.5 py-1 rounded-xl">
-                                {bcgAnalysis.stats.cow.count} Productos
+                                {filteredProducts.filter(p => p.quadrant === 'cow').length} Productos
                             </span>
                         </div>
-                        <div className="max-h-48 overflow-y-auto pr-1 space-y-1.5 text-xs font-bold">
-                            {bcgAnalysis.bcgProducts.filter(p => p.quadrant === 'cow').map(p => (
-                                <div key={p.producto_id} className="bg-white p-2.5 rounded-2xl border border-emerald-200/70 shadow-2xs flex justify-between items-center">
-                                    <span className="text-slate-900 font-extrabold truncate max-w-[180px]">{p.nombre}</span>
-                                    <div className="text-right shrink-0">
-                                        <span className="block font-black text-emerald-800">{formatBs(p.ingresos_bs)}</span>
-                                        <span className="text-[10px] text-slate-400 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                        <div className="max-h-56 overflow-y-auto pr-1 space-y-2 text-xs font-bold">
+                            {filteredProducts.filter(p => p.quadrant === 'cow').map(p => {
+                                const isMatch = searchTerm.trim() && p.nombre.toLowerCase().includes(searchTerm.toLowerCase().trim());
+                                return (
+                                    <div
+                                        key={p.producto_id}
+                                        onClick={() => setSearchTerm(p.nombre)}
+                                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${
+                                            isMatch
+                                                ? 'bg-emerald-100 border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-[1.01]'
+                                                : 'bg-white border-emerald-200/70 shadow-2xs hover:border-emerald-400'
+                                        }`}
+                                    >
+                                        <div className="space-y-0.5">
+                                            <span className="text-slate-900 font-extrabold block truncate max-w-[200px]">{p.nombre}</span>
+                                            <span className="text-[9px] font-black text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                                <Tag size={9} /> {p.categoria_nombre}
+                                            </span>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <span className="block font-black text-emerald-900">{formatBs(p.ingresos_bs)}</span>
+                                            <span className="text-[10px] text-slate-500 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            {bcgAnalysis.stats.cow.count === 0 && (
-                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos en este cuadrante</p>
+                                );
+                            })}
+                            {filteredProducts.filter(p => p.quadrant === 'cow').length === 0 && (
+                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos coincidentes en este cuadrante</p>
                             )}
                         </div>
                     </div>
@@ -432,21 +586,37 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                                 </div>
                             </div>
                             <span className="text-xs font-black text-slate-800 bg-slate-300/80 px-2.5 py-1 rounded-xl">
-                                {bcgAnalysis.stats.dog.count} Productos
+                                {filteredProducts.filter(p => p.quadrant === 'dog').length} Productos
                             </span>
                         </div>
-                        <div className="max-h-48 overflow-y-auto pr-1 space-y-1.5 text-xs font-bold">
-                            {bcgAnalysis.bcgProducts.filter(p => p.quadrant === 'dog').map(p => (
-                                <div key={p.producto_id} className="bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs flex justify-between items-center">
-                                    <span className="text-slate-900 font-extrabold truncate max-w-[180px]">{p.nombre}</span>
-                                    <div className="text-right shrink-0">
-                                        <span className="block font-black text-slate-700">{formatBs(p.ingresos_bs)}</span>
-                                        <span className="text-[10px] text-slate-400 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                        <div className="max-h-56 overflow-y-auto pr-1 space-y-2 text-xs font-bold">
+                            {filteredProducts.filter(p => p.quadrant === 'dog').map(p => {
+                                const isMatch = searchTerm.trim() && p.nombre.toLowerCase().includes(searchTerm.toLowerCase().trim());
+                                return (
+                                    <div
+                                        key={p.producto_id}
+                                        onClick={() => setSearchTerm(p.nombre)}
+                                        className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${
+                                            isMatch
+                                                ? 'bg-slate-200 border-slate-400 ring-2 ring-slate-300 shadow-md scale-[1.01]'
+                                                : 'bg-white border-slate-200/80 shadow-2xs hover:border-slate-400'
+                                        }`}
+                                    >
+                                        <div className="space-y-0.5">
+                                            <span className="text-slate-900 font-extrabold block truncate max-w-[200px]">{p.nombre}</span>
+                                            <span className="text-[9px] font-black text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                                                <Tag size={9} /> {p.categoria_nombre}
+                                            </span>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <span className="block font-black text-slate-800">{formatBs(p.ingresos_bs)}</span>
+                                            <span className="text-[10px] text-slate-500 font-extrabold">{p.unidades_vendidas} un. ({p.participacion_pct}%)</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            {bcgAnalysis.stats.dog.count === 0 && (
-                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos en este cuadrante</p>
+                                );
+                            })}
+                            {filteredProducts.filter(p => p.quadrant === 'dog').length === 0 && (
+                                <p className="text-center py-4 text-slate-400 font-bold">Sin productos coincidentes en este cuadrante</p>
                             )}
                         </div>
                     </div>
