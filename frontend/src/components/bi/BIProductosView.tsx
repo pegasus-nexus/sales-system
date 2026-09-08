@@ -6,6 +6,7 @@ import {
 import { getBIProductos, getBISucursales } from '../../api/biApi';
 import type { BIProductosResponse, BISucursalOption } from '../../api/biApi';
 import { BIMatrizBCGView } from './BIMatrizBCGView';
+import { BIDescuentosView } from './BIDescuentosView';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -33,7 +34,11 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     return `${year}-${month}-${day}`;
 };
 
-export const BIProductosView: React.FC = () => {
+export interface BIProductosViewProps {
+    initialSubTab?: 'catalog' | 'bcg' | 'descuentos';
+}
+
+export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab = 'catalog' }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -42,10 +47,16 @@ export const BIProductosView: React.FC = () => {
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'bcg'>('catalog');
+    const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'bcg' | 'descuentos'>(initialSubTab);
 
     const [data, setData] = useState<BIProductosResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (initialSubTab) {
+            setActiveSubTab(initialSubTab);
+        }
+    }, [initialSubTab]);
 
     const loadSucursales = async () => {
         try {
@@ -146,7 +157,7 @@ export const BIProductosView: React.FC = () => {
         return p.nombre.toLowerCase().includes(term) || p.categoria_nombre.toLowerCase().includes(term);
     }) || [];
 
-    if (error && !loading) {
+    if (error && !loading && activeSubTab !== 'descuentos') {
         return (
             <div className="bg-rose-50/90 border-2 border-rose-200/80 rounded-3xl p-8 space-y-6 animate-in fade-in duration-300 text-rose-950 max-w-4xl mx-auto my-8 shadow-sm">
                 <div className="flex items-start gap-4">
@@ -183,7 +194,7 @@ export const BIProductosView: React.FC = () => {
                         </div>
                         <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 3</span>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Catálogo Inteligente & Matriz BCG</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Catálogo Inteligente & Análisis de Productos</h1>
                     <p className="text-xs text-slate-500 font-semibold mt-1">
                         Modelo Estrella (`FACT_SALES_ITEMS`) sobre MongoDB `sales.items[]` (<span className="text-amber-800 font-black bg-amber-100/80 px-2 py-0.5 rounded-md">America/La_Paz</span>)
                     </p>
@@ -214,9 +225,11 @@ export const BIProductosView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA DE SUBPESTAÑAS (CATÁLOGO GENERAL VS MATRIZ BCG) */}
+            {/* BARRA DE LAS 3 SUBPESTAÑAS DEL MÓDULO CATÁLOGO INTELIGENTE */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-3xl border border-slate-200/70 shadow-xs">
-                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-black">
+                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-black flex-wrap gap-1">
+                    
+                    {/* SUBPESTAÑA 1: RANKING Y CATÁLOGO GENERAL */}
                     <button
                         onClick={() => setActiveSubTab('catalog')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
@@ -226,8 +239,10 @@ export const BIProductosView: React.FC = () => {
                         }`}
                     >
                         <Package size={16} />
-                        <span>Ranking & Catálogo General</span>
+                        <span>1. Ranking & Catálogo General</span>
                     </button>
+
+                    {/* SUBPESTAÑA 2: MATRIZ BCG COMPLETA */}
                     <button
                         onClick={() => setActiveSubTab('bcg')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
@@ -236,112 +251,129 @@ export const BIProductosView: React.FC = () => {
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                         }`}
                     >
-                        <Sparkles size={16} className="text-yellow-300" />
-                        <span>Matriz BCG Completa</span>
+                        <Sparkles size={16} className={activeSubTab === 'bcg' ? 'text-yellow-300' : 'text-amber-600'} />
+                        <span>2. Matriz BCG Completa</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-md ${activeSubTab === 'bcg' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900'}`}>
                             {data?.top_productos.length || 0} SKUs
                         </span>
                     </button>
+
+                    {/* SUBPESTAÑA 3: DESCUENTOS & PROMOCIONES */}
+                    <button
+                        onClick={() => setActiveSubTab('descuentos')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
+                            activeSubTab === 'descuentos'
+                                ? 'bg-amber-600 text-white shadow-xs font-extrabold'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        }`}
+                    >
+                        <Tag size={16} />
+                        <span>3. Descuentos & Promociones</span>
+                    </button>
                 </div>
 
-                {data && (
+                {data && activeSubTab !== 'descuentos' && (
                     <div className="text-xs font-bold text-slate-500 shrink-0 px-3">
                         <span>Última Sincronización POS: <strong className="text-amber-700">{data.ultima_actualizacion}</strong></span>
                     </div>
                 )}
             </div>
 
-            {/* CONTROLES DE FILTRADO DE FECHA Y SUCURSAL */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
-                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                    {/* Botones de Selección Rápida */}
-                    <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/70">
-                        <button
-                            onClick={() => setQuickRange('today')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                                isTodayActive
-                                    ? 'bg-amber-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                            }`}
-                        >
-                            Hoy
-                        </button>
-                        <button
-                            onClick={() => setQuickRange('yesterday')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                                isYesterdayActive
-                                    ? 'bg-amber-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                            }`}
-                        >
-                            Ayer
-                        </button>
-                        <button
-                            onClick={() => setQuickRange('7days')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                                is7DaysActive
-                                    ? 'bg-amber-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                            }`}
-                        >
-                            Últimos 7 Días
-                        </button>
-                        <button
-                            onClick={() => setQuickRange('month')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                                isMonthActive
-                                    ? 'bg-amber-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                            }`}
-                        >
-                            Este Mes
-                        </button>
+            {/* CONTROLES DE FILTRADO DE FECHA Y SUCURSAL (SOLO SI NO ESTÁ EN SUBPESTAÑA DESCUENTOS EMBEBIDA) */}
+            {activeSubTab !== 'descuentos' && (
+                <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                        {/* Botones de Selección Rápida */}
+                        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/70">
+                            <button
+                                onClick={() => setQuickRange('today')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                    isTodayActive
+                                        ? 'bg-amber-600 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                }`}
+                            >
+                                Hoy
+                            </button>
+                            <button
+                                onClick={() => setQuickRange('yesterday')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                    isYesterdayActive
+                                        ? 'bg-amber-600 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                }`}
+                            >
+                                Ayer
+                            </button>
+                            <button
+                                onClick={() => setQuickRange('7days')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                    is7DaysActive
+                                        ? 'bg-amber-600 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                }`}
+                            >
+                                Últimos 7 Días
+                            </button>
+                            <button
+                                onClick={() => setQuickRange('month')}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                    isMonthActive
+                                        ? 'bg-amber-600 text-white shadow-xs'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                }`}
+                            >
+                                Este Mes
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
+                            <Calendar size={14} className="text-slate-400" />
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-slate-700 outline-none"
+                            />
+                            <span className="text-slate-400 font-bold text-xs">a</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-slate-700 outline-none"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
+                            <Filter size={14} className="text-slate-400" />
+                            <select
+                                value={selectedSucursal}
+                                onChange={(e) => setSelectedSucursal(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                            >
+                                <option value="all">Todas las Sucursales</option>
+                                {sucursales.map((s) => (
+                                    <option key={s.sucursal_id} value={s.sucursal_id}>
+                                        {s.nombre} ({s.ciudad})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Calendar size={14} className="text-slate-400" />
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                        <span className="text-slate-400 font-bold text-xs">a</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
-                        <Filter size={14} className="text-slate-400" />
-                        <select
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales.map((s) => (
-                                <option key={s.sucursal_id} value={s.sucursal_id}>
-                                    {s.nombre} ({s.ciudad})
-                                </option>
-                            ))}
-                        </select>
+                    <div className="text-xs font-bold text-slate-500 shrink-0 flex items-center gap-2">
+                        <Calendar size={15} className="text-amber-600" />
+                        <span>
+                            Período: <strong className="text-slate-900 font-black">{startDate}</strong> al <strong className="text-slate-900 font-black">{endDate}</strong>
+                        </span>
                     </div>
                 </div>
-
-                <div className="text-xs font-bold text-slate-500 shrink-0 flex items-center gap-2">
-                    <Calendar size={15} className="text-amber-600" />
-                    <span>
-                        Período: <strong className="text-slate-900 font-black">{startDate}</strong> al <strong className="text-slate-900 font-black">{endDate}</strong>
-                    </span>
-                </div>
-            </div>
+            )}
 
             {/* CONTENIDO SEGÚN LA SUBPESTAÑA SELECCIONADA */}
-            {activeSubTab === 'bcg' ? (
+            {activeSubTab === 'descuentos' ? (
+                <BIDescuentosView />
+            ) : activeSubTab === 'bcg' ? (
                 <BIMatrizBCGView products={data?.top_productos || []} loading={loading} />
             ) : (
                 <div className="space-y-6">
