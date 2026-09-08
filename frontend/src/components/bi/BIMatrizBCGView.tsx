@@ -3,6 +3,7 @@ import {
     Sparkles, Package, Target, RefreshCw, Info, Search
 } from 'lucide-react';
 import type { TopProductoItemBI } from '../../api/biApi';
+import { BIMatrizBCGPlot } from './BIMatrizBCGPlot';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -294,6 +295,14 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
                 </div>
 
             </div>
+
+            {/* GRÁFICO DE DISPERSIÓN 2D CON EJES Y NODOS BURBUJA (FORMATO SOLICITADO) */}
+            <BIMatrizBCGPlot
+                products={bcgAnalysis.bcgProducts}
+                medianUnits={bcgAnalysis.medianUnits}
+                medianRevenue={bcgAnalysis.medianRevenue}
+                onSelectProduct={(prod) => setSearchTerm(prod.nombre)}
+            />
 
             {/* CUADRANTE VISUAL BCG 2X2 */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/70 shadow-xs space-y-4">
