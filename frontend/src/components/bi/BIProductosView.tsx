@@ -225,60 +225,6 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
                 </div>
             </div>
 
-            {/* BARRA DE LAS 3 SUBPESTAÑAS DEL MÓDULO CATÁLOGO INTELIGENTE */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-3xl border border-slate-200/70 shadow-xs">
-                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-black flex-wrap gap-1">
-                    
-                    {/* SUBPESTAÑA 1: RANKING Y CATÁLOGO GENERAL */}
-                    <button
-                        onClick={() => setActiveSubTab('catalog')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
-                            activeSubTab === 'catalog'
-                                ? 'bg-amber-600 text-white shadow-xs font-extrabold'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                        }`}
-                    >
-                        <Package size={16} />
-                        <span>1. Ranking & Catálogo General</span>
-                    </button>
-
-                    {/* SUBPESTAÑA 2: MATRIZ BCG COMPLETA */}
-                    <button
-                        onClick={() => setActiveSubTab('bcg')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
-                            activeSubTab === 'bcg'
-                                ? 'bg-amber-600 text-white shadow-xs font-extrabold'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                        }`}
-                    >
-                        <Sparkles size={16} className={activeSubTab === 'bcg' ? 'text-yellow-300' : 'text-amber-600'} />
-                        <span>2. Matriz BCG Completa</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md ${activeSubTab === 'bcg' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900'}`}>
-                            {data?.top_productos.length || 0} SKUs
-                        </span>
-                    </button>
-
-                    {/* SUBPESTAÑA 3: DESCUENTOS & PROMOCIONES */}
-                    <button
-                        onClick={() => setActiveSubTab('descuentos')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all ${
-                            activeSubTab === 'descuentos'
-                                ? 'bg-amber-600 text-white shadow-xs font-extrabold'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                        }`}
-                    >
-                        <Tag size={16} />
-                        <span>3. Descuentos & Promociones</span>
-                    </button>
-                </div>
-
-                {data && activeSubTab !== 'descuentos' && (
-                    <div className="text-xs font-bold text-slate-500 shrink-0 px-3">
-                        <span>Última Sincronización POS: <strong className="text-amber-700">{data.ultima_actualizacion}</strong></span>
-                    </div>
-                )}
-            </div>
-
             {/* CONTROLES DE FILTRADO DE FECHA Y SUCURSAL (SOLO SI NO ESTÁ EN SUBPESTAÑA DESCUENTOS EMBEBIDA) */}
             {activeSubTab !== 'descuentos' && (
                 <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
@@ -366,6 +312,11 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
                         <span>
                             Período: <strong className="text-slate-900 font-black">{startDate}</strong> al <strong className="text-slate-900 font-black">{endDate}</strong>
                         </span>
+                        {data && (
+                            <span className="ml-2 text-slate-400 font-semibold border-l border-slate-200 pl-2">
+                                POS Sincro: <strong className="text-amber-700 font-bold">{data.ultima_actualizacion}</strong>
+                            </span>
+                        )}
                     </div>
                 </div>
             )}
@@ -460,7 +411,7 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
                         </div>
                     )}
 
-                    {/* RESUMEN DE LA MATRIZ BCG CON BOTÓN ACCESO A SUBPESTAÑA COMPLETA */}
+                    {/* RESUMEN DE LA MATRIZ BCG */}
                     {data && data.top_productos && data.top_productos.length > 0 && (
                         <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -471,12 +422,6 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
                                     </h3>
                                     <p className="text-xs text-slate-400 font-bold">Distribución rápida de productos clave según rotación y margen</p>
                                 </div>
-                                <button
-                                    onClick={() => setActiveSubTab('bcg')}
-                                    className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs px-4 py-2 rounded-2xl transition-all shadow-xs"
-                                >
-                                    <span>Ver Matriz BCG Completa ({data.top_productos.length} SKUs)</span>
-                                </button>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -627,7 +572,7 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
                         </div>
 
                         {/* SIDEBAR RESUMEN DE CATEGORÍAS (1 TERCIO) CON TEMA AMBER */}
-                        <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4 h-fit">
+                        <div className="bg-[#ffffff] rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4 h-fit">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                 <div>
                                     <h3 className="text-base font-black text-slate-900">Ventas por Categoría</h3>
