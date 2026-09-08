@@ -158,34 +158,23 @@ export const BIMatrizBCGView: React.FC<BIMatrizBCGViewProps> = ({ products, load
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-            
-            {/* CABECERA EXPLICATIVA MATRIZ BCG */}
-            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-yellow-500/10 rounded-3xl p-6 border border-amber-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <span className="bg-amber-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                            Matriz Boston Consulting Group
-                        </span>
-                        <span className="text-xs font-bold text-slate-500">Base: {products.length} SKUs analizados</span>
-                    </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <span>Matriz BCG & Clasificación Estratégica de Productos</span>
-                    </h2>
-                    <p className="text-xs text-slate-600 font-semibold max-w-2xl">
-                        Evaluación matemática de rendimiento basada en mediana de volumen (<strong className="text-amber-800 font-black">{bcgAnalysis.medianUnits} un.</strong>) e ingresos acumulados (<strong className="text-amber-800 font-black">{formatBs(bcgAnalysis.medianRevenue)}</strong>).
-                    </p>
-                </div>
 
-                <div className="flex items-center gap-2 bg-white/90 p-3 rounded-2xl border border-amber-200/80 shadow-xs text-xs font-bold text-slate-700 shrink-0">
-                    <Target size={18} className="text-amber-600" />
-                    <div>
-                        <span className="block text-[10px] text-slate-400 font-black uppercase">Recaudación Total Analizada</span>
-                        <span className="text-sm font-black text-slate-900">{formatBs(bcgAnalysis.totalRevenue)}</span>
-                    </div>
+            {/* TARJETAS RESUMEN DE LOS 4 CUADRANTES CON RECAUDACIÓN TOTAL */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-amber-50/50 p-4 rounded-3xl border border-amber-200/80">
+                <div className="flex items-center gap-2">
+                    <span className="bg-amber-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Matriz Boston Consulting Group
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-700">
+                        Base: <strong className="text-amber-900 font-black">{products.length} SKUs</strong> | Eje Volumen: <strong className="text-amber-900 font-black">{bcgAnalysis.medianUnits} un.</strong> | Eje Ingresos: <strong className="text-amber-900 font-black">{formatBs(bcgAnalysis.medianRevenue)}</strong>
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-2xl border border-amber-200/80 text-xs font-bold text-slate-800 shadow-2xs">
+                    <Target size={15} className="text-amber-600" />
+                    <span>Recaudación Analizada: <strong className="text-slate-900 font-black">{formatBs(bcgAnalysis.totalRevenue)}</strong></span>
                 </div>
             </div>
 
-            {/* TARJETAS RESUMEN DE LOS 4 CUADRANTES */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
                 {/* 1. ESTRELLAS ⭐ */}

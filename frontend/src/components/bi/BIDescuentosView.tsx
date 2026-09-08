@@ -32,7 +32,11 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     return `${year}-${month}-${day}`;
 };
 
-export const BIDescuentosView: React.FC = () => {
+interface BIDescuentosViewProps {
+    hideHeader?: boolean;
+}
+
+export const BIDescuentosView: React.FC<BIDescuentosViewProps> = ({ hideHeader = false }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -132,44 +136,46 @@ export const BIDescuentosView: React.FC = () => {
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
             {/* CABECERA ESTILO PASTEL */}
-            <div className="bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-yellow-50/90 rounded-3xl p-6 shadow-sm border border-orange-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
-                <div>
-                    <div className="flex items-center gap-2 text-orange-700 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Tag size={14} className="text-orange-700" />
+            {!hideHeader && (
+                <div className="bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-yellow-50/90 rounded-3xl p-6 shadow-sm border border-orange-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
+                    <div>
+                        <div className="flex items-center gap-2 text-orange-700 font-extrabold text-xs tracking-wider uppercase mb-1">
+                            <div className="p-1 bg-white rounded-lg shadow-xs">
+                                <Tag size={14} className="text-orange-700" />
+                            </div>
+                            <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 8</span>
                         </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 8</span>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Descuentos & Promociones</h1>
+                        <p className="text-xs text-slate-500 font-semibold mt-1">
+                            Modelo Estrella (`FACT_DESCUENTOS_SALES`) sobre MongoDB `descuentos` y `sales` (<span className="text-orange-700 font-black bg-orange-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                        </p>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Descuentos & Promociones</h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Modelo Estrella (`FACT_DESCUENTOS_SALES`) sobre MongoDB `descuentos` y `sales` (<span className="text-orange-700 font-black bg-orange-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
-                    </p>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => fetchDescuentosData(startDate, endDate, selectedSucursal)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        <span>Actualizar</span>
-                    </button>
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <RotateCcw size={14} className="text-slate-500" />
-                        <span>Restablecer</span>
-                    </button>
-                    <button
-                        onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <Maximize2 size={14} className="text-slate-500" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fetchDescuentosData(startDate, endDate, selectedSucursal)}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                        >
+                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                            <span>Actualizar</span>
+                        </button>
+                        <button
+                            onClick={handleReset}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <RotateCcw size={14} className="text-slate-500" />
+                            <span>Restablecer</span>
+                        </button>
+                        <button
+                            onClick={toggleFullscreen}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <Maximize2 size={14} className="text-slate-500" />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* BARRA TRANSPARENTE SOBRE ROI Y EFECTIVIDAD CAUSAL NO DISPONIBLES */}
             <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-amber-900 text-xs font-bold shadow-xs">

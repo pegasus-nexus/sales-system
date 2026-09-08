@@ -182,21 +182,44 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
         );
     }
 
+    const getHeaderDetails = () => {
+        if (activeSubTab === 'bcg') {
+            return {
+                badge: 'CENTRO DE INTELIGENCIA DE NEGOCIOS — MATRIZ BCG',
+                title: 'Matriz BCG & Clasificación Estratégica de Productos',
+                subtitle: 'Evaluación matemática dinámica por volumen de venta y recaudación acumulada'
+            };
+        } else if (activeSubTab === 'descuentos') {
+            return {
+                badge: 'CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 8',
+                title: 'Descuentos & Impacto de Promociones',
+                subtitle: 'Modelo Estrella (`FACT_DESCUENTOS_SALES`) sobre MongoDB `descuentos` y `sales`'
+            };
+        }
+        return {
+            badge: 'CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 3',
+            title: 'Catálogo Inteligente & Ranking de Productos',
+            subtitle: 'Modelo Estrella (`FACT_SALES_ITEMS`) sobre MongoDB `sales.items[]`'
+        };
+    };
+
+    const headerInfo = getHeaderDetails();
+
     return (
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
-            {/* CABECERA ESTILO PASTEL NARANJITA / AMBER (ESTILO PESTAÑA) */}
+            {/* CABECERA ESTILO PASTEL NARANJITA / AMBER (DINÁMICA SEGÚN SUBPESTAÑA) */}
             <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-yellow-50/90 rounded-3xl p-6 shadow-sm border border-amber-200/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
                 <div>
                     <div className="flex items-center gap-2 text-amber-700 font-extrabold text-xs tracking-wider uppercase mb-1">
                         <div className="p-1 bg-white rounded-lg shadow-xs">
                             <Layers size={14} className="text-amber-600" />
                         </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 3</span>
+                        <span>{headerInfo.badge}</span>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Catálogo Inteligente & Análisis de Productos</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{headerInfo.title}</h1>
                     <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Modelo Estrella (`FACT_SALES_ITEMS`) sobre MongoDB `sales.items[]` (<span className="text-amber-800 font-black bg-amber-100/80 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                        {headerInfo.subtitle} (<span className="text-amber-800 font-black bg-amber-100/80 px-2 py-0.5 rounded-md">America/La_Paz</span>)
                     </p>
                 </div>
 
@@ -323,7 +346,7 @@ export const BIProductosView: React.FC<BIProductosViewProps> = ({ initialSubTab 
 
             {/* CONTENIDO SEGÚN LA SUBPESTAÑA SELECCIONADA */}
             {activeSubTab === 'descuentos' ? (
-                <BIDescuentosView />
+                <BIDescuentosView hideHeader={true} />
             ) : activeSubTab === 'bcg' ? (
                 <BIMatrizBCGView products={data?.top_productos || []} loading={loading} />
             ) : (
