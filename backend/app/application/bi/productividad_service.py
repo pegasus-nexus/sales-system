@@ -74,10 +74,12 @@ class ProductividadBIService:
             c_nom = str(s.get("cashier_name") or s.get("usuario_nombre") or s.get("vendedor_name") or "Cajero No Especificado").strip()
             tot = safe_float_bi(s.get("total"))
             suc_id_str = str(s.get("sucursal_id") or "")
+            suc_nom_raw = str(s.get("sucursal_nombre") or s.get("sucursal") or "").strip()
             sales_rows.append({
                 "sale_id": str(s.get("_id")),
                 "cajero_nombre": c_nom,
                 "sucursal_id": suc_id_str,
+                "sucursal_nombre_raw": suc_nom_raw,
                 "total": tot
             })
 
@@ -86,7 +88,7 @@ class ProductividadBIService:
         total_tickets_global = len(df_sales)
 
         # Agregación por Cajero
-        grp_cajero = df_sales.groupby(["cajero_nombre", "sucursal_id"]).agg(
+        grp_cajero = df_sales.groupby(["cajero_nombre", "sucursal_id", "sucursal_nombre_raw"]).agg(
             tickets_conteo=("sale_id", "count"),
             ingresos_bs=("total", "sum")
         ).reset_index()
@@ -100,7 +102,8 @@ class ProductividadBIService:
         cajeros_list: List[CajeroProductividadItemBI] = []
         for _, r in grp_cajero.iterrows():
             s_id = str(r["sucursal_id"])
-            s_nom = suc_map.get(s_id, "Sucursal Central" if not s_id else "Sucursal General")
+            raw_n = str(r["sucursal_nombre_raw"])
+            s_nom = suc_map.get(s_id) or (raw_n if raw_n else ("Sucursal Central" if not s_id or s_id in ["None", "default", ""] else "Sucursal General"))
             cajeros_list.append(
                 CajeroProductividadItemBI(
                     cajero_nombre=str(r["cajero_nombre"]),
