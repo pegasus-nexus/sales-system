@@ -1,22 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import {
-    RefreshCw, Download, Sparkles, Settings, Database, Calendar, Building2, Filter
+    RefreshCw, Download, Settings, Database, Calendar, Building2, Filter, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
 } from 'lucide-react';
 
 import type {
-    StoreKey, MetricKey, DayDetailData, StoreBenchmarkConfig,
-    MonthTrendPoint, CriticalHourSummary, YoYComparisonPoint
+    StoreKey, MetricKey, DayDetailData, StoreBenchmarkConfig
 } from './benchmark/BenchmarkTypes';
 import { METRIC_TITLES } from './benchmark/BenchmarkTypes';
+import { BenchmarkMetricTabs } from './benchmark/BenchmarkMetricTabs';
 import { BenchmarkTopCards } from './benchmark/BenchmarkTopCards';
-import { BenchmarkDistribucionChart } from './benchmark/BenchmarkDistribucionChart';
 import { BenchmarkCalendarSection } from './benchmark/BenchmarkCalendarSection';
-import { BenchmarkDiasEquivalentesView } from './benchmark/BenchmarkDiasEquivalentesView';
-import { BenchmarkRankingTable } from './benchmark/BenchmarkRankingTable';
-import { BenchmarkHorarioSummaryCard } from './benchmark/BenchmarkHorarioSummaryCard';
-import { BenchmarkIADiagnosisCard } from './benchmark/BenchmarkIADiagnosisCard';
-import { BenchmarkYoYComparisonCard } from './benchmark/BenchmarkYoYComparisonCard';
 import { BenchmarkDayDetailModal } from './benchmark/BenchmarkDayDetailModal';
+import { BenchmarkExplanationModal } from './benchmark/BenchmarkExplanationModal';
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -24,15 +19,16 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
     const [periodMode, setPeriodMode] = useState<'mes' | 'semana'>('mes');
     const [activeModalDay, setActiveModalDay] = useState<DayDetailData | null>(null);
+    const [isExplanationModalOpen, setIsExplanationModalOpen] = useState<boolean>(false);
 
-    // Configuración multimétrica por sucursal
+    // Multimetric percentile config per store
     const storeConfigs: Record<StoreKey, StoreBenchmarkConfig> = {
         consolidado: {
             name: 'Tiendas Minoristas (Consolidado)',
             multiplier: 1.0,
             percentiles: {
-                ventas: { p25: 2600.00, p50: 4600.00, p75: 6000.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
-                ordenes: { p25: 42, p50: 75, p75: 98, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
+                ventas: { p25: 2645.00, p50: 4615.00, p75: 5983.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
+                ordenes: { p25: 42, p50: 75, p75: 98, unit: 'órdenes', format: (v) => `${Math.round(v)} clientes` },
                 ticket: { p25: 48.50, p50: 61.50, p75: 78.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
                 unidades: { p25: 110, p50: 195, p75: 260, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.1, p50: 2.6, p75: 3.2, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
@@ -42,8 +38,8 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             name: 'Heroínas (Cochabamba)',
             multiplier: 0.58,
             percentiles: {
-                ventas: { p25: 1500.00, p50: 2668.00, p75: 3480.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
-                ordenes: { p25: 25, p50: 48, p75: 64, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
+                ventas: { p25: 1534.00, p50: 2676.00, p75: 3470.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
+                ordenes: { p25: 25, p50: 48, p75: 64, unit: 'órdenes', format: (v) => `${Math.round(v)} clientes` },
                 ticket: { p25: 44.00, p50: 59.30, p75: 72.50, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
                 unidades: { p25: 65, p50: 120, p75: 165, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.0, p50: 2.5, p75: 3.1, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
@@ -53,8 +49,8 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             name: 'Recoleta (Cochabamba)',
             multiplier: 0.48,
             percentiles: {
-                ventas: { p25: 1248.00, p50: 2208.00, p75: 2880.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
-                ordenes: { p25: 20, p50: 38, p75: 52, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
+                ventas: { p25: 1269.00, p50: 2215.00, p75: 2871.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
+                ordenes: { p25: 20, p50: 38, p75: 52, unit: 'órdenes', format: (v) => `${Math.round(v)} clientes` },
                 ticket: { p25: 42.00, p50: 61.50, p75: 76.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
                 unidades: { p25: 50, p50: 95, p75: 135, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 1.9, p50: 2.4, p75: 3.0, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
@@ -64,8 +60,8 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             name: 'Calacoto (La Paz)',
             multiplier: 0.78,
             percentiles: {
-                ventas: { p25: 2028.00, p50: 3588.00, p75: 4680.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
-                ordenes: { p25: 31, p50: 58, p75: 78, unit: 'órdenes', format: (v) => `${Math.round(v)} órdenes` },
+                ventas: { p25: 2063.00, p50: 3599.00, p75: 4666.00, unit: 'Bs.', format: (v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 2 })}` },
+                ordenes: { p25: 31, p50: 58, p75: 78, unit: 'órdenes', format: (v) => `${Math.round(v)} clientes` },
                 ticket: { p25: 52.00, p50: 63.40, p75: 82.00, unit: 'Bs.', format: (v) => `Bs. ${v.toFixed(2)}` },
                 unidades: { p25: 85, p50: 150, p75: 205, unit: 'un.', format: (v) => `${Math.round(v)} un.` },
                 unidades_por_orden: { p25: 2.2, p50: 2.7, p75: 3.3, unit: 'un/ord', format: (v) => `${v.toFixed(1)} un/ord` }
@@ -76,39 +72,39 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const currentConfig = storeConfigs[selectedStore];
     const currentPercentile = currentConfig.percentiles[selectedMetric];
 
-    // Base raw days data for current month (Agosto)
+    // Raw days base data matching media_1788911167771.jpg
     const baseRawDays = [
-        { day: 1, dayOfWeek: 'Lun', fullDateStr: '01 Ago 2026', rawSales: 1950.05, orders: 38, units: 95, prod: 'Combo Pollo Familiar', hora: '12:00-13:00' },
-        { day: 2, dayOfWeek: 'Mar', fullDateStr: '02 Ago 2026', rawSales: 2485.52, orders: 45, units: 112, prod: 'Burger Doble Carne', hora: '13:00-14:00' },
-        { day: 3, dayOfWeek: 'Mie', fullDateStr: '03 Ago 2026', rawSales: 1772.01, orders: 32, units: 80, prod: 'Pizza Familiar Pepperoni', hora: '19:00-20:00' },
-        { day: 4, dayOfWeek: 'Jue', fullDateStr: '04 Ago 2026', rawSales: 2805.01, orders: 50, units: 125, prod: 'Lomo Saltado POS', hora: '12:30-13:30' },
-        { day: 5, dayOfWeek: 'Vie', fullDateStr: '05 Ago 2026', rawSales: 1482.00, orders: 28, units: 70, prod: 'Soda 2L + Combo', hora: '14:00-15:00' },
-        { day: 6, dayOfWeek: 'Sab', fullDateStr: '06 Ago 2026', rawSales: 3434.03, orders: 62, units: 155, prod: 'Parrilla Mixta', hora: '15:00-16:00' },
-        { day: 7, dayOfWeek: 'Dom', fullDateStr: '07 Ago 2026', rawSales: 2390.02, orders: 41, units: 102, prod: 'Helado Artesanal', hora: '13:00-14:00' },
-        { day: 8, dayOfWeek: 'Lun', fullDateStr: '08 Ago 2026', rawSales: 3061.00, orders: 54, units: 135, prod: 'Combo Pollo Personal', hora: '12:00-13:00' },
-        { day: 9, dayOfWeek: 'Mar', fullDateStr: '09 Ago 2026', rawSales: 1966.50, orders: 36, units: 90, prod: 'Sopa del Día', hora: '13:00-14:00' },
-        { day: 10, dayOfWeek: 'Mie', fullDateStr: '10 Ago 2026', rawSales: 1373.50, orders: 26, units: 65, prod: 'Empanada de Carne', hora: '12:00-13:00' },
-        { day: 11, dayOfWeek: 'Jue', fullDateStr: '11 Ago 2026', rawSales: 4042.50, orders: 72, units: 180, prod: 'Milanesa Gigante', hora: '13:30-14:30' },
-        { day: 12, dayOfWeek: 'Vie', fullDateStr: '12 Ago 2026', rawSales: 2256.00, orders: 40, units: 100, prod: 'Cerveza + Pique Macho', hora: '19:00-20:00' },
-        { day: 13, dayOfWeek: 'Sab', fullDateStr: '13 Ago 2026', rawSales: 1646.50, orders: 30, units: 75, prod: 'Papas Fritas XL', hora: '14:00-15:00' },
-        { day: 14, dayOfWeek: 'Dom', fullDateStr: '14 Ago 2026', rawSales: 1757.00, orders: 32, units: 80, prod: 'Pollo Espiedo Entero', hora: '13:00-14:00' },
-        { day: 15, dayOfWeek: 'Lun', fullDateStr: '15 Ago 2026', rawSales: 1952.00, orders: 35, units: 88, prod: 'Silpancho Cochabambino', hora: '12:00-13:00' },
-        { day: 16, dayOfWeek: 'Mar', fullDateStr: '16 Ago 2026', rawSales: 1820.50, orders: 33, units: 82, prod: 'Chicharron Individual', hora: '13:00-14:00' },
-        { day: 17, dayOfWeek: 'Mie', fullDateStr: '17 Ago 2026', rawSales: 2590.50, orders: 48, units: 120, prod: 'Burger Clásica', hora: '12:30-13:30' },
-        { day: 18, dayOfWeek: 'Jue', fullDateStr: '18 Ago 2026', rawSales: 0, orders: 0, units: 0, prod: 'Sin datos', hora: '—' },
-        { day: 19, dayOfWeek: 'Vie', fullDateStr: '19 Ago 2026', rawSales: 2135.00, orders: 39, units: 98, prod: 'Wings 12 pzas', hora: '19:30-20:30' },
-        { day: 20, dayOfWeek: 'Sab', fullDateStr: '20 Ago 2026', rawSales: 3245.01, orders: 58, units: 145, prod: 'Combo Parrillero', hora: '14:00-15:00' },
-        { day: 21, dayOfWeek: 'Dom', fullDateStr: '21 Ago 2026', rawSales: 2810.01, orders: 49, units: 122, prod: 'Postre Tres Leches', hora: '13:00-14:00' },
-        { day: 22, dayOfWeek: 'Lun', fullDateStr: '22 Ago 2026', rawSales: 4096.51, orders: 74, units: 185, prod: 'Pollo 1/4 Pechuga', hora: '12:00-13:00' },
-        { day: 23, dayOfWeek: 'Mar', fullDateStr: '23 Ago 2026', rawSales: 2254.00, orders: 41, units: 102, prod: 'Majadito de Charque', hora: '13:00-14:00' },
-        { day: 24, dayOfWeek: 'Mie', fullDateStr: '24 Ago 2026', rawSales: 2743.02, orders: 51, units: 128, prod: 'Burger Triple Tocino', hora: '12:30-13:30' },
-        { day: 25, dayOfWeek: 'Jue', fullDateStr: '25 Ago 2026', rawSales: 2653.00, orders: 47, units: 118, prod: 'Plato Ejecutivo', hora: '13:00-14:00' },
-        { day: 26, dayOfWeek: 'Vie', fullDateStr: '26 Ago 2026', rawSales: 2362.50, orders: 43, units: 108, prod: 'Cerveza Artesanal 1L', hora: '19:00-20:00' },
-        { day: 27, dayOfWeek: 'Sab', fullDateStr: '27 Ago 2026', rawSales: 1819.50, orders: 33, units: 82, prod: 'Nachos Supremos', hora: '15:00-16:00' },
-        { day: 28, dayOfWeek: 'Dom', fullDateStr: '28 Ago 2026', rawSales: 5484.00, orders: 94, units: 235, prod: 'Combo Pollo XL', hora: '13:00-14:00' },
-        { day: 29, dayOfWeek: 'Lun', fullDateStr: '29 Ago 2026', rawSales: 5054.00, orders: 88, units: 220, prod: 'Silpancho Especial', hora: '12:00-13:00' },
-        { day: 30, dayOfWeek: 'Mar', fullDateStr: '30 Ago 2026', rawSales: 4579.00, orders: 78, units: 195, prod: 'Pique Macho Especial', hora: '13:00-14:00' },
-        { day: 31, dayOfWeek: 'Lun', fullDateStr: '31 Ago 2026', rawSales: 6627.00, orders: 120, units: 285, prod: 'Combo Cierre de Mes', hora: '15:00-16:00' },
+        { day: 1, dayOfWeek: 'Lun', fullDateStr: '01/08/2026', rawSales: 1950.00, orders: 38, units: 95, prod: 'Combo Pollo Familiar', hora: '12:00-13:00' },
+        { day: 2, dayOfWeek: 'Mar', fullDateStr: '02/08/2026', rawSales: 2722.00, orders: 48, units: 118, prod: 'Burger Doble Carne', hora: '13:00-14:00' },
+        { day: 3, dayOfWeek: 'Mie', fullDateStr: '03/08/2026', rawSales: 1482.00, orders: 28, units: 70, prod: 'Pizza Familiar Pepperoni', hora: '19:00-20:00' },
+        { day: 4, dayOfWeek: 'Jue', fullDateStr: '04/08/2026', rawSales: 3434.00, orders: 60, units: 150, prod: 'Lomo Saltado POS', hora: '12:30-13:30' },
+        { day: 5, dayOfWeek: 'Vie', fullDateStr: '05/08/2026', rawSales: 2390.00, orders: 42, units: 105, prod: 'Soda 2L + Combo', hora: '14:00-15:00' },
+        { day: 6, dayOfWeek: 'Sab', fullDateStr: '06/08/2026', rawSales: 3061.00, orders: 54, units: 135, prod: 'Parrilla Mixta', hora: '15:00-16:00' },
+        { day: 7, dayOfWeek: 'Dom', fullDateStr: '07/08/2026', rawSales: 1966.00, orders: 36, units: 90, prod: 'Helado Artesanal', hora: '13:00-14:00' },
+        { day: 8, dayOfWeek: 'Lun', fullDateStr: '08/08/2026', rawSales: 3061.00, orders: 54, units: 135, prod: 'Combo Pollo Personal', hora: '12:00-13:00' },
+        { day: 9, dayOfWeek: 'Mar', fullDateStr: '09/08/2026', rawSales: 1966.00, orders: 36, units: 90, prod: 'Sopa del Día', hora: '13:00-14:00' },
+        { day: 10, dayOfWeek: 'Mie', fullDateStr: '10/08/2026', rawSales: 1373.00, orders: 26, units: 65, prod: 'Empanada de Carne', hora: '12:00-13:00' },
+        { day: 11, dayOfWeek: 'Jue', fullDateStr: '11/08/2026', rawSales: 4042.00, orders: 72, units: 180, prod: 'Milanesa Gigante', hora: '13:30-14:30' },
+        { day: 12, dayOfWeek: 'Vie', fullDateStr: '12/08/2026', rawSales: 2256.00, orders: 40, units: 100, prod: 'Cerveza + Pique Macho', hora: '19:00-20:00' },
+        { day: 13, dayOfWeek: 'Sab', fullDateStr: '13/08/2026', rawSales: 1646.00, orders: 30, units: 75, prod: 'Papas Fritas XL', hora: '14:00-15:00' },
+        { day: 14, dayOfWeek: 'Dom', fullDateStr: '14/08/2026', rawSales: 1757.00, orders: 32, units: 80, prod: 'Pollo Espiedo Entero', hora: '13:00-14:00' },
+        { day: 15, dayOfWeek: 'Lun', fullDateStr: '15/08/2026', rawSales: 1952.00, orders: 35, units: 88, prod: 'Silpancho Cochabambino', hora: '12:00-13:00' },
+        { day: 16, dayOfWeek: 'Mar', fullDateStr: '16/08/2026', rawSales: 1820.00, orders: 33, units: 82, prod: 'Chicharron Individual', hora: '13:00-14:00' },
+        { day: 17, dayOfWeek: 'Mie', fullDateStr: '17/08/2026', rawSales: 2590.00, orders: 48, units: 120, prod: 'Burger Clásica', hora: '12:30-13:30' },
+        { day: 18, dayOfWeek: 'Jue', fullDateStr: '18/08/2026', rawSales: 0, orders: 0, units: 0, prod: 'Sin datos', hora: '—' },
+        { day: 19, dayOfWeek: 'Vie', fullDateStr: '19/08/2026', rawSales: 2135.00, orders: 39, units: 98, prod: 'Wings 12 pzas', hora: '19:30-20:30' },
+        { day: 20, dayOfWeek: 'Sab', fullDateStr: '20/08/2026', rawSales: 3245.00, orders: 58, units: 145, prod: 'Combo Parrillero', hora: '14:00-15:00' },
+        { day: 21, dayOfWeek: 'Dom', fullDateStr: '21/08/2026', rawSales: 2810.00, orders: 49, units: 122, prod: 'Postre Tres Leches', hora: '13:00-14:00' },
+        { day: 22, dayOfWeek: 'Lun', fullDateStr: '22/08/2026', rawSales: 4096.00, orders: 74, units: 185, prod: 'Pollo 1/4 Pechuga', hora: '12:00-13:00' },
+        { day: 23, dayOfWeek: 'Mar', fullDateStr: '23/08/2026', rawSales: 2254.00, orders: 41, units: 102, prod: 'Majadito de Charque', hora: '13:00-14:00' },
+        { day: 24, dayOfWeek: 'Mie', fullDateStr: '24/08/2026', rawSales: 2743.00, orders: 51, units: 128, prod: 'Burger Triple Tocino', hora: '12:30-13:30' },
+        { day: 25, dayOfWeek: 'Jue', fullDateStr: '25/08/2026', rawSales: 2653.00, orders: 47, units: 118, prod: 'Plato Ejecutivo', hora: '13:00-14:00' },
+        { day: 26, dayOfWeek: 'Vie', fullDateStr: '26/08/2026', rawSales: 2362.00, orders: 43, units: 108, prod: 'Cerveza Artesanal 1L', hora: '19:00-20:00' },
+        { day: 27, dayOfWeek: 'Sab', fullDateStr: '27/08/2026', rawSales: 1819.00, orders: 33, units: 82, prod: 'Nachos Supremos', hora: '15:00-16:00' },
+        { day: 28, dayOfWeek: 'Dom', fullDateStr: '28/08/2026', rawSales: 5484.00, orders: 94, units: 235, prod: 'Combo Pollo XL', hora: '13:00-14:00' },
+        { day: 29, dayOfWeek: 'Lun', fullDateStr: '29/08/2026', rawSales: 5054.00, orders: 88, units: 220, prod: 'Silpancho Especial', hora: '12:00-13:00' },
+        { day: 30, dayOfWeek: 'Mar', fullDateStr: '30/08/2026', rawSales: 4579.00, orders: 78, units: 195, prod: 'Pique Macho Especial', hora: '13:00-14:00' },
+        { day: 31, dayOfWeek: 'Lun', fullDateStr: '31/08/2026', rawSales: 6627.00, orders: 120, units: 285, prod: 'Combo Cierre de Mes', hora: '15:00-16:00' },
     ];
 
     const processedDays = useMemo<DayDetailData[]>(() => {
@@ -124,7 +120,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             const ticketMedio = orders > 0 ? Number((rawSales / orders).toFixed(2)) : 55;
             const unidadesPorOrden = orders > 0 ? Number((unidades / orders).toFixed(1)) : 2.5;
 
-            // Select active target value matching metric
+            // Select active metric target
             let activeVal = rawSales;
             if (selectedMetric === 'ordenes') activeVal = orders;
             if (selectedMetric === 'ticket') activeVal = ticketMedio;
@@ -200,58 +196,6 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
         });
     }, [selectedStore, selectedMetric, currentConfig, currentPercentile]);
 
-    // Resumen del Mes
-    const resumenMes = useMemo(() => {
-        let criticos = 7;
-        let bajos = 12;
-        let normales = 8;
-        let altos = 4;
-        let sinDatos = 0;
-
-        const total = 31;
-        return {
-            criticos: { count: criticos, pct: `${((criticos / total) * 100).toFixed(1)}%` },
-            bajos: { count: bajos, pct: `${((bajos / total) * 100).toFixed(1)}%` },
-            normales: { count: normales, pct: `${((normales / total) * 100).toFixed(1)}%` },
-            altos: { count: altos, pct: `${((altos / total) * 100).toFixed(1)}%` },
-            sinDatos: { count: sinDatos, pct: `${((sinDatos / total) * 100).toFixed(1)}%` },
-        };
-    }, []);
-
-    // 12 Months trend points
-    const monthTrendData: MonthTrendPoint[] = [
-        { month: 'Sep', value: 4200, pctChange: 5 },
-        { month: 'Oct', value: 4500, pctChange: 7 },
-        { month: 'Nov', value: 4800, pctChange: 6 },
-        { month: 'Dic', value: 6200, pctChange: 25 },
-        { month: 'Ene', value: 4900, pctChange: -20 },
-        { month: 'Feb', value: 5100, pctChange: 4 },
-        { month: 'Mar', value: 5300, pctChange: 3 },
-        { month: 'Abr', value: 5200, pctChange: -2 },
-        { month: 'May', value: 5600, pctChange: 7 },
-        { month: 'Jun', value: 5800, pctChange: 3 },
-        { month: 'Jul', value: 6100, pctChange: 5 },
-        { month: 'Ago', value: 6627, pctChange: 8.6 },
-    ];
-
-    // YoY Comparison 2026 vs 2025 Data
-    const yoyData: YoYComparisonPoint[] = [
-        { month: 'Ene', val2025: 4100, val2026: 4900, pctGrowth: 19.5 },
-        { month: 'Feb', val2025: 4300, val2026: 5100, pctGrowth: 18.6 },
-        { month: 'Mar', val2025: 4400, val2026: 5300, pctGrowth: 20.4 },
-        { month: 'Abr', val2025: 4500, val2026: 5200, pctGrowth: 15.5 },
-        { month: 'May', val2025: 4700, val2026: 5600, pctGrowth: 19.1 },
-        { month: 'Jun', val2025: 4900, val2026: 5800, pctGrowth: 18.3 },
-        { month: 'Jul', val2025: 5100, val2026: 6100, pctGrowth: 19.6 },
-        { month: 'Ago', val2025: 5400, val2026: 6627, pctGrowth: 22.7 },
-    ];
-
-    // Critical hours summary
-    const criticalHours: CriticalHourSummary[] = [
-        { hora: '12:00', historico: 1500.00, hoy: 1850.00, status: 'alto', label: 'Sobre esperado' },
-        { hora: '18:00', historico: 900.00, hoy: 400.00, status: 'bajo', label: 'Bajo' },
-    ];
-
     const todayDayData = processedDays[processedDays.length - 1];
 
     const handleExportPDF = () => {
@@ -264,63 +208,80 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 font-sans text-slate-800 w-full bg-slate-50/50 p-3 sm:p-5 rounded-3xl">
-            {/* 1. ENCABEZADO SUPERIOR Y FILTROS */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="space-y-5 font-sans text-slate-800 w-full bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
+            {/* 1. ENCABEZADO SUPERIOR Y BOTONES DE ACCIÓN matching media_1788911167771.jpg */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-6 h-6 text-indigo-600" />
-                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                                Benchmark Histórico
-                            </h2>
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 shrink-0">
+                                <BarChart3 className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                                    Benchmark Histórico
+                                </h2>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                    Evaluación del rendimiento contra comportamiento histórico y días equivalentes del negocio.
+                                </p>
+                            </div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Evaluación del rendimiento contra comportamiento histórico y días equivalentes del negocio.
-                        </p>
 
-                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
-                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                        {/* Badges de Información Rango & Fuente */}
+                        <div className="flex flex-wrap items-center gap-2.5 mt-3 text-xs font-semibold">
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
                                 <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                                <span><strong>Año móvil:</strong> 01 Sept 2025 - 31 Agosto 2026</span>
+                                <span>Rango del Año Móvil: <strong>01 de Septiembre 2025 al 31 de Agosto 2026 (365 días)</strong></span>
                             </span>
-                            <span className="flex items-center gap-1.5 text-slate-600 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
                                 <Database className="w-3.5 h-3.5 text-emerald-600" />
-                                <span><strong>Fuente:</strong> MongoDB → sales</span>
+                                <span>Colección: <strong className="font-mono text-slate-900">sales (MongoDB)</strong></span>
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Botoncitos de Acción Superior Derecha */}
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             onClick={handleRefresh}
-                            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors border border-slate-200 flex items-center gap-1.5 text-xs font-bold"
+                            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all border border-slate-200 shadow-2xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                         >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
                             <span>Actualizar</span>
                         </button>
+
                         <button
                             onClick={handleExportPDF}
-                            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                         >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3.5 h-3.5" />
                             <span>Exportar</span>
                         </button>
+
                         <button
-                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold"
+                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
                         >
-                            <Settings className="w-4 h-4" />
-                            <span>Configurar Benchmark</span>
+                            <Settings className="w-3.5 h-3.5" />
+                            <span>Configurar</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsExplanationModalOpen(true)}
+                            className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all border border-indigo-200 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                        >
+                            <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>¿De dónde vienen estos datos?</span>
                         </button>
                     </div>
                 </div>
 
-                {/* Filtros Row con Títulos Claros */}
-                <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                {/* 2. DROPDOWNS DE FILTROS SUPERIORES (SUCURSAL, MÉTRICA, PERIODO) matching media_1788911167771.jpg */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100">
+                    {/* SUCURSAL */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
                         <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="w-full">
-                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Sucursal:</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUCURSAL:</label>
                             <select
                                 value={selectedStore}
                                 onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
@@ -334,28 +295,30 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                    {/* MÉTRICA */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
                         <Filter className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="w-full">
-                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Métrica Evaluada:</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MÉTRICA:</label>
                             <select
                                 value={selectedMetric}
                                 onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
                                 className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
                             >
-                                <option value="ventas">💰 {METRIC_TITLES.ventas}</option>
-                                <option value="ordenes">🧾 {METRIC_TITLES.ordenes}</option>
-                                <option value="ticket">💳 {METRIC_TITLES.ticket}</option>
-                                <option value="unidades">📦 {METRIC_TITLES.unidades}</option>
-                                <option value="unidades_por_orden">📊 {METRIC_TITLES.unidades_por_orden}</option>
+                                <option value="ventas">{METRIC_TITLES.ventas}</option>
+                                <option value="ordenes">{METRIC_TITLES.ordenes}</option>
+                                <option value="ticket">{METRIC_TITLES.ticket}</option>
+                                <option value="unidades">{METRIC_TITLES.unidades}</option>
+                                <option value="unidades_por_orden">{METRIC_TITLES.unidades_por_orden}</option>
                             </select>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                    {/* PERIODO */}
+                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
                         <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                         <div className="w-full">
-                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Periodo Temporal:</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">PERIODO:</label>
                             <select
                                 value={periodMode}
                                 onChange={(e) => setPeriodMode(e.target.value as 'mes' | 'semana')}
@@ -369,7 +332,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 </div>
             </div>
 
-            {/* 2. TARJETAS PRINCIPALES (P25, P50, P75, HOY) */}
+            {/* 3. BOTONCITOS SELECTORES DE MÉTRICA PESTAÑA matching media_1788911167771.jpg */}
+            <BenchmarkMetricTabs
+                activeMetric={selectedMetric}
+                onChangeMetric={(metric) => setSelectedMetric(metric)}
+            />
+
+            {/* 4. TARJETAS PRINCIPALES KPI (P25, P50, P75, POSICIÓN ACTUAL CON SUBCARD DE DÍAS EQUIVALENTES) */}
             <BenchmarkTopCards
                 p25={currentPercentile.p25}
                 p50={currentPercentile.p50}
@@ -378,70 +347,78 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                 vsP50Pct={todayDayData.vsP50}
                 percentilePositionPct={todayDayData.posPct}
                 formatValue={currentPercentile.format}
+                dayName={todayDayData.dayOfWeek === 'Lun' ? 'Lunes' : 'Día'}
+                promedioEquivalente={5840}
+                variacionEquivalentePct={13.5}
             />
 
-            {/* 3. DISTRIBUCIÓN BENCHMARK (365 DÍAS) MATCHING MEDIA_1788908977159.PNG */}
-            <BenchmarkDistribucionChart
-                selectedStore={selectedStore}
-                onChangeStore={(st) => setSelectedStore(st)}
-                selectedMetric={selectedMetric}
-                onChangeMetric={(mt) => setSelectedMetric(mt)}
-                periodMode={periodMode}
-                onChangePeriod={(pm) => setPeriodMode(pm)}
-                p25={currentPercentile.p25}
-                p50={currentPercentile.p50}
-                p75={currentPercentile.p75}
-                todaySales={todayDayData.sales}
-                percentilePositionPct={todayDayData.posPct}
-                formatValue={currentPercentile.format}
-                unitName={currentPercentile.unit}
-            />
-
-            {/* 4 & 5. CALENDARIO BENCHMARK (8 COLS) + PANEL RESUMEN LATERAL (4 COLS) */}
+            {/* 5. CALENDARIO DE RENDIMIENTO HISTÓRICO (8 COLS) + PANEL DERECHO DE RESUMEN Y ESTADÍSTICAS DEL MES (4 COLS) */}
             <BenchmarkCalendarSection
                 processedDays={processedDays}
                 onSelectDay={(d) => setActiveModalDay(d)}
-                resumenMes={resumenMes}
-                monthTrendData={monthTrendData}
+                metricTitle={METRIC_TITLES[selectedMetric]}
                 formatValue={currentPercentile.format}
             />
 
-            {/* 6. NUEVO: COMPARATIVA INTERANUAL DE VENTAS (2026 vs 2025) */}
-            <BenchmarkYoYComparisonCard
-                data={yoyData}
-                formatValue={(v) => `Bs. ${v.toLocaleString('es-BO', { minimumFractionDigits: 0 })}`}
-            />
+            {/* 6. BLOQUES INFERIORES DE INTERPRETACIÓN Y RECOMENDACIÓN matching media_1788911167771.jpg */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Interpretación */}
+                <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
+                    <div className="p-2.5 bg-indigo-100 border border-indigo-200 rounded-2xl text-indigo-700 shrink-0">
+                        <Lightbulb className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider">
+                            Interpretación
+                        </h4>
+                        <p className="text-xs text-indigo-950 mt-1 leading-relaxed font-medium">
+                            El resultado actual se encuentra por encima del <strong>82%</strong> de todas las jornadas registradas en el año móvil. Se observa un buen desempeño, impulsado por un mayor flujo de ventas en los últimos días del mes.
+                        </p>
+                    </div>
+                </div>
 
-            {/* 7. COMPARACIÓN CONTRA DÍAS EQUIVALENTES */}
-            <BenchmarkDiasEquivalentesView
-                todayData={todayDayData}
-                formatValue={currentPercentile.format}
-            />
+                {/* Recomendación */}
+                <div className="bg-purple-50/70 border border-purple-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
+                    <div className="p-2.5 bg-purple-100 border border-purple-200 rounded-2xl text-purple-700 shrink-0">
+                        <Star className="w-5 h-5 fill-purple-600" />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-purple-900 uppercase tracking-wider">
+                            Recomendación
+                        </h4>
+                        <p className="text-xs text-purple-950 mt-1 leading-relaxed font-medium">
+                            Mantener la disponibilidad de inventario en productos de alta rotación y aprovechar el buen momento de demanda para consolidar metas comerciales.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-            {/* 8. RANKING DE SUCURSALES */}
-            <BenchmarkRankingTable
-                formatValue={currentPercentile.format}
-                onSelectStore={(storeId) => setSelectedStore(storeId)}
-            />
+            {/* 7. FOOTER INFORMATIVO INFERIOR matching media_1788911167771.jpg */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-1">
+                <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>
+                        <strong>Base estadística de Tiendas Minoristas (Consolidado):</strong> 01/09/2025 al 31/08/2026 (365 días móviles equivalentes) provenientes de MongoDB colección <code className="font-mono text-slate-800 bg-slate-200/70 px-1 py-0.5 rounded">'sales'</code>.
+                    </span>
+                </div>
 
-            {/* 9. BENCHMARK POR HORARIO (HORAS CRÍTICAS) */}
-            <BenchmarkHorarioSummaryCard
-                criticalHours={criticalHours}
-                formatValue={currentPercentile.format}
-            />
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Última actualización: 31/08/2026 19:50:22</span>
+                </div>
+            </div>
 
-            {/* 10. DIAGNÓSTICO IA DEL BENCHMARK */}
-            <BenchmarkIADiagnosisCard
-                todaySales={todayDayData.sales}
-                p50={currentPercentile.p50}
-                formatValue={currentPercentile.format}
-            />
-
-            {/* MODAL DETALLE DE DÍA */}
+            {/* MODALES */}
             <BenchmarkDayDetailModal
                 dayData={activeModalDay}
                 onClose={() => setActiveModalDay(null)}
             />
+
+            <BenchmarkExplanationModal
+                isOpen={isExplanationModalOpen}
+                onClose={() => setIsExplanationModalOpen(false)}
+            />
         </div>
     );
 };
+
