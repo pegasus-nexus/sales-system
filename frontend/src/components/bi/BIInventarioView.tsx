@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle, Search, X,
     Package, DollarSign, AlertCircle, CheckCircle2, XCircle, Building2,
-    ShoppingCart, History, Sparkles, Clock, ShieldAlert
+    ShoppingCart, Sparkles, Clock, ShieldAlert
 } from 'lucide-react';
 import { getBIInventarioControl, getBISucursales } from '../../api/biApi';
 import type { BIInventarioControlResponse, BISucursalOption } from '../../api/biApi';
@@ -178,65 +178,10 @@ export const BIInventarioView: React.FC<BIInventarioViewProps> = ({
                 </div>
             )}
 
-            {/* SECTOR DE NAVEGACIÓN POR SUB-PESTAÑAS */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2 rounded-3xl border border-slate-200/70 shadow-xs">
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => setActiveSubTab('valorizacion')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                            activeSubTab === 'valorizacion'
-                                ? 'bg-purple-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                        }`}
-                    >
-                        <Package size={14} />
-                        <span>1. Valorización & Stock General</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab('demanda')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                            activeSubTab === 'demanda'
-                                ? 'bg-purple-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                        }`}
-                    >
-                        <Sparkles size={14} />
-                        <span>2. Demanda Predictiva & Pedidos a Futuro</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab('kardex')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                            activeSubTab === 'kardex'
-                                ? 'bg-purple-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                        }`}
-                    >
-                        <History size={14} />
-                        <span>3. Movimientos Kárdex</span>
-                    </button>
-                </div>
-
-                {/* BUSCADOR DENTRO DE LA SUBPESTAÑA */}
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl w-full sm:w-64">
-                    <Search size={14} className="text-slate-400 shrink-0" />
-                    <input
-                        type="text"
-                        placeholder="Buscar producto o categoría..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full placeholder:text-slate-400 placeholder:font-semibold"
-                    />
-                    {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
-                            <X size={14} />
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* CONTROLES DE FILTRADO DE SUCURSAL */}
+            {/* CONTROLES DE FILTRADO Y BÚSQUEDA */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    {/* FILTRO SUCURSALES */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Filter size={14} className="text-purple-600" />
                         <span className="text-xs font-black text-slate-500">Sucursal:</span>
@@ -252,6 +197,23 @@ export const BIInventarioView: React.FC<BIInventarioViewProps> = ({
                                 </option>
                             ))}
                         </select>
+                    </div>
+
+                    {/* BUSCADOR DE PRODUCTOS */}
+                    <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl w-full sm:w-64">
+                        <Search size={14} className="text-slate-400 shrink-0" />
+                        <input
+                            type="text"
+                            placeholder="Buscar producto o categoría..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-transparent text-xs font-bold text-slate-700 outline-none w-full placeholder:text-slate-400 placeholder:font-semibold"
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
                 </div>
 
