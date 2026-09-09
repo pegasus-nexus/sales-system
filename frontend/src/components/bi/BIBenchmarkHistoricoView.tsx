@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    RefreshCw, Download, Settings, Database, Calendar, Building2, Filter, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
+    RefreshCw, Download, Settings, Database, Calendar, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
 } from 'lucide-react';
 
 import type {
@@ -15,9 +15,8 @@ import { BenchmarkExplanationModal } from './benchmark/BenchmarkExplanationModal
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
-    const [selectedStore, setSelectedStore] = useState<StoreKey>('consolidado');
+    const selectedStore: StoreKey = 'consolidado';
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
-    const [periodMode, setPeriodMode] = useState<'mes' | 'semana'>('mes');
     const [activeModalDay, setActiveModalDay] = useState<DayDetailData | null>(null);
     const [isExplanationModalOpen, setIsExplanationModalOpen] = useState<boolean>(false);
 
@@ -275,61 +274,6 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 2. DROPDOWNS DE FILTROS SUPERIORES (SUCURSAL, MÉTRICA, PERIODO) matching media_1788911167771.jpg */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100">
-                    {/* SUCURSAL */}
-                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
-                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div className="w-full">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUCURSAL:</label>
-                            <select
-                                value={selectedStore}
-                                onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
-                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
-                            >
-                                <option value="consolidado">Todas las Sucursales (Consolidado)</option>
-                                <option value="heroinas">Heroínas (Cochabamba)</option>
-                                <option value="recoleta">Recoleta (Cochabamba)</option>
-                                <option value="calacoto">Calacoto (La Paz)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* MÉTRICA */}
-                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
-                        <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div className="w-full">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MÉTRICA:</label>
-                            <select
-                                value={selectedMetric}
-                                onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
-                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
-                            >
-                                <option value="ventas">{METRIC_TITLES.ventas}</option>
-                                <option value="ordenes">{METRIC_TITLES.ordenes}</option>
-                                <option value="ticket">{METRIC_TITLES.ticket}</option>
-                                <option value="unidades">{METRIC_TITLES.unidades}</option>
-                                <option value="unidades_por_orden">{METRIC_TITLES.unidades_por_orden}</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* PERIODO */}
-                    <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
-                        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                        <div className="w-full">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">PERIODO:</label>
-                            <select
-                                value={periodMode}
-                                onChange={(e) => setPeriodMode(e.target.value as 'mes' | 'semana')}
-                                className="w-full bg-transparent text-slate-900 text-xs font-bold focus:outline-none cursor-pointer"
-                            >
-                                <option value="mes">Vista Mensual</option>
-                                <option value="semana">Vista Semanal</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* 3. BOTONCITOS SELECTORES DE MÉTRICA PESTAÑA matching media_1788911167771.jpg */}

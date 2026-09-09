@@ -17,7 +17,7 @@ export const BenchmarkMetricTabs: React.FC<Props> = ({ activeMetric, onChangeMet
     ];
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeMetric === tab.key;
@@ -26,20 +26,20 @@ export const BenchmarkMetricTabs: React.FC<Props> = ({ activeMetric, onChangeMet
                     <button
                         key={tab.key}
                         onClick={() => onChangeMetric(tab.key)}
-                        className={`p-3.5 rounded-2xl flex items-center gap-3 transition-all duration-200 text-left border cursor-pointer ${
+                        className={`p-2.5 rounded-2xl flex items-center gap-2.5 transition-all duration-200 text-left border cursor-pointer ${
                             isActive
                                 ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
                                 : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 hover:border-slate-300 shadow-2xs'
                         }`}
                     >
-                        <div className={`p-2 rounded-xl shrink-0 ${
+                        <div className={`p-1.5 rounded-xl shrink-0 ${
                             isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                         }`}>
-                            <Icon className="w-5 h-5" />
+                            <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs font-black truncate">{tab.label}</div>
-                            <div className={`text-[11px] truncate font-medium ${isActive ? 'text-indigo-100' : 'text-slate-500'}`}>
+                            <div className="text-xs font-black truncate leading-tight">{tab.label}</div>
+                            <div className={`text-[10px] truncate font-semibold leading-tight ${isActive ? 'text-indigo-100' : 'text-slate-500'}`}>
                                 {tab.sublabel}
                             </div>
                         </div>
