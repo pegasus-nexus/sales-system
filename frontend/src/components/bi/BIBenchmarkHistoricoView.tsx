@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    RefreshCw, Download, Settings, Database, Calendar, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
+    RefreshCw, Download, Settings, Database, Calendar, Building2, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
 } from 'lucide-react';
 
 import type {
@@ -15,7 +15,7 @@ import { BenchmarkExplanationModal } from './benchmark/BenchmarkExplanationModal
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
-    const selectedStore: StoreKey = 'consolidado';
+    const [selectedStore, setSelectedStore] = useState<StoreKey>('consolidado');
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
     const [activeModalDay, setActiveModalDay] = useState<DayDetailData | null>(null);
     const [isExplanationModalOpen, setIsExplanationModalOpen] = useState<boolean>(false);
@@ -226,8 +226,24 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Badges de Información Rango & Fuente */}
-                        <div className="flex flex-wrap items-center gap-2.5 mt-3 text-xs font-semibold">
+                        {/* Badges de Información Rango & Fuente & Selector de Sucursal */}
+                        <div className="flex flex-wrap items-center gap-2 mt-3 text-xs font-semibold">
+                            {/* Selector de Sucursal Sleek */}
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200/80 rounded-xl text-indigo-900 font-bold shadow-2xs">
+                                <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <span className="text-slate-500 font-medium text-[11px]">Sucursal:</span>
+                                <select
+                                    value={selectedStore}
+                                    onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
+                                    className="bg-transparent text-indigo-950 font-black focus:outline-none cursor-pointer text-xs"
+                                >
+                                    <option value="consolidado">Todas las Sucursales (Consolidado)</option>
+                                    <option value="heroinas">Heroínas (Cochabamba)</option>
+                                    <option value="recoleta">Recoleta (Cochabamba)</option>
+                                    <option value="calacoto">Calacoto (La Paz)</option>
+                                </select>
+                            </div>
+
                             <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
                                 <Calendar className="w-3.5 h-3.5 text-indigo-600" />
                                 <span>Rango del Año Móvil: <strong>01 de Septiembre 2025 al 31 de Agosto 2026 (365 días)</strong></span>
