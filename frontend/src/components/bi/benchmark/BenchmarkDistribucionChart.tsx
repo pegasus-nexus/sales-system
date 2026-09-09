@@ -413,7 +413,7 @@ export const BenchmarkDistribucionChart: React.FC<Props> = ({
 
                 <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono shrink-0">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Última actualización: 31/08/2026 19:50:22</span>
+                    <span>Última actualización: {new Date().toLocaleDateString('es-BO')} {new Date().toLocaleTimeString('es-BO')}</span>
                 </div>
             </div>
         </div>

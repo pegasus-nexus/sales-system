@@ -22,6 +22,17 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const [activeModalDay, setActiveModalDay] = useState<DayDetailData | null>(null);
     const [isExplanationModalOpen, setIsExplanationModalOpen] = useState<boolean>(false);
 
+    const currentTimestamp = useMemo(() => {
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        return `${d}/${m}/${y} ${hh}:${mm}:${ss}`;
+    }, [loading]);
+
     // Multimetric percentile config per store
     const storeConfigs: Record<StoreKey, StoreBenchmarkConfig> = {
         consolidado: {
@@ -398,7 +409,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
 
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono shrink-0">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Última actualización: 31/08/2026 19:50:22</span>
+                            <span>Última actualización: {currentTimestamp}</span>
                         </div>
                     </div>
                 </div>

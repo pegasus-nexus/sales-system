@@ -12,6 +12,17 @@ export const BenchmarkYoYView: React.FC = () => {
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
     const [loading, setLoading] = useState<boolean>(false);
 
+    const currentTimestamp = useMemo(() => {
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        return `${d}/${m}/${y} ${hh}:${mm}:${ss}`;
+    }, [loading]);
+
     // Multipliers per store
     const storeMultipliers: Record<StoreKey, { name: string; multiplier: number }> = {
         consolidado: { name: 'Todas las sucursales (Consolidado)', multiplier: 1.0 },
@@ -443,7 +454,7 @@ export const BenchmarkYoYView: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-1">
                 <div className="flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                    <span>Última actualización: <strong>31/08/2026 19:50:22</strong></span>
+                    <span>Última actualización: <strong>{currentTimestamp}</strong></span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px]">
                     <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
