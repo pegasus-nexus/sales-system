@@ -12,8 +12,10 @@ import { BenchmarkTopCards } from './benchmark/BenchmarkTopCards';
 import { BenchmarkCalendarSection } from './benchmark/BenchmarkCalendarSection';
 import { BenchmarkDayDetailModal } from './benchmark/BenchmarkDayDetailModal';
 import { BenchmarkExplanationModal } from './benchmark/BenchmarkExplanationModal';
+import { BenchmarkYoYView } from './benchmark/BenchmarkYoYView';
 
 export const BIBenchmarkHistoricoView: React.FC = () => {
+    const [viewMode, setViewMode] = useState<'yoy' | 'percentiles'>('yoy');
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedStore, setSelectedStore] = useState<StoreKey>('consolidado');
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
@@ -207,166 +209,200 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     };
 
     return (
-        <div className="space-y-5 font-sans text-slate-800 w-full bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
-            {/* 1. ENCABEZADO SUPERIOR Y BOTONES DE ACCIÓN matching media_1788911167771.jpg */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 shrink-0">
-                                <BarChart3 className="w-6 h-6" />
+        <div className="space-y-4 font-sans text-slate-800 w-full">
+            {/* VISTA MODE SELECTOR TABS */}
+            <div className="flex items-center justify-between bg-white border border-slate-200/90 p-2 rounded-2xl shadow-2xs">
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                    <button
+                        onClick={() => setViewMode('yoy')}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                            viewMode === 'yoy'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        }`}
+                    >
+                        <span>📅 Benchmark YoY (Día Equivalente)</span>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('percentiles')}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                            viewMode === 'percentiles'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        }`}
+                    >
+                        <span>📊 Percentiles & Calendario (365 días)</span>
+                    </button>
+                </div>
+
+                <div className="text-xs font-bold text-slate-500 hidden sm:block px-3">
+                    Modo seleccionado: <strong className="text-indigo-900">{viewMode === 'yoy' ? 'YoY Día Comercial' : '365 Días Móviles'}</strong>
+                </div>
+            </div>
+
+            {/* SI MODO ES YOY, MOSTRAR COMPONENTE PREMIUM YOY */}
+            {viewMode === 'yoy' ? (
+                <BenchmarkYoYView />
+            ) : (
+                <div className="space-y-5 bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
+                    {/* 1. ENCABEZADO SUPERIOR Y BOTONES DE ACCIÓN */}
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 shrink-0">
+                                        <BarChart3 className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                                            Benchmark Histórico (Percentiles)
+                                        </h2>
+                                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                            Evaluación del rendimiento contra comportamiento histórico y días equivalentes del negocio.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Badges de Información Rango & Fuente & Selector de Sucursal */}
+                                <div className="flex flex-wrap items-center gap-2 mt-3 text-xs font-semibold">
+                                    {/* Selector de Sucursal Sleek */}
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200/80 rounded-xl text-indigo-900 font-bold shadow-2xs">
+                                        <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                        <span className="text-slate-500 font-medium text-[11px]">Sucursal:</span>
+                                        <select
+                                            value={selectedStore}
+                                            onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
+                                            className="bg-transparent text-indigo-950 font-black focus:outline-none cursor-pointer text-xs"
+                                        >
+                                            <option value="consolidado">Todas las Sucursales (Consolidado)</option>
+                                            <option value="heroinas">Heroínas (Cochabamba)</option>
+                                            <option value="recoleta">Recoleta (Cochabamba)</option>
+                                            <option value="calacoto">Calacoto (La Paz)</option>
+                                        </select>
+                                    </div>
+
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
+                                        <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                                        <span>Rango del Año Móvil: <strong>01 de Septiembre 2025 al 31 de Agosto 2026 (365 días)</strong></span>
+                                    </span>
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
+                                        <Database className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Colección: <strong className="font-mono text-slate-900">sales (MongoDB)</strong></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Botoncitos de Acción Superior Derecha */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    onClick={handleRefresh}
+                                    className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all border border-slate-200 shadow-2xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+                                    <span>Actualizar</span>
+                                </button>
+
+                                <button
+                                    onClick={handleExportPDF}
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Exportar</span>
+                                </button>
+
+                                <button
+                                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                                >
+                                    <Settings className="w-3.5 h-3.5" />
+                                    <span>Configurar</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setIsExplanationModalOpen(true)}
+                                    className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all border border-indigo-200 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                                >
+                                    <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>¿De dónde vienen estos datos?</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3. BOTONCITOS SELECTORES DE MÉTRICA PESTAÑA */}
+                    <BenchmarkMetricTabs
+                        activeMetric={selectedMetric}
+                        onChangeMetric={(metric) => setSelectedMetric(metric)}
+                    />
+
+                    {/* 4. TARJETAS PRINCIPALES KPI */}
+                    <BenchmarkTopCards
+                        p25={currentPercentile.p25}
+                        p50={currentPercentile.p50}
+                        p75={currentPercentile.p75}
+                        todaySales={todayDayData.sales}
+                        vsP50Pct={todayDayData.vsP50}
+                        percentilePositionPct={todayDayData.posPct}
+                        formatValue={currentPercentile.format}
+                        dayName={todayDayData.dayOfWeek === 'Lun' ? 'Lunes' : 'Día'}
+                        promedioEquivalente={5840}
+                        variacionEquivalentePct={13.5}
+                    />
+
+                    {/* 5. CALENDARIO DE RENDIMIENTO HISTÓRICO */}
+                    <BenchmarkCalendarSection
+                        processedDays={processedDays}
+                        onSelectDay={(d) => setActiveModalDay(d)}
+                        metricTitle={METRIC_TITLES[selectedMetric]}
+                        formatValue={currentPercentile.format}
+                    />
+
+                    {/* 6. BLOQUES INFERIORES DE INTERPRETACIÓN Y RECOMENDACIÓN */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
+                            <div className="p-2.5 bg-indigo-100 border border-indigo-200 rounded-2xl text-indigo-700 shrink-0">
+                                <Lightbulb className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                                    Benchmark Histórico
-                                </h2>
-                                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                    Evaluación del rendimiento contra comportamiento histórico y días equivalentes del negocio.
+                                <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider">
+                                    Interpretación
+                                </h4>
+                                <p className="text-xs text-indigo-950 mt-1 leading-relaxed font-medium">
+                                    El resultado actual se encuentra por encima del <strong>82%</strong> de todas las jornadas registradas en el año móvil. Se observa un buen desempeño, impulsado por un mayor flujo de ventas en los últimos días del mes.
                                 </p>
                             </div>
                         </div>
 
-                        {/* Badges de Información Rango & Fuente & Selector de Sucursal */}
-                        <div className="flex flex-wrap items-center gap-2 mt-3 text-xs font-semibold">
-                            {/* Selector de Sucursal Sleek */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200/80 rounded-xl text-indigo-900 font-bold shadow-2xs">
-                                <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                <span className="text-slate-500 font-medium text-[11px]">Sucursal:</span>
-                                <select
-                                    value={selectedStore}
-                                    onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
-                                    className="bg-transparent text-indigo-950 font-black focus:outline-none cursor-pointer text-xs"
-                                >
-                                    <option value="consolidado">Todas las Sucursales (Consolidado)</option>
-                                    <option value="heroinas">Heroínas (Cochabamba)</option>
-                                    <option value="recoleta">Recoleta (Cochabamba)</option>
-                                    <option value="calacoto">Calacoto (La Paz)</option>
-                                </select>
+                        <div className="bg-purple-50/70 border border-purple-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
+                            <div className="p-2.5 bg-purple-100 border border-purple-200 rounded-2xl text-purple-700 shrink-0">
+                                <Star className="w-5 h-5 fill-purple-600" />
                             </div>
-
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
-                                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                                <span>Rango del Año Móvil: <strong>01 de Septiembre 2025 al 31 de Agosto 2026 (365 días)</strong></span>
-                            </span>
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200/80 rounded-xl text-slate-700">
-                                <Database className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Colección: <strong className="font-mono text-slate-900">sales (MongoDB)</strong></span>
-                            </span>
+                            <div>
+                                <h4 className="text-xs font-black text-purple-900 uppercase tracking-wider">
+                                    Recomendación
+                                </h4>
+                                <p className="text-xs text-purple-950 mt-1 leading-relaxed font-medium">
+                                    Mantener la disponibilidad de inventario en productos de alta rotación y aprovechar el buen momento de demanda para consolidar metas comerciales.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Botoncitos de Acción Superior Derecha */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            onClick={handleRefresh}
-                            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all border border-slate-200 shadow-2xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-                            <span>Actualizar</span>
-                        </button>
+                    {/* 7. FOOTER INFORMATIVO INFERIOR */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-1">
+                        <div className="flex items-center gap-2">
+                            <Info className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <span>
+                                <strong>Base estadística de Tiendas Minoristas (Consolidado):</strong> 01/09/2025 al 31/08/2026 (365 días móviles equivalentes) provenientes de MongoDB colección <code className="font-mono text-slate-800 bg-slate-200/70 px-1 py-0.5 rounded">'sales'</code>.
+                            </span>
+                        </div>
 
-                        <button
-                            onClick={handleExportPDF}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Exportar</span>
-                        </button>
-
-                        <button
-                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <Settings className="w-3.5 h-3.5" />
-                            <span>Configurar</span>
-                        </button>
-
-                        <button
-                            onClick={() => setIsExplanationModalOpen(true)}
-                            className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all border border-indigo-200 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>¿De dónde vienen estos datos?</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono shrink-0">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Última actualización: 31/08/2026 19:50:22</span>
+                        </div>
                     </div>
                 </div>
-
-            </div>
-
-            {/* 3. BOTONCITOS SELECTORES DE MÉTRICA PESTAÑA matching media_1788911167771.jpg */}
-            <BenchmarkMetricTabs
-                activeMetric={selectedMetric}
-                onChangeMetric={(metric) => setSelectedMetric(metric)}
-            />
-
-            {/* 4. TARJETAS PRINCIPALES KPI (P25, P50, P75, POSICIÓN ACTUAL CON SUBCARD DE DÍAS EQUIVALENTES) */}
-            <BenchmarkTopCards
-                p25={currentPercentile.p25}
-                p50={currentPercentile.p50}
-                p75={currentPercentile.p75}
-                todaySales={todayDayData.sales}
-                vsP50Pct={todayDayData.vsP50}
-                percentilePositionPct={todayDayData.posPct}
-                formatValue={currentPercentile.format}
-                dayName={todayDayData.dayOfWeek === 'Lun' ? 'Lunes' : 'Día'}
-                promedioEquivalente={5840}
-                variacionEquivalentePct={13.5}
-            />
-
-            {/* 5. CALENDARIO DE RENDIMIENTO HISTÓRICO (8 COLS) + PANEL DERECHO DE RESUMEN Y ESTADÍSTICAS DEL MES (4 COLS) */}
-            <BenchmarkCalendarSection
-                processedDays={processedDays}
-                onSelectDay={(d) => setActiveModalDay(d)}
-                metricTitle={METRIC_TITLES[selectedMetric]}
-                formatValue={currentPercentile.format}
-            />
-
-            {/* 6. BLOQUES INFERIORES DE INTERPRETACIÓN Y RECOMENDACIÓN matching media_1788911167771.jpg */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Interpretación */}
-                <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
-                    <div className="p-2.5 bg-indigo-100 border border-indigo-200 rounded-2xl text-indigo-700 shrink-0">
-                        <Lightbulb className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider">
-                            Interpretación
-                        </h4>
-                        <p className="text-xs text-indigo-950 mt-1 leading-relaxed font-medium">
-                            El resultado actual se encuentra por encima del <strong>82%</strong> de todas las jornadas registradas en el año móvil. Se observa un buen desempeño, impulsado por un mayor flujo de ventas en los últimos días del mes.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Recomendación */}
-                <div className="bg-purple-50/70 border border-purple-200/80 rounded-3xl p-5 shadow-xs flex items-start gap-3">
-                    <div className="p-2.5 bg-purple-100 border border-purple-200 rounded-2xl text-purple-700 shrink-0">
-                        <Star className="w-5 h-5 fill-purple-600" />
-                    </div>
-                    <div>
-                        <h4 className="text-xs font-black text-purple-900 uppercase tracking-wider">
-                            Recomendación
-                        </h4>
-                        <p className="text-xs text-purple-950 mt-1 leading-relaxed font-medium">
-                            Mantener la disponibilidad de inventario en productos de alta rotación y aprovechar el buen momento de demanda para consolidar metas comerciales.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* 7. FOOTER INFORMATIVO INFERIOR matching media_1788911167771.jpg */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-1">
-                <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>
-                        <strong>Base estadística de Tiendas Minoristas (Consolidado):</strong> 01/09/2025 al 31/08/2026 (365 días móviles equivalentes) provenientes de MongoDB colección <code className="font-mono text-slate-800 bg-slate-200/70 px-1 py-0.5 rounded">'sales'</code>.
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono shrink-0">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Última actualización: 31/08/2026 19:50:22</span>
-                </div>
-            </div>
+            )}
 
             {/* MODALES */}
             <BenchmarkDayDetailModal
