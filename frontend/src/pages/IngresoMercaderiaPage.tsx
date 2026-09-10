@@ -84,23 +84,33 @@ export default function IngresoMercaderiaPage() {
     // Handle PO Selection
     const handleSelectOrder = (orderId: string) => {
         setPurchaseOrderId(orderId);
-        const order = orders.find((o: any) => o._id === orderId);
+        const order = orders.find((o: any) => (o._id ?? o.id) === orderId);
         if (order) {
             setProveedorId(order.proveedor_id);
             setProveedorNombre(order.proveedor_nombre);
-            
+
             // Map PO details to Reception details
             const newDetalles = order.detalles.map((item: any) => {
-                const product = products.find((p: any) => p._id === item.producto_id);
+                // FIX: resolve both _id and id variants (backend may serialize either)
+                const product = products.find((p: any) => (p._id ?? p.id) === item.producto_id);
+                // FIX: use the agreed cost from the PO, NOT precio_venta
+                // Using precio_venta as costo inflated cost of goods and distorted margins
+                const costoReal =
+                    item.costo_unitario_estimado ||
+                    (product ? product.costo_producto || 0 : 0);
+                const costoHistorico = product ? product.costo_producto || 0 : costoReal;
+                // FIX: preload cantidad_recibida from the PO so operators don't
+                // have to re-type every line. They can edit individual items for partial deliveries.
+                const cantidadInicial = item.cantidad_pedida ?? 0;
                 return {
                     producto_id: item.producto_id,
                     nombre_producto: item.nombre_producto,
                     codigo_producto: item.codigo_producto,
-                    cantidad_recibida: 0,
-                    cantidad_pedida: item.cantidad_pedida,
-                    costo_unitario_real: product ? (product.costo_producto || product.precio_venta || 0) : 0,
-                    costo_historico: product ? (product.costo_producto || product.precio_venta || 0) : 0,
-                    subtotal: 0
+                    cantidad_recibida: cantidadInicial,
+                    cantidad_pedida: item.cantidad_pedida ?? 0,
+                    costo_unitario_real: costoReal,
+                    costo_historico: costoHistorico,
+                    subtotal: cantidadInicial * costoReal,
                 };
             });
             setDetalles(newDetalles);
@@ -396,7 +406,10 @@ export default function IngresoMercaderiaPage() {
                             <tbody className="divide-y divide-gray-100">
                                 {detalles.map((item, idx) => {
                                     const isCostHigher = item.costo_unitario_real > item.costo_historico;
-                                    const isComplete = purchaseOrderId && item.cantidad_recibida >= item.cantidad_pedida;
+                                    // FIX: cantidad_pedida > 0 guard prevents scanner-added items
+                                    // (cantidad_pedida=0) from being falsely highlighted as "complete"
+                                    // (1 >= 0 was always true, painting them green incorrectly)
+                                    const isComplete = purchaseOrderId && item.cantidad_pedida > 0 && item.cantidad_recibida >= item.cantidad_pedida;
 
                                     return (
                                         <tr key={idx} className={`transition-colors ${isComplete ? 'bg-emerald-50/30' : 'hover:bg-gray-50'}`}>
@@ -414,9 +427,10 @@ export default function IngresoMercaderiaPage() {
                                                 </div>
                                             </td>
                                             <td className="p-5 text-center">
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     min="0"
+                                                    step="any"
                                                     className="w-24 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center font-black text-lg text-gray-900 outline-none focus:ring-2 focus:ring-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     value={item.cantidad_recibida === 0 ? '' : item.cantidad_recibida}
                                                     onChange={(e) => updateItem(idx, 'cantidad_recibida', Number(e.target.value))}

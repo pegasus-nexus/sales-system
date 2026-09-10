@@ -53,10 +53,6 @@ interface VentasCardProps {
 
 const VentasCard = memo((props: VentasCardProps) => {
     const { ventasBrutas, desgloseSucursales, showBreakdown, setShowBreakdown, formatBs } = props;
-    console.log("RENDER VENTASCARD", {
-        ventasBrutas,
-        timestamp: new Date().toISOString()
-    });
 
     return (
         <div className="bg-[#7b75a6] rounded-3xl p-6 shadow-md flex flex-col justify-between text-white h-full min-h-[295px] select-none border border-white/10 transition-all hover:shadow-lg">
@@ -418,16 +414,14 @@ export default function DashboardMaestro() {
         if (startDate) {
             const s = new Date(startDate);
             s.setHours(0, 0, 0, 0);
-            
+
             const e = endDate ? new Date(endDate) : new Date(startDate);
             e.setHours(23, 59, 59, 999);
 
-            console.log("SETDATES");
-            console.log({ start: s.toISOString(), end: e.toISOString() });
-            console.trace();
             setDates({ start: s.toISOString(), end: e.toISOString() });
         }
     };
+
 
     const setQuickDate = (type: 'today' | 'yesterday' | '30days') => {
         const today = new Date();
@@ -479,24 +473,12 @@ export default function DashboardMaestro() {
             setIsError(false);
             setIsBackendOffline(false);
             try {
-                console.log("REQUEST DASHBOARD", {
-                    start: dates.start,
-                    end: dates.end,
-                    selectedSucursal,
-                    timeRange: 'custom',
-                    now: new Date().toISOString()
-                });
                 const res = await getAnalyticsDashboardV3(
                     dates.start,
                     dates.end,
                     selectedSucursal === 'all' ? undefined : selectedSucursal
                 );
                 if (isMounted) {
-                    console.log("RESPONSE DASHBOARD", {
-                        ventas: (res as any)?.overview?.ventas_brutas,
-                        start: dates.start,
-                        end: dates.end
-                    });
                     setData(res);
                     setLastSyncTime(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
                 }

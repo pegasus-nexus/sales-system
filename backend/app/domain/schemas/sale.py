@@ -5,10 +5,11 @@ Extracted from sales.py endpoint to allow independent development
 of schemas vs endpoint logic.
 """
 
-from typing import List, Optional, Literal
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
 from decimal import Decimal
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.models.sale import DescuentoInfo
 
@@ -16,47 +17,49 @@ from app.domain.models.sale import DescuentoInfo
 class SaleItemIn(BaseModel):
     """A single item line in a sale request."""
     producto_id: str
-    cantidad: int
-    precio_unitario: float = 0.0   # if 0, falls back to product.precio_venta
-    descuento_unitario: float = 0.0
-    almacen_id: Optional[str] = None  # Override por-ítem. Si None, hereda almacen_id global de SaleCreate
+    # SECURITY: gt=0 prevents negative quantity injection which would INCREASE stock
+    # instead of decreasing it, and allow registering sales for 0 Bs or negative amounts.
+    cantidad: int = Field(..., gt=0, description="Cantidad de unidades vendidas. Debe ser positiva.")
+    precio_unitario: float = Field(default=0.0, ge=0.0)  # if 0, falls back to product.precio_venta
+    descuento_unitario: float = Field(default=0.0, ge=0.0)
+    almacen_id: str | None = None  # Override por-ítem. Si None, hereda almacen_id global de SaleCreate
 
 
 class PagoIn(BaseModel):
     """One payment segment (supports split payments)."""
     metodo: Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA", "CREDITO"]
-    monto: float
+    monto: float = Field(..., gt=0, description="Monto del pago. Debe ser positivo.")
 
 class AbonoCreate(BaseModel):
     """Request body to pay off portions of a credit sale."""
     metodo: Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA"]
-    monto: float
+    monto: float = Field(..., gt=0, description="Monto del abono. Debe ser positivo.")
 
 
 class ClienteIn(BaseModel):
     """Optional invoice / billing data provided at point of sale."""
-    nit: Optional[str] = None
-    razon_social: Optional[str] = None
-    email: Optional[str] = None
-    telefono: Optional[str] = None
+    nit: str | None = None
+    razon_social: str | None = None
+    email: str | None = None
+    telefono: str | None = None
     es_factura: bool = False
     is_miembro_comunidad: bool = False
 
 
 class SaleCreate(BaseModel):
     """Request body for creating a new sale."""
-    sucursal_id: Optional[str] = None
+    sucursal_id: str | None = None
     almacen_id: str = "default"
-    items: List[SaleItemIn]
-    pagos: List[PagoIn] = []
-    descuento: Optional[DescuentoInfo] = None
-    cliente_id: Optional[str] = None
-    cliente: Optional[ClienteIn] = None
-    vendedor_id: Optional[str] = None
-    vendedor_name: Optional[str] = None
-    fecha_venta: Optional[datetime] = None
+    items: list[SaleItemIn]
+    pagos: list[PagoIn] = []
+    descuento: DescuentoInfo | None = None
+    cliente_id: str | None = None
+    cliente: ClienteIn | None = None
+    vendedor_id: str | None = None
+    vendedor_name: str | None = None
+    fecha_venta: datetime | None = None
     send_whatsapp: bool = False
-    idempotency_key: Optional[str] = None
+    idempotency_key: str | None = None
     confirm_duplicate: bool = False
 
 
@@ -77,9 +80,9 @@ class AnulacionCreate(BaseModel):
         "VENTA_DUPLICADA",
         "OTRO"
     ]
-    notas: Optional[str] = None
+    notas: str | None = None
     # Solo requerido si motivo == "ERROR_COBRO"
-    metodo_pago_correcto: Optional[Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA"]] = None
+    metodo_pago_correcto: Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA"] | None = None
 
 
 class QRInfoUpdate(BaseModel):
@@ -94,7 +97,7 @@ class ListaPrecioItemResponse(BaseModel):
     precio: Decimal
     moneda: str = "Bs"
     vigente: bool = True
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
