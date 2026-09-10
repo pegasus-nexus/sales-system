@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle,
-    Building2, DollarSign, ShoppingBag, Trophy, Award, MapPin
+    Building2, DollarSign, ShoppingBag, Trophy, Award, MapPin, User, Users
 } from 'lucide-react';
 import { getBISucursalesDesempeno, getBISucursales } from '../../api/biApi';
 import type { BISucursalesDesempenoResponse, BISucursalOption } from '../../api/biApi';
@@ -92,6 +92,38 @@ export const BISucursalesView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
+    const setQuickRange = (type: 'today' | 'yesterday' | '7days' | 'month') => {
+        const todayStr = getFormattedBoliviaDate(0);
+        if (type === 'today') {
+            setStartDate(todayStr);
+            setEndDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yest = getFormattedBoliviaDate(-1);
+            setStartDate(yest);
+            setEndDate(yest);
+        } else if (type === '7days') {
+            const d7 = getFormattedBoliviaDate(-6);
+            setStartDate(d7);
+            setEndDate(todayStr);
+        } else if (type === 'month') {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            setStartDate(`${y}-${m}-01`);
+            setEndDate(todayStr);
+        }
+    };
+
+    const todayStr = getFormattedBoliviaDate(0);
+    const yestStr = getFormattedBoliviaDate(-1);
+    const d7Str = getFormattedBoliviaDate(-6);
+    const firstMonthStr = `${todayStr.substring(0, 7)}-01`;
+
+    const isTodayActive = startDate === todayStr && endDate === todayStr;
+    const isYesterdayActive = startDate === yestStr && endDate === yestStr;
+    const is7DaysActive = startDate === d7Str && endDate === todayStr;
+    const isMonthActive = startDate === firstMonthStr && endDate === todayStr;
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -172,9 +204,53 @@ export const BISucursalesView: React.FC = () => {
                 </div>
             </div>
 
-            {/* CONTROLES DE FILTRADO */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-wrap items-center gap-3">
+            {/* CONTROLES DE FILTRADO & BOTONES DE FECHA RÁPIDA */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                    {/* Botones de Selección Rápida */}
+                    <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/70">
+                        <button
+                            onClick={() => setQuickRange('today')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isTodayActive
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('yesterday')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isYesterdayActive
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('7days')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                is7DaysActive
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Últimos 7 Días
+                        </button>
+                        <button
+                            onClick={() => setQuickRange('month')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                                isMonthActive
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                            }`}
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
@@ -210,7 +286,7 @@ export const BISucursalesView: React.FC = () => {
                 </div>
 
                 {data && (
-                    <div className="text-xs font-bold text-slate-500">
+                    <div className="text-xs font-bold text-slate-500 shrink-0">
                         <span>Última Sincronización POS: <strong className="text-blue-700">{data.ultima_actualizacion}</strong></span>
                     </div>
                 )}
@@ -318,7 +394,10 @@ export const BISucursalesView: React.FC = () => {
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>
-                        <h3 className="text-base font-black text-slate-900">Ranking y Desempeño Operativo de Tiendas</h3>
+                        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                            <Building2 size={18} className="text-blue-600" />
+                            <span>Ranking y Desempeño Operativo de Tiendas</span>
+                        </h3>
                         <p className="text-xs text-slate-400 font-bold">Ordenadas por facturación total real en `sales`</p>
                     </div>
                     <span className="text-xs font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-xl">
@@ -378,6 +457,87 @@ export const BISucursalesView: React.FC = () => {
                                 <tr>
                                     <td colSpan={6} className="py-8 text-center text-slate-400 font-bold">
                                         No se registraron ventas operacionales para ninguna sucursal en el período seleccionado.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* TABLA DESEMPEÑO POR EMPLEADOS / CAJEROS CON IDENTIFICACIÓN DE SUCURSAL */}
+            <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div>
+                        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                            <Users size={18} className="text-indigo-600" />
+                            <span>Desempeño Operativo por Empleado & Cajero</span>
+                        </h3>
+                        <p className="text-xs text-slate-400 font-bold">
+                            Ingresos, transacciones y sucursal de asignación según tickets operacionales registrados en `sales`
+                        </p>
+                    </div>
+                    <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl">
+                        {data?.empleados?.length || 0} Trabajadores Activos
+                    </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                        <thead>
+                            <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
+                                <th className="py-3 px-3">Empleado / Cajero</th>
+                                <th className="py-3 px-3">Sucursal / Tienda de Origen</th>
+                                <th className="py-3 px-3 text-right">Tickets</th>
+                                <th className="py-3 px-3 text-right">Ticket Medio</th>
+                                <th className="py-3 px-3 text-right">Ingresos Totales</th>
+                                <th className="py-3 px-3 text-center">Participación %</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                            {data?.empleados?.map((emp, idx) => (
+                                <tr key={`${emp.empleado_nombre}-${emp.sucursal_id}-${idx}`} className="hover:bg-indigo-50/40 transition-colors">
+                                    <td className="py-3.5 px-3 font-black text-slate-900">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                                <User size={14} />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-black text-slate-900">{emp.empleado_nombre}</div>
+                                                <div className="text-[10px] text-indigo-600 font-bold">Cajero / Vendedor POS</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-3.5 px-3">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-black">
+                                            <MapPin size={12} className="text-indigo-500 shrink-0" />
+                                            <span>{emp.sucursal_nombre}</span>
+                                            <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-100 px-1.5 py-0.2 rounded">
+                                                {emp.ciudad}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3.5 px-3 text-right text-slate-800">{emp.tickets_conteo} tks</td>
+                                    <td className="py-3.5 px-3 text-right text-slate-500">{formatBs(emp.ticket_medio)}</td>
+                                    <td className="py-3.5 px-3 text-right font-black text-slate-900">{formatBs(emp.ingresos_bs)}</td>
+                                    <td className="py-3.5 px-3 text-center font-extrabold text-indigo-700">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className="w-10 text-right">{emp.participacion_pct}%</span>
+                                            <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden hidden sm:block">
+                                                <div
+                                                    className="bg-indigo-600 h-1.5 rounded-full"
+                                                    style={{ width: `${Math.min(emp.participacion_pct, 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {(!data?.empleados || data.empleados.length === 0) && (
+                                <tr>
+                                    <td colSpan={6} className="py-8 text-center text-slate-400 font-bold">
+                                        No se registraron ventas por empleado para el período seleccionado.
                                     </td>
                                 </tr>
                             )}

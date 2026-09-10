@@ -15,6 +15,8 @@ class KPIProductividadBI(BaseModel):
 
 class CajeroProductividadItemBI(BaseModel):
     cajero_nombre: str
+    sucursal_id: str = ""
+    sucursal_nombre: str = "Sin Sucursal"
     tickets_conteo: int = 0
     ingresos_bs: float = 0.0
     ticket_medio: float = 0.0

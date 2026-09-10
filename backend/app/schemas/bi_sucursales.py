@@ -25,6 +25,17 @@ class SucursalDesempenoItemBI(BaseModel):
     participacion_pct: float = 0.0
 
 
+class EmpleadoDesempenoItemBI(BaseModel):
+    empleado_nombre: str
+    sucursal_id: str = ""
+    sucursal_nombre: str = "Sin Sucursal"
+    ciudad: str = "Sin Ciudad"
+    tickets_conteo: int = 0
+    ingresos_bs: float = 0.0
+    ticket_medio: float = 0.0
+    participacion_pct: float = 0.0
+
+
 class BISucursalesDesempenoResponse(BaseModel):
     status: str = "success"
     fecha_inicio_bolivia: str
@@ -34,6 +45,7 @@ class BISucursalesDesempenoResponse(BaseModel):
 
     kpis: KPISucursalesBI
     sucursales: List[SucursalDesempenoItemBI] = []
+    empleados: List[EmpleadoDesempenoItemBI] = []
 
     trazabilidad: Dict[str, Any] = Field(
         default_factory=lambda: {

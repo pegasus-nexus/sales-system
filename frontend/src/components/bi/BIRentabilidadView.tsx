@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle,
-    TrendingUp, DollarSign, Trophy, Info, Layers
+    TrendingUp, DollarSign, Trophy, Info, Layers, HelpCircle, X, CheckCircle2, BookOpen
 } from 'lucide-react';
 import { getBIRentabilidadMargen, getBISucursales } from '../../api/biApi';
 import type { BIRentabilidadMargenResponse, BISucursalOption } from '../../api/biApi';
@@ -43,6 +43,7 @@ export const BIRentabilidadView: React.FC = () => {
 
     const [data, setData] = useState<BIRentabilidadMargenResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [showEbitdaModal, setShowEbitdaModal] = useState<boolean>(false);
 
     const loadSucursales = async () => {
         try {
@@ -89,6 +90,34 @@ export const BIRentabilidadView: React.FC = () => {
         setStartDate(todayStr);
         setEndDate(todayStr);
         setSelectedSucursal('all');
+    };
+
+    // Funciones rápidas para los botones de rango de fecha
+    const handleSelectToday = () => {
+        const todayStr = getFormattedBoliviaDate(0);
+        setStartDate(todayStr);
+        setEndDate(todayStr);
+    };
+
+    const handleSelectYesterday = () => {
+        const yesterdayStr = getFormattedBoliviaDate(-1);
+        setStartDate(yesterdayStr);
+        setEndDate(yesterdayStr);
+    };
+
+    const handleSelectLast7Days = () => {
+        const todayStr = getFormattedBoliviaDate(0);
+        const last7Str = getFormattedBoliviaDate(-7);
+        setStartDate(last7Str);
+        setEndDate(todayStr);
+    };
+
+    const handleSelectThisMonth = () => {
+        const todayStr = getFormattedBoliviaDate(0);
+        const [y, m] = todayStr.split('-');
+        const firstDayOfMonth = `${y}-${m}-01`;
+        setStartDate(firstDayOfMonth);
+        setEndDate(todayStr);
     };
 
     const toggleFullscreen = () => {
@@ -171,17 +200,65 @@ export const BIRentabilidadView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA TRANSPARENTE SOBRE GASTOS OPERATIVOS Y EBITDA NO DISPONIBLES */}
-            <div className="bg-sky-50/80 border border-sky-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-sky-900 text-xs font-bold shadow-xs">
-                <Info size={18} className="text-sky-600 shrink-0" />
-                <span>
-                    <strong>Gastos Operacionales & EBITDA:</strong> Declarados oficiales como <span className="bg-sky-200/70 px-2 py-0.5 rounded-md font-black">NO DISPONIBLES</span> al no contar con asientos de alquileres, salarios o impuestos en la base de datos operacional del POS.
-                </span>
+            {/* BARRA TRANSPARENTE SOBRE GASTOS OPERATIVOS Y EBITDA CON BOTÓN EXPLICATIVO */}
+            <div className="bg-sky-50/80 border border-sky-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sky-900 text-xs font-bold shadow-xs">
+                <div className="flex items-center gap-3">
+                    <Info size={20} className="text-sky-600 shrink-0" />
+                    <span>
+                        <strong>Gastos Operacionales & EBITDA:</strong> Declarados oficiales como <span className="bg-sky-200/70 px-2 py-0.5 rounded-md font-black">NO DISPONIBLES</span> al no contar con asientos de alquileres, salarios o impuestos en la base de datos operacional del POS.
+                    </span>
+                </div>
+
+                <button
+                    onClick={() => setShowEbitdaModal(true)}
+                    className="flex items-center gap-1.5 bg-white hover:bg-sky-100 text-sky-900 font-extrabold text-xs px-3.5 py-1.5 rounded-xl border border-sky-300 shadow-xs cursor-pointer shrink-0 transition-all"
+                >
+                    <HelpCircle size={14} className="text-sky-600" />
+                    <span>🔍 ¿Qué es EBITDA y cómo se calcula?</span>
+                </button>
             </div>
 
-            {/* CONTROLES DE FILTRADO */}
+            {/* CONTROLES DE FILTRADO CON BOTONES RÁPIDOS (HOY, AYER, 7 DÍAS, ESTE MES) */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3">
+                    
+                    {/* Botones Rápidos de Fecha */}
+                    <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-2xl">
+                        <button
+                            onClick={handleSelectToday}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                startDate === getFormattedBoliviaDate(0) && endDate === getFormattedBoliviaDate(0)
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            onClick={handleSelectYesterday}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                startDate === getFormattedBoliviaDate(-1) && endDate === getFormattedBoliviaDate(-1)
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            onClick={handleSelectLast7Days}
+                            className="px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-all cursor-pointer"
+                        >
+                            Últimos 7 Días
+                        </button>
+                        <button
+                            onClick={handleSelectThisMonth}
+                            className="px-3 py-1.5 rounded-xl text-xs font-black text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-all cursor-pointer"
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
+                    {/* Selector Manual de Rango de Fecha */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
@@ -199,6 +276,7 @@ export const BIRentabilidadView: React.FC = () => {
                         />
                     </div>
 
+                    {/* Selector de Sucursales */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Filter size={14} className="text-slate-400" />
                         <select
@@ -306,6 +384,90 @@ export const BIRentabilidadView: React.FC = () => {
                 </div>
             )}
 
+            {/* MODAL INTERACTIVO SOBRE QUÉ ES EBITDA Y GASTOS OPERACIONALES */}
+            {showEbitdaModal && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 max-w-2xl w-full space-y-5 relative text-slate-800">
+                        <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-sky-100 text-sky-700 rounded-2xl">
+                                    <BookOpen size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">¿Qué es EBITDA y cómo se calcula?</h3>
+                                    <p className="text-xs text-slate-500 font-bold mt-0.5">
+                                        Conceptos financieros de Margen Bruto vs EBITDA en el POS
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowEbitdaModal(false)}
+                                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 cursor-pointer transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-xs">
+                            {/* Definición de EBITDA */}
+                            <div className="p-4 rounded-2xl bg-sky-50/80 border border-sky-100 space-y-1.5">
+                                <span className="font-black text-sky-950 uppercase text-[10px] tracking-wider block">💡 DEFINICIÓN FINANCIERA (EBITDA)</span>
+                                <p className="text-sm font-black text-sky-950">
+                                    Earnings Before Interest, Taxes, Depreciation, and Amortization
+                                </p>
+                                <p className="text-xs text-sky-800 font-medium leading-relaxed">
+                                    (Utilidad Antes de Intereses, Impuestos, Depreciaciones y Amortizaciones). Mide la capacidad pura del negocio para generar caja operativa con su actividad comercial directa.
+                                </p>
+                            </div>
+
+                            {/* Fórmulas Comparativas */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1.5">
+                                    <span className="text-[10px] font-black text-emerald-800 uppercase block">1. MARGEN BRUTO TEÓRICO (EN POS)</span>
+                                    <p className="text-xs font-black text-emerald-950">
+                                        Ventas Conciliadas - Costo de Almacén (COGS)
+                                    </p>
+                                    <p className="text-[11px] text-slate-600 font-medium">
+                                        Es lo que calcula Pegasus POS sobre la mercadería vendida en caja.
+                                    </p>
+                                </div>
+
+                                <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100 space-y-1.5">
+                                    <span className="text-[10px] font-black text-purple-800 uppercase block">2. EBITDA OPERACIONAL</span>
+                                    <p className="text-xs font-black text-purple-950">
+                                        Margen Bruto - Gastos Fijos (Alquiler, Sueldos, Luz)
+                                    </p>
+                                    <p className="text-[11px] text-slate-600 font-medium">
+                                        Requiere asientos contables de costos fijos mensuales.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Por qué está en NO DISPONIBLE */}
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                                <h4 className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                                    <CheckCircle2 size={14} className="text-emerald-600" />
+                                    ¿Por qué el sistema marca Gastos Operacionales & EBITDA como NO DISPONIBLES?
+                                </h4>
+                                <ul className="list-disc pl-5 space-y-1.5 text-slate-600 text-[11px]">
+                                    <li>La base de datos del POS MongoDB (`sales` e `inventory`) registra transacciones comerciales directas en caja (ingresos y costo de mercadería vendida).</li>
+                                    <li>Al no contar con un libro diario contable de alquileres, planillas salariales de personal o servicios públicos registrados en caja, el sistema declara oficialmente el EBITDA como <strong>NO DISPONIBLE</strong> para mantener la integridad de tus reportes financieros y no mostrar números falsos o incompletos.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={() => setShowEbitdaModal(false)}
+                                className="bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-2xl shadow-xs cursor-pointer transition-all"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* SECCIÓN CATEGORÍAS Y DETALLE DE PRODUCTOS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -369,7 +531,7 @@ export const BIRentabilidadView: React.FC = () => {
                                             <div className="text-[10px] text-slate-400 font-semibold">{p.categoria_nombre}</div>
                                         </td>
                                         <td className="py-3 px-3 text-right text-slate-800">{p.unidades_vendidas} un.</td>
-                                        <td className="py-3 px-3 text-right text-slate-500">{formatBs(p.ingresos_bs)}</td>
+                                        <td className="py-3 px-3 text-right text-slate-50">{formatBs(p.ingresos_bs)}</td>
                                         <td className="py-3 px-3 text-right text-slate-400">{formatBs(p.costos_bs)}</td>
                                         <td className="py-3 px-3 text-right font-black text-emerald-700">{formatBs(p.margen_bruto_bs)}</td>
                                         <td className="py-3 px-3 text-center">

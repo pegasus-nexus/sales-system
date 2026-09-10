@@ -53,8 +53,9 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
         { nombre: 'Alfajor Artesanal Chocolate', unidades: 3, pct: 25 },
     ];
 
-    // Sucursales activas ordenadas por ingreso
+    // Sucursales activas con ventas en el periodo ordenadas por ingreso desc
     const activeSucursales = (data?.desglose_sucursales || [])
+        .filter((suc) => (suc.ingresos || 0) > 0 || (suc.ordenes || 0) > 0)
         .slice()
         .sort((a, b) => (b.ingresos || 0) - (a.ingresos || 0));
 
@@ -247,17 +248,23 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                         </button>
 
                         {expandedCard === 'ingresos' && data && (
-                            <div className="mt-3 pt-3 border-t border-indigo-200/60 space-y-1.5 animate-in fade-in duration-200">
-                                {activeSucursales.map((suc) => (
-                                    <div
-                                        key={suc.sucursal_id}
-                                        onClick={() => onSucursalChange(suc.sucursal_id)}
-                                        className="flex items-center justify-between py-1 px-2 bg-white/90 rounded-xl text-xs font-bold text-indigo-950 cursor-pointer hover:bg-indigo-100/70"
-                                    >
-                                        <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
-                                        <span className="font-black shrink-0 text-indigo-900">{formatBs(suc.ingresos)}</span>
-                                    </div>
-                                ))}
+                            <div className="mt-3 pt-3 border-t border-indigo-200/60 space-y-1.5 animate-in fade-in duration-200 max-h-48 overflow-y-auto pr-1">
+                                {activeSucursales.length > 0 ? (
+                                    activeSucursales.map((suc) => (
+                                        <div
+                                            key={suc.sucursal_id}
+                                            onClick={() => onSucursalChange(suc.sucursal_id)}
+                                            className="flex items-center justify-between py-1 px-2 bg-white/90 rounded-xl text-xs font-bold text-indigo-950 cursor-pointer hover:bg-indigo-100/70"
+                                        >
+                                            <span className="truncate pr-2 font-extrabold">{suc.nombre_sucursal}</span>
+                                            <span className="font-black shrink-0 text-indigo-900">{formatBs(suc.ingresos)}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-[11px] font-bold text-indigo-700/70 italic text-center py-1">
+                                        Sin ventas registradas en el periodo
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

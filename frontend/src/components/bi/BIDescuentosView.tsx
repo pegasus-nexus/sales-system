@@ -32,7 +32,11 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     return `${year}-${month}-${day}`;
 };
 
-export const BIDescuentosView: React.FC = () => {
+interface BIDescuentosViewProps {
+    hideHeader?: boolean;
+}
+
+export const BIDescuentosView: React.FC<BIDescuentosViewProps> = ({ hideHeader = false }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +95,38 @@ export const BIDescuentosView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
+    const setQuickRange = (type: 'today' | 'yesterday' | '7days' | 'month') => {
+        const todayStr = getFormattedBoliviaDate(0);
+        if (type === 'today') {
+            setStartDate(todayStr);
+            setEndDate(todayStr);
+        } else if (type === 'yesterday') {
+            const yest = getFormattedBoliviaDate(-1);
+            setStartDate(yest);
+            setEndDate(yest);
+        } else if (type === '7days') {
+            const d7 = getFormattedBoliviaDate(-6);
+            setStartDate(d7);
+            setEndDate(todayStr);
+        } else if (type === 'month') {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            setStartDate(`${y}-${m}-01`);
+            setEndDate(todayStr);
+        }
+    };
+
+    const todayStr = getFormattedBoliviaDate(0);
+    const yestStr = getFormattedBoliviaDate(-1);
+    const d7Str = getFormattedBoliviaDate(-6);
+    const firstMonthStr = `${todayStr.substring(0, 7)}-01`;
+
+    const isTodayActive = startDate === todayStr && endDate === todayStr;
+    const isYesterdayActive = startDate === yestStr && endDate === yestStr;
+    const is7DaysActive = startDate === d7Str && endDate === todayStr;
+    const isMonthActive = startDate === firstMonthStr && endDate === todayStr;
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -132,44 +168,46 @@ export const BIDescuentosView: React.FC = () => {
         <div className={`min-h-screen bg-[#f8f9fd] p-1 sm:p-2 space-y-6 font-sans text-slate-800 w-full ${isFullscreen ? 'p-8' : ''}`}>
             
             {/* CABECERA ESTILO PASTEL */}
-            <div className="bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-yellow-50/90 rounded-3xl p-6 shadow-sm border border-orange-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
-                <div>
-                    <div className="flex items-center gap-2 text-orange-700 font-extrabold text-xs tracking-wider uppercase mb-1">
-                        <div className="p-1 bg-white rounded-lg shadow-xs">
-                            <Tag size={14} className="text-orange-700" />
+            {!hideHeader && (
+                <div className="bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-yellow-50/90 rounded-3xl p-6 shadow-sm border border-orange-100/70 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
+                    <div>
+                        <div className="flex items-center gap-2 text-orange-700 font-extrabold text-xs tracking-wider uppercase mb-1">
+                            <div className="p-1 bg-white rounded-lg shadow-xs">
+                                <Tag size={14} className="text-orange-700" />
+                            </div>
+                            <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 8</span>
                         </div>
-                        <span>CENTRO DE INTELIGENCIA DE NEGOCIOS — FASE 8</span>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Descuentos & Promociones</h1>
+                        <p className="text-xs text-slate-500 font-semibold mt-1">
+                            Modelo Estrella (`FACT_DESCUENTOS_SALES`) sobre MongoDB `descuentos` y `sales` (<span className="text-orange-700 font-black bg-orange-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
+                        </p>
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Descuentos & Promociones</h1>
-                    <p className="text-xs text-slate-500 font-semibold mt-1">
-                        Modelo Estrella (`FACT_DESCUENTOS_SALES`) sobre MongoDB `descuentos` y `sales` (<span className="text-orange-700 font-black bg-orange-100/60 px-2 py-0.5 rounded-md">America/La_Paz</span>)
-                    </p>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => fetchDescuentosData(startDate, endDate, selectedSucursal)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        <span>Actualizar</span>
-                    </button>
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <RotateCcw size={14} className="text-slate-500" />
-                        <span>Restablecer</span>
-                    </button>
-                    <button
-                        onClick={toggleFullscreen}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
-                    >
-                        <Maximize2 size={14} className="text-slate-500" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fetchDescuentosData(startDate, endDate, selectedSucursal)}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                        >
+                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                            <span>Actualizar</span>
+                        </button>
+                        <button
+                            onClick={handleReset}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <RotateCcw size={14} className="text-slate-500" />
+                            <span>Restablecer</span>
+                        </button>
+                        <button
+                            onClick={toggleFullscreen}
+                            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs"
+                        >
+                            <Maximize2 size={14} className="text-slate-500" />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* BARRA TRANSPARENTE SOBRE ROI Y EFECTIVIDAD CAUSAL NO DISPONIBLES */}
             <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-amber-900 text-xs font-bold shadow-xs">
@@ -179,9 +217,58 @@ export const BIDescuentosView: React.FC = () => {
                 </span>
             </div>
 
-            {/* CONTROLES DE FILTRADO */}
+            {/* CONTROLES DE FILTRADO Y RANGOS RÁPIDOS */}
             <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* BOTONES DE FILTRO RÁPIDO DE FECHAS */}
+                    <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/80">
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('today')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isTodayActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Hoy
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('yesterday')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isYesterdayActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Ayer
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('7days')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                is7DaysActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Últimos 7 Días
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuickRange('month')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                                isMonthActive
+                                    ? 'bg-orange-600 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            }`}
+                        >
+                            Este Mes
+                        </button>
+                    </div>
+
+                    {/* SELECTOR MANUAL DE FECHA */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Calendar size={14} className="text-slate-400" />
                         <input
@@ -199,6 +286,7 @@ export const BIDescuentosView: React.FC = () => {
                         />
                     </div>
 
+                    {/* FILTRO SUCURSALES */}
                     <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
                         <Filter size={14} className="text-slate-400" />
                         <select

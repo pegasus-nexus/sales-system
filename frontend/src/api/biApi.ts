@@ -293,6 +293,17 @@ export interface SucursalDesempenoItemBI {
     participacion_pct: number;
 }
 
+export interface EmpleadoDesempenoItemBI {
+    empleado_nombre: string;
+    sucursal_id: string;
+    sucursal_nombre: string;
+    ciudad: string;
+    tickets_conteo: number;
+    ingresos_bs: number;
+    ticket_medio: number;
+    participacion_pct: number;
+}
+
 export interface BISucursalesDesempenoResponse {
     status: string;
     fecha_inicio_bolivia: string;
@@ -302,6 +313,7 @@ export interface BISucursalesDesempenoResponse {
 
     kpis: KPISucursalesBI;
     sucursales: SucursalDesempenoItemBI[];
+    empleados: EmpleadoDesempenoItemBI[];
     trazabilidad: Record<string, unknown>;
 }
 
@@ -314,6 +326,9 @@ export interface KPIInventarioBI {
     skus_stock_bajo: number;
     sucursal_mayor_inventario_nombre: string;
     sucursal_mayor_inventario_monto: number;
+    skus_sugerencia_pedido?: number;
+    unidades_sugeridas_totales?: number;
+    presupuesto_reabastecimiento_bs?: number;
 }
 
 export interface SucursalInventarioItemBI {
@@ -334,6 +349,22 @@ export interface ProductoInventarioItemBI {
     costo_unitario: number;
     valor_total_costo: number;
     estado_stock: string;
+    velocidad_diaria_ventas?: number;
+    dias_cobertura_estimados?: number | null;
+    alerta_cobertura?: string;
+    sugerencia_reabastecimiento_unidades?: number;
+    sugerencia_monto_bs?: number;
+}
+
+export interface InventoryLogItemBI {
+    log_id: string;
+    producto_id: string;
+    descripcion: string;
+    tipo_movimiento: string;
+    cantidad_movida: number;
+    stock_resultante: number;
+    usuario_nombre: string;
+    fecha: string;
 }
 
 export interface BIInventarioControlResponse {
@@ -345,6 +376,8 @@ export interface BIInventarioControlResponse {
     kpis: KPIInventarioBI;
     desglose_sucursales: SucursalInventarioItemBI[];
     top_productos_inventario: ProductoInventarioItemBI[];
+    sugerencias_reabastecimiento?: ProductoInventarioItemBI[];
+    movimientos_kardex_recientes?: InventoryLogItemBI[];
     trazabilidad: Record<string, unknown>;
 }
 
@@ -436,6 +469,8 @@ export interface KPIProductividadBI {
 
 export interface CajeroProductividadItemBI {
     cajero_nombre: string;
+    sucursal_id?: string;
+    sucursal_nombre?: string;
     tickets_conteo: number;
     ingresos_bs: number;
     ticket_medio: number;

@@ -67,35 +67,80 @@ class DescuentosBIService:
 
         for s in sales_with_disc:
             d_obj = s.get("descuento")
+            d_nombre: Optional[str] = None
+            d_tipo = "PORCENTAJE"
+            d_val = 0.0
+            monto_desc = 0.0
+
+            subt = safe_float_bi(s.get("subtotal") or s.get("total"))
+
             if isinstance(d_obj, dict):
-                d_nombre = str(d_obj.get("nombre") or "Descuento Sin Nombre").strip()
+                d_nombre = str(d_obj.get("nombre") or "Descuento General").strip()
                 d_tipo = str(d_obj.get("tipo") or "PORCENTAJE")
                 d_val = safe_float_bi(d_obj.get("valor"))
-                subt = safe_float_bi(s.get("subtotal") or s.get("total"))
-
-                monto_desc = 0.0
                 if d_tipo == "MONTO":
                     monto_desc = d_val
                 elif d_tipo == "PORCENTAJE":
                     monto_desc = round(subt * (d_val / 100.0), 2)
+            elif isinstance(d_obj, (int, float)) and d_obj > 0:
+                d_nombre = "Descuento Directo POS"
+                d_tipo = "MONTO"
+                d_val = safe_float_bi(d_obj)
+                monto_desc = d_val
+            elif s.get("descuento_monto") or s.get("monto_descuento") or s.get("cupon_descuento"):
+                monto_val = safe_float_bi(s.get("descuento_monto") or s.get("monto_descuento") or s.get("cupon_descuento"))
+                if monto_val > 0:
+                    d_nombre = str(s.get("cupon") or "Descuento Cupon POS").strip()
+                    d_tipo = "MONTO"
+                    d_val = monto_val
+                    monto_desc = monto_val
 
-                monto_total_descuentos += monto_desc
+            # Descuento por ítems individuales (descuento_unitario)
+            items_desc_total = 0.0
+            items_list = s.get("items") or []
+            if isinstance(items_list, list):
+                for item in items_list:
+                    if isinstance(item, dict):
+                        d_u = safe_float_bi(item.get("descuento_unitario"))
+                        cant = safe_float_bi(item.get("cantidad") or 1.0)
+                        if d_u > 0:
+                            items_desc_total += round(d_u * cant, 2)
+
+            total_sale_discount = round(monto_desc + items_desc_total, 2)
+            if total_sale_discount > 0:
+                monto_total_descuentos += total_sale_discount
+
+                if not d_nombre:
+                    if items_desc_total > 0:
+                        d_nombre = "Descuento Directo en Productos (SKU)"
+                    elif s.get("cliente", {}).get("is_miembro_comunidad"):
+                        d_nombre = "Comunidad Taboada - Recompensa Fidelidad"
+                    else:
+                        d_nombre = "Descuento General POS"
 
                 norm_key = d_nombre.lower()
                 if norm_key in promos_map:
                     promos_map[norm_key]["tickets_aplicados"] += 1
-                    promos_map[norm_key]["monto_descuento_total"] += monto_desc
+                    promos_map[norm_key]["monto_descuento_total"] += total_sale_discount
                 else:
-                    # Si el descuento registrado en el ticket no estaba en la colección catálogo
-                    promos_map[norm_key] = {
-                        "id": str(s.get("_id")),
-                        "nombre": d_nombre,
-                        "tipo": d_tipo,
-                        "valor": d_val,
-                        "is_active": True,
-                        "tickets_aplicados": 1,
-                        "monto_descuento_total": monto_desc
-                    }
+                    matched = False
+                    for p_key in promos_map.keys():
+                        if p_key in norm_key or norm_key in p_key:
+                            promos_map[p_key]["tickets_aplicados"] += 1
+                            promos_map[p_key]["monto_descuento_total"] += total_sale_discount
+                            matched = True
+                            break
+
+                    if not matched:
+                        promos_map[norm_key] = {
+                            "id": str(s.get("_id")),
+                            "nombre": d_nombre,
+                            "tipo": d_tipo,
+                            "valor": d_val if d_val > 0 else (items_desc_total if items_desc_total > 0 else total_sale_discount),
+                            "is_active": True,
+                            "tickets_aplicados": 1,
+                            "monto_descuento_total": total_sale_discount
+                        }
 
         monto_total_descuentos = round(monto_total_descuentos, 2)
 
