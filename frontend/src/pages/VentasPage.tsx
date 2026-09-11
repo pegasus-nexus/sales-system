@@ -827,7 +827,7 @@ export default function VentasPage() {
                                 type="datetime-local" 
                                 value={nuevaFecha} 
                                 onChange={e => setNuevaFecha(e.target.value)} 
-                                className="w-full px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-6 text-gray-900 bg-white"
                             />
                             
                             <div className="flex gap-3 justify-end">

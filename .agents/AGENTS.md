@@ -64,3 +64,9 @@ Este documento define las directrices y normas que todos los agentes de IA (incl
 ## 🛑 PREVENCIÓN DE PÉRDIDA DE DATOS (REGLA DE ORO)
 1. **PROHIBIDO ELIMINAR DATOS MASIVOS:** Nunca crees, sugieras, ni ejecutes scripts que usen .delete_all(), .delete_many(), .drop() o similares en colecciones principales (ventas, inventario, productos).
 2. Los datos nunca se borran. Si un dato es inválido o se debe ocultar, se debe **inactivar** o **cambiar su estado** (soft delete), pero jamás borrar el registro de la base de datos.
+
+## 🎨 UX/UI y Frontend Estilos (Tailwind)
+1. **Contraste de Inputs Obligatorio:** NUNCA crear inputs (text, date, select, textarea) con colores dinámicos o ausentes que puedan resultar en texto blanco sobre fondo blanco (debido a configuraciones del navegador o dark mode extensions). 
+   - SIEMPRE forzar explícitamente el color del texto y fondo en inputs. 
+   - Ejemplo correcto: `className="... text-gray-900 bg-white"`.
+   - Única excepción: Si el diseño es explícitamente oscuro (`bg-gray-900 text-white`).

@@ -1,4 +1,4 @@
-﻿/**
+/**
 
  * Centralized API service layer.
 
@@ -2081,4 +2081,4 @@ export const updatePurchaseOrderStatus = (sucursalId: string, orderId: string, s
 export const createPurchaseReception = (data: any) => client<any>('/compras/receptions', { method: 'POST', body: data });
 
 export const getPurchaseReceptions = (sucursalId: string) => client<any[]>(`/compras/receptions/${sucursalId}`);
-export const updateSaleDate = (saleId: string, nueva_fecha: string) => client<any>(`/ventas/${saleId}/fecha`, { method: 'PATCH', body: { nueva_fecha: new Date(nueva_fecha).toISOString() } });
+export const updateSaleDate = (saleId: string, nueva_fecha: string) => client<any>(`/sales/${saleId}/fecha`, { method: 'PATCH', body: { nueva_fecha: new Date(nueva_fecha).toISOString() } });
