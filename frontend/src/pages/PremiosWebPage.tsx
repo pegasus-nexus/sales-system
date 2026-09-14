@@ -13,6 +13,7 @@ interface WebReward {
     validity: string;
     validity_days?: number;
     is_active: boolean;
+    deleted?: boolean;
 }
 
 export default function PremiosWebPage() {
@@ -154,7 +155,7 @@ Lo recomendable es simplemente cambiar su estado a 'Oculto'.
             if (!confirm('¿Estás seguro de eliminar este premio?')) return;
         }
 
-        const updatedRewards = rewards.filter(r => r.id !== id);
+        const updatedRewards = rewards.map(r => r.id === id ? { ...r, is_active: false, deleted: true } : r);
         mutation.mutate({ rewards: updatedRewards });
     };
 
@@ -199,7 +200,7 @@ Lo recomendable es simplemente cambiar su estado a 'Oculto'.
                                 <td colSpan={5} className="py-12 text-center text-gray-400">No hay premios configurados.</td>
                             </tr>
                         )}
-                        {rewards.map(reward => (
+                        {rewards.filter(r => !r.deleted).map(reward => (
                             <tr key={reward.id} className="hover:bg-gray-50/30 transition-colors">
                                 <td className="py-4 px-6">
                                     <div className="flex items-center gap-3">

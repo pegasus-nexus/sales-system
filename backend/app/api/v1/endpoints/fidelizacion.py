@@ -253,7 +253,7 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
             "club_benefit_description": web_config.club_benefit_description,
             "club_benefit_branch": web_config.club_benefit_branch,
             "club_benefit_valid_until": web_config.club_benefit_valid_until,
-            "rewards": [r.dict() for r in getattr(web_config, 'rewards', [])]
+            "rewards": [r.dict() for r in getattr(web_config, 'rewards', []) if not getattr(r, 'deleted', False)]
         },
         "colecciones": col_list,
         "categorias": cat_list,

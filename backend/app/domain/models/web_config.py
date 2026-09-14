@@ -12,6 +12,7 @@ class WebReward(BaseModel):
     validity: str = ''
     validity_days: int = 14
     is_active: bool = True
+    deleted: bool = False
 
 class WebConfig(Document):
     tenant_id: str = Field(..., index=True)
