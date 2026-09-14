@@ -136,23 +136,23 @@ export default function ComunidadPage() {
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                             <Users size={20} />
                         </div>
-                        <p className="text-sm font-medium text-gray-500">Registrados</p>
+                        <p className="text-sm font-medium text-gray-500">Afiliados Web (Cupones Generados)</p>
                         <p className="text-3xl font-black text-gray-900">{stats.total_registrados}</p>
-                        <p className="text-[10px] text-gray-400 leading-tight">Clientes que se han unido a la comunidad (Web o QR).</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">Personas que se registraron online y obtuvieron un cupón virtual.</p>
                     </div>
 
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
                         <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
                             <Gift size={20} />
                         </div>
-                        <p className="text-sm font-medium text-gray-500">Cupones Reclamados</p>
+                        <p className="text-sm font-medium text-gray-500">Entregados en Tienda</p>
                         <div className="flex items-baseline gap-2">
                             <p className="text-3xl font-black text-gray-900">{stats.total_reclamados}</p>
                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
-                                {stats.total_registrados > 0 ? Math.round((stats.total_reclamados / stats.total_registrados) * 100) : 0}% canjeó
+                                {stats.total_registrados > 0 ? Math.round((stats.total_reclamados / stats.total_registrados) * 100) : 0}% entregados
                             </span>
                         </div>
-                        <p className="text-[10px] text-gray-400 leading-tight">Miembros de la comunidad que ya usaron su beneficio de bienvenida.</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">De los afiliados web, cuántos fueron físicamente a la sucursal a canjearlo.</p>
                     </div>
 
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
