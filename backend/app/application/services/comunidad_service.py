@@ -158,14 +158,17 @@ class ComunidadService:
         ).sort("-created_at").skip(skip).limit(limit).to_list()
 
     @staticmethod
-    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0, search: Optional[str] = None):
+    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0, search: Optional[str] = None, tipo_filtro: str = "comunidad"):
         from app.domain.models.cliente import Cliente
         from app.domain.models.sale import Sale
         
         query = {
-            "tenant_id": tenant_id,
-            "is_miembro_comunidad": True
+            "tenant_id": tenant_id
         }
+        if tipo_filtro == "comunidad":
+            query["is_miembro_comunidad"] = True
+        elif tipo_filtro == "regulares":
+            query["is_miembro_comunidad"] = {"$ne": True}
         
         if search:
             query["$or"] = [

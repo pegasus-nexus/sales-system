@@ -49,6 +49,7 @@ export default function ComunidadPage() {
     const [miembrosPage, setMiembrosPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [tipoFiltro, setTipoFiltro] = useState<'comunidad' | 'regulares' | 'todos'>('comunidad');
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -59,11 +60,11 @@ export default function ComunidadPage() {
     }, [searchTerm]);
 
     const { data: miembros, isLoading: miembrosLoading, refetch: refetchMiembros } = useQuery({
-        queryKey: ['comunidad-miembros', miembrosPage, debouncedSearch],
+        queryKey: ['comunidad-miembros', miembrosPage, debouncedSearch, tipoFiltro],
         queryFn: async () => {
             const skip = (miembrosPage - 1) * 10;
             const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
-            const res = await client<any>(`/comunidad/miembros?limit=10&skip=${skip}${searchParam}`);
+            const res = await client<any>(`/comunidad/miembros?limit=10&skip=${skip}&tipo=${tipoFiltro}${searchParam}`);
             return res;
         }
     });
@@ -131,36 +132,45 @@ export default function ComunidadPage() {
             {/* Stats Grid */}
             {stats && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                             <Users size={20} />
                         </div>
                         <p className="text-sm font-medium text-gray-500">Registrados</p>
                         <p className="text-3xl font-black text-gray-900">{stats.total_registrados}</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">Clientes que se han unido a la comunidad (Web o QR).</p>
                     </div>
 
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
                         <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
                             <Gift size={20} />
                         </div>
                         <p className="text-sm font-medium text-gray-500">Cupones Reclamados</p>
-                        <p className="text-3xl font-black text-gray-900">{stats.total_reclamados}</p>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-3xl font-black text-gray-900">{stats.total_reclamados}</p>
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
+                                {stats.total_registrados > 0 ? Math.round((stats.total_reclamados / stats.total_registrados) * 100) : 0}% canjeó
+                            </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 leading-tight">Miembros de la comunidad que ya usaron su beneficio de bienvenida.</p>
                     </div>
 
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
                         <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                            <PercentIcon />
+                            <span className="font-bold text-lg">%</span>
                         </div>
                         <p className="text-sm font-medium text-gray-500">Tasa de Conversión</p>
                         <p className="text-3xl font-black text-gray-900">{stats.tasa_conversion}%</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">Porcentaje de visitantes web que terminaron registrándose.</p>
                     </div>
 
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative group">
                         <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center">
                             <MousePointerClick size={20} />
                         </div>
                         <p className="text-sm font-medium text-gray-500">Visitas a la Landing</p>
                         <p className="text-3xl font-black text-gray-900">{stats.total_visitas_globales}</p>
+                        <p className="text-[10px] text-gray-400 leading-tight">Número total de visitas a la página web de registro.</p>
                     </div>
                 </div>
             )}
@@ -168,9 +178,16 @@ export default function ComunidadPage() {
             {/* Users Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
                 <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-gray-900">Miembros de la Comunidad Web</h2>
-                        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold">NUEVO</span>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-gray-900">Directorio de Clientes</h2>
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold">NUEVO</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-gray-100/50 p-1 rounded-xl w-max">
+                            <button onClick={() => { setTipoFiltro('comunidad'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'comunidad' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>Comunidad Web</button>
+                            <button onClick={() => { setTipoFiltro('regulares'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'regulares' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>No Afiliados</button>
+                            <button onClick={() => { setTipoFiltro('todos'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'todos' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
+                        </div>
                     </div>
                     
                     <div className="relative w-full md:w-80">
