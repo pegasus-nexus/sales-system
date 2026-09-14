@@ -160,7 +160,7 @@ export default function ComunidadPage() {
                         <div className="flex items-baseline gap-2">
                             <p className="text-3xl font-black text-gray-900">{stats.total_entregados || 0}</p>
                             <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-lg border border-green-200">
-                                {stats.total_reclamados > 0 ? Math.round(((stats.total_entregados || 0) / stats.total_reclamados) * 100) : 0}% efectividad
+                                {stats.total_reclamados > 0 ? Math.round(((stats.total_entregados || 0) / stats.total_reclamados) * 100) : 0}% entregados
                             </span>
                         </div>
                         <p className="text-[10px] text-gray-400 leading-tight">De los que reclamaron, cuántos fueron físicamente a la sucursal.</p>
@@ -175,16 +175,103 @@ export default function ComunidadPage() {
                         <p className="text-[10px] text-gray-400 leading-tight">Número total de visitas a la página web de registro.</p>
                     </div>
                 </div>
-            )} : 'Fecha no registrada';
+            )}
+
+            {/* Users Table */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
+                <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-gray-900">Directorio de Clientes</h2>
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold">NUEVO</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-gray-100/50 p-1 rounded-xl w-max">
+                            <button onClick={() => { setTipoFiltro('comunidad'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'comunidad' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>Comunidad Web</button>
+                            <button onClick={() => { setTipoFiltro('regulares'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'regulares' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>No Afiliados</button>
+                            <button onClick={() => { setTipoFiltro('todos'); setMiembrosPage(1); }} className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-all ${tipoFiltro === 'todos' ? 'bg-white text-indigo-700 shadow-sm border border-gray-200/60' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
+                        </div>
+                    </div>
+                    
+                    <div className="relative w-full md:w-80">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search size={16} className="text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre, CI, teléfono..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+                        />
+                    </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-600">
+                        <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4">Cliente</th>
+                                <th className="px-6 py-4">Teléfono</th>
+                                <th className="px-6 py-4">Estado</th>
+                                <th className="px-6 py-4">Ingreso</th>
+                                <th className="px-6 py-4">Última Compra</th>
+                                <th className="px-6 py-4">Total Compras</th>
+                                <th className="px-6 py-4">Premios Canjeados</th>
+                                <th className="px-6 py-4">Tarjeta Taboada</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {miembrosLoading ? (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">Cargando...</td>
+                                </tr>
+                            ) : miembros?.items?.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-8 text-center text-gray-400 font-medium">No hay miembros registrados desde la web todavía.</td>
+                                </tr>
+                            ) : (
+                                miembros?.items?.map((miembro: any) => (
+                                    <tr key={miembro._id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-3">
+                                            <div className="font-bold text-gray-900">{miembro.nombre}</div>
+                                            <div className="text-xs text-gray-400">{miembro.email || 'Sin correo'}</div>
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-700">{miembro.telefono}</td>
+                                        <td className="px-6 py-3">
+                                            {miembro.estado_visita === 'Comprador' ? (
+                                                <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold border border-green-200">
+                                                    Comprador
+                                                </span>
+                                            ) : (
+                                                <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold border border-gray-200">
+                                                    Solo Visitó
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-700">
+                                            {miembro.fecha_afiliacion ? new Date(miembro.fecha_afiliacion).toLocaleDateString() : (miembro.created_at ? new Date(miembro.created_at).toLocaleDateString() : '-')}
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-700">
+                                            {miembro.ultima_compra_fecha ? new Date(miembro.ultima_compra_fecha).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="px-6 py-3 font-medium text-gray-900">
+                                            {miembro.total_compras || 0}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {miembro.premios_canjeados?.length > 0 ? (
+                                                <div className="flex flex-col gap-2">
+                                                    {miembro.premios_canjeados.map((p: string, i: number) => {
+                                                        const dateIso = miembro.premios_canjeados_fechas?.[p] || miembro.fecha_afiliacion || miembro.created_at;
+                                                        const dateObj = dateIso ? new Date(dateIso) : null;
+                                                        const dateStr = dateObj ? dateObj.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no registrada';
                                                         
                                                         const rewardConfig = webConfig?.rewards?.find((r: any) => r.id === p);
                                                         const prizeName = miembro.premios_canjeados_nombres?.[p] || rewardConfig?.title || (p === 'trufa' ? 'CHOCOLATE AMARGO' : p === 'choco' ? 'TRUFAS DE CHOCOLATE' : p === 'cupon2' ? 'GESTO 2%' : p === 'choco3' ? 'GESTO 3%' : p === 'cupon4' ? 'GESTO 4%' : p.startsWith('PREMIO_') ? 'CUPÓN DESCATALOGADO' : p.toUpperCase());
                                                         
                                                         let expiresStr = '';
                                                         let isExpired = false;
-                                                        const validityDays = rewardConfig?.validity_days || 14;
-                                                        if (dateObj) {
-                                                            const expiresDate = new Date(dateObj.getTime() + validityDays * 24 * 60 * 60 * 1000);
+                                                        if (rewardConfig?.validity_days && dateObj) {
+                                                            const expiresDate = new Date(dateObj.getTime() + rewardConfig.validity_days * 24 * 60 * 60 * 1000);
                                                             expiresStr = expiresDate.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                                                             isExpired = new Date() > expiresDate;
                                                         }
