@@ -200,7 +200,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ShoppingCart, label: 'Ingresar Compra', path: '/compras/recepciones', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
                     { icon: History, label: 'Ingreso Histórico', path: '/compras/historico', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: ClipboardList, label: 'Historial Ingresos', path: '/compras/historial', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
-                    { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: 'DESCUENTOS_AVANZADOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+                    { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
                 ]
             },
