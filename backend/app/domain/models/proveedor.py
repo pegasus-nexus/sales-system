@@ -1,9 +1,16 @@
 from typing import Optional
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 
-class Proveedor(Document):
+from app.domain.models.base import SoftDeleteMixin
+
+
+class Proveedor(Document, SoftDeleteMixin):
+    """
+    Supplier / vendor catalog.
+    Soft-delete via SoftDeleteMixin: sets is_active=False, deleted_at, deleted_by.
+    """
     tenant_id: str
     nombre: str  # Nombre de la empresa o proveedor
     contacto_nombre: Optional[str] = None  # Persona de contacto
@@ -13,8 +20,7 @@ class Proveedor(Document):
     direccion: Optional[str] = None
     tipo_insumos: Optional[str] = None  # Ej: "Materia Prima", "Embalajes", "Servicios"
     notas: Optional[str] = None
-    is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "proveedores"
