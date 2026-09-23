@@ -111,13 +111,18 @@ class CompraService:
                         continue
                     almacen_id = "default"
                     
-                    inventario = await Inventario.find_one(
-                        Inventario.tenant_id == reception.tenant_id,
-                        Inventario.sucursal_id == reception.sucursal_id,
-                        Inventario.almacen_id == almacen_id,
-                        Inventario.producto_id == item.producto_id,
-                        session=session
-                    )
+                    # Fix: Prevenir duplicados manejando correctamente almacen_id nulos o faltantes
+                    inv_query = {
+                        "tenant_id": reception.tenant_id,
+                        "sucursal_id": reception.sucursal_id,
+                        "producto_id": item.producto_id,
+                    }
+                    if almacen_id == "default":
+                        inv_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
+                    else:
+                        inv_query["almacen_id"] = almacen_id
+
+                    inventario = await Inventario.find_one(inv_query, session=session)
                     
                     stock_previo = inventario.cantidad if inventario else 0.0
                     nuevo_stock = stock_previo + item.cantidad_recibida

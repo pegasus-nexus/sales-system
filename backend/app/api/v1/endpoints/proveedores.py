@@ -137,12 +137,12 @@ async def eliminar_proveedor(
 ):
     tenant_id = current_user.tenant_id or "default"
     proveedor = await Proveedor.get(proveedor_id)
-    
+
     if not proveedor or proveedor.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-        
-    proveedor.is_active = False
-    await proveedor.save()
+
+    # Soft-delete: records who deleted and when for full audit trail
+    await proveedor.soft_delete(deleted_by=str(current_user.id))
     return {"message": "Proveedor desactivado exitosamente"}
 @router.post("/admin/migrate", response_model=dict)
 async def migrate_proveedores(current_user: User = Depends(get_current_active_user)):

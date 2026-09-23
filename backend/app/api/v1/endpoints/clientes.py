@@ -100,11 +100,18 @@ async def crear_cliente(
 ):
     tenant_id = current_user.tenant_id or "default"
     
-    # Optional NIT uniqueness check per tenant
+    # Optional NIT uniqueness check per tenant — only among active clients
     if data.nit_ci:
-        existing = await Cliente.find_one(Cliente.tenant_id == tenant_id, Cliente.nit_ci == data.nit_ci)
+        existing = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.nit_ci == data.nit_ci,
+            Cliente.is_active == True  # noqa: E712 — ignore deleted clients
+        )
         if existing:
-            raise HTTPException(status_code=400, detail="Ya existe un cliente con este NIT/CI.")
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un cliente activo con este NIT/CI."
+            )
 
     cliente = Cliente(
         tenant_id=tenant_id,

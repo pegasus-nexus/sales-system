@@ -62,7 +62,7 @@ async def get_inventario(
     if almacen_id == "default":
         lookup_match["$or"] = [
             {"almacen_id": "default"},
-            {"almacen_id": {"$exists": False}}
+            {"almacen_id": {"$exists": False}}, {"almacen_id": None}
         ]
     else:
         lookup_match["almacen_id"] = almacen_id
@@ -180,7 +180,7 @@ async def ajustar_inventario(
     # Check if a document exists (with or without almacen_id for default)
     search_query = dict(base_query)
     if almacen_id == "default":
-        search_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+        search_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
     else:
         search_query["almacen_id"] = almacen_id
         
@@ -346,7 +346,7 @@ async def ajustar_inventario_masivo(
             "producto_id": {"$in": [a.producto_id for a in ajustes_permitidos]}
         }
         if req.almacen_id == "default":
-            inventario_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+            inventario_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
         else:
             inventario_query["almacen_id"] = req.almacen_id
 
