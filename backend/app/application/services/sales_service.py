@@ -47,11 +47,11 @@ class SalesService:
                 sale.created_at = nueva_fecha
                 await sale.save(session=session)
                 
-                await SaleItemAnalytics.find(SaleItemAnalytics.sale_id == sale_id, session=session).update({"": {"sale_date": nueva_fecha}}, session=session)
+                await SaleItemAnalytics.find(SaleItemAnalytics.sale_id == sale_id, session=session).update({"$set": {"sale_date": nueva_fecha}}, session=session)
                 
-                await InventoryLog.find(InventoryLog.referencia_id == sale_id, session=session).update({"": {"created_at": nueva_fecha}}, session=session)
+                await InventoryLog.find(InventoryLog.referencia_id == sale_id, session=session).update({"$set": {"created_at": nueva_fecha}}, session=session)
                 
-                await CajaMovimiento.find(CajaMovimiento.sale_id == sale_id, session=session).update({"": {"fecha": nueva_fecha, "created_at": nueva_fecha}}, session=session)
+                await CajaMovimiento.find(CajaMovimiento.sale_id == sale_id, session=session).update({"$set": {"fecha": nueva_fecha, "created_at": nueva_fecha}}, session=session)
                 
         return sale
 
