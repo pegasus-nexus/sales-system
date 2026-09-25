@@ -33,6 +33,31 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     return `${year}-${month}-${day}`;
 };
 
+const getFormattedDateLong = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dayName = dt.toLocaleDateString('es-BO', { weekday: 'short' });
+    const monthName = dt.toLocaleDateString('es-BO', { month: 'short' });
+    return `${dayName}, ${d} ${monthName} ${y}`;
+};
+
+const getAlignmentHistoryText = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    
+    const d2026 = new Date(y, m - 1, d);
+    const str2026 = `${d2026.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${d2026.toLocaleDateString('es-BO', { month: 'short' })} ${y}`;
+    
+    const d2025 = new Date(y - 1, m - 1, d);
+    const str2025 = `${d2025.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${d2025.toLocaleDateString('es-BO', { month: 'short' })} ${y - 1}`;
+    
+    const d2024 = new Date(y - 2, m - 1, d);
+    const str2024 = `${d2024.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${d2024.toLocaleDateString('es-BO', { month: 'short' })} ${y - 2}`;
+    
+    return `${str2026} vs ${str2025} vs ${str2024}`;
+};
+
 interface HourlyMultiYearData {
     hora: string;
     hourNum: number;
@@ -247,15 +272,15 @@ export const BIComparativasView: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600">
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">FECHA ANALIZADA</span>
-                        <strong className="text-slate-900 text-sm font-black">31 ago 2026</strong>
+                        <strong className="text-slate-900 text-sm font-black capitalize">{getFormattedDateLong(startDate)}</strong>
                     </div>
 
                     <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
 
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">ALINEACIÓN HISTÓRICA</span>
-                        <span className="text-indigo-700 font-black">
-                            Lun 31 ago 2026 <span className="text-slate-400">vs</span> Lun 1 sept 2025 <span className="text-slate-400">vs</span> Lun 2 sept 2024
+                        <span className="text-indigo-700 font-black capitalize">
+                            {getAlignmentHistoryText(startDate)}
                         </span>
                     </div>
                 </div>
@@ -268,9 +293,19 @@ export const BIComparativasView: React.FC = () => {
                         Hoy
                     </button>
 
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
-                        <Calendar size={14} className="text-slate-400" />
-                        <span>lun, 31 ago 2026</span>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl text-xs font-bold text-slate-700">
+                        <Calendar size={14} className="text-indigo-600 shrink-0" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setStartDate(e.target.value);
+                                    setEndDate(e.target.value);
+                                }
+                            }}
+                            className="bg-transparent font-black text-slate-900 focus:outline-none cursor-pointer text-xs"
+                        />
                     </div>
 
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
@@ -354,8 +389,19 @@ export const BIComparativasView: React.FC = () => {
                             <Clock size={18} className="text-indigo-600" />
                             <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
-                        <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Trayectoria armónica: <strong className="text-indigo-600">🟣 2026 (Índigo Ejecutivo)</strong> | <strong className="text-sky-500">🩵 2025 (Cian Fresco)</strong> | <strong className="text-slate-400">🩶 2024 (Slate Neutro)</strong>
+                        <p className="text-xs text-slate-400 font-bold mt-0.5 flex flex-wrap items-center gap-2">
+                            <span>Trayectoria armónica:</span>
+                            <span className="inline-flex items-center gap-1.5 text-indigo-600 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block shadow-2xs"></span> 2026 (Índigo Ejecutivo)
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="inline-flex items-center gap-1.5 text-cyan-600 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> 2025 (Cian Fresco)
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="inline-flex items-center gap-1.5 text-slate-500 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-2xs"></span> 2024 (Slate Neutro)
+                            </span>
                         </p>
                     </div>
 
@@ -489,12 +535,12 @@ export const BIComparativasView: React.FC = () => {
                                             {/* 2025 (Cian Fresco) */}
                                             <div
                                                 style={{ height: `${h2025Pct}%` }}
-                                                className="w-3 bg-sky-400 rounded-t-sm transition-all group-hover:bg-sky-500 shadow-xs"
+                                                className="w-3 bg-cyan-500 rounded-t-sm transition-all group-hover:bg-cyan-600 shadow-xs"
                                             ></div>
                                             {/* 2024 (Slate Neutro) */}
                                             <div
                                                 style={{ height: `${h2024Pct}%` }}
-                                                className="w-3 bg-slate-300 rounded-t-sm transition-all group-hover:bg-slate-400 shadow-xs"
+                                                className="w-3 bg-slate-400 rounded-t-sm transition-all group-hover:bg-slate-500 shadow-xs"
                                             ></div>
                                         </div>
                                     );
@@ -532,7 +578,7 @@ export const BIComparativasView: React.FC = () => {
                                         <path
                                             d={line2025.pathD}
                                             fill="none"
-                                            stroke="#0EA5E9"
+                                            stroke="#06B6D4"
                                             strokeWidth="3.5"
                                             strokeLinecap="round"
                                         />
@@ -559,7 +605,7 @@ export const BIComparativasView: React.FC = () => {
                                     {/* NODOS 2025 */}
                                     {line2025.points.map((pt, i) => (
                                         pt.val > 0 && (
-                                            <circle key={`p25-${i}`} cx={pt.x} cy={pt.y} r="5.5" fill="#0EA5E9" stroke="#FFFFFF" strokeWidth="2" />
+                                            <circle key={`p25-${i}`} cx={pt.x} cy={pt.y} r="5.5" fill="#06B6D4" stroke="#FFFFFF" strokeWidth="2" />
                                         )
                                     ))}
 
@@ -631,11 +677,23 @@ export const BIComparativasView: React.FC = () => {
                             <thead>
                                 <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
                                     <th className="py-3 px-3">🕒 Hora</th>
-                                    <th className="py-3 px-3 text-right text-indigo-900">🟣 2026 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-indigo-900">🎟️ 2026 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-sky-900">🩵 2025 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-sky-900">🎫 2025 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-slate-700">🩶 2024 (Bs.)</th>
+                                    <th className="py-3 px-3 text-right text-indigo-900">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-indigo-600 inline-block"></span> 2026 (Bs.)
+                                        </span>
+                                    </th>
+                                    <th className="py-3 px-3 text-right text-indigo-900 font-black">🎟️ 2026 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-cyan-900">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block"></span> 2025 (Bs.)
+                                        </span>
+                                    </th>
+                                    <th className="py-3 px-3 text-right text-cyan-900 font-black">🎫 2025 (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-slate-700">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> 2024 (Bs.)
+                                        </span>
+                                    </th>
                                     <th className="py-3 px-3 text-center">📈 Var. 26 vs 25</th>
                                     <th className="py-3 px-3 text-center">📊 Var. 26 vs 24</th>
                                 </tr>
