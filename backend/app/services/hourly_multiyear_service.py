@@ -34,7 +34,35 @@ async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) 
         if res_live and sum(res_live.values()) > 0:
             return res_live
 
-    # 2. Para años anteriores o si no hay datos en vivo, consultar db.ventas_historicas_crudas
+    # 2. Para años históricos (<= 2025), consultar HistoricalFactsService limpio con hora exacta de Bolivia
+    try:
+        from app.application.services.historical_facts_service import HistoricalFactsService
+        sales = HistoricalFactsService.get_sales_for_date_range(d_str, d_str, sucursal)
+        if sales:
+            hourly_map: Dict[int, float] = {}
+            for s in sales:
+                h = s.get("hora_bolivia")
+                if h is None:
+                    c_at = s.get("created_at")
+                    if isinstance(c_at, datetime):
+                        if c_at.tzinfo is not None:
+                            from app.core.config import BUSINESS_TIMEZONE
+                            from zoneinfo import ZoneInfo
+                            h = c_at.astimezone(ZoneInfo(BUSINESS_TIMEZONE)).hour
+                        else:
+                            from zoneinfo import ZoneInfo
+                            from app.core.config import BUSINESS_TIMEZONE
+                            h = c_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo(BUSINESS_TIMEZONE)).hour
+                    else:
+                        h = 12
+                h_int = int(h)
+                hourly_map[h_int] = round(hourly_map.get(h_int, 0.0) + float(s.get("total", 0.0)), 2)
+            if sum(hourly_map.values()) > 0:
+                return hourly_map
+    except Exception as err:
+        print(f"Error en HistoricalFactsService para {d_str}: {err}")
+
+    # 3. Fallback a db.ventas_historicas_crudas (sin doble resta de timezone)
     db = await get_raw_db()
     start_hist = datetime(d.year, d.month, d.day, 0, 0, 0)
     end_hist = datetime(d.year, d.month, d.day, 23, 59, 59)
@@ -59,7 +87,7 @@ async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) 
         {
             "$project": {
                 "monto": {"$toDouble": "$monto_total_bs"},
-                "hour": {"$hour": {"date": "$fecha_transaccion", "timezone": "-04:00"}}
+                "hour": {"$hour": "$fecha_transaccion"}
             }
         },
         {"$match": {"monto": {"$gt": 0}}},
@@ -79,28 +107,6 @@ async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) 
             return res_map
     except Exception as e:
         print(f"Error consultando ventas_historicas_crudas: {e}")
-
-    # 3. Fallback unificado a HistoricalFactsService (datos limpios sin pruebas sintéticas)
-    try:
-        from app.application.services.historical_facts_service import HistoricalFactsService
-        sales = HistoricalFactsService.get_sales_for_date_range(d_str, d_str, sucursal)
-        if sales:
-            hourly_map: Dict[int, float] = {}
-            for s in sales:
-                c_at = s.get("created_at")
-                if isinstance(c_at, datetime):
-                    if c_at.tzinfo is not None:
-                        from app.core.config import BUSINESS_TIMEZONE
-                        from zoneinfo import ZoneInfo
-                        h = c_at.astimezone(ZoneInfo(BUSINESS_TIMEZONE)).hour
-                    else:
-                        h = c_at.hour
-                else:
-                    h = 12
-                hourly_map[h] = round(hourly_map.get(h, 0.0) + float(s.get("total", 0.0)), 2)
-            return hourly_map
-    except Exception as err:
-        print(f"Error en fallback HistoricalFactsService: {err}")
 
     return {}
 

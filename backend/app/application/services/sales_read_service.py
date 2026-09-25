@@ -189,11 +189,20 @@ class SalesReadService:
                     doc_date_str = fecha_b[:10]
                 elif isinstance(created_raw, datetime):
                     if created_raw.tzinfo is None:
-                        doc_date_str = created_raw.strftime("%Y-%m-%d")
+                        created_aware = created_raw.replace(tzinfo=ZoneInfo("UTC")).astimezone(BOLIVIA_TZ)
+                        doc_date_str = created_aware.strftime("%Y-%m-%d")
                     else:
                         doc_date_str = created_raw.astimezone(BOLIVIA_TZ).strftime("%Y-%m-%d")
                 elif isinstance(created_raw, str) and len(created_raw) >= 10:
-                    doc_date_str = created_raw[:10]
+                    try:
+                        import pandas as pd
+                        dt_p = pd.to_datetime(created_raw)
+                        if getattr(dt_p, "tzinfo", None) is None:
+                            doc_date_str = dt_p.tz_localize("UTC").tz_convert(BOLIVIA_TZ).strftime("%Y-%m-%d")
+                        else:
+                            doc_date_str = dt_p.tz_convert(BOLIVIA_TZ).strftime("%Y-%m-%d")
+                    except Exception:
+                        doc_date_str = created_raw[:10]
 
                 if doc_date_str and not (start_date_str <= doc_date_str <= end_date_str):
                     continue

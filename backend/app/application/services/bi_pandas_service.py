@@ -37,24 +37,42 @@ def _normalize_df_datetimes(df: pd.DataFrame) -> pd.DataFrame:
     def extract_bolivia_dt(row):
         c = row.get("created_at")
         fb = row.get("fecha_bolivia")
+        hb = row.get("hora_bolivia")
+
+        # 1. Si ya tiene fecha y hora Bolivia explícita, usarla
+        if isinstance(fb, str) and len(fb) >= 10 and hb is not None:
+            try:
+                h_int = int(hb)
+                d = datetime.strptime(fb[:10], "%Y-%m-%d")
+                return d.replace(hour=h_int, minute=0, second=0, tzinfo=BOLIVIA_TZ)
+            except Exception:
+                pass
+
+        # 2. Si c es un datetime de Python
         if isinstance(c, datetime):
             if c.tzinfo is None:
-                return c.replace(tzinfo=BOLIVIA_TZ)
+                # Los datetimes devueltos por PyMongo/Motor son naive en UTC -> asignar UTC y convertir a Bolivia
+                return c.replace(tzinfo=ZoneInfo("UTC")).astimezone(BOLIVIA_TZ)
             return c.astimezone(BOLIVIA_TZ)
+
+        # 3. Si c es un string ISO
         elif isinstance(c, str):
             try:
                 dt_p = pd.to_datetime(c)
                 if getattr(dt_p, "tzinfo", None) is None:
-                    return dt_p.tz_localize(BOLIVIA_TZ)
+                    return dt_p.tz_localize("UTC").tz_convert(BOLIVIA_TZ)
                 return dt_p.tz_convert(BOLIVIA_TZ)
             except Exception:
                 pass
+
+        # 4. Fallback con fecha_bolivia
         if isinstance(fb, str) and len(fb) >= 10:
             try:
                 d = datetime.strptime(fb[:10], "%Y-%m-%d")
                 return d.replace(hour=12, minute=0, second=0, tzinfo=BOLIVIA_TZ)
             except Exception:
                 pass
+
         return datetime.now(BOLIVIA_TZ)
 
     df["created_at_bolivia"] = df.apply(extract_bolivia_dt, axis=1)
