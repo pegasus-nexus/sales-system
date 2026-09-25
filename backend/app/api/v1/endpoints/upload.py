@@ -23,11 +23,33 @@ def clean_col_name(c) -> str:
     text = unicodedata.normalize('NFKD', str(c)).encode('ASCII', 'ignore').decode('utf-8').upper()
     return ''.join(ch for ch in text if ch.isalnum())
 
+def is_null_val(v: Any) -> bool:
+    if v is None:
+        return True
+    if isinstance(v, (list, tuple, pd.Series, pd.DataFrame)):
+        return len(v) == 0
+    try:
+        r = pd.isna(v)
+        if isinstance(r, (pd.Series, list, tuple)):
+            return bool(all(r))
+        if hasattr(r, '__iter__') and not isinstance(r, (str, bytes)):
+            return bool(all(r))
+        return bool(r)
+    except Exception:
+        return False
+
 def safe_num(val, default=0.0) -> float:
-    if val is None or pd.isna(val):
+    if is_null_val(val):
         return default
     if isinstance(val, (int, float)):
         return float(val)
+    if isinstance(val, (pd.Series, list, tuple)):
+        try:
+            if len(val) == 0:
+                return default
+            val = val.iloc[0] if hasattr(val, 'iloc') else val[0]
+        except Exception:
+            return default
     try:
         s = str(val).strip().replace(',', '.')
         return float(s)
@@ -137,21 +159,25 @@ async def importar(
             # Mapeo estricto sin duplicados
             col_map = get_unique_column_mapping(df_item.columns)
             df_renamed = df_item.rename(columns=col_map)
+            df_renamed = df_renamed.loc[:, ~df_renamed.columns.duplicated(keep='first')].copy()
             
-            # Deduplicar columnas si existieran
-            df_renamed = df_renamed.loc[:, ~df_renamed.columns.duplicated(keep='first')]
+            # Construcción 100% 1D garantizada
+            extracted_cols = {}
+            for target_col in ['FECHA', 'DESCRIPCION', 'CODIGO', 'CANTIDAD', 'PRECIO_UNITARIO', 'TOTAL']:
+                if target_col in df_renamed.columns:
+                    c_data = df_renamed[target_col]
+                    if isinstance(c_data, pd.DataFrame):
+                        c_data = c_data.iloc[:, 0]
+                    extracted_cols[target_col] = c_data
             
-            # Mantener solo columnas mapeadas conocidas para evitar ambigüedad de Series
-            keep_cols = [col for col in ['FECHA', 'DESCRIPCION', 'CODIGO', 'CANTIDAD', 'PRECIO_UNITARIO', 'TOTAL'] if col in df_renamed.columns]
-            if len(keep_cols) >= 2:
-                processed_dfs.append(df_renamed[keep_cols])
+            if len(extracted_cols) >= 2:
+                processed_dfs.append(pd.DataFrame(extracted_cols))
 
         if not processed_dfs:
             raise ValueError("El archivo subido está vacío o no contiene hojas válidas.")
 
         df_completo = pd.concat(processed_dfs, ignore_index=True)
-        # Deduplicar columnas en el DataFrame consolidado
-        df_completo = df_completo.loc[:, ~df_completo.columns.duplicated(keep='first')]
+        df_completo = df_completo.loc[:, ~df_completo.columns.duplicated(keep='first')].copy()
         
         total_original_filas = len(df_completo)
         print(f"[OK] Archivo leído y unificado. Filas crudas: {total_original_filas}")
@@ -160,7 +186,11 @@ async def importar(
             columnas_detectadas = [str(c) for c in df_completo.columns]
             raise ValueError(f"No se pudieron detectar las columnas requeridas ('FECHA' y 'DESCRIPCION'). Columnas detectadas: {columnas_detectadas}")
 
-        df_completo = df_completo.dropna(subset=['DESCRIPCION'])
+        # Limpieza de nulos en DESCRIPCION
+        desc_col = df_completo['DESCRIPCION']
+        if isinstance(desc_col, pd.DataFrame):
+            desc_col = desc_col.iloc[:, 0]
+        df_completo = df_completo[desc_col.notna()].copy()
         
         # Parseo robusto de fechas con verificación escalar segura
         fecha_series = df_completo['FECHA']
@@ -173,7 +203,10 @@ async def importar(
             parsed_fechas = pd.to_datetime(fecha_series, errors='coerce', dayfirst=True)
 
         df_completo['FECHA'] = parsed_fechas
-        df_completo = df_completo.dropna(subset=['FECHA'])
+        fechas_clean = df_completo['FECHA']
+        if isinstance(fechas_clean, pd.DataFrame):
+            fechas_clean = fechas_clean.iloc[:, 0]
+        df_completo = df_completo[fechas_clean.notna()].copy()
 
         # Extracción a lista de diccionarios planos (inmune a errores de Series de pandas)
         raw_records = df_completo.to_dict(orient='records')
@@ -181,7 +214,7 @@ async def importar(
         grupos_tickets: Dict[str, Dict[str, Any]] = {}
         for row in raw_records:
             f_val = row.get("FECHA")
-            if f_val is None or pd.isna(f_val):
+            if is_null_val(f_val):
                 continue
                 
             if hasattr(f_val, "strftime"):
@@ -196,12 +229,12 @@ async def importar(
             p_tot = safe_num(row.get("TOTAL"), default=(p_cant * p_precio))
             
             raw_cod = row.get("CODIGO")
-            p_cod = str(raw_cod).strip() if raw_cod is not None and not pd.isna(raw_cod) else "N/A"
+            p_cod = str(raw_cod).strip() if not is_null_val(raw_cod) else "N/A"
             if p_cod == "" or p_cod.lower() == "nan":
                 p_cod = "N/A"
                 
             raw_nom = row.get("DESCRIPCION")
-            p_nom = str(raw_nom).strip() if raw_nom is not None and not pd.isna(raw_nom) else "Producto sin nombre"
+            p_nom = str(raw_nom).strip() if not is_null_val(raw_nom) else "Producto sin nombre"
 
             item_obj = {
                 "producto_id": p_cod,
