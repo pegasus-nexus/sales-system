@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-    RefreshCw, Download, Settings, Database, Calendar, Building2,
-    TrendingUp, CheckCircle2, Clock, Sparkles, BarChart2, Lightbulb
+    RefreshCw, Download, Database, Building2,
+    Clock, Sparkles, Lightbulb
 } from 'lucide-react';
 
 import type { StoreKey, MetricKey } from './BenchmarkTypes';
@@ -126,195 +126,133 @@ export const BenchmarkYoYView: React.FC = () => {
     };
 
     return (
-        <div className="w-full space-y-4 font-sans text-slate-800">
-            {/* 1. CABECERA DEL MÓDULO */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="space-y-6 font-sans text-slate-800 w-full">
+            
+            {/* 1. CABECERA CON FILTROS E INFO SUPERIOR (ESTILO COMPARATIVAS BI) */}
+            <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-200/70 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600">
                     <div>
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 shrink-0">
-                                <BarChart2 className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                    <span>📊 Benchmark Histórico YoY</span>
-                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full border border-indigo-200">
-                                        Día Equivalente
-                                    </span>
-                                </h2>
-                                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                    Comparación del rendimiento actual frente al mismo día comercial del año anterior.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Chips informativos */}
-                        <div className="flex flex-wrap items-center gap-2 mt-3 text-xs font-semibold">
-                            {/* Sucursal Dropdown */}
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200/80 rounded-xl text-indigo-900 font-bold shadow-2xs">
-                                <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                <span className="text-slate-500 font-medium text-[11px]">Sucursal:</span>
-                                <select
-                                    value={selectedStore}
-                                    onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
-                                    className="bg-transparent text-indigo-950 font-black focus:outline-none cursor-pointer text-xs"
-                                >
-                                    <option value="consolidado">Todas las sucursales (Consolidado)</option>
-                                    <option value="heroinas">Heroínas (Cochabamba)</option>
-                                    <option value="recoleta">Recoleta (Cochabamba)</option>
-                                    <option value="calacoto">Calacoto (La Paz)</option>
-                                </select>
-                            </div>
-
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200/80 rounded-xl text-slate-700">
-                                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                                <span>Fecha analizada: <strong className="text-slate-900">31 Agosto 2026</strong></span>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">MÓDULO BENCHMARK</span>
+                        <strong className="text-slate-900 text-sm font-black flex items-center gap-2">
+                            <span>📊 Benchmark Histórico YoY</span>
+                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-xl border border-indigo-200">
+                                Día Equivalente
                             </span>
-
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200/80 rounded-xl text-slate-700">
-                                <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
-                                <span>Día comercial: <strong className="text-indigo-700">Lunes</strong></span>
-                            </span>
-
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-50 border border-purple-200/80 rounded-xl text-purple-900">
-                                <span>Comparación: <strong className="text-purple-950">01 Septiembre 2025 (Lunes equiv.)</strong></span>
-                            </span>
-
-                            <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-900">
-                                <Database className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Fuente: <strong className="font-mono text-emerald-950">MongoDB → sales</strong></span>
-                            </span>
-                        </div>
+                        </strong>
                     </div>
 
-                    {/* Botones de acción */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            onClick={handleRefresh}
-                            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all border border-slate-200 shadow-2xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-                            <span>Actualizar</span>
-                        </button>
+                    <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
 
-                        <button
-                            onClick={handleExport}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Exportar</span>
-                        </button>
-
-                        <button
-                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all shadow-xs flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                        >
-                            <Settings className="w-3.5 h-3.5" />
-                            <span>Configurar</span>
-                        </button>
+                    <div>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">FECHA ANALIZADA</span>
+                        <strong className="text-slate-900 text-sm font-black capitalize">Lunes, 31 de Agosto 2026</strong>
                     </div>
+
+                    <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+
+                    <div>
+                        <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">ALINEACIÓN DÍA COMERCIAL</span>
+                        <span className="text-indigo-700 font-black">
+                            Lunes 01/09/2025 (Mismo día comercial)
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Selector de Sucursal */}
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
+                        <Building2 size={14} className="text-indigo-600 shrink-0" />
+                        <select
+                            value={selectedStore}
+                            onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
+                            className="bg-transparent font-black text-slate-900 focus:outline-none cursor-pointer text-xs"
+                        >
+                            <option value="consolidado">Todas las Sucursales (Consolidado)</option>
+                            <option value="heroinas">Heroínas (Cochabamba)</option>
+                            <option value="recoleta">Recoleta (Cochabamba)</option>
+                            <option value="calacoto">Calacoto (La Paz)</option>
+                        </select>
+                    </div>
+
+                    <button
+                        onClick={handleRefresh}
+                        className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-2xl border border-slate-200/80 cursor-pointer shadow-xs transition-all"
+                    >
+                        <RefreshCw size={14} className={`text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+                        <span>Actualizar</span>
+                    </button>
+
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2 rounded-2xl cursor-pointer shadow-xs transition-all"
+                    >
+                        <Download size={14} />
+                        <span>Exportar</span>
+                    </button>
                 </div>
             </div>
 
-            {/* 6. DESGLOSE DE MÉTRICAS (METRIC TABS) */}
+            {/* 2. DESGLOSE DE MÉTRICAS (METRIC TABS) */}
             <BenchmarkMetricTabs
                 activeMetric={selectedMetric}
                 onChangeMetric={(metric) => setSelectedMetric(metric)}
             />
 
-            {/* 3. TARJETAS KPI SUPERIORES (4 CARDS COMPACTAS) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {/* CARD 1: VENTA ACTUAL */}
-                <div className="bg-indigo-600 text-white border border-indigo-700 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-indigo-100">
-                            VENTA ACTUAL (2026)
-                        </span>
-                        <span className="p-1 bg-white/20 rounded-lg">
-                            <BarChart2 className="w-3.5 h-3.5 text-white" />
-                        </span>
-                    </div>
-                    <div className="my-1.5">
-                        <div className="text-xl font-black font-mono tracking-tight">
-                            {metricYoYData.format(metricYoYData.val2026)}
-                        </div>
-                        <div className="text-[11px] font-semibold text-indigo-100 mt-0.5">
-                            Lunes 31 Agosto 2026
-                        </div>
+            {/* 3. BANNER SUPERIOR KPIS MULTIANUAL (FONDO PASTEL ELEGANTE Y DINÁMICO) */}
+            <div className="bg-gradient-to-r from-indigo-50/80 via-sky-50/70 to-slate-50/80 rounded-3xl p-6 border border-indigo-100/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+                
+                {/* AÑO ACTUAL */}
+                <div className="flex-1 pr-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">2026 (AÑO ACTUAL)</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-3xl font-black text-indigo-950">{metricYoYData.format(metricYoYData.val2026)}</h2>
+                        <span className="text-xs font-bold text-slate-500">Lunes 31 Ago</span>
                     </div>
                 </div>
 
-                {/* CARD 2: MISMO DÍA AÑO ANTERIOR */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                            MISMO DÍA AÑO ANTERIOR
-                        </span>
-                        <span className="p-1 bg-slate-100 rounded-lg text-slate-600">
-                            <Calendar className="w-3.5 h-3.5" />
-                        </span>
-                    </div>
-                    <div className="my-1.5">
-                        <div className="text-xl font-black text-slate-700 font-mono tracking-tight">
-                            {metricYoYData.format(metricYoYData.val2025)}
-                        </div>
-                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5">
-                            Lunes 01 Septiembre 2025
-                        </div>
-                    </div>
-                </div>
-
-                {/* CARD 3: VARIACIÓN YoY */}
-                <div className={`border rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between ${
-                    metricYoYData.isPositive
-                        ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-950'
-                        : 'bg-rose-50/70 border-rose-200/80 text-rose-950'
-                }`}>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-wider">
-                            VARIACIÓN YoY
-                        </span>
-                        <span className={`p-1 rounded-lg ${
-                            metricYoYData.isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                            <TrendingUp className={`w-3.5 h-3.5 ${metricYoYData.isPositive ? '' : 'rotate-180'}`} />
-                        </span>
-                    </div>
-                    <div className="my-1.5">
-                        <div className={`text-xl font-black font-mono tracking-tight ${
-                            metricYoYData.isPositive ? 'text-emerald-700' : 'text-rose-700'
+                {/* HACE 1 AÑO */}
+                <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-sky-900 uppercase tracking-wider block">2025 (AÑO ANTERIOR)</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-2xl font-black text-sky-950">{metricYoYData.format(metricYoYData.val2025)}</h2>
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-xl border inline-flex items-center gap-1 ${
+                            metricYoYData.isPositive
+                                ? 'text-emerald-800 bg-emerald-100/90 border-emerald-200/80'
+                                : 'text-rose-800 bg-rose-100/90 border-rose-200/80'
                         }`}>
                             {metricYoYData.isPositive ? '▲ +' : '▼ '}{metricYoYData.diffPct.toFixed(1)}%
-                        </div>
-                        <div className="text-[11px] font-bold mt-0.5">
-                            {metricYoYData.isPositive ? '+' : '-'}{metricYoYData.diffFormat(metricYoYData.diffVal)} vs año anterior
-                        </div>
+                        </span>
                     </div>
+                    <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Lunes 01 Sept (Equiv.)</span>
                 </div>
 
-                {/* CARD 4: ESTADO DEL NEGOCIO */}
-                <div className="bg-white border-2 border-indigo-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black text-indigo-900 uppercase tracking-wider">
-                            ESTADO DEL NEGOCIO
-                        </span>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                {/* VARIACIÓN NETA */}
+                <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">DIFERENCIA NETA YoY</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className={`text-2xl font-black ${metricYoYData.isPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {metricYoYData.isPositive ? '+' : '-'}{metricYoYData.diffFormat(metricYoYData.diffVal)}
+                        </h2>
                     </div>
-                    <div className="my-1.5">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-black">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>🟢 Mejor rendimiento histórico</span>
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-bold mt-1">
-                            Superior al año anterior
-                        </div>
+                    <span className="text-[10px] font-bold text-slate-400 block mt-0.5">vs Mismo Día Comercial</span>
+                </div>
+
+                {/* ESTADO */}
+                <div className="flex-1 pl-0 md:pl-4">
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">ESTADO COMERCIAL</span>
+                    <div className="mt-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/90 border border-emerald-200/80 rounded-xl text-xs font-black text-emerald-900">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                            <span>🟢 Superior al año anterior</span>
+                        </span>
                     </div>
                 </div>
             </div>
 
             {/* 4. GRÁFICO PRINCIPAL & 5. TABLA HISTÓRICA */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* 4. GRÁFICO PRINCIPAL (COMPARACIÓN BARRAS HORIZONTALES) */}
-                <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-3xl p-5 shadow-2xs space-y-4">
+                <div className="lg:col-span-7 bg-white border border-slate-200/70 rounded-3xl p-6 shadow-xs space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
                             <h3 className="text-sm font-black text-slate-900 tracking-tight">
@@ -334,7 +272,7 @@ export const BenchmarkYoYView: React.FC = () => {
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs font-bold text-slate-600">
                                 <span>Año Anterior (Lunes 01/09/2025)</span>
-                                <span className="font-mono text-slate-800">{metricYoYData.format(metricYoYData.val2025)}</span>
+                                <span className="font-mono text-slate-800 font-bold">{metricYoYData.format(metricYoYData.val2025)}</span>
                             </div>
                             <div className="w-full bg-slate-100 h-7 rounded-xl overflow-hidden p-1 border border-slate-200/80">
                                 <div
@@ -363,16 +301,16 @@ export const BenchmarkYoYView: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 text-xs text-slate-600 flex items-center justify-between font-medium">
-                        <span>Diferencia Neta en Valor:</span>
-                        <strong className={`font-mono text-xs ${metricYoYData.isPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-xs text-slate-600 flex items-center justify-between font-medium">
+                        <span className="font-bold text-slate-700">Diferencia Neta en Valor:</span>
+                        <strong className={`font-mono text-xs font-black ${metricYoYData.isPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
                             {metricYoYData.isPositive ? '+' : '-'}{metricYoYData.diffFormat(metricYoYData.diffVal)}
                         </strong>
                     </div>
                 </div>
 
                 {/* 5. EVOLUCIÓN HISTÓRICA DEL MISMO DÍA (TABLA) */}
-                <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-3xl p-5 shadow-2xs space-y-3">
+                <div className="lg:col-span-5 bg-white border border-slate-200/70 rounded-3xl p-6 shadow-xs space-y-4">
                     <div className="border-b border-slate-100 pb-2">
                         <h3 className="text-sm font-black text-slate-900 tracking-tight">
                             Histórico de Lunes Equivalentes
@@ -426,8 +364,8 @@ export const BenchmarkYoYView: React.FC = () => {
                 </div>
             </div>
 
-            {/* 7. PANEL DE INTERPRETACIÓN IA */}
-            <div className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-5 shadow-md flex items-start gap-4">
+            {/* 6. PANEL DE INTERPRETACIÓN IA */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-xs flex items-start gap-4">
                 <div className="p-3 bg-white/10 border border-white/20 rounded-2xl text-amber-300 shrink-0">
                     <Sparkles className="w-6 h-6 animate-pulse" />
                 </div>
@@ -450,8 +388,8 @@ export const BenchmarkYoYView: React.FC = () => {
                 </div>
             </div>
 
-            {/* 8. PIE DEL COMPONENTE */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-1">
+            {/* 7. PIE DEL COMPONENTE */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-3 border-t border-slate-200/80 px-2">
                 <div className="flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                     <span>Última actualización: <strong>{currentTimestamp}</strong></span>
