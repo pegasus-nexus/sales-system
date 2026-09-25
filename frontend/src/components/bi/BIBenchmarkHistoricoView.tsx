@@ -220,13 +220,13 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     };
 
     return (
-        <div className="space-y-4 font-sans text-slate-800 w-full">
-            {/* VISTA MODE SELECTOR TABS */}
-            <div className="flex items-center justify-between bg-white border border-slate-200/90 p-2 rounded-2xl shadow-2xs">
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+        <div className="space-y-6 font-sans text-slate-800 w-full">
+            {/* VISTA MODE SELECTOR TABS (ESTILO COMPARATIVAS BI) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200/70 p-3 rounded-3xl shadow-xs gap-3">
+                <div className="flex items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl">
                     <button
                         onClick={() => setViewMode('yoy')}
-                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
                             viewMode === 'yoy'
                                 ? 'bg-indigo-600 text-white shadow-xs'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -236,7 +236,7 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     </button>
                     <button
                         onClick={() => setViewMode('percentiles')}
-                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
                             viewMode === 'percentiles'
                                 ? 'bg-indigo-600 text-white shadow-xs'
                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -246,8 +246,8 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="text-xs font-bold text-slate-500 hidden sm:block px-3">
-                    Modo seleccionado: <strong className="text-indigo-900">{viewMode === 'yoy' ? 'YoY Día Comercial' : '365 Días Móviles'}</strong>
+                <div className="text-xs font-bold text-slate-500 px-3">
+                    Modo seleccionado: <strong className="text-indigo-900 font-black">{viewMode === 'yoy' ? 'YoY Día Comercial' : '365 Días Móviles'}</strong>
                 </div>
             </div>
 
@@ -255,9 +255,9 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             {viewMode === 'yoy' ? (
                 <BenchmarkYoYView />
             ) : (
-                <div className="space-y-5 bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
+                <div className="space-y-6 w-full">
                     {/* 1. ENCABEZADO SUPERIOR Y BOTONES DE ACCIÓN */}
-                    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4">
+                    <div className="bg-white border border-slate-200/70 rounded-3xl p-6 shadow-xs space-y-4">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2.5">

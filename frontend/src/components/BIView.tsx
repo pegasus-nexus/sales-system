@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     BarChart3, Clock, RefreshCw, Download, Maximize2, Settings,
     Activity, TrendingUp, Sparkles, DollarSign, Package,
-    Boxes, Crown, Users, Building2, UserCheck, Tag, History
+    Boxes, Crown, Users, Building2, UserCheck, Tag, History, UploadCloud
 } from 'lucide-react';
 import { BIPanelGeneralView } from './bi/BIPanelGeneralView';
 import { BIComparativasView } from './bi/BIComparativasView';
@@ -16,6 +16,7 @@ import { BIEjecutivoView } from './bi/BIEjecutivoView';
 import { BIIAAnalyticaView } from './bi/BIIAAnalyticaView';
 import { BIDiagnosticoIAView } from './bi/BIDiagnosticoIAView';
 import { BIBenchmarkHistoricoView } from './bi/BIBenchmarkHistoricoView';
+import ImportadorInteligente from './DataImporterWizard';
 
 type ModuleId = 'panel' | 'rentabilidad' | 'catalogo' | 'inventario' | 'ia' | 'ejecutivo';
 
@@ -91,6 +92,7 @@ export default function BIView() {
     const [subTab, setSubTab] = useState<string>('default');
     const [isAnimating, setIsAnimating] = useState<boolean>(false);
     const [currentTime, setCurrentTime] = useState<string>('');
+    const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
     useEffect(() => {
         const updateClock = () => {
@@ -178,6 +180,15 @@ export default function BIView() {
                     >
                         <Download size={14} />
                         <span>Exportar</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-indigo-100 text-indigo-900 hover:text-indigo-600 shadow-xs transition-all cursor-pointer"
+                        title="Subir / Importar datos históricos de ventas"
+                    >
+                        <UploadCloud size={14} />
+                        <span>Importar</span>
                     </button>
 
                     <button
@@ -470,6 +481,21 @@ export default function BIView() {
                     )}
                 </div>
             </div>
+
+            {/* MODAL DE IMPORTACIÓN DE DATOS HISTÓRICOS */}
+            {showImportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-xl">
+                        <ImportadorInteligente
+                            isModal={true}
+                            onClose={() => setShowImportModal(false)}
+                            onSuccess={() => {
+                                // Dejar visible el resultado para confirmación visual
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
 
         </div>
     );

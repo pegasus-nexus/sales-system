@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Calendar, RefreshCw, Filter, Maximize2, RotateCcw, AlertTriangle,
-    Crown, DollarSign, Boxes, Tag, UserCheck, Building2, Info, PieChart
+    Crown, DollarSign, Boxes, Tag, UserCheck, Building2, Info, PieChart, UploadCloud
 } from 'lucide-react';
 import { getBIEjecutivoResumen, getBISucursales } from '../../api/biApi';
 import type { BIEjecutivoResumenResponse, BISucursalOption } from '../../api/biApi';
 import { BIStateBanner } from './common/BIStateBanner';
+import ImportadorInteligente from '../DataImporterWizard';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -52,6 +53,7 @@ export const BIEjecutivoView: React.FC = () => {
 
     const [data, setData] = useState<BIEjecutivoResumenResponse | null>(null);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [showImportModal, setShowImportModal] = useState<boolean>(false);
 
     const loadSucursales = async () => {
         try {
@@ -181,6 +183,14 @@ export const BIEjecutivoView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowImportModal(true)}
+                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-4 py-2.5 rounded-2xl transition-all shadow-xs active:scale-95 cursor-pointer"
+                        title="Importar Ventas Históricas"
+                    >
+                        <UploadCloud size={14} />
+                        <span>Importar</span>
+                    </button>
                     <button
                         onClick={() => fetchEjecutivoData(startDate, endDate, selectedSucursal)}
                         disabled={loading}
@@ -486,6 +496,21 @@ export const BIEjecutivoView: React.FC = () => {
                 title="Métricas Financieras de Egresos Fijos & Modelos Predictivos de IA"
                 message="Las métricas de EBITDA (gastos fijos operativos), Kardex continuo y pronósticos de Inteligencia Artificial están etiquetadas explícitamente como NO DISPONIBLES en MongoDB y se activarán en fases posteriores sin simular estimaciones ficticias."
             />
+
+            {/* MODAL DE IMPORTACIÓN DE DATOS HISTÓRICOS */}
+            {showImportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-xl">
+                        <ImportadorInteligente
+                            isModal={true}
+                            onClose={() => setShowImportModal(false)}
+                            onSuccess={() => {
+                                fetchEjecutivoData(startDate, endDate, selectedSucursal);
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
 
         </div>
     );

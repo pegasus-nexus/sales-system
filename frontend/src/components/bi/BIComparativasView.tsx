@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Calendar, RefreshCw, Filter,
     AlertTriangle, Store, Info, ArrowUpRight, ArrowDownRight, Minus,
     Clock, Download, AlertCircle, BarChart3, TrendingUp, Layers
 } from 'lucide-react';
-import { getBIComparativas, getBISucursales } from '../../api/biApi';
-import type { BIComparativaResponse, BISucursalOption } from '../../api/biApi';
+import { getBIComparativas, getBISucursales, getBIPanelGeneral } from '../../api/biApi';
+import type { BIComparativaResponse, BISucursalOption, BIPanelGeneralResponse } from '../../api/biApi';
 
 const formatBs = (num?: number) =>
     `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -31,6 +31,54 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
     const day = String(dateObj.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+};
+
+const getSameWeekdayPrevYearDateStr = (dateStr: string, yearsOffset: number): string => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    // Restar 52 semanas por año (364 días) para alinear exacto el mismo día comercial de la semana (ej. Viernes vs Viernes)
+    dateObj.setDate(dateObj.getDate() - (52 * yearsOffset * 7));
+
+    const yr = dateObj.getFullYear();
+    const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dy = String(dateObj.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${dy}`;
+};
+
+const getYearFromDateStr = (dateStr: string, yearsOffset: number = 0): number => {
+    if (!dateStr) return new Date().getFullYear() - yearsOffset;
+    const [y] = dateStr.split('-').map(Number);
+    return y - yearsOffset;
+};
+
+const getFormattedDateLong = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dayName = dt.toLocaleDateString('es-BO', { weekday: 'short' });
+    const monthName = dt.toLocaleDateString('es-BO', { month: 'short' });
+    return `${dayName}, ${d} ${monthName} ${y}`;
+};
+
+const getAlignmentHistoryText = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    
+    const dCur = new Date(y, m - 1, d);
+    const strCur = `${dCur.toLocaleDateString('es-BO', { weekday: 'short' })} ${dCur.getDate()} ${dCur.toLocaleDateString('es-BO', { month: 'short' })} ${dCur.getFullYear()}`;
+    
+    const d1AgoStr = getSameWeekdayPrevYearDateStr(dateStr, 1);
+    const [y1, m1, d1] = d1AgoStr.split('-').map(Number);
+    const d1Ago = new Date(y1, m1 - 1, d1);
+    const str1Ago = `${d1Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d1Ago.getDate()} ${d1Ago.toLocaleDateString('es-BO', { month: 'short' })} ${d1Ago.getFullYear()}`;
+    
+    const d2AgoStr = getSameWeekdayPrevYearDateStr(dateStr, 2);
+    const [y2, m2, d2] = d2AgoStr.split('-').map(Number);
+    const d2Ago = new Date(y2, m2 - 1, d2);
+    const str2Ago = `${d2Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d2Ago.getDate()} ${d2Ago.toLocaleDateString('es-BO', { month: 'short' })} ${d2Ago.getFullYear()}`;
+    
+    return `${strCur} vs ${str1Ago} vs ${str2Ago}`;
 };
 
 interface HourlyMultiYearData {
@@ -63,27 +111,39 @@ export const BIComparativasView: React.FC = () => {
 
     const [data, setData] = useState<BIComparativaResponse | null>(null);
 
-    // Datos multianuales desglosados coincidiendo con la maqueta
-    const allHourlyData: HourlyMultiYearData[] = [
-        { hora: '06:00', hourNum: 6, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
-        { hora: '07:00', hourNum: 7, v2026: 0, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
-        { hora: '08:00', hourNum: 8, v2026: 0, ord2026: 0, v2025: 350.00, ord2025: 4, v2024: 0, ord2024: 0 },
-        { hora: '09:00', hourNum: 9, v2026: 220.00, ord2026: 4, v2025: 450.00, ord2025: 5, v2024: 180.00, ord2024: 2 },
-        { hora: '10:00', hourNum: 10, v2026: 94.00, ord2026: 4, v2025: 230.00, ord2025: 3, v2024: 110.00, ord2024: 2 },
-        { hora: '11:00', hourNum: 11, v2026: 300.00, ord2026: 5, v2025: 800.00, ord2025: 9, v2024: 290.00, ord2024: 3 },
-        { hora: '12:00', hourNum: 12, v2026: 1050.00, ord2026: 12, v2025: 1930.00, ord2025: 18, v2024: 610.00, ord2024: 7 },
-        { hora: '13:00', hourNum: 13, v2026: 205.50, ord2026: 6, v2025: 1740.00, ord2025: 15, v2024: 680.00, ord2024: 8 },
-        { hora: '14:00', hourNum: 14, v2026: 0.00, ord2026: 0, v2025: 1020.00, ord2025: 10, v2024: 300.00, ord2024: 4 },
-        { hora: '15:00', hourNum: 15, v2026: 390.00, ord2026: 6, v2025: 1250.00, ord2025: 11, v2024: 150.00, ord2024: 2 },
-        { hora: '16:00', hourNum: 16, v2026: 310.00, ord2026: 4, v2025: 290.00, ord2025: 3, v2024: 0, ord2024: 0 },
-        { hora: '17:00', hourNum: 17, v2026: 170.00, ord2026: 3, v2025: 190.00, ord2025: 2, v2024: 0, ord2024: 0 },
-        { hora: '18:00', hourNum: 18, v2026: 220.00, ord2026: 4, v2025: 210.00, ord2025: 3, v2024: 0, ord2024: 0 },
-        { hora: '19:00', hourNum: 19, v2026: 345.00, ord2026: 6, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '20:00', hourNum: 20, v2026: 260.00, ord2026: 4, v2025: 250.00, ord2025: 3, v2024: 0, ord2024: 0 },
-        { hora: '21:00', hourNum: 21, v2026: 30.00, ord2026: 1, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0 },
-        { hora: '22:00', hourNum: 22, v2026: 0.00, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
-        { hora: '23:00', hourNum: 23, v2026: 0.00, ord2026: 0, v2025: 0, ord2025: 0, v2024: 0, ord2024: 0, isOffHours: true },
-    ];
+    // Paneles multianuales dinámicos para los 3 años seleccionados
+    const [multiYearPanels, setMultiYearPanels] = useState<{
+        panelCur: BIPanelGeneralResponse | null;
+        panel1Ago: BIPanelGeneralResponse | null;
+        panel2Ago: BIPanelGeneralResponse | null;
+    }>({ panelCur: null, panel1Ago: null, panel2Ago: null });
+
+    const currentYear = getYearFromDateStr(startDate, 0);
+    const year1Ago = getYearFromDateStr(startDate, 1);
+    const year2Ago = getYearFromDateStr(startDate, 2);
+
+    // Construcción dinámico-reactiva de datos multianuales por hora desde la API
+    const allHourlyData: HourlyMultiYearData[] = useMemo(() => {
+        const { panelCur, panel1Ago, panel2Ago } = multiYearPanels;
+        return Array.from({ length: 24 }, (_, h) => {
+            const horaStr = `${String(h).padStart(2, '0')}:00`;
+            const curHour = panelCur?.ventas_por_hora?.find(item => item.hora === h);
+            const p1Hour = panel1Ago?.ventas_por_hora?.find(item => item.hora === h);
+            const p2Hour = panel2Ago?.ventas_por_hora?.find(item => item.hora === h);
+
+            return {
+                hora: horaStr,
+                hourNum: h,
+                v2026: curHour?.ingresos || 0,
+                ord2026: curHour?.ordenes || 0,
+                v2025: p1Hour?.ingresos || 0,
+                ord2025: p1Hour?.ordenes || 0,
+                v2024: p2Hour?.ingresos || 0,
+                ord2024: p2Hour?.ordenes || 0,
+                isOffHours: h < 8 || h > 21
+            };
+        });
+    }, [multiYearPanels]);
 
     // Verificar si hay ventas atípicas fuera del horario comercial (08:00 - 21:00)
     const offHoursSalesCount = allHourlyData.filter(
@@ -100,6 +160,13 @@ export const BIComparativasView: React.FC = () => {
         }
         return true; // full
     });
+
+    // Escala del gráfico dinámica
+    const maxValCalculated = Math.max(
+        ...visibleHourlyData.flatMap(h => [h.v2026, h.v2025, h.v2024]),
+        100
+    );
+    const maxChartVal = Math.max(Math.ceil(maxValCalculated / 100) * 100, 500);
 
     // CÁLCULO DE PUNTOS Y RUTAS SVG MATEMÁTICAMENTE EXACTAS DE ALINEACIÓN POR HORA
     const generatePathAndPoints = (
@@ -129,7 +196,6 @@ export const BIComparativasView: React.FC = () => {
         return { pathD, points };
     };
 
-    const maxChartVal = 2000;
     const svgWidth = 1000;
     const svgHeight = 220;
 
@@ -150,8 +216,22 @@ export const BIComparativasView: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await getBIComparativas(sDate, eDate, compMode, sucId);
-            setData(res);
+            const date1Ago = getSameWeekdayPrevYearDateStr(sDate, 1);
+            const date2Ago = getSameWeekdayPrevYearDateStr(sDate, 2);
+
+            const [resComp, pCur, p1Ago, p2Ago] = await Promise.all([
+                getBIComparativas(sDate, eDate, compMode, sucId),
+                getBIPanelGeneral(sDate, sDate, sucId),
+                getBIPanelGeneral(date1Ago, date1Ago, sucId),
+                getBIPanelGeneral(date2Ago, date2Ago, sucId)
+            ]);
+
+            setData(resComp);
+            setMultiYearPanels({
+                panelCur: pCur,
+                panel1Ago: p1Ago,
+                panel2Ago: p2Ago
+            });
         } catch (err: unknown) {
             console.error('Error obteniendo comparativas del BI:', err);
             const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
@@ -196,14 +276,14 @@ export const BIComparativasView: React.FC = () => {
         if (pct > 0) {
             return (
                 <span className="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-2.5 py-1 rounded-xl border border-emerald-200/80 inline-flex items-center gap-1">
-                    <ArrowUpRight size={12} /> ↑ {pct}%
+                    <ArrowUpRight size={12} /> ↑ {pct.toFixed(1)}%
                 </span>
             );
         }
         if (pct < 0) {
             return (
                 <span className="text-[10px] font-black text-rose-800 bg-rose-100/90 px-2.5 py-1 rounded-xl border border-rose-200/80 inline-flex items-center gap-1">
-                    <ArrowDownRight size={12} /> ↓ {pct}%
+                    <ArrowDownRight size={12} /> ↓ {Math.abs(pct).toFixed(1)}%
                 </span>
             );
         }
@@ -213,6 +293,40 @@ export const BIComparativasView: React.FC = () => {
             </span>
         );
     };
+
+    // Cálculos de KPIs Nivel Superior
+    const ingCur = multiYearPanels.panelCur?.ingresos_totales || 0;
+    const ing1Ago = multiYearPanels.panel1Ago?.ingresos_totales || 0;
+    const ing2Ago = multiYearPanels.panel2Ago?.ingresos_totales || 0;
+
+    const var1AgoPct = ing1Ago > 0 ? (((ingCur - ing1Ago) / ing1Ago) * 100) : null;
+    const var2AgoPct = ing2Ago > 0 ? (((ingCur - ing2Ago) / ing2Ago) * 100) : null;
+
+    const maxHistIng = Math.max(ing1Ago, ing2Ago);
+    let statusBadgeText = 'Debajo del Histórico';
+    let statusBadgeClass = 'text-rose-900 bg-rose-100/90 border-rose-200/80';
+    let statusDotClass = 'bg-rose-600';
+
+    if (ingCur === 0 && maxHistIng === 0) {
+        statusBadgeText = 'Sin Registros de Venta';
+        statusBadgeClass = 'text-slate-700 bg-slate-100 border-slate-200';
+        statusDotClass = 'bg-slate-400';
+    } else if (ingCur >= maxHistIng && ingCur > 0) {
+        statusBadgeText = 'Sobre el Histórico';
+        statusBadgeClass = 'text-emerald-900 bg-emerald-100/90 border-emerald-200/80';
+        statusDotClass = 'bg-emerald-600';
+    } else if (ingCur > 0) {
+        statusBadgeText = 'Debajo del Histórico';
+        statusBadgeClass = 'text-rose-900 bg-rose-100/90 border-rose-200/80';
+        statusDotClass = 'bg-rose-600';
+    }
+
+    const currentBoliviaHourStr = new Intl.DateTimeFormat('es-BO', {
+        timeZone: 'America/La_Paz',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).format(new Date());
 
     if (error && !loading) {
         return (
@@ -247,15 +361,15 @@ export const BIComparativasView: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600">
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">FECHA ANALIZADA</span>
-                        <strong className="text-slate-900 text-sm font-black">31 ago 2026</strong>
+                        <strong className="text-slate-900 text-sm font-black capitalize">{getFormattedDateLong(startDate)}</strong>
                     </div>
 
                     <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
 
                     <div>
                         <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">ALINEACIÓN HISTÓRICA</span>
-                        <span className="text-indigo-700 font-black">
-                            Lun 31 ago 2026 <span className="text-slate-400">vs</span> Lun 1 sept 2025 <span className="text-slate-400">vs</span> Lun 2 sept 2024
+                        <span className="text-indigo-700 font-black capitalize">
+                            {getAlignmentHistoryText(startDate)}
                         </span>
                     </div>
                 </div>
@@ -268,9 +382,19 @@ export const BIComparativasView: React.FC = () => {
                         Hoy
                     </button>
 
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
-                        <Calendar size={14} className="text-slate-400" />
-                        <span>lun, 31 ago 2026</span>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl text-xs font-bold text-slate-700">
+                        <Calendar size={14} className="text-indigo-600 shrink-0" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setStartDate(e.target.value);
+                                    setEndDate(e.target.value);
+                                }
+                            }}
+                            className="bg-transparent font-black text-slate-900 focus:outline-none cursor-pointer text-xs"
+                        />
                     </div>
 
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700">
@@ -299,47 +423,43 @@ export const BIComparativasView: React.FC = () => {
                 </div>
             </div>
 
-            {/* BANNER SUPERIOR KPIS DE VENTA NETA MULTIANUAL (FONDO PASTEL ELEGANTE) */}
+            {/* BANNER SUPERIOR KPIS DE VENTA NETA MULTIANUAL (FONDO PASTEL ELEGANTE Y DINÁMICO) */}
             <div className="bg-gradient-to-r from-indigo-50/80 via-sky-50/70 to-slate-50/80 rounded-3xl p-6 border border-indigo-100/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
                 
-                {/* 2026 (AÑO ACTUAL) */}
+                {/* AÑO ACTUAL */}
                 <div className="flex-1 pr-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">2026 (AÑO ACTUAL)</span>
+                    <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">{currentYear} (AÑO ACTUAL)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-3xl font-black text-indigo-950">Bs. 3,345.00</h2>
+                        <h2 className="text-3xl font-black text-indigo-950">{formatBs(ingCur)}</h2>
                         <span className="text-xs font-bold text-slate-500">Venta Neta del Día</span>
                     </div>
                 </div>
 
-                {/* 2025 (HACE 1 AÑO) */}
+                {/* HACE 1 AÑO */}
                 <div className="flex-1 px-0 md:px-4 border-b md:border-b-0 md:border-r border-indigo-200/60 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-sky-900 uppercase tracking-wider block">2025 (HACE 1 AÑO)</span>
+                    <span className="text-[10px] font-black text-sky-900 uppercase tracking-wider block">{year1Ago} (HACE 1 AÑO)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-2xl font-black text-sky-950">Bs. 7,997.00</h2>
-                        <span className="text-xs font-black text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200">
-                            ▼ -58.2%
-                        </span>
+                        <h2 className="text-2xl font-black text-sky-950">{formatBs(ing1Ago)}</h2>
+                        {renderVariationBadge(var1AgoPct, var1AgoPct === null ? 'SIN_BASE_COMPARATIVA' : 'OK')}
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Venta Neta Histórica</span>
                 </div>
 
-                {/* 2024 (HACE 2 AÑOS) */}
+                {/* HACE 2 AÑOS */}
                 <div className="flex-1 px-0 md:px-4 pb-4 md:pb-0">
-                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">2024 (HACE 2 AÑOS)</span>
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">{year2Ago} (HACE 2 AÑOS)</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h2 className="text-2xl font-black text-slate-800">Bs. 1,973.00</h2>
-                        <span className="text-xs font-black text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-200">
-                            ▲ +69.5%
-                        </span>
+                        <h2 className="text-2xl font-black text-slate-800">{formatBs(ing2Ago)}</h2>
+                        {renderVariationBadge(var2AgoPct, var2AgoPct === null ? 'SIN_BASE_COMPARATIVA' : 'OK')}
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 block mt-0.5">Venta Neta Histórica</span>
                 </div>
 
-                {/* BADGE DE ESTADO */}
+                {/* BADGE DE ESTADO DINÁMICO */}
                 <div className="self-end md:self-center shrink-0">
-                    <span className="text-xs font-black text-rose-900 bg-rose-100/90 px-4 py-2 rounded-2xl border border-rose-200/80 inline-flex items-center gap-2 shadow-xs">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
-                        Debajo del Histórico
+                    <span className={`text-xs font-black px-4 py-2 rounded-2xl border inline-flex items-center gap-2 shadow-xs ${statusBadgeClass}`}>
+                        <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass} animate-pulse`}></span>
+                        {statusBadgeText}
                     </span>
                 </div>
 
@@ -354,8 +474,19 @@ export const BIComparativasView: React.FC = () => {
                             <Clock size={18} className="text-indigo-600" />
                             <h3 className="text-base font-black text-slate-900">Ventas por Rango Horario (Multianual)</h3>
                         </div>
-                        <p className="text-xs text-slate-400 font-bold mt-0.5">
-                            Trayectoria armónica: <strong className="text-indigo-600">🟣 2026 (Índigo Ejecutivo)</strong> | <strong className="text-sky-500">🩵 2025 (Cian Fresco)</strong> | <strong className="text-slate-400">🩶 2024 (Slate Neutro)</strong>
+                        <p className="text-xs text-slate-400 font-bold mt-0.5 flex flex-wrap items-center gap-2">
+                            <span>Trayectoria armónica:</span>
+                            <span className="inline-flex items-center gap-1.5 text-indigo-600 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block shadow-2xs"></span> {currentYear} (Índigo Ejecutivo)
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="inline-flex items-center gap-1.5 text-cyan-600 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> {year1Ago} (Cian Fresco)
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="inline-flex items-center gap-1.5 text-slate-500 font-black">
+                                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-2xs"></span> {year2Ago} (Slate Neutro)
+                            </span>
                         </p>
                     </div>
 
@@ -455,18 +586,18 @@ export const BIComparativasView: React.FC = () => {
                     {/* Marcador de Hora Actual en el gráfico */}
                     <div className="absolute right-12 top-4 z-10 flex flex-col items-center">
                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md shadow-xs mb-1">
-                            Hora actual 22:00
+                            Hora actual {currentBoliviaHourStr}
                         </span>
                         <div className="w-px h-44 bg-indigo-400 stroke-dasharray-2 border-r border-dashed border-indigo-400"></div>
                     </div>
 
                     <div className="h-56 relative flex items-end justify-between px-4 pt-8">
-                        {/* Escala Eje Y */}
+                        {/* Escala Eje Y Dinámica */}
                         <div className="absolute left-2 top-0 bottom-6 flex flex-col justify-between text-[10px] font-bold text-slate-400 pointer-events-none z-10">
-                            <span>Bs 2,000</span>
-                            <span>Bs 1,500</span>
-                            <span>Bs 1,000</span>
-                            <span>Bs 500</span>
+                            <span>Bs {maxChartVal.toLocaleString('en-US')}</span>
+                            <span>Bs {Math.round(maxChartVal * 0.75).toLocaleString('en-US')}</span>
+                            <span>Bs {Math.round(maxChartVal * 0.5).toLocaleString('en-US')}</span>
+                            <span>Bs {Math.round(maxChartVal * 0.25).toLocaleString('en-US')}</span>
                             <span>Bs 0</span>
                         </div>
 
@@ -474,27 +605,29 @@ export const BIComparativasView: React.FC = () => {
                         {chartStyle === 'grouped_bars' && (
                             <div className="w-full h-full flex items-end justify-between pl-12 pr-12 gap-2">
                                 {visibleHourlyData.map((h) => {
-                                    const maxVal = 2000;
-                                    const h2026Pct = Math.min((h.v2026 / maxVal) * 100, 100);
-                                    const h2025Pct = Math.min((h.v2025 / maxVal) * 100, 100);
-                                    const h2024Pct = Math.min((h.v2024 / maxVal) * 100, 100);
+                                    const h2026Pct = Math.min((h.v2026 / maxChartVal) * 100, 100);
+                                    const h2025Pct = Math.min((h.v2025 / maxChartVal) * 100, 100);
+                                    const h2024Pct = Math.min((h.v2024 / maxChartVal) * 100, 100);
 
                                     return (
                                         <div key={h.hora} className="flex-1 flex items-end justify-center gap-1 h-full relative group">
-                                            {/* 2026 (Índigo Ejecutivo) */}
+                                            {/* Current Year (Índigo Ejecutivo) */}
                                             <div
                                                 style={{ height: `${h2026Pct}%` }}
                                                 className="w-3 bg-indigo-600 rounded-t-sm transition-all group-hover:bg-indigo-700 shadow-xs"
+                                                title={`${currentYear}: ${formatBs(h.v2026)}`}
                                             ></div>
-                                            {/* 2025 (Cian Fresco) */}
+                                            {/* Year 1 Ago (Cian Fresco) */}
                                             <div
                                                 style={{ height: `${h2025Pct}%` }}
-                                                className="w-3 bg-sky-400 rounded-t-sm transition-all group-hover:bg-sky-500 shadow-xs"
+                                                className="w-3 bg-cyan-500 rounded-t-sm transition-all group-hover:bg-cyan-600 shadow-xs"
+                                                title={`${year1Ago}: ${formatBs(h.v2025)}`}
                                             ></div>
-                                            {/* 2024 (Slate Neutro) */}
+                                            {/* Year 2 Ago (Slate Neutro) */}
                                             <div
                                                 style={{ height: `${h2024Pct}%` }}
-                                                className="w-3 bg-slate-300 rounded-t-sm transition-all group-hover:bg-slate-400 shadow-xs"
+                                                className="w-3 bg-slate-400 rounded-t-sm transition-all group-hover:bg-slate-500 shadow-xs"
+                                                title={`${year2Ago}: ${formatBs(h.v2024)}`}
                                             ></div>
                                         </div>
                                     );
@@ -516,7 +649,7 @@ export const BIComparativasView: React.FC = () => {
                                     <line x1="0" y1="155" x2={svgWidth} y2="155" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
                                     <line x1="0" y1="195" x2={svgWidth} y2="195" stroke="#CBD5E1" strokeWidth="1.5" />
 
-                                    {/* LÍNEA 2024 (Slate Neutro) */}
+                                    {/* LÍNEA Year 2 Ago (Slate Neutro) */}
                                     {line2024.pathD && (
                                         <path
                                             d={line2024.pathD}
@@ -527,18 +660,18 @@ export const BIComparativasView: React.FC = () => {
                                         />
                                     )}
 
-                                    {/* LÍNEA 2025 (Cian Fresco) */}
+                                    {/* LÍNEA Year 1 Ago (Cian Fresco) */}
                                     {line2025.pathD && (
                                         <path
                                             d={line2025.pathD}
                                             fill="none"
-                                            stroke="#0EA5E9"
+                                            stroke="#06B6D4"
                                             strokeWidth="3.5"
                                             strokeLinecap="round"
                                         />
                                     )}
 
-                                    {/* LÍNEA 2026 (Índigo Ejecutivo) */}
+                                    {/* LÍNEA Current Year (Índigo Ejecutivo) */}
                                     {line2026.pathD && (
                                         <path
                                             d={line2026.pathD}
@@ -549,21 +682,21 @@ export const BIComparativasView: React.FC = () => {
                                         />
                                     )}
 
-                                    {/* NODOS 2024 */}
+                                    {/* NODOS Year 2 Ago */}
                                     {line2024.points.map((pt, i) => (
                                         pt.val > 0 && (
                                             <circle key={`p24-${i}`} cx={pt.x} cy={pt.y} r="4.5" fill="#94A3B8" stroke="#FFFFFF" strokeWidth="2" />
                                         )
                                     ))}
 
-                                    {/* NODOS 2025 */}
+                                    {/* NODOS Year 1 Ago */}
                                     {line2025.points.map((pt, i) => (
                                         pt.val > 0 && (
-                                            <circle key={`p25-${i}`} cx={pt.x} cy={pt.y} r="5.5" fill="#0EA5E9" stroke="#FFFFFF" strokeWidth="2" />
+                                            <circle key={`p25-${i}`} cx={pt.x} cy={pt.y} r="5.5" fill="#06B6D4" stroke="#FFFFFF" strokeWidth="2" />
                                         )
                                     ))}
 
-                                    {/* NODOS 2026 */}
+                                    {/* NODOS Current Year */}
                                     {line2026.points.map((pt, i) => (
                                         pt.val > 0 && (
                                             <g key={`p26-${i}`}>
@@ -584,7 +717,7 @@ export const BIComparativasView: React.FC = () => {
                                     viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                                     preserveAspectRatio="none"
                                 >
-                                    {/* ÁREA 2026 */}
+                                    {/* ÁREA Current Year */}
                                     {line2026.pathD && (
                                         <path
                                             d={`${line2026.pathD} L ${svgWidth} ${svgHeight} L 0 ${svgHeight} Z`}
@@ -631,19 +764,31 @@ export const BIComparativasView: React.FC = () => {
                             <thead>
                                 <tr className="border-b border-slate-200 text-slate-400 font-black uppercase text-[10px]">
                                     <th className="py-3 px-3">🕒 Hora</th>
-                                    <th className="py-3 px-3 text-right text-indigo-900">🟣 2026 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-indigo-900">🎟️ 2026 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-sky-900">🩵 2025 (Bs.)</th>
-                                    <th className="py-3 px-3 text-right text-sky-900">🎫 2025 (Ord.)</th>
-                                    <th className="py-3 px-3 text-right text-slate-700">🩶 2024 (Bs.)</th>
-                                    <th className="py-3 px-3 text-center">📈 Var. 26 vs 25</th>
-                                    <th className="py-3 px-3 text-center">📊 Var. 26 vs 24</th>
+                                    <th className="py-3 px-3 text-right text-indigo-900">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-indigo-600 inline-block"></span> {currentYear} (Bs.)
+                                        </span>
+                                    </th>
+                                    <th className="py-3 px-3 text-right text-indigo-900 font-black">🎟️ {currentYear} (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-cyan-900">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block"></span> {year1Ago} (Bs.)
+                                        </span>
+                                    </th>
+                                    <th className="py-3 px-3 text-right text-cyan-900 font-black">🎫 {year1Ago} (Ord.)</th>
+                                    <th className="py-3 px-3 text-right text-slate-700">
+                                        <span className="inline-flex items-center justify-end gap-1.5 font-black">
+                                            <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> {year2Ago} (Bs.)
+                                        </span>
+                                    </th>
+                                    <th className="py-3 px-3 text-center">📈 Var. {String(currentYear).slice(-2)} vs {String(year1Ago).slice(-2)}</th>
+                                    <th className="py-3 px-3 text-center">📊 Var. {String(currentYear).slice(-2)} vs {String(year2Ago).slice(-2)}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                                 {visibleHourlyData.map((h) => {
-                                    const var25 = h.v2025 > 0 ? (((h.v2026 - h.v2025) / h.v2025) * 100).toFixed(1) : null;
-                                    const var24 = h.v2024 > 0 ? (((h.v2026 - h.v2024) / h.v2024) * 100).toFixed(1) : null;
+                                    const var1Ago = h.v2025 > 0 ? (((h.v2026 - h.v2025) / h.v2025) * 100).toFixed(1) : null;
+                                    const var2Ago = h.v2024 > 0 ? (((h.v2026 - h.v2024) / h.v2024) * 100).toFixed(1) : null;
 
                                     return (
                                         <tr key={h.hora} className="hover:bg-indigo-50/40 transition-colors">
@@ -654,22 +799,22 @@ export const BIComparativasView: React.FC = () => {
                                             <td className="py-3 px-3 text-right font-semibold text-sky-700">{h.ord2025} ord.</td>
                                             <td className="py-3 px-3 text-right font-semibold text-slate-600">{formatBs(h.v2024)}</td>
                                             <td className="py-3 px-3 text-center">
-                                                {var25 !== null ? (
+                                                {var1Ago !== null ? (
                                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                                        Number(var25) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                        Number(var1Ago) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                                                     }`}>
-                                                        {Number(var25) >= 0 ? '+' : ''}{var25}%
+                                                        {Number(var1Ago) >= 0 ? '+' : ''}{var1Ago}%
                                                     </span>
                                                 ) : (
                                                     <span className="text-[10px] text-slate-400 font-bold">—</span>
                                                 )}
                                             </td>
                                             <td className="py-3 px-3 text-center">
-                                                {var24 !== null ? (
+                                                {var2Ago !== null ? (
                                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                                        Number(var24) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                        Number(var2Ago) >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                                                     }`}>
-                                                        {Number(var24) >= 0 ? '+' : ''}{var24}%
+                                                        {Number(var2Ago) >= 0 ? '+' : ''}{var2Ago}%
                                                     </span>
                                                 ) : (
                                                     <span className="text-[10px] text-slate-400 font-bold">—</span>
@@ -747,7 +892,7 @@ export const BIComparativasView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600">
                     <Clock size={14} className="text-slate-400" />
-                    <span>Última actualización: <strong>{data?.ultima_actualizacion || '31/08/2026 15:00:00'}</strong></span>
+                    <span>Última actualización: <strong>{data?.ultima_actualizacion || new Date().toLocaleTimeString('es-BO')}</strong></span>
                 </div>
             </div>
 
