@@ -120,7 +120,7 @@ const ControlInventarioPage = () => {
                         <select
                             value={selectedSucursal}
                             onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold"
+                            className="bg-white text-gray-900 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold"
                         >
                             <option value="CENTRAL">Central</option>
                             {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
@@ -307,7 +307,7 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                         placeholder="Buscar producto..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+                        className="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white text-gray-900"
                     />
                 </div>
                 <div className="flex gap-6 text-sm">
