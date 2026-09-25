@@ -27,6 +27,9 @@ from app.schemas.bi import (
     CategoriaProductosItemBI
 )
 
+BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
+
+
 def _normalize_df_datetimes(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
