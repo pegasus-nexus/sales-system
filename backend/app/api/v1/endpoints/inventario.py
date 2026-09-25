@@ -10,6 +10,7 @@ from app.domain.models.inventario import Inventario
 from app.domain.models.product import Product
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.user import User, UserRole
+from app.domain.models.category import Category
 from app.infrastructure.auth import get_current_active_user, require_roles
 from app.domain.schemas.inventario import InventarioItem, AjusteInventario, InventarioPaginated, AjusteInventarioMasivoRequest
 from app.utils.date_utils import get_day_range_bolivia
