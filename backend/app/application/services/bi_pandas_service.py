@@ -167,15 +167,23 @@ class BIPandasService:
             margen_liquido_bs = round(comision_matriz_bs + margen_retail_bs, 2)
             rentabilidad_contable_pct = round((margen_liquido_bs / ingresos_totales * 100.0), 2) if ingresos_totales > 0 else 0.0
 
-        df_merged = pd.merge(
-            df_sales,
-            df_dim_sucursal,
-            on="sucursal_id",
-            how="left"
-        )
-        df_merged["nombre"] = df_merged["nombre"].fillna("Sucursal Central")
+        # Smart Branch Resolution (garantiza coincidencia exacta 1:1 con el Historial de Ventas)
+        def resolve_branch_info(suc_val):
+            if not suc_val or str(suc_val).upper() in ["NONE", "NULL", "CENTRAL", ""]:
+                return "CENTRAL", "Sucursal Central"
+            s_str = str(suc_val).strip()
+            for s in sucursales:
+                if str(s.get("sucursal_id", "")).strip() == s_str:
+                    return str(s.get("sucursal_id", s_str)), str(s.get("nombre", s_str))
+                if str(s.get("nombre", "")).strip().lower() == s_str.lower():
+                    return str(s.get("sucursal_id", s_str)), str(s.get("nombre", s_str))
+            return s_str, s_str
 
-        groupby_suc = df_merged.groupby(["sucursal_id", "nombre"]).agg(
+        resolved = df_sales["sucursal_id"].apply(resolve_branch_info)
+        df_sales["sucursal_id_canonical"] = [r[0] for r in resolved]
+        df_sales["sucursal_nombre_canonical"] = [r[1] for r in resolved]
+
+        groupby_suc = df_sales.groupby(["sucursal_id_canonical", "sucursal_nombre_canonical"]).agg(
             ingresos=("total_neto", "sum"),
             ordenes=("ticket_id", "count")
         ).reset_index()
@@ -192,12 +200,12 @@ class BIPandasService:
 
             if ing > max_ingresos_suc:
                 max_ingresos_suc = ing
-                suc_lider_nombre = str(row["nombre"])
+                suc_lider_nombre = str(row["sucursal_nombre_canonical"])
 
             desglose_list.append(
                 DesgloseSucursalBI(
-                    sucursal_id=str(row["sucursal_id"]),
-                    nombre_sucursal=str(row["nombre"]),
+                    sucursal_id=str(row["sucursal_id_canonical"]),
+                    nombre_sucursal=str(row["sucursal_nombre_canonical"]),
                     ingresos=ing,
                     ordenes=ord_cnt,
                     ticket_medio=tm,
@@ -507,8 +515,8 @@ class BIPandasService:
             sid = str(row_suc.get("sucursal_id", ""))
             sname = str(row_suc.get("nombre", "Sin Nombre"))
 
-            act_sub = df_act[df_act["sucursal_id"] == sid] if not df_act.empty and "sucursal_id" in df_act.columns else pd.DataFrame()
-            comp_sub = df_comp[df_comp["sucursal_id"] == sid] if not df_comp.empty and "sucursal_id" in df_comp.columns else pd.DataFrame()
+            act_sub = df_act[(df_act["sucursal_id"] == sid) | (df_act["sucursal_id"] == sname)] if not df_act.empty and "sucursal_id" in df_act.columns else pd.DataFrame()
+            comp_sub = df_comp[(df_comp["sucursal_id"] == sid) | (df_comp["sucursal_id"] == sname)] if not df_comp.empty and "sucursal_id" in df_comp.columns else pd.DataFrame()
 
             ing_s_act = round(float(act_sub["total_neto"].sum()), 2) if not act_sub.empty else 0.0
             ord_s_act = int(len(act_sub)) if not act_sub.empty else 0
