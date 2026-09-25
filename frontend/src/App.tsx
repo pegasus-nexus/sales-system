@@ -15,6 +15,7 @@ const SucursalesPage = lazy(() => import('./pages/SucursalesPage'));
 const CatalogoPage = lazy(() => import('./pages/CatalogoPage'));
 const InventarioPage = lazy(() => import('./pages/InventarioPage'));
 const InventarioTrasladosPage = lazy(() => import('./pages/InventarioTrasladosPage'));
+const ControlInventarioPage = lazy(() => import('./pages/ControlInventarioPage'));
 const PedidosPage = lazy(() => import('./pages/PedidosPage'));
 const POSPage = lazy(() => import('./pages/POSPage'));
 const CajaPage = lazy(() => import('./pages/CajaPage'));
@@ -284,6 +285,11 @@ function App() {
                       <Route path="/inventario" element={
                         <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
                           <InventarioPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/auditoria-inventario" element={
+                        <ProtectedRoute allowedRoles={[...STAFF_NO_CAJERO, 'CAJERO']} requiredFeature="INVENTARIO">
+                          <ControlInventarioPage />
                         </ProtectedRoute>
                       } />
 

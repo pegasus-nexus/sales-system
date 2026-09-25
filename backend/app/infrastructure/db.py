@@ -26,6 +26,7 @@ from app.domain.models.b2b import NotaDevolucionMerma, NotaTraspaso, InventarioM
 from app.domain.models.comunidad import ComunidadUser, VisitaRegistro
 from app.domain.models.traslado import TrasladoInventario
 from app.domain.models.etiqueta import Etiqueta
+from app.domain.models.conteo_fisico import ConteoFisico
 from app.domain.models.almacen import Almacen
 from app.domain.models.recipe import Recipe
 from app.domain.models.recipe_ingredient import RecipeIngredient
@@ -116,6 +117,7 @@ async def init_db():
             VisitaRegistro,
             TrasladoInventario,
             Etiqueta,
+            ConteoFisico,
             Almacen,
             Recipe,
             RecipeIngredient,
