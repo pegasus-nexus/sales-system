@@ -1,13 +1,50 @@
-import React, { useState } from 'react';
-import { Loader2, CheckCircle2, AlertCircle, FileSpreadsheet, UploadCloud } from 'lucide-react';
-// Importación de cliente API eliminada porque usamos fetch nativo para FormData multi-part
+import React, { useState, useEffect } from 'react';
+import { Loader2, CheckCircle2, AlertCircle, FileSpreadsheet, UploadCloud, X } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { getBISucursales } from '../api/biApi';
+import type { BISucursalOption } from '../api/biApi';
 
-export default function ImportadorInteligente() {
-    const [sucursal, setSucursal] = useState('');
+export interface HistoricalUploadResult {
+    status: string;
+    upserted: number;
+    modified: number;
+    ignored: number;
+    total_procesado: number;
+    message?: string;
+}
+
+interface ImportadorInteligenteProps {
+    onClose?: () => void;
+    onSuccess?: () => void;
+    isModal?: boolean;
+}
+
+export default function ImportadorInteligente({ onClose, onSuccess, isModal = false }: ImportadorInteligenteProps) {
+    const [sucursal, setSucursal] = useState<string>('');
+    const [sucursales, setSucursales] = useState<BISucursalOption[]>([]);
     const [archivo, setArchivo] = useState<File | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadResult, setUploadResult] = useState<any>(null);
-    const [error, setError] = useState('');
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+    const [uploadResult, setUploadResult] = useState<HistoricalUploadResult | null>(null);
+    const [error, setError] = useState<string>('');
+
+    useEffect(() => {
+        let mounted = true;
+        const fetchSucursales = async () => {
+            try {
+                const data = await getBISucursales();
+                if (mounted && Array.isArray(data) && data.length > 0) {
+                    setSucursales(data);
+                    setSucursal(data[0].sucursal_id);
+                }
+            } catch (err) {
+                console.error('Error al cargar sucursales para importador:', err);
+            }
+        };
+        fetchSucursales();
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const manejarSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -26,12 +63,20 @@ export default function ImportadorInteligente() {
             formData.append('file', archivo);
             formData.append('sucursal_id', sucursal);
 
-            // Determinar la URL correcta (usamos localhost si no hay variable de entorno, para que coincida con el origin de React)
-            const baseUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8001/api/v1";
+            const isProductionUrl = window.location.hostname.includes('vercel.app') 
+                || window.location.hostname.includes('pegasus-nexus.com');
+            const fallbackUrl = isProductionUrl ? '/api/v1' : 'http://127.0.0.1:8001/api/v1';
+            const baseUrl = import.meta.env.VITE_API_URL ?? fallbackUrl;
             
-            // Construir la petición POST
+            const token = useAuthStore.getState().token;
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const respuesta = await fetch(`${baseUrl}/importar-historico`, {
                 method: "POST",
+                headers,
                 body: formData
             });
 
@@ -40,49 +85,65 @@ export default function ImportadorInteligente() {
                 throw new Error(errData?.detail || `Error HTTP: ${respuesta.status}`);
             }
 
-            const data = await respuesta.json();
+            const data: HistoricalUploadResult = await respuesta.json();
             
-            // Guardar el JSON con el resumen de auditoría
             setUploadResult(data);
-            
-            // Limpiar formulario para nuevo envío si se desea
             setArchivo(null);
-            const fileInputSuccess = document.getElementById('file-input') as HTMLInputElement | null;
+            const fileInputSuccess = document.getElementById('file-input-historico') as HTMLInputElement | null;
             if (fileInputSuccess) fileInputSuccess.value = "";
 
-        } catch (err) {
+            if (onSuccess) {
+                onSuccess();
+            }
+
+        } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "Error desconocido al procesar el archivo.";
-            setError("Fallo la importación: " + errorMessage + ". Verifica que el archivo no esté corrupto y que la conexión esté activa.");
+            setError("Falló la importación: " + errorMessage + ". Verifica que el archivo tenga el formato correcto.");
         } finally {
             setIsUploading(false);
         }
     };
 
     return (
-        <div className="bg-white/80 backdrop-blur-xl min-h-[400px] w-full p-8 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col items-center justify-center animate-in fade-in transition-all duration-300">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shadow-sm">
+        <div className={`bg-white rounded-3xl shadow-xl border border-slate-200/80 p-6 sm:p-8 flex flex-col items-center justify-center animate-in fade-in transition-all duration-300 relative w-full max-w-xl mx-auto`}>
+            {isModal && onClose && (
+                <button
+                    onClick={onClose}
+                    className="absolute top-5 right-5 p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+                    title="Cerrar modal"
+                >
+                    <X size={18} />
+                </button>
+            )}
+
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shadow-xs border border-indigo-100">
                     <UploadCloud size={28} />
                 </div>
-                <h2 className="text-3xl font-black text-gray-800 tracking-tight">
-                    Importador de Datos Históricos
-                </h2>
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                        Importador de Datos Históricos
+                    </h2>
+                    <p className="text-xs font-bold text-slate-500 mt-0.5">
+                        Carga y consolida ventas en el modelo analítico de MongoDB
+                    </p>
+                </div>
             </div>
             
             {/* Manejo Visual de Error */}
             {error && (
-                <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-600 px-6 py-4 rounded-2xl w-full max-w-md mb-6 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
-                    <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 px-5 py-3.5 rounded-2xl w-full mb-5 flex items-start gap-3 shadow-xs animate-in slide-in-from-top-2">
+                    <AlertCircle size={20} className="shrink-0 text-rose-600 mt-0.5" />
                     <div>
-                        <h4 className="font-bold text-red-700">Error de Procesamiento</h4>
-                        <p className="text-sm font-medium opacity-90">{error}</p>
+                        <h4 className="font-black text-xs text-rose-900">Error de Procesamiento</h4>
+                        <p className="text-xs font-medium text-rose-700 mt-0.5">{error}</p>
                     </div>
                 </div>
             )}
 
-            <form onSubmit={manejarSubmit} className="w-full max-w-md space-y-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+            <form onSubmit={manejarSubmit} className="w-full space-y-5">
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wide">
                         1. Sucursal Destino
                     </label>
                     <div className="relative">
@@ -90,27 +151,35 @@ export default function ImportadorInteligente() {
                             disabled={isUploading}
                             value={sucursal}
                             onChange={(e) => setSucursal(e.target.value)}
-                            className="w-full h-12 bg-white border border-gray-200 text-gray-800 rounded-xl px-4 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-50 font-bold shadow-sm transition-all appearance-none"
+                            className="w-full h-11 bg-white border border-slate-200 text-slate-900 rounded-2xl px-4 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 font-bold text-xs shadow-xs transition-all cursor-pointer"
                         >
-                            <option value="">-- Seleccionar --</option>
-                            <option value="Heroínas">Heroínas</option>
-                            <option value="Recoleta">Recoleta</option>
-                            <option value="Calacoto">Calacoto</option>
+                            <option value="" className="text-slate-900 bg-white">-- Seleccionar Sucursal --</option>
+                            {sucursales.length > 0 ? (
+                                sucursales.map((s) => (
+                                    <option key={s.sucursal_id} value={s.sucursal_id} className="text-slate-900 bg-white">
+                                        {s.nombre} ({s.ciudad})
+                                    </option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="Heroínas" className="text-slate-900 bg-white">Heroínas</option>
+                                    <option value="Recoleta" className="text-slate-900 bg-white">Recoleta</option>
+                                    <option value="Calacoto" className="text-slate-900 bg-white">Calacoto</option>
+                                    <option value="CENTRAL" className="text-slate-900 bg-white">CENTRAL</option>
+                                </>
+                            )}
                         </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-600 uppercase tracking-wide">
-                        2. Archivo Excel Consolidado
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wide">
+                        2. Archivo Excel Consolidado (.xlsx, .csv)
                     </label>
-                    <div className={`relative border-2 border-dashed rounded-2xl transition-all duration-300 flex flex-col items-center justify-center p-8
-                        ${archivo ? 'border-indigo-300 bg-indigo-50/50' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-100 hover:border-gray-300'}`}>
+                    <div className={`relative border-2 border-dashed rounded-2xl transition-all duration-300 flex flex-col items-center justify-center p-6
+                        ${archivo ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300'}`}>
                         <input
-                            id="file-input"
+                            id="file-input-historico"
                             type="file"
                             accept=".xlsx,.xls,.csv"
                             onChange={(e) => {
@@ -124,11 +193,11 @@ export default function ImportadorInteligente() {
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                         />
                         <div className="text-center pointer-events-none flex flex-col items-center">
-                            <FileSpreadsheet size={32} className={`mb-3 ${archivo ? 'text-indigo-500' : 'text-gray-400'}`} />
-                            <h4 className="text-gray-800 font-bold mb-1">
+                            <FileSpreadsheet size={30} className={`mb-2 ${archivo ? 'text-indigo-600' : 'text-slate-400'}`} />
+                            <h4 className="text-slate-800 font-bold text-xs mb-1">
                                 {archivo ? archivo.name : "Subir archivo (Arrastra o Haz Clic)"}
                             </h4>
-                            <p className="text-sm font-medium text-gray-400">
+                            <p className="text-[11px] font-semibold text-slate-400">
                                 {archivo ? `${(archivo.size / 1024 / 1024).toFixed(2)} MB` : "Soporta múltiples hojas (.xlsx, .csv)"}
                             </p>
                         </div>
@@ -138,49 +207,52 @@ export default function ImportadorInteligente() {
                 <button
                     type="submit"
                     disabled={isUploading}
-                    className={`w-full py-4 rounded-2xl font-black text-white text-lg tracking-wide transition-all duration-300 shadow-md flex items-center justify-center gap-3 ${
+                    className={`w-full py-3.5 rounded-2xl font-black text-white text-xs tracking-wide transition-all shadow-md flex items-center justify-center gap-2.5 cursor-pointer ${
                         isUploading 
-                            ? 'bg-indigo-300 cursor-not-allowed shadow-none' 
-                            : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98]'
+                            ? 'bg-indigo-400 cursor-not-allowed shadow-none' 
+                            : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'
                     }`}
                 >
                     {isUploading ? (
                         <>
-                            <Loader2 size={24} className="animate-spin" />
-                            Procesando Excel...
+                            <Loader2 size={16} className="animate-spin" />
+                            <span>Procesando e Ingestando en MongoDB...</span>
                         </>
                     ) : (
-                        "Iniciar Importación Segura"
+                        <>
+                            <UploadCloud size={16} />
+                            <span>Iniciar Importación Segura</span>
+                        </>
                     )}
                 </button>
             </form>
 
             {/* Tarjeta de Auditoría Visual (Resultados) */}
             {uploadResult && (
-                <div className="mt-8 w-full max-w-md bg-emerald-50/80 backdrop-blur-sm border border-emerald-200 rounded-2xl p-6 shadow-sm animate-in slide-in-from-bottom-4">
-                    <div className="flex items-center gap-3 mb-4 border-b border-emerald-100 pb-3">
-                        <CheckCircle2 size={24} className="text-emerald-500" />
-                        <h3 className="text-lg font-black text-emerald-800">✅ Importación Completada</h3>
+                <div className="mt-6 w-full bg-emerald-50 border border-emerald-200 rounded-2xl p-5 shadow-xs animate-in slide-in-from-bottom-3">
+                    <div className="flex items-center gap-2.5 mb-3 border-b border-emerald-100 pb-2">
+                        <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+                        <h3 className="text-xs font-black text-emerald-950 uppercase tracking-tight">Importación Completada Exitosamente</h3>
                     </div>
                     
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center bg-white/60 px-4 py-2.5 rounded-xl border border-emerald-100">
-                            <span className="text-sm font-bold text-gray-600">Registros insertados:</span>
-                            <span className="text-base font-black text-emerald-600">{uploadResult.upserted}</span>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] font-bold text-slate-500 block uppercase">Insertados</span>
+                            <span className="text-sm font-black text-emerald-700">{uploadResult.upserted}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white/60 px-4 py-2.5 rounded-xl border border-emerald-100">
-                            <span className="text-sm font-bold text-gray-600">Registros actualizados:</span>
-                            <span className="text-base font-black text-indigo-600">{uploadResult.modified}</span>
+                        <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] font-bold text-slate-500 block uppercase">Actualizados</span>
+                            <span className="text-sm font-black text-indigo-700">{uploadResult.modified}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white/60 px-4 py-2.5 rounded-xl border border-emerald-100">
-                            <span className="text-sm font-bold text-gray-600">Duplicados ignorados:</span>
-                            <span className="text-base font-black text-gray-500">{uploadResult.ignored}</span>
+                        <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] font-bold text-slate-500 block uppercase">Ignorados</span>
+                            <span className="text-sm font-black text-slate-600">{uploadResult.ignored}</span>
                         </div>
                     </div>
                     
-                    <div className="mt-4 pt-3 border-t border-emerald-100 text-center">
-                        <p className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest">
-                            Total Procesado: {uploadResult.total_procesado}
+                    <div className="mt-3 pt-2.5 border-t border-emerald-100/80 text-center">
+                        <p className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">
+                            Total Registros Procesados: {uploadResult.total_procesado}
                         </p>
                     </div>
                 </div>
