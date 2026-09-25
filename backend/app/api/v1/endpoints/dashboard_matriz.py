@@ -134,7 +134,7 @@ async def get_dashboard_matriz(
                 "$map": {
                     "input": {"$ifNull": ["$items", []]},
                     "as": "item",
-                    "in": {"$multiply": [{"$ifNull": ["$$item.cantidad", 0]}, {"$ifNull": ["$$item.costo_unitario", {"$multiply": [{"$ifNull": ["$$item.precio_unitario", 0]}, 0.70]}]}]}
+                    "in": {"$multiply": [{"$ifNull": ["$$item.cantidad", 0]}, {"$ifNull": ["$$item.costo_unitario", 0]}]}
                 }
             }
         }},
@@ -184,7 +184,7 @@ async def get_dashboard_matriz(
                 "$map": {
                     "input": {"$ifNull": ["$items", []]},
                     "as": "item",
-                    "in": {"$multiply": [{"$ifNull": ["$$item.cantidad", 0]}, {"$ifNull": ["$$item.costo_unitario", {"$multiply": [{"$ifNull": ["$$item.precio_unitario", 0]}, 0.70]}]}]}
+                    "in": {"$multiply": [{"$ifNull": ["$$item.cantidad", 0]}, {"$ifNull": ["$$item.costo_unitario", 0]}]}
                 }
             }
         }},
