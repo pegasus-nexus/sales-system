@@ -2082,3 +2082,21 @@ export const createPurchaseReception = (data: any) => client<any>('/compras/rece
 
 export const getPurchaseReceptions = (sucursalId: string) => client<any[]>(`/compras/receptions/${sucursalId}`);
 export const updateSaleDate = (saleId: string, nueva_fecha: string) => client<any>(`/sales/${saleId}/fecha`, { method: 'PATCH', body: { nueva_fecha: new Date(nueva_fecha).toISOString() } });
+
+export interface DashboardMatrizMetrics {
+    ventas_hoy: number;
+    transacciones_ventas: number;
+    transacciones_compras: number;
+    anulaciones_hoy: number;
+    personal_activo: { id: string; nombre: string; ventas_hoy: number; transacciones: number }[];
+    productos_mas_vendidos: { producto_id: string; nombre: string; cantidad: number; ingresos: number }[];
+    grafico_mensual: { mes: string; mes_index: number; ventas_totales: number; margen_distribuidor: number; margen_cliente: number }[];
+    grafico_diario: { dia: number; ventas_totales: number; margen_distribuidor: number; margen_cliente: number }[];
+    mes_actual: number;
+    dia_actual: number;
+}
+
+export const getDashboardMatriz = (sucursal_id?: string) => {
+    const url = sucursal_id && sucursal_id !== 'all' ? `/dashboard-matriz?sucursal_id=${sucursal_id}` : '/dashboard-matriz';
+    return client<DashboardMatrizMetrics>(url);
+};

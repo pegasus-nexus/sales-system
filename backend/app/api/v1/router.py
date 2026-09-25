@@ -1,3 +1,4 @@
+from app.api.v1.endpoints import dashboard_matriz
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth, tenants, users, products, sales,
@@ -56,3 +57,5 @@ api_router.include_router(meal_plans.router, tags=["meal_plans"])
 api_router.include_router(production.router, tags=["production"])
 api_router.include_router(fidelizacion.router, prefix="/fidelizacion", tags=["fidelizacion"])
 api_router.include_router(compras.router, prefix="/compras", tags=["compras"])
+
+api_router.include_router(dashboard_matriz.router, prefix="/dashboard-matriz", tags=["dashboard-matriz"])

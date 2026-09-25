@@ -1,15 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTenantStats, getProducts, getUsers, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
-import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, KeyRound, AlertTriangle, Copy, Check } from 'lucide-react';
+import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
+import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, KeyRound, AlertTriangle, Copy, Check, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import type { Product, ProductCreate, EmployeeCreate } from '../api/types';
+import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
 import { toast } from 'sonner';
 
-import { Link } from 'react-router-dom';
-import { BASE_URL } from '../api/client';
+
 import PasswordField from '../components/PasswordField';
-import Pagination from '../components/Pagination';
+import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ReferenceLine } from 'recharts';
 
 const BLANK_PRODUCT: ProductCreate = {
     descripcion: '', categoria_id: '', precio_venta: 0, costo_producto: 0,
@@ -19,6 +18,11 @@ const BLANK_PRODUCT: ProductCreate = {
 export default function TenantDashboard() {
     const user = useAuthStore(state => state.user);
     const queryClient = useQueryClient();
+    
+    const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
+    const [showVentasHoy, setShowVentasHoy] = useState(false);
+    
+    // Modals
     const [showProductModal, setShowProductModal] = useState(false);
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [productForm, setProductForm] = useState<ProductCreate>(BLANK_PRODUCT);
@@ -28,27 +32,13 @@ export default function TenantDashboard() {
     const [credentials, setCredentials] = useState<{ username: string; password: string; full_name: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const { data: stats } = useQuery({ queryKey: ['tenant-stats'], queryFn: getTenantStats });
-    const { data: productsData, isLoading: loadingProducts } = useQuery({ queryKey: ['products'], queryFn: () => getProducts(1, 1000) });
-    const products = productsData?.items || [];
-    const { data: employees, isLoading: loadingEmployees } = useQuery({ queryKey: ['employees'], queryFn: getUsers });
+    const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
-
-    const [currentPageProducts, setCurrentPageProducts] = useState(1);
-    const [currentPageEmployees, setCurrentPageEmployees] = useState(1);
-    const ITEMS_PER_PAGE = 5;
-
-    const paginatedProducts = useMemo(() => {
-        if (!products) return [];
-        const startIndex = (currentPageProducts - 1) * ITEMS_PER_PAGE;
-        return products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [products, currentPageProducts]);
-
-    const paginatedEmployees = useMemo(() => {
-        if (!employees) return [];
-        const startIndex = (currentPageEmployees - 1) * ITEMS_PER_PAGE;
-        return employees.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [employees, currentPageEmployees]);
+    const { data: metrics, isLoading: loadingMetrics, refetch } = useQuery({ 
+        queryKey: ['dashboard-matriz', selectedSucursal], 
+        queryFn: () => getDashboardMatriz(selectedSucursal),
+        refetchInterval: 300000 // Refresh every 5 mins
+    });
 
     const createProductMutation = useMutation({
         mutationFn: (data: ProductCreate) => createProduct(data),
@@ -56,6 +46,7 @@ export default function TenantDashboard() {
             queryClient.invalidateQueries({ queryKey: ['products'] });
             setShowProductModal(false);
             setProductForm(BLANK_PRODUCT);
+            toast.success("Producto creado exitosamente");
         },
     });
 
@@ -66,6 +57,7 @@ export default function TenantDashboard() {
             setShowProductModal(false);
             setEditingProduct(null);
             setProductForm(BLANK_PRODUCT);
+            toast.success("Producto actualizado");
         },
     });
 
@@ -77,22 +69,9 @@ export default function TenantDashboard() {
             setShowEmployeeModal(false);
             setEmployeeForm({ username: '', password: '', full_name: '', email: '' });
             setConfirmPassword('');
+            toast.success("Cajero creado exitosamente");
         },
     });
-
-    const handleEditProduct = (product: Product) => {
-        setEditingProduct(product);
-        setProductForm({
-            descripcion: product.descripcion,
-            categoria_id: product.categoria_id,
-            precio_venta: product.precio_venta,
-            costo_producto: product.costo_producto ?? 0,
-            codigo_corto: product.codigo_corto ?? '',
-            codigo_largo: product.codigo_largo ?? '',
-            image_url: product.image_url ?? '',
-        });
-        setShowProductModal(true);
-    };
 
     const handleProductSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,211 +82,218 @@ export default function TenantDashboard() {
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const formData = new FormData();
-        formData.append('file', file);
+    const canSubmitEmployee = employeeForm.username && employeeForm.password && employeeForm.password === confirmPassword && employeeForm.full_name;
+
+    const copyToClipboard = async () => {
+        if (!credentials) return;
+        const text = `Hola ${credentials.full_name},
+
+Tus accesos al sistema son:
+Usuario: ${credentials.username}
+Contrasea: ${credentials.password}
+
+Ingresa desde: https://taboada.app`;
         try {
-            const res = await fetch(`${BASE_URL}/upload`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.url) setProductForm(prev => ({ ...prev, image_url: data.url }));
-        } catch {
-            toast.error('Error al subir imagen');
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            toast.success("Copiado al portapapeles");
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            toast.error("Error al copiar");
         }
     };
 
-    const handleCopy = () => {
-        if (!credentials) return;
-        navigator.clipboard.writeText(`Cajero: ${credentials.full_name}\nUsuario: ${credentials.username}\nContraseña: ${credentials.password}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const pf = (key: keyof ProductCreate, val: string | number) =>
-        setProductForm(f => ({ ...f, [key]: val }));
-
-    const canSubmitEmployee = employeeForm.password === confirmPassword && employeeForm.password!.length >= 8;
-
     return (
-        <div className="max-w-7xl mx-auto px-3 py-4 md:p-4 space-y-4 relative pb-20 md:pb-4">
-
-            {/* ── Credentials Modal ─────────────────────────────────────── */}
-            {credentials && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                                <KeyRound size={20} className="text-amber-600" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-gray-900">Cajero creado</h2>
-                                <p className="text-sm text-gray-500">{credentials.full_name}</p>
-                            </div>
-                        </div>
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-start gap-2 text-amber-800 text-sm mb-3">
-                                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                                <span>Guarda estas credenciales ahora. La contraseña no se mostrará nuevamente.</span>
-                            </div>
-                            <div className="space-y-2">
-                                {[{ label: 'Usuario', val: credentials.username }, { label: 'Contraseña', val: credentials.password }].map(({ label, val }) => (
-                                    <div key={label} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-amber-200">
-                                        <span className="text-xs text-gray-500">{label}</span>
-                                        <span className="font-mono font-semibold text-gray-900">{val}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={handleCopy}
-                                className="flex items-center gap-2 flex-1 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-xl text-sm font-medium transition-colors">
-                                {copied ? <><Check size={16} className="text-green-600" /> Copiado</> : <><Copy size={16} /> Copiar</>}
-                            </button>
-                            <button onClick={() => setCredentials(null)}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl text-sm font-medium transition-colors">
-                                Entendido
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* Header */}
-            <div className="flex justify-between items-end">
+        <div className="max-w-7xl mx-auto space-y-8 pb-20">
+            {/* Header & Controls */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Hola, {user?.full_name?.split(' ')[0] ?? user?.username} 👋</h1>
-                    <p className="text-gray-500 mt-2 text-lg">Gestiona tu negocio desde aquí</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dashboard General</h1>
+                    <p className="text-gray-500 mt-1 font-medium">Panel de control de Matriz</p>
                 </div>
-                <div className="flex gap-4">
+                
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="bg-white px-4 py-2 rounded-2xl border border-gray-200/60 shadow-sm flex items-center gap-3">
+                        <Store size={18} className="text-indigo-500" />
+                        <select 
+                            value={selectedSucursal}
+                            onChange={(e) => setSelectedSucursal(e.target.value)}
+                            className="bg-transparent outline-none text-sm font-bold text-gray-700 min-w-[150px] cursor-pointer"
+                        >
+                            <option value="all">Todas las Sucursales</option>
+                            {sucursales.map(s => (
+                                <option key={s._id} value={s._id}>{s.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <button onClick={() => refetch()} className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200/60 shadow-sm hover:bg-gray-50 transition-all active:scale-95">
+                        <RefreshCw size={20} className={loadingMetrics ? "animate-spin" : ""} />
+                    </button>
+                    
                     <button onClick={() => { setEditingProduct(null); setProductForm(BLANK_PRODUCT); setShowProductModal(true); }}
-                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition-all active:scale-95">
-                        <Plus size={20} /> Nuevo Producto
+                        className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition-all active:scale-95">
+                        <Plus size={18} /> Producto
                     </button>
+                    
                     <button onClick={() => setShowEmployeeModal(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-full font-bold hover:bg-gray-50 transition-all active:scale-95">
-                        <Users size={20} /> Nuevo Cajero
+                        className="flex items-center gap-2 px-5 py-3 bg-white text-gray-900 border-2 border-gray-200 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95">
+                        <Users size={18} /> Cajero
                     </button>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 bg-white/20 rounded-2xl"><DollarSign size={24} /></div>
-                        <span className="text-indigo-100 font-medium">Ventas Hoy</span>
-                    </div>
-                    <h3 className="text-4xl font-black mb-1">Bs. {(stats?.total_sales ?? 0).toFixed(2)}</h3>
-                    <p className="text-indigo-100/80 text-sm">Actualizado hace un momento</p>
+            {loadingMetrics ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="animate-spin text-indigo-500" size={48} />
                 </div>
-                <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 bg-orange-50 rounded-2xl"><Package size={24} className="text-orange-500" /></div>
-                        <span className="text-gray-400 font-medium">Catálogo</span>
-                    </div>
-                    <h3 className="text-4xl font-black text-gray-900 mb-1">{stats?.active_products ?? 0}</h3>
-                    <p className="text-gray-400 text-sm">Productos activos</p>
-                </div>
-                <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 bg-blue-50 rounded-2xl"><Store size={24} className="text-blue-500" /></div>
-                        <span className="text-gray-400 font-medium">Personal</span>
-                    </div>
-                    <h3 className="text-4xl font-black text-gray-900 mb-1">{stats?.active_employees ?? 0}</h3>
-                    <p className="text-gray-400 text-sm">Cajeros registrados</p>
-                </div>
-            </div>
+            ) : metrics ? (
+                <>
+                    {/* Top Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
+                            <div className="absolute -right-6 -top-6 bg-white/10 w-32 h-32 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
+                            <div className="flex justify-between items-start mb-4 relative">
+                                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm"><DollarSign size={24} /></div>
+                                <button onClick={() => setShowVentasHoy(!showVentasHoy)} className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
+                                    {showVentasHoy ? <Eye size={20} /> : <EyeOff size={20} />}
+                                </button>
+                            </div>
+                            <h3 className="text-4xl font-black mb-1 tracking-tight">
+                                {showVentasHoy ? `Bs. ${metrics.ventas_hoy.toFixed(2)}` : '****'}
+                            </h3>
+                            <p className="text-indigo-100 font-medium text-sm">Ventas Hoy</p>
+                        </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Products List */}
-                <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-200/60">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900">Productos Recientes</h2>
-                        <Link to="/catalogo" className="text-sm font-bold text-gray-400 hover:text-black transition-colors">Ver todos</Link>
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-blue-50 rounded-2xl"><ShoppingBag size={24} className="text-blue-500" /></div>
+                            </div>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.transacciones_ventas}</h3>
+                            <p className="text-gray-500 font-medium text-sm">Transacciones de Venta Hoy</p>
+                        </div>
+
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-green-50 rounded-2xl"><Package size={24} className="text-green-500" /></div>
+                            </div>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.transacciones_compras}</h3>
+                            <p className="text-gray-500 font-medium text-sm">Transacciones de Compra Hoy</p>
+                        </div>
+
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-red-50 rounded-2xl"><XCircle size={24} className="text-red-500" /></div>
+                            </div>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.anulaciones_hoy}</h3>
+                            <p className="text-gray-500 font-medium text-sm">Anulaciones Hoy</p>
+                        </div>
                     </div>
-                    {loadingProducts ? (
-                        <div className="flex justify-center p-8"><Loader2 className="animate-spin text-gray-400" /></div>
-                    ) : (
-                        <div className="space-y-3">
-                            {paginatedProducts.map(product => (
-                                <div key={product._id}
-                                    className="group p-4 hover:bg-gray-50 rounded-3xl transition-colors flex items-center gap-4 cursor-pointer"
-                                    onClick={() => handleEditProduct(product)}>
-                                    <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
-                                        {product.image_url ? (
-                                            <img src={product.image_url} alt={product.descripcion} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Package size={22} className="text-gray-400" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{product.descripcion}</h4>
-                                        <p className="text-sm text-gray-400">
-                                            <span className="font-semibold text-gray-700">Bs. {product.precio_venta.toFixed(2)}</span>
-                                            {product.codigo_corto && <span className="ml-2 font-mono text-xs">{product.codigo_corto}</span>}
-                                        </p>
-                                    </div>
-                                    <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-2 py-1 rounded-lg shrink-0">
-                                        {product.categoria_nombre ?? '—'}
-                                    </span>
+
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Monthly Bar Chart */}
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Evolucin Anual (Mes a Mes)</h2>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={metrics.grafico_mensual} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `Bs${val/1000}k`} />
+                                        <RechartsTooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                        
+                                        <Bar dataKey="margen_distribuidor" name="Margen Dist. (15%)" stackId="a" fill="#8b5cf6" radius={[0,0,4,4]} />
+                                        <Bar dataKey="margen_cliente" name="Margen Cliente (85%)" stackId="a" fill="#indigo-300" radius={[4,4,0,0]} />
+                                        
+                                        <ReferenceLine x={metrics.grafico_mensual.find((m: any) => m.mes_index === metrics.mes_actual)?.mes} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Mes Actual', fill: '#ef4444', fontSize: 12 }} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Daily Line Chart */}
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Ventas Diarias (Mes Actual)</h2>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={metrics.grafico_diario} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `Bs${val/1000}k`} />
+                                        <RechartsTooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                        
+                                        <Line type="monotone" dataKey="ventas_totales" name="Ventas Totales" stroke="#4f46e5" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                                        <Line type="monotone" dataKey="margen_distribuidor" name="Margen Dist. (15%)" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                                        <Line type="monotone" dataKey="margen_cliente" name="Margen Cliente (85%)" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Lists */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Top Products */}
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Productos Ms Vendidos Hoy</h2>
+                            {metrics.productos_mas_vendidos.length === 0 ? (
+                                <p className="text-gray-500 text-center py-8">No hay ventas registradas hoy.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {metrics.productos_mas_vendidos.map((prod: any, idx: number) => (
+                                        <div key={prod.producto_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                                                    {idx + 1}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{prod.nombre}</p>
+                                                    <p className="text-xs text-gray-500">{prod.cantidad} unidades vendidas</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-indigo-600">Bs. {prod.ingresos.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                            {products?.length === 0 && (
-                                <div className="text-center py-12 text-gray-400">
-                                    <ShoppingBag size={48} className="mx-auto mb-4 opacity-20" />
-                                    <p>No hay productos aún.</p>
-                                </div>
-                            )}
-                            {products && products.length > ITEMS_PER_PAGE && (
-                                <Pagination 
-                                    currentPage={currentPageProducts}
-                                    totalPages={Math.ceil(products.length / ITEMS_PER_PAGE)}
-                                    onPageChange={setCurrentPageProducts}
-                                    totalItems={products.length}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                />
                             )}
                         </div>
-                    )}
-                </div>
 
-                {/* Employees List */}
-                <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-200/60">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900">Equipo</h2>
-                    </div>
-                    {loadingEmployees ? (
-                        <div className="flex justify-center p-8"><Loader2 className="animate-spin text-gray-400" /></div>
-                    ) : (
-                        <div className="space-y-3">
-                            {paginatedEmployees.map(emp => (
-                                <div key={emp._id} className="p-4 bg-gray-50 rounded-3xl flex items-center justify-between">
-                                    <div>
-                                        <h4 className="font-bold text-gray-900">{emp.full_name ?? emp.username}</h4>
-                                        <p className="text-xs text-gray-500">@{emp.username}</p>
-                                    </div>
-                                    <span className="text-xs font-bold px-3 py-1 bg-green-100 text-green-700 rounded-full">Activo</span>
+                        {/* Active Personnel */}
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Activo Hoy (Vendiendo)</h2>
+                            {metrics.personal_activo.length === 0 ? (
+                                <p className="text-gray-500 text-center py-8">No hay personal con ventas hoy.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {metrics.personal_activo.map((emp: any) => (
+                                        <div key={emp.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:border-indigo-100 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                                    {emp.nombre.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{emp.nombre}</p>
+                                                    <p className="text-xs text-gray-500">{emp.transacciones} transacciones hoy</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-gray-900">Bs. {emp.ventas_hoy.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                            {employees?.length === 0 && (
-                                <p className="text-center text-gray-400 text-sm py-8">No hay cajeros registrados.</p>
-                            )}
-                            {employees && employees.length > ITEMS_PER_PAGE && (
-                                <Pagination 
-                                    currentPage={currentPageEmployees}
-                                    totalPages={Math.ceil(employees.length / ITEMS_PER_PAGE)}
-                                    onPageChange={setCurrentPageEmployees}
-                                    totalItems={employees.length}
-                                    itemsPerPage={ITEMS_PER_PAGE}
-                                />
                             )}
                         </div>
-                    )}
-                </div>
-            </div>
+                    </div>
+                </>
+            ) : null}
 
-            {/* ── Product Modal ──────────────────────────────────────────────────── */}
-            {showProductModal && (
+                        {showProductModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-[32px] p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
