@@ -12,7 +12,7 @@ import motor.motor_asyncio
 router = APIRouter()
 LA_PAZ_TZ = pytz.timezone("America/La_Paz")
 
-@router.get("/dashboard-matriz")
+@router.get("")
 async def get_dashboard_matriz(
     sucursal_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user)
