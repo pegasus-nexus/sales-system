@@ -3,6 +3,8 @@ import shutil
 import tempfile
 import traceback
 import unicodedata
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import List, Dict, Any, Optional
 import pandas as pd
 import cloudinary
@@ -12,10 +14,12 @@ from pymongo import UpdateOne, InsertOne
 from bson.objectid import ObjectId
 from app.db import get_raw_db
 from app.infrastructure.core.config import settings
+from app.core.config import BUSINESS_TIMEZONE
 from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 
 router = APIRouter()
+BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
 
 def clean_col_name(c) -> str:
     if c is None:
@@ -228,10 +232,21 @@ async def importar(
                 
             if hasattr(f_val, "strftime"):
                 numero_ticket = f_val.strftime("%Y-%m-%d %H:%M:%S")
-                created_at = f_val.to_pydatetime() if hasattr(f_val, "to_pydatetime") else f_val
+                created_at_raw = f_val.to_pydatetime() if hasattr(f_val, "to_pydatetime") else f_val
             else:
                 numero_ticket = str(f_val)
-                created_at = pd.to_datetime(f_val).to_pydatetime()
+                created_at_raw = pd.to_datetime(f_val).to_pydatetime()
+
+            if isinstance(created_at_raw, datetime):
+                if created_at_raw.tzinfo is None:
+                    created_at_local = created_at_raw.replace(tzinfo=BOLIVIA_TZ)
+                else:
+                    created_at_local = created_at_raw.astimezone(BOLIVIA_TZ)
+                created_at_utc = created_at_local.astimezone(ZoneInfo("UTC"))
+                fecha_bolivia_str = created_at_local.strftime("%Y-%m-%d")
+            else:
+                created_at_utc = datetime.now(timezone.utc)
+                fecha_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
 
             p_cant = safe_num(row.get("CANTIDAD"), default=1.0)
             p_precio = safe_num(row.get("PRECIO_UNITARIO"), default=0.0)
@@ -256,7 +271,8 @@ async def importar(
             if numero_ticket not in grupos_tickets:
                 grupos_tickets[numero_ticket] = {
                     "numero_ticket": numero_ticket,
-                    "created_at": created_at,
+                    "created_at": created_at_utc,
+                    "fecha_bolivia": fecha_bolivia_str,
                     "sucursal_id": sucursal_id,
                     "tenant_id": tenant_id,
                     "total": 0.0,

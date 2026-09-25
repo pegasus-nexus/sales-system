@@ -101,10 +101,37 @@ class SalesReadService:
             else:
                 match_stage["sucursal_id"] = str(sucursal_id)
 
-        # 4. Rango de Fechas Semiabierto [start_utc, end_utc) en America/La_Paz
-        start_utc, end_utc = cls.calculate_bolivia_date_range(start_date_str, end_date_str)
-        if start_utc and end_utc:
-            match_stage["created_at"] = {"$gte": start_utc, "$lt": end_utc}
+        # 4. Rango de Fechas Semiabierto en America/La_Paz y compatibilidad histórica
+        if start_date_str.lower() not in ["all", "historial", "todo", ""]:
+            try:
+                s_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                e_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+                start_local = datetime.combine(s_dt, time.min, tzinfo=BOLIVIA_TZ)
+                end_local = datetime.combine(e_dt + timedelta(days=1), time.min, tzinfo=BOLIVIA_TZ)
+
+                start_utc = start_local.astimezone(ZoneInfo("UTC"))
+                end_utc = end_local.astimezone(ZoneInfo("UTC"))
+
+                start_naive = datetime.combine(s_dt, time.min)
+                end_naive = datetime.combine(e_dt + timedelta(days=1), time.min)
+
+                date_or_clause = [
+                    {"created_at": {"$gte": start_utc, "$lt": end_utc}},
+                    {"created_at": {"$gte": start_naive, "$lt": end_naive}},
+                    {"fecha_bolivia": {"$gte": start_date_str, "$lte": end_date_str}}
+                ]
+
+                if "$or" in match_stage:
+                    existing_or = match_stage.pop("$or")
+                    match_stage["$and"] = [
+                        {"$or": existing_or},
+                        {"$or": date_or_clause}
+                    ]
+                else:
+                    match_stage["$or"] = date_or_clause
+            except Exception as err:
+                print(f"⚠️ Error estructurando filtro de fechas ({start_date_str} -> {end_date_str}): {err}")
 
         projection = {
             "_id": 1,
@@ -112,6 +139,7 @@ class SalesReadService:
             "numero_ticket": 1,
             "sucursal_id": 1,
             "created_at": 1,
+            "fecha_bolivia": 1,
             "total": 1,
             "descuento": 1,
             "anulada": 1,
@@ -136,6 +164,26 @@ class SalesReadService:
                 doc["sucursal_id"] = "CENTRAL"
 
             doc["total"] = safe_float(doc.get("total", 0.0))
+
+            # Validación estricta de pertenencia al día/rango en hora local de Bolivia
+            if start_date_str.lower() not in ["all", "historial", "todo", ""]:
+                fecha_b = doc.get("fecha_bolivia")
+                created_raw = doc.get("created_at")
+                doc_date_str = None
+
+                if isinstance(fecha_b, str) and len(fecha_b) >= 10:
+                    doc_date_str = fecha_b[:10]
+                elif isinstance(created_raw, datetime):
+                    if created_raw.tzinfo is None:
+                        doc_date_str = created_raw.strftime("%Y-%m-%d")
+                    else:
+                        doc_date_str = created_raw.astimezone(BOLIVIA_TZ).strftime("%Y-%m-%d")
+                elif isinstance(created_raw, str) and len(created_raw) >= 10:
+                    doc_date_str = created_raw[:10]
+
+                if doc_date_str and not (start_date_str <= doc_date_str <= end_date_str):
+                    continue
+
             cleaned_sales.append(doc)
 
         return cleaned_sales

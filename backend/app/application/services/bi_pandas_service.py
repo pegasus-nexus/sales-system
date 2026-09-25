@@ -27,7 +27,39 @@ from app.schemas.bi import (
     CategoriaProductosItemBI
 )
 
-BOLIVIA_TZ = ZoneInfo(BUSINESS_TIMEZONE)
+def _normalize_df_datetimes(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    def extract_bolivia_dt(row):
+        c = row.get("created_at")
+        fb = row.get("fecha_bolivia")
+        if isinstance(c, datetime):
+            if c.tzinfo is None:
+                return c.replace(tzinfo=BOLIVIA_TZ)
+            return c.astimezone(BOLIVIA_TZ)
+        elif isinstance(c, str):
+            try:
+                dt_p = pd.to_datetime(c)
+                if getattr(dt_p, "tzinfo", None) is None:
+                    return dt_p.tz_localize(BOLIVIA_TZ)
+                return dt_p.tz_convert(BOLIVIA_TZ)
+            except Exception:
+                pass
+        if isinstance(fb, str) and len(fb) >= 10:
+            try:
+                d = datetime.strptime(fb[:10], "%Y-%m-%d")
+                return d.replace(hour=12, minute=0, second=0, tzinfo=BOLIVIA_TZ)
+            except Exception:
+                pass
+        return datetime.now(BOLIVIA_TZ)
+
+    df["created_at_bolivia"] = df.apply(extract_bolivia_dt, axis=1)
+    df["created_at_utc"] = df["created_at_bolivia"].apply(lambda d: d.astimezone(ZoneInfo("UTC")))
+    df["hora_bolivia"] = df["created_at_bolivia"].apply(lambda d: d.hour)
+    df["hora_minuto_bolivia"] = df["created_at_bolivia"].apply(lambda d: d.strftime("%H:%M"))
+    df["fecha_bolivia"] = df["created_at_bolivia"].apply(lambda d: d.strftime("%Y-%m-%d"))
+    return df
 
 
 class BIPandasService:
@@ -101,10 +133,7 @@ class BIPandasService:
         df_sales.rename(columns={"_id": "ticket_id", "total": "total_neto"}, inplace=True)
         df_sales["total_neto"] = pd.to_numeric(df_sales["total_neto"].apply(safe_float), errors="coerce").fillna(0.0)
 
-        df_sales["created_at_utc"] = pd.to_datetime(df_sales["created_at"], utc=True)
-        df_sales["created_at_bolivia"] = df_sales["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
-        df_sales["hora_bolivia"] = df_sales["created_at_bolivia"].dt.hour
-        df_sales["hora_minuto_bolivia"] = df_sales["created_at_bolivia"].dt.strftime("%H:%M")
+        df_sales = _normalize_df_datetimes(df_sales)
 
         ingresos_totales = round(float(df_sales["total_neto"].sum()), 2)
         cantidad_ordenes = int(len(df_sales))
@@ -400,9 +429,7 @@ class BIPandasService:
                 return 0.0, 0, 0.0, pd.DataFrame()
             df = pd.DataFrame(raw_list)
             df["total_neto"] = pd.to_numeric(df["total"].apply(safe_float), errors="coerce").fillna(0.0)
-            df["created_at_utc"] = pd.to_datetime(df["created_at"], utc=True)
-            df["created_at_bolivia"] = df["created_at_utc"].dt.tz_convert(BOLIVIA_TZ)
-            df["fecha_bolivia"] = df["created_at_bolivia"].dt.strftime("%Y-%m-%d")
+            df = _normalize_df_datetimes(df)
 
             ing = round(float(df["total_neto"].sum()), 2)
             ord_cnt = int(len(df))
