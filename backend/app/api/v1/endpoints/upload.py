@@ -2,6 +2,8 @@ import os
 import shutil
 import tempfile
 import traceback
+import unicodedata
+from typing import List, Dict, Any, Optional
 import pandas as pd
 import cloudinary
 import cloudinary.uploader
@@ -15,7 +17,24 @@ from app.domain.models.user import User
 
 router = APIRouter()
 
-def get_unique_column_mapping(columns: List[Any]) -> Dict[Any, str]:
+def clean_col_name(c) -> str:
+    if c is None:
+        return ""
+    text = unicodedata.normalize('NFKD', str(c)).encode('ASCII', 'ignore').decode('utf-8').upper()
+    return ''.join(ch for ch in text if ch.isalnum())
+
+def safe_num(val, default=0.0) -> float:
+    if val is None or pd.isna(val):
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    try:
+        s = str(val).strip().replace(',', '.')
+        return float(s)
+    except Exception:
+        return default
+
+def get_unique_column_mapping(columns: Any) -> Dict[Any, str]:
     col_map: Dict[Any, str] = {}
     assigned_targets = set()
     cleaned_dict = {col: clean_col_name(col) for col in columns}
@@ -119,6 +138,9 @@ async def importar(
             col_map = get_unique_column_mapping(df_item.columns)
             df_renamed = df_item.rename(columns=col_map)
             
+            # Deduplicar columnas si existieran
+            df_renamed = df_renamed.loc[:, ~df_renamed.columns.duplicated(keep='first')]
+            
             # Mantener solo columnas mapeadas conocidas para evitar ambigüedad de Series
             keep_cols = [col for col in ['FECHA', 'DESCRIPCION', 'CODIGO', 'CANTIDAD', 'PRECIO_UNITARIO', 'TOTAL'] if col in df_renamed.columns]
             if len(keep_cols) >= 2:
@@ -128,6 +150,9 @@ async def importar(
             raise ValueError("El archivo subido está vacío o no contiene hojas válidas.")
 
         df_completo = pd.concat(processed_dfs, ignore_index=True)
+        # Deduplicar columnas en el DataFrame consolidado
+        df_completo = df_completo.loc[:, ~df_completo.columns.duplicated(keep='first')]
+        
         total_original_filas = len(df_completo)
         print(f"[OK] Archivo leído y unificado. Filas crudas: {total_original_filas}")
 
@@ -137,11 +162,17 @@ async def importar(
 
         df_completo = df_completo.dropna(subset=['DESCRIPCION'])
         
-        # Parseo robusto de fechas
-        df_completo['FECHA'] = pd.to_datetime(df_completo['FECHA'], errors='coerce', format='mixed')
-        if df_completo['FECHA'].isna().mean() > 0.5:
-            df_completo['FECHA'] = pd.to_datetime(df_completo['FECHA'], errors='coerce', dayfirst=True)
+        # Parseo robusto de fechas con verificación escalar segura
+        fecha_series = df_completo['FECHA']
+        if isinstance(fecha_series, pd.DataFrame):
+            fecha_series = fecha_series.iloc[:, 0]
 
+        parsed_fechas = pd.to_datetime(fecha_series, errors='coerce', format='mixed')
+        na_ratio = float(parsed_fechas.isna().mean()) if len(parsed_fechas) > 0 else 0.0
+        if na_ratio > 0.5:
+            parsed_fechas = pd.to_datetime(fecha_series, errors='coerce', dayfirst=True)
+
+        df_completo['FECHA'] = parsed_fechas
         df_completo = df_completo.dropna(subset=['FECHA'])
 
         # Extracción a lista de diccionarios planos (inmune a errores de Series de pandas)
