@@ -2,7 +2,7 @@ import { BASE_URL } from '../api/client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
-import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, KeyRound, AlertTriangle, Copy, Check, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
+import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
 import { toast } from 'sonner';
@@ -17,7 +17,6 @@ const BLANK_PRODUCT: ProductCreate = {
 };
 
 export default function TenantDashboard() {
-    const user = useAuthStore(state => state.user);
     const queryClient = useQueryClient();
     
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
@@ -31,7 +30,6 @@ export default function TenantDashboard() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [credentials, setCredentials] = useState<{ username: string; password: string; full_name: string } | null>(null);
-    const [copied, setCopied] = useState(false);
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
@@ -85,24 +83,6 @@ export default function TenantDashboard() {
 
     const canSubmitEmployee = employeeForm.username && employeeForm.password && employeeForm.password === confirmPassword && employeeForm.full_name;
 
-    const copyToClipboard = async () => {
-        if (!credentials) return;
-        const text = `Hola ${credentials.full_name},
-
-Tus accesos al sistema son:
-Usuario: ${credentials.username}
-Contrasea: ${credentials.password}
-
-Ingresa desde: https://taboada.app`;
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            toast.success("Copiado al portapapeles");
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            toast.error("Error al copiar");
-        }
-    };
 
 
     const pf = (key: keyof ProductCreate, val: string | number) =>
