@@ -1,11 +1,12 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, Plus, Search, Save, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { ClipboardList, Plus, Search, Save, CheckCircle, ArrowLeft, Loader2, X } from 'lucide-react';
 import { getConteos, iniciarConteo, getConteo, guardarProgresoConteo, finalizarConteo } from '../api/conteos_api';
 import type { ConteoItem } from '../api/conteos_api';
 import { getSucursales } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
+import { useConfirm } from '../components/ConfirmModal';
 import { formatFullDate } from '../utils/dateUtils';
 
 const ControlInventarioPage = () => {
@@ -41,9 +42,15 @@ const ControlInventarioPage = () => {
         }
     });
 
+    const [showStartModal, setShowStartModal] = useState(false);
+    const [startNotas, setStartNotas] = useState("Conteo General");
     const handleStart = () => {
-        if (!confirm(`¿Iniciar un nuevo conteo físico para la sucursal seleccionada?\nSe tomará una foto del stock actual del sistema.`)) return;
-        startMutation.mutate("Conteo General");
+        setShowStartModal(true);
+    };
+
+    const confirmStart = () => {
+        startMutation.mutate(startNotas);
+        setShowStartModal(false);
     };
 
     if (activeConteoId) {
@@ -52,6 +59,51 @@ const ControlInventarioPage = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+
+            {showStartModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-gray-800">Iniciar Nuevo Conteo Físico</h3>
+                            <button onClick={() => setShowStartModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <p className="text-sm text-gray-600">
+                                Se tomará una fotografía del inventario actual del sistema para compararlo con tu conteo físico.
+                            </p>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">Motivo / Notas del Conteo</label>
+                                <input 
+                                    type="text" 
+                                    value={startNotas}
+                                    onChange={(e) => setStartNotas(e.target.value)}
+                                    placeholder="Ej: Conteo mensual, Inventario general, etc."
+                                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-gray-100 flex justify-end gap-2 bg-gray-50">
+                            <button 
+                                onClick={() => setShowStartModal(false)}
+                                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={confirmStart}
+                                disabled={startMutation.isPending}
+                                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2"
+                            >
+                                {startMutation.isPending && <Loader2 size={16} className="animate-spin"/>}
+                                Iniciar Conteo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -140,6 +192,7 @@ const ControlInventarioPage = () => {
 };
 
 const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () => void }) => {
+    const confirmModal = useConfirm();
     const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
     const [localItems, setLocalItems] = useState<ConteoItem[]>([]);
@@ -231,8 +284,8 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                             Guardar Borrador
                         </button>
                         <button 
-                            onClick={() => {
-                                if(confirm('¿Finalizar conteo? Ya no podrás editarlo y se generará el reporte definitivo.')) {
+                            onClick={async () => {
+                                if(await confirmModal({title: 'Finalizar Conteo', message: '¿Finalizar conteo? Ya no podrás editarlo y se generará el reporte definitivo.', type: 'warning'})) {
                                     finishMutation.mutate();
                                 }
                             }}

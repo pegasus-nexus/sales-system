@@ -47,7 +47,7 @@ export const getConteos = (sucursal_id?: string) => {
 export const iniciarConteo = (sucursal_id: string, notas?: string) => {
     return client<ConteoFisico>(`/conteos-fisicos/iniciar`, {
         method: 'POST',
-        body: JSON.stringify({ sucursal_id, notas })
+        body: { sucursal_id, notas }
     });
 };
 
@@ -58,7 +58,7 @@ export const getConteo = (conteo_id: string) => {
 export const guardarProgresoConteo = (conteo_id: string, items: ConteoItem[], notas?: string) => {
     return client<ConteoFisico>(`/conteos-fisicos/${conteo_id}`, {
         method: 'PUT',
-        body: JSON.stringify({ items, notas })
+        body: { items, notas }
     });
 };
 
