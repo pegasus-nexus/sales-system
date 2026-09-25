@@ -1,7 +1,7 @@
 import { BASE_URL } from '../api/client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../api/client';
+import { client } from '../api/client';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
 import { Plus, Users, Package, DollarSign, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
 import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
@@ -34,7 +34,7 @@ export default function TenantDashboard() {
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
-    const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { const res = await api.get('/dashboard-matriz/exchange-rates'); return res.data; }, refetchInterval: 1800000 });
+    const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { const res = await client('/dashboard-matriz/exchange-rates'); return res.data; }, refetchInterval: 1800000 });
     const { data: metricsHoy, isLoading: loadingHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
     const { data: metricsMensual, isLoading: loadingMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
     const { data: metricsDiario, isLoading: loadingDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
