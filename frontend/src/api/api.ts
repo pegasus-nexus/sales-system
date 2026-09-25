@@ -8,7 +8,8 @@
 
 export { client } from './client';
 
-import { client } from './client';
+import { client, BASE_URL } from './client';
+import { useAuthStore } from '../store/authStore';
 
 
 
@@ -2100,3 +2101,26 @@ export const getDashboardMatriz = (sucursal_id?: string) => {
     const url = sucursal_id && sucursal_id !== 'all' ? `/dashboard-matriz?sucursal_id=${sucursal_id}` : '/dashboard-matriz';
     return client<DashboardMatrizMetrics>(url);
 };
+
+export async function exportInventarioExcel(): Promise<void> {
+    const token = useAuthStore.getState().token;
+    if (!token) throw new Error("No token");
+    
+    const response = await fetch(`${BASE_URL}/inventario/exportar-excel`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) throw new Error("Error al exportar");
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Inventario_Completo_${new Date().getTime()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}

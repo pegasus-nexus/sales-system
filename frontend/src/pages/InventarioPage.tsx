@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer } from 'lucide-react';
-import { getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario } from '../api/api';
+import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
@@ -145,6 +145,14 @@ export default function InventarioPage() {
                 </div>
 
                 <div className="flex gap-3">
+                    <button 
+                        onClick={() => exportInventarioExcel().then(() => toast.success('Inventario exportado')).catch(() => toast.error('Error al exportar'))}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors"
+                        title="Exportar Stock Completo (Excel)"
+                    >
+                        <FileSpreadsheet size={16} />
+                        Exportar Excel
+                    </button>
                     {esMatriz && (
                         <div className="w-full md:w-56">
                             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Viendo Sucursal</label>
