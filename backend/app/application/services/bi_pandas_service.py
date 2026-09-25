@@ -292,10 +292,10 @@ class BIPandasService:
 
         # Detectar ventas fuera de horario comercial
         after_hours_list: List[AfterHoursActivityItem] = []
-        if "hora_bolivia" in df_merged.columns:
-            after_hours_df = df_merged[(df_merged["hora_bolivia"] < op_hour) | (df_merged["hora_bolivia"] > cl_hour)]
+        if "hora_bolivia" in df_sales.columns:
+            after_hours_df = df_sales[(df_sales["hora_bolivia"] < op_hour) | (df_sales["hora_bolivia"] > cl_hour)]
             if not after_hours_df.empty:
-                grouped_after = after_hours_df.groupby(["nombre", "hora_minuto_bolivia", "hora_bolivia"]).agg(
+                grouped_after = after_hours_df.groupby(["sucursal_nombre_canonical", "hora_minuto_bolivia", "hora_bolivia"]).agg(
                     tickets=("ticket_id", "count"),
                     monto_total=("total_neto", "sum")
                 ).reset_index()
@@ -304,7 +304,7 @@ class BIPandasService:
                     st_op = "PRE_APERTURA" if h_bol < op_hour else "POST_CIERRE"
                     after_hours_list.append(
                         AfterHoursActivityItem(
-                            sucursal_nombre=str(r_ah["nombre"]),
+                            sucursal_nombre=str(r_ah["sucursal_nombre_canonical"]),
                             hora_exacta=str(r_ah["hora_minuto_bolivia"]),
                             tickets=int(r_ah["tickets"]),
                             monto_total=round(float(r_ah["monto_total"]), 2),
@@ -361,11 +361,11 @@ class BIPandasService:
             insights_ia=insights_ia_list
         )
 
-        df_recientes = df_merged.sort_values(by="created_at_utc", ascending=False).head(10)
+        df_recientes = df_sales.sort_values(by="created_at_utc", ascending=False).head(10)
         ventas_recientes_list: List[VentaRecienteBI] = []
 
         for _, row in df_recientes.iterrows():
-            suc_name = str(row["nombre"])
+            suc_name = str(row.get("sucursal_nombre_canonical", "Sucursal Central"))
             num_ticket = str(row.get("numero_ticket") or row["ticket_id"])
             if len(num_ticket) > 8 and not num_ticket.startswith("#"):
                 num_ticket = f"#{num_ticket[-6:].upper()}"
