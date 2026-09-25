@@ -18,7 +18,9 @@ const BLANK_PRODUCT: ProductCreate = {
 export default function TenantDashboard() {
     const queryClient = useQueryClient();
     
-    const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
+    const [filterHoy, setFilterHoy] = useState<string>('all');
+    const [filterMensual, setFilterMensual] = useState<string>('all');
+    const [filterDiario, setFilterDiario] = useState<string>('all');
     const [showVentasHoy, setShowVentasHoy] = useState(false);
     
     // Modals
@@ -31,11 +33,13 @@ export default function TenantDashboard() {
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
-    const { data: metrics, isLoading: loadingMetrics, refetch } = useQuery({ 
-        queryKey: ['dashboard-matriz', selectedSucursal], 
-        queryFn: () => getDashboardMatriz(selectedSucursal),
-        refetchInterval: 300000 // Refresh every 5 mins
-    });
+    const { data: metricsHoy, isLoading: loadingHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
+    const { data: metricsMensual, isLoading: loadingMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
+    const { data: metricsDiario, isLoading: loadingDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
+    
+    const loadingMetrics = loadingHoy || loadingMensual || loadingDiario;
+    const refetchAll = () => { refetchHoy(); };
+
 
     const createProductMutation = useMutation({
         mutationFn: (data: ProductCreate) => createProduct(data),
@@ -114,22 +118,8 @@ export default function TenantDashboard() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="bg-white px-4 py-2 rounded-2xl border border-gray-200/60 shadow-sm flex items-center gap-3">
-                        <Store size={18} className="text-indigo-500" />
-                        <select 
-                            value={selectedSucursal}
-                            onChange={(e) => setSelectedSucursal(e.target.value)}
-                            className="bg-transparent outline-none text-sm font-bold text-gray-700 min-w-[150px] cursor-pointer"
-                        >
-                            <option value="all">Todas las Sucursales</option>
-                            {sucursales.map(s => (
-                                <option key={s._id} value={s._id}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <button onClick={() => refetch()} className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200/60 shadow-sm hover:bg-gray-50 transition-all active:scale-95">
-                        <RefreshCw size={20} className={loadingMetrics ? "animate-spin" : ""} />
+                    <button onClick={refetchAll} className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200/60 shadow-sm hover:bg-gray-50 transition-all active:scale-95" title="Actualizar datos">
+                        <RefreshCw size={20} className={loadingHoy ? "animate-spin" : ""} />
                     </button>
                     
                     <button onClick={() => { setEditingProduct(null); setProductForm(BLANK_PRODUCT); setShowProductModal(true); }}
@@ -148,7 +138,7 @@ export default function TenantDashboard() {
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="animate-spin text-indigo-500" size={48} />
                 </div>
-            ) : metrics ? (
+            ) : metricsHoy && metricsMensual && metricsDiario ? (
                 <>
                     {/* Top Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -156,12 +146,22 @@ export default function TenantDashboard() {
                             <div className="absolute -right-6 -top-6 bg-white/10 w-32 h-32 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
                             <div className="flex justify-between items-start mb-4 relative">
                                 <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm"><DollarSign size={24} /></div>
-                                <button onClick={() => setShowVentasHoy(!showVentasHoy)} className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
-                                    {showVentasHoy ? <Eye size={20} /> : <EyeOff size={20} />}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <select 
+                                        value={filterHoy}
+                                        onChange={(e) => setFilterHoy(e.target.value)}
+                                        className="bg-white/10 outline-none text-xs font-bold text-white rounded-lg px-2 py-1 cursor-pointer appearance-none"
+                                    >
+                                        <option value="all" className="text-gray-900">Todas las Sucursales</option>
+                                        {sucursales.map(s => <option key={s._id} value={s._id} className="text-gray-900">{s.nombre}</option>)}
+                                    </select>
+                                    <button onClick={() => setShowVentasHoy(!showVentasHoy)} className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/80 hover:text-white">
+                                        {showVentasHoy ? <Eye size={20} /> : <EyeOff size={20} />}
+                                    </button>
+                                </div>
                             </div>
                             <h3 className="text-4xl font-black mb-1 tracking-tight">
-                                {showVentasHoy ? `Bs. ${metrics.ventas_hoy.toFixed(2)}` : '****'}
+                                {showVentasHoy ? `Bs. ${metricsHoy.ventas_hoy.toFixed(2)}` : '****'}
                             </h3>
                             <p className="text-indigo-100 font-medium text-sm">Ventas Hoy</p>
                         </div>
@@ -170,7 +170,7 @@ export default function TenantDashboard() {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-blue-50 rounded-2xl"><ShoppingBag size={24} className="text-blue-500" /></div>
                             </div>
-                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.transacciones_ventas}</h3>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metricsHoy.transacciones_ventas}</h3>
                             <p className="text-gray-500 font-medium text-sm">Transacciones de Venta Hoy</p>
                         </div>
 
@@ -178,7 +178,7 @@ export default function TenantDashboard() {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-green-50 rounded-2xl"><Package size={24} className="text-green-500" /></div>
                             </div>
-                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.transacciones_compras}</h3>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metricsHoy.transacciones_compras}</h3>
                             <p className="text-gray-500 font-medium text-sm">Transacciones de Compra Hoy</p>
                         </div>
 
@@ -186,7 +186,7 @@ export default function TenantDashboard() {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-red-50 rounded-2xl"><XCircle size={24} className="text-red-500" /></div>
                             </div>
-                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metrics.anulaciones_hoy}</h3>
+                            <h3 className="text-3xl font-black text-gray-900 mb-1">{metricsHoy.anulaciones_hoy}</h3>
                             <p className="text-gray-500 font-medium text-sm">Anulaciones Hoy</p>
                         </div>
                     </div>
@@ -195,20 +195,31 @@ export default function TenantDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Monthly Bar Chart */}
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6">Evolucin Anual (Mes a Mes)</h2>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-900">Evolucin Anual (Mes a Mes)</h2>
+                                <select 
+                                    value={filterMensual}
+                                    onChange={(e) => setFilterMensual(e.target.value)}
+                                    className="bg-gray-50 border border-gray-200 outline-none text-xs font-bold text-gray-700 rounded-lg px-2 py-1 cursor-pointer"
+                                >
+                                    <option value="all">Todas las Sucursales</option>
+                                    {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
+                                </select>
+                            </div>
                             <div className="h-80">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={metrics.grafico_mensual} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <BarChart data={metricsMensual.grafico_mensual} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `Bs${val/1000}k`} />
                                         <RechartsTooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                                         <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                         
-                                        <Bar dataKey="margen_distribuidor" name="Margen Dist. (15%)" stackId="a" fill="#8b5cf6" radius={[0,0,4,4]} />
-                                        <Bar dataKey="margen_cliente" name="Margen Cliente (85%)" stackId="a" fill="#indigo-300" radius={[4,4,0,0]} />
+                                        <Bar dataKey="ventas_totales" name="Ventas Totales" fill="#4f46e5" radius={[4,4,0,0]} />
+                                        <Bar dataKey="margen_distribuidor" name="Margen Dist. (15%)" fill="#8b5cf6" radius={[4,4,0,0]} />
+                                        <Bar dataKey="margen_cliente" name="Margen Cliente (85%)" fill="#cbd5e1" radius={[4,4,0,0]} />
                                         
-                                        <ReferenceLine x={metrics.grafico_mensual.find((m: any) => m.mes_index === metrics.mes_actual)?.mes} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Mes Actual', fill: '#ef4444', fontSize: 12 }} />
+                                        <ReferenceLine x={metricsMensual.grafico_mensual.find((m: any) => m.mes_index === metricsMensual.mes_actual)?.mes} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Mes Actual', fill: '#ef4444', fontSize: 12 }} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -216,10 +227,20 @@ export default function TenantDashboard() {
 
                         {/* Daily Line Chart */}
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6">Ventas Diarias (Mes Actual)</h2>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-900">Ventas Diarias (Mes Actual)</h2>
+                                <select 
+                                    value={filterDiario}
+                                    onChange={(e) => setFilterDiario(e.target.value)}
+                                    className="bg-gray-50 border border-gray-200 outline-none text-xs font-bold text-gray-700 rounded-lg px-2 py-1 cursor-pointer"
+                                >
+                                    <option value="all">Todas las Sucursales</option>
+                                    {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
+                                </select>
+                            </div>
                             <div className="h-80">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={metrics.grafico_diario} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <LineChart data={metricsDiario.grafico_diario} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `Bs${val/1000}k`} />
@@ -240,11 +261,11 @@ export default function TenantDashboard() {
                         {/* Top Products */}
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Productos Ms Vendidos Hoy</h2>
-                            {metrics.productos_mas_vendidos.length === 0 ? (
+                            {metricsHoy.productos_mas_vendidos.length === 0 ? (
                                 <p className="text-gray-500 text-center py-8">No hay ventas registradas hoy.</p>
                             ) : (
                                 <div className="space-y-4">
-                                    {metrics.productos_mas_vendidos.map((prod: any, idx: number) => (
+                                    {metricsHoy.productos_mas_vendidos.map((prod: any, idx: number) => (
                                         <div key={prod.producto_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
@@ -267,11 +288,11 @@ export default function TenantDashboard() {
                         {/* Active Personnel */}
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Activo Hoy (Vendiendo)</h2>
-                            {metrics.personal_activo.length === 0 ? (
+                            {metricsHoy.personal_activo.length === 0 ? (
                                 <p className="text-gray-500 text-center py-8">No hay personal con ventas hoy.</p>
                             ) : (
                                 <div className="space-y-4">
-                                    {metrics.personal_activo.map((emp: any) => (
+                                    {metricsHoy.personal_activo.map((emp: any) => (
                                         <div key={emp.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:border-indigo-100 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
