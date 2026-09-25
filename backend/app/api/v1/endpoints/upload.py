@@ -1,4 +1,4 @@
-﻿import os
+import os
 import shutil
 import tempfile
 import traceback
@@ -21,6 +21,7 @@ async def importar(
     sucursal_id: str = Form(...),  # Recibe sucursal_id directo del frontend
     current_user: User = Depends(get_current_active_user)
 ):
+    temp_path = None
     try:
         tenant_id = current_user.tenant_id
         
@@ -29,29 +30,62 @@ async def importar(
         print(f"Archivo: {file.filename} -> Sucursal Destino: {sucursal_id}")
         
         # 1. Manejo de Archivos Grandes (Guardar en Disco)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
+        is_csv = file.filename.lower().endswith(".csv") if file.filename else False
+        suffix = ".csv" if is_csv else ".xlsx"
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
             shutil.copyfileobj(file.file, temp_file)
             temp_path = temp_file.name
             
         print(f"[OK] Archivo guardado temporalmente en disco: {temp_path}")
 
-        # 2. Lectura Multi-Hoja (Pandas)
-        diccionario_hojas = pd.read_excel(temp_path, sheet_name=None)
-        df_completo = pd.concat(diccionario_hojas.values(), ignore_index=True)
+        # 2. Lectura (Excel Multi-Hoja o CSV)
+        if is_csv:
+            df_completo = pd.read_csv(temp_path)
+        else:
+            diccionario_hojas = pd.read_excel(temp_path, sheet_name=None)
+            if isinstance(diccionario_hojas, dict):
+                df_completo = pd.concat(diccionario_hojas.values(), ignore_index=True)
+            else:
+                df_completo = diccionario_hojas
+                
         total_original_filas = len(df_completo)
-        print(f"[OK] Todas las hojas unidas. Filas planas crudas: {total_original_filas}")
-        
-        # Eliminar el archivo temporal del disco duro
-        os.remove(temp_path)
+        print(f"[OK] Archivo leido. Filas crudas: {total_original_filas}")
 
-        # 3. Limpieza de Nombres y Filas Basura
-        df_completo.columns = df_completo.columns.str.strip()
-        df_completo = df_completo.dropna(subset=['DESCRIPCION'])
+        # 3. Limpieza y Normalización de Columnas
+        df_completo.columns = [str(c).strip().upper() for c in df_completo.columns]
         
-        # 4. Transformacion (Agrupacion por Ticket usando la marca de tiempo)
+        # Mapeo flexible de nombres de columnas
+        col_map = {}
+        for col in df_completo.columns:
+            if col in ["FECHA", "DATE", "FECHA VENTA", "FECHA_VENTA", "TIMESTAMP"]:
+                col_map[col] = "FECHA"
+            elif col in ["DESCRIPCION", "DETALLE", "PRODUCTO", "ITEM", "NOMBRE", "NOMBRE PRODUCTO"]:
+                col_map[col] = "DESCRIPCION"
+            elif col in ["CANTIDAD", "CANT", "QTY", "UNIDADES", "CANTIDAD VENDIDA"]:
+                col_map[col] = "CANTIDAD"
+            elif col in ["PRECIO UNITARIO", "PRECIO", "PRECIO_UNITARIO", "P.UNITARIO", "PRECIO VENTA"]:
+                col_map[col] = "PRECIO UNITARIO"
+            elif col in ["TOTAL", "SUBTOTAL", "IMPORTE", "MONTO"]:
+                col_map[col] = "TOTAL"
+            elif col in ["S/N", "CODIGO", "ID", "PRODUCTO_ID", "COD"]:
+                col_map[col] = "S/N"
+
+        df_completo = df_completo.rename(columns=col_map)
+
+        if "DESCRIPCION" not in df_completo.columns or "FECHA" not in df_completo.columns:
+            raise ValueError("El archivo debe contener al menos las columnas 'FECHA' y 'DESCRIPCION' (o Producto).")
+
+        df_completo = df_completo.dropna(subset=['DESCRIPCION'])
         df_completo['FECHA'] = pd.to_datetime(df_completo['FECHA'], errors='coerce')
         df_completo = df_completo.dropna(subset=['FECHA'])
         
+        # Si no existe TOTAL, calcularlo si hay CANTIDAD y PRECIO UNITARIO
+        if "TOTAL" not in df_completo.columns:
+            cant_col = df_completo.get("CANTIDAD", 1.0).fillna(1.0).astype(float)
+            precio_col = df_completo.get("PRECIO UNITARIO", 0.0).fillna(0.0).astype(float)
+            df_completo["TOTAL"] = cant_col * precio_col
+
         grupos = df_completo.groupby('FECHA')
         
         registros = []
@@ -64,12 +98,17 @@ async def importar(
             
             items = []
             for _, fila in grupo.iterrows():
+                p_cant = float(fila['CANTIDAD']) if 'CANTIDAD' in fila and pd.notnull(fila['CANTIDAD']) else 1.0
+                p_precio = float(fila['PRECIO UNITARIO']) if 'PRECIO UNITARIO' in fila and pd.notnull(fila['PRECIO UNITARIO']) else 0.0
+                p_tot = float(fila['TOTAL']) if 'TOTAL' in fila and pd.notnull(fila['TOTAL']) else (p_cant * p_precio)
+                p_sn = str(fila['S/N']) if 'S/N' in fila and pd.notnull(fila['S/N']) else "N/A"
+                
                 items.append({
-                    "producto_id": str(fila['S/N']) if pd.notnull(fila.get('S/N')) else "N/A",
+                    "producto_id": p_sn,
                     "nombre": str(fila['DESCRIPCION']),
-                    "cantidad": float(fila['CANTIDAD']) if pd.notnull(fila.get('CANTIDAD')) else 1.0,
-                    "precio_unitario": float(fila['PRECIO UNITARIO']) if pd.notnull(fila.get('PRECIO UNITARIO')) else 0.0,
-                    "subtotal": float(fila['TOTAL']) if pd.notnull(fila.get('TOTAL')) else 0.0
+                    "cantidad": p_cant,
+                    "precio_unitario": p_precio,
+                    "subtotal": p_tot
                 })
                 
             registro = {
@@ -105,9 +144,6 @@ async def importar(
         
         print(f"[INFO] Iniciando insercion por lotes (Chunks de {CHUNK_SIZE})")
         
-        # Optimization: Fetch existing sales to map numero_ticket to existing ObjectIds
-        # and only create analytics for new ones, or upsert analytics.
-        
         for i in range(0, len(registros), CHUNK_SIZE):
             lote = registros[i:i + CHUNK_SIZE]
             
@@ -122,8 +158,6 @@ async def importar(
             operaciones_caja = []
             
             for reg in lote:
-                # If sale exists, we reuse its ID for upserts to avoid duplication.
-                # If it doesn't, we pre-generate one.
                 if reg["numero_ticket"] in mapa_existentes:
                     sale_id_str = mapa_existentes[reg["numero_ticket"]]
                     sale_id_obj = ObjectId(sale_id_str)
@@ -132,10 +166,13 @@ async def importar(
                     sale_id_str = str(sale_id_obj)
                     mapa_existentes[reg["numero_ticket"]] = sale_id_str
                 
-                # Regla innegociable: Match por numero_ticket y sucursal_id
+                # Match por numero_ticket y sucursal_id con operadores $set y $setOnInsert
                 op = UpdateOne(
                     {"numero_ticket": reg["numero_ticket"], "sucursal_id": sucursal_id},
-                    {"": reg, "": {"_id": sale_id_obj}},
+                    {
+                        "$set": reg,
+                        "$setOnInsert": {"_id": sale_id_obj}
+                    },
                     upsert=True
                 )
                 operaciones_sales.append(op)
@@ -144,7 +181,7 @@ async def importar(
                 for it in reg["items"]:
                     op_ana = UpdateOne(
                         {"sale_id": sale_id_str, "producto_id": it["producto_id"], "descripcion": it["nombre"]},
-                        {"": {
+                        {"$set": {
                             "tenant_id": tenant_id,
                             "sucursal_id": sucursal_id,
                             "sale_date": reg["created_at"],
@@ -162,7 +199,7 @@ async def importar(
                 # Caja ops
                 op_caja = UpdateOne(
                     {"sale_id": sale_id_str},
-                    {"": {
+                    {"$set": {
                         "tenant_id": tenant_id,
                         "sucursal_id": sucursal_id,
                         "sesion_id": "HISTORICO",
@@ -209,15 +246,16 @@ async def importar(
     except Exception as e:
         print(f"Error interno: {e}")
         print(traceback.format_exc())
-        
-        if 'temp_path' in locals() and os.path.exists(temp_path):
-            os.remove(temp_path)
-            
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
     finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
         import gc
         gc.collect()
 
