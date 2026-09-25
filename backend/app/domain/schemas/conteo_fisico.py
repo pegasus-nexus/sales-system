@@ -7,6 +7,9 @@ class ConteoItemSchema(BaseModel):
     producto_id: str
     codigo_corto: Optional[str] = None
     descripcion: Optional[str] = None
+    categoria_id: Optional[str] = None
+    categoria_nombre: Optional[str] = None
+    proveedores: Optional[List[str]] = Field(default_factory=list)
     stock_sistema: float
     stock_fisico: Optional[float] = None
     diferencia: float = 0.0
