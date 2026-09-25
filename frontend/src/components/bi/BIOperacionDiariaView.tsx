@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-    Calendar, RefreshCw, TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
+    Calendar, TrendingUp, ShoppingBag, Receipt, CheckCircle2, Filter,
     RotateCcw, Sparkles, ChevronRight, Store,
-    Clock, UserCheck, PackageX, Mail, Printer, Download, Settings, BarChart2
+    Clock, UserCheck, PackageX, BarChart2
 } from 'lucide-react';
 import type { BIPanelGeneralResponse, BISucursalOption } from '../../api/biApi';
 import { MargenLiquidoCard } from './MargenLiquidoCard';
@@ -19,8 +19,8 @@ interface BIOperacionDiariaViewProps {
     onPresetChange: (preset: 'hoy' | 'ayer' | '7dias' | '30dias' | 'historial') => void;
     onDateChange: (start: string, end: string) => void;
     onSucursalChange: (sucursalId: string) => void;
-    onReset: () => void;
-    onRefresh: () => void;
+    onReset?: () => void;
+    onRefresh?: () => void;
     onOpenOperatingHours?: () => void;
 }
 
@@ -37,8 +37,8 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
     onDateChange,
     onSucursalChange,
     onReset,
-    onRefresh,
-    onOpenOperatingHours
+    onRefresh: _onRefresh,
+    onOpenOperatingHours: _onOpenOperatingHours
 }) => {
     const [expandedCard, setExpandedCard] = useState<'ingresos' | 'margen' | 'ia' | 'ticket' | 'ordenes' | null>(null);
 
@@ -733,60 +733,6 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                     </button>
                 </div>
 
-            </div>
-
-            {/* ACCIONES RÁPIDAS (PIE DE PÁGINA) */}
-            <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/70 space-y-3">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">ACCIONES RÁPIDAS</span>
-                <div className="flex flex-wrap items-center gap-3">
-                    <button
-                        onClick={onOpenOperatingHours}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 font-bold text-xs transition-all border border-slate-200/80 cursor-pointer"
-                    >
-                        <Calendar size={14} className="text-indigo-600" />
-                        <span>Ver Horario Comercial</span>
-                    </button>
-
-                    <button
-                        onClick={onOpenOperatingHours}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-900 font-bold text-xs transition-all border border-slate-200/80 cursor-pointer"
-                    >
-                        <Settings size={14} className="text-indigo-600" />
-                        <span>Configurar Horario</span>
-                    </button>
-
-                    <button
-                        onClick={() => window.print()}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-all border border-slate-200/80 cursor-pointer"
-                    >
-                        <Download size={14} className="text-slate-600" />
-                        <span>Exportar Reporte</span>
-                    </button>
-
-                    <button
-                        onClick={() => alert('Reporte diario enviado por email.')}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-all border border-slate-200/80 cursor-pointer"
-                    >
-                        <Mail size={14} className="text-slate-600" />
-                        <span>Enviar por Email</span>
-                    </button>
-
-                    <button
-                        onClick={() => window.print()}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-all border border-slate-200/80 cursor-pointer"
-                    >
-                        <Printer size={14} className="text-slate-600" />
-                        <span>Imprimir Reporte</span>
-                    </button>
-
-                    <button
-                        onClick={onRefresh}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition-all shadow-xs cursor-pointer ml-auto"
-                    >
-                        <RefreshCw size={14} />
-                        <span>Actualizar Datos</span>
-                    </button>
-                </div>
             </div>
 
         </div>
