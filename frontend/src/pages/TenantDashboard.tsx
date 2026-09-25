@@ -34,7 +34,7 @@ export default function TenantDashboard() {
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
-    const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { const res = await client('/dashboard-matriz/exchange-rates'); return res.data; }, refetchInterval: 1800000 });
+    const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { return await client<any>('/dashboard-matriz/exchange-rates'); }, refetchInterval: 1800000 });
     const { data: metricsHoy, isLoading: loadingHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
     const { data: metricsMensual, isLoading: loadingMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
     const { data: metricsDiario, isLoading: loadingDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
