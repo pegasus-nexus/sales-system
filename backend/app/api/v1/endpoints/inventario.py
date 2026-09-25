@@ -623,6 +623,11 @@ async def exportar_movimientos(
         })
         
     df = pd.DataFrame(rows)
+    
+    # Fetch all categories to map category_id -> category_name
+    categories = await Category.find(Category.tenant_id == tenant_id).to_list()
+    cat_map = {str(c.id): c.name for c in categories}
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Kardex', index=False)
@@ -691,6 +696,11 @@ async def export_inventory_template(
 
     df = pd.DataFrame(data)
 
+    
+    # Fetch all categories to map category_id -> category_name
+    categories = await Category.find(Category.tenant_id == tenant_id).to_list()
+    cat_map = {str(c.id): c.name for c in categories}
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Conteo Fisico', index=False)
@@ -753,6 +763,11 @@ async def export_inventory_excel(
     if not sucursales:
         sucursales = [Sucursal(tenant_id=tenant_id, nombre="Central", ciudad="", direccion="")]
 
+    
+    # Fetch all categories to map category_id -> category_name
+    categories = await Category.find(Category.tenant_id == tenant_id).to_list()
+    cat_map = {str(c.id): c.name for c in categories}
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         for suc in sucursales:
@@ -808,12 +823,45 @@ async def export_inventory_excel(
             else:
                 for doc in docs:
                     doc.pop("_id", None)
+                    # Resolve category name
+                    cat_id = doc.get("Categoria")
+                    doc["Categoria"] = cat_map.get(str(cat_id), "Sin Categoría") if cat_id else "Sin Categoría"
                 df = pd.DataFrame(docs)
                 
             sheet_name = str(suc.nombre)[:31].replace("[", "").replace("]", "").replace("*", "").replace(":", "")
             if not sheet_name.strip():
                 sheet_name = "Inventario"
             df.to_excel(writer, sheet_name=sheet_name, index=False)
+            
+            # --- Diseño y Formato ---
+            worksheet = writer.sheets[sheet_name]
+            from openpyxl.styles import PatternFill, Font, Alignment
+            
+            # Formato de cabecera
+            header_fill = PatternFill(start_color="1F2937", end_color="1F2937", fill_type="solid") # Dark Gray-900
+            header_font = Font(color="FFFFFF", bold=True)
+            for cell in worksheet[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+            # Tamaños de columnas fijos
+            worksheet.column_dimensions["A"].width = 15 # Codigo Corto
+            worksheet.column_dimensions["B"].width = 15 # Codigo Largo
+            worksheet.column_dimensions["C"].width = 45 # Producto
+            worksheet.column_dimensions["D"].width = 25 # Categoria
+            worksheet.column_dimensions["E"].width = 15 # Precio Final
+            worksheet.column_dimensions["F"].width = 15 # Costo
+            worksheet.column_dimensions["G"].width = 12 # Stock
+            worksheet.column_dimensions["H"].width = 18 # Costo Total
+            
+            # Formato de números para dinero y stock
+            for row in range(2, len(df) + 2):
+                worksheet[f"E{row}"].number_format = '#,##0.00'
+                worksheet[f"F{row}"].number_format = '#,##0.00'
+                worksheet[f"G{row}"].number_format = '#,##0.00'
+                worksheet[f"H{row}"].number_format = '#,##0.00'
+
             
     output.seek(0)
     
