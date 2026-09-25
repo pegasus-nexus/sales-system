@@ -2,7 +2,7 @@ import { BASE_URL } from '../api/client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
-import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
+import { Plus, Users, Package, DollarSign, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
 import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
 import { toast } from 'sonner';
 
