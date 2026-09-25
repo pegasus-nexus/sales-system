@@ -196,7 +196,7 @@ export default function TenantDashboard() {
                         {/* Monthly Bar Chart */}
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-gray-900">Evolucin Anual (Mes a Mes)</h2>
+                                <h2 className="text-xl font-bold text-gray-900">Evolución Anual (Mes a Mes)</h2>
                                 <select 
                                     value={filterMensual}
                                     onChange={(e) => setFilterMensual(e.target.value)}
@@ -217,7 +217,7 @@ export default function TenantDashboard() {
                                         
                                         <Bar dataKey="ventas_totales" name="Ventas Totales" fill="#4f46e5" radius={[4,4,0,0]} />
                                         <Bar dataKey="margen_distribuidor" name="Margen Distribuidor" fill="#8b5cf6" radius={[4,4,0,0]} />
-                                        <Bar dataKey="margen_cliente" name="Margen Cliente" fill="#cbd5e1" radius={[4,4,0,0]} />
+                                        <Bar dataKey="margen_cliente" name="Margen Cliente" fill="#64748b" radius={[4,4,0,0]} />
                                         
                                         <ReferenceLine x={metricsMensual.grafico_mensual.find((m: any) => m.mes_index === metricsMensual.mes_actual)?.mes} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Mes Actual', fill: '#ef4444', fontSize: 12 }} />
                                     </BarChart>
@@ -249,7 +249,7 @@ export default function TenantDashboard() {
                                         
                                         <Line type="monotone" dataKey="ventas_totales" name="Ventas Totales" stroke="#4f46e5" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                                         <Line type="monotone" dataKey="margen_distribuidor" name="Margen Distribuidor" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="margen_cliente" name="Margen Cliente" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                        <Line type="monotone" dataKey="margen_cliente" name="Margen Cliente" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="5 5" />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
