@@ -299,7 +299,7 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                 )}
             </div>
 
-            <div className="flex items-center justify-between shrink-0 bg-white p-3 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between shrink-0 bg-white p-3 rounded-lg border border-gray-200 text-gray-900">
                 <div className="relative w-64">
                     <Search className="absolute left-2.5 top-2.5 text-gray-400" size={16} />
                     <input
