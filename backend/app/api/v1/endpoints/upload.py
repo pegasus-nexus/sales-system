@@ -61,8 +61,17 @@ def get_unique_column_mapping(columns: Any) -> Dict[Any, str]:
     assigned_targets = set()
     cleaned_dict = {col: clean_col_name(col) for col in columns}
 
+    # Pass 0: Prioridad Absoluta a VENTA NETA (Regla de Negocio Estricta)
+    for col, cleaned in cleaned_dict.items():
+        if any(k in cleaned for k in ['VENTANETA', 'VENTASNETAS', 'IMPORTENETO', 'TOTALNETO', 'NETO', 'NETA', 'TOTAN']):
+            col_map[col] = 'TOTAL'
+            assigned_targets.add('TOTAL')
+            break
+
     # Pass 1: Primary matches
     for col, cleaned in cleaned_dict.items():
+        if col in col_map:
+            continue
         if 'FECHA' not in assigned_targets and ('FECHA' in cleaned or 'DATE' in cleaned or 'TIMESTAMP' in cleaned):
             col_map[col] = 'FECHA'
             assigned_targets.add('FECHA')
@@ -78,7 +87,7 @@ def get_unique_column_mapping(columns: Any) -> Dict[Any, str]:
         elif 'PRECIO_UNITARIO' not in assigned_targets and (cleaned in ['PU', 'PUNITARIO', 'PRECIOUNITARIO', 'PUNIT'] or 'PRECIO' in cleaned or 'UNIT' in cleaned):
             col_map[col] = 'PRECIO_UNITARIO'
             assigned_targets.add('PRECIO_UNITARIO')
-        elif 'TOTAL' not in assigned_targets and (any(k in cleaned for k in ['TOTAL', 'TOTAN', 'IMPORTE', 'SUBTOTAL', 'MONTO']) or cleaned == 'TOT'):
+        elif 'TOTAL' not in assigned_targets and (any(k in cleaned for k in ['TOTAL', 'IMPORTE', 'SUBTOTAL', 'MONTO']) or cleaned == 'TOT'):
             col_map[col] = 'TOTAL'
             assigned_targets.add('TOTAL')
 
