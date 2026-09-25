@@ -1,12 +1,13 @@
 ﻿from fastapi import APIRouter, Depends, Query
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User, UserRole
 from app.domain.models.sale import Sale
 from app.domain.models.compra import PurchaseOrder
 from app.domain.models.sucursal import Sucursal
+from app.domain.models.tenant import Tenant
 import motor.motor_asyncio
 
 router = APIRouter()

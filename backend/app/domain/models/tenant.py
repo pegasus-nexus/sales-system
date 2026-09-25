@@ -20,6 +20,7 @@ class TenantSettings(BaseModel):
     direccion: Optional[str] = None
     telefono: Optional[str] = None
     brand_color: Optional[str] = "#4f46e5"
+    margen_distribuidor: float = 0.15  # Default 15% margen
 from .base import SoftDeleteMixin
 
 

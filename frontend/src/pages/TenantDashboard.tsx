@@ -216,8 +216,8 @@ export default function TenantDashboard() {
                                         <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                         
                                         <Bar dataKey="ventas_totales" name="Ventas Totales" fill="#4f46e5" radius={[4,4,0,0]} />
-                                        <Bar dataKey="margen_distribuidor" name="Margen Dist. (15%)" fill="#8b5cf6" radius={[4,4,0,0]} />
-                                        <Bar dataKey="margen_cliente" name="Margen Cliente (85%)" fill="#cbd5e1" radius={[4,4,0,0]} />
+                                        <Bar dataKey="margen_distribuidor" name="Margen Distribuidor" fill="#8b5cf6" radius={[4,4,0,0]} />
+                                        <Bar dataKey="margen_cliente" name="Margen Cliente" fill="#cbd5e1" radius={[4,4,0,0]} />
                                         
                                         <ReferenceLine x={metricsMensual.grafico_mensual.find((m: any) => m.mes_index === metricsMensual.mes_actual)?.mes} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Mes Actual', fill: '#ef4444', fontSize: 12 }} />
                                     </BarChart>
@@ -248,8 +248,8 @@ export default function TenantDashboard() {
                                         <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                         
                                         <Line type="monotone" dataKey="ventas_totales" name="Ventas Totales" stroke="#4f46e5" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
-                                        <Line type="monotone" dataKey="margen_distribuidor" name="Margen Dist. (15%)" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="margen_cliente" name="Margen Cliente (85%)" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                        <Line type="monotone" dataKey="margen_distribuidor" name="Margen Distribuidor" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                                        <Line type="monotone" dataKey="margen_cliente" name="Margen Cliente" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="5 5" />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
@@ -299,7 +299,15 @@ export default function TenantDashboard() {
                                                     {emp.nombre.charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-gray-900">{emp.nombre}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-gray-900">{emp.nombre}</p>
+                                                        {emp.is_online ? (
+                                                            <span className="flex h-2 w-2 relative">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                     <p className="text-xs text-gray-500">{emp.transacciones} transacciones hoy</p>
                                                 </div>
                                             </div>
