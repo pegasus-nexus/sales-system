@@ -126,9 +126,9 @@ export const BenchmarkYoYView: React.FC = () => {
     };
 
     return (
-        <div className="max-w-[1200px] mx-auto space-y-4 font-sans text-slate-800 bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
+        <div className="w-full space-y-4 font-sans text-slate-800">
             {/* 1. CABECERA DEL MÓDULO */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs space-y-4">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2.5">

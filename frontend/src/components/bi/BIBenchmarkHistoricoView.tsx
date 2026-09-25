@@ -255,9 +255,9 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
             {viewMode === 'yoy' ? (
                 <BenchmarkYoYView />
             ) : (
-                <div className="space-y-5 bg-slate-50/60 p-3 sm:p-5 rounded-3xl">
+                <div className="space-y-4 w-full">
                     {/* 1. ENCABEZADO SUPERIOR Y BOTONES DE ACCIÓN */}
-                    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs space-y-4">
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2.5">
