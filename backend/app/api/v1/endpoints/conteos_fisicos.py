@@ -17,7 +17,7 @@ def get_conteo_service() -> ConteoFisicoService:
     repo = MongoConteoFisicoRepository()
     return ConteoFisicoService(repo)
 
-@router.get("/conteos-fisicos", response_model=List[ConteoFisicoListResponse])
+@router.get("", response_model=List[ConteoFisicoListResponse])
 async def list_conteos(
     sucursal_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user),
@@ -33,7 +33,7 @@ async def list_conteos(
         
     return await service.list_conteos(tenant_id, sucursal_id)
 
-@router.post("/conteos-fisicos/iniciar", response_model=ConteoFisicoResponse)
+@router.post("/iniciar", response_model=ConteoFisicoResponse)
 async def iniciar_conteo(
     req: IniciarConteoRequest,
     current_user: User = Depends(get_current_active_user),
@@ -51,7 +51,7 @@ async def iniciar_conteo(
         current_user.full_name or current_user.username
     )
 
-@router.get("/conteos-fisicos/{conteo_id}", response_model=ConteoFisicoResponse)
+@router.get("/{conteo_id}", response_model=ConteoFisicoResponse)
 async def get_conteo(
     conteo_id: str,
     current_user: User = Depends(get_current_active_user),
@@ -60,7 +60,7 @@ async def get_conteo(
     """Obtiene los detalles completos de un conteo."""
     return await service.get_conteo(conteo_id, current_user.tenant_id or "")
 
-@router.put("/conteos-fisicos/{conteo_id}", response_model=ConteoFisicoResponse)
+@router.put("/{conteo_id}", response_model=ConteoFisicoResponse)
 async def guardar_conteo(
     conteo_id: str,
     req: GuardarConteoRequest,
@@ -70,7 +70,7 @@ async def guardar_conteo(
     """Guarda el progreso del conteo físico en borrador."""
     return await service.guardar_progreso(conteo_id, req, current_user.tenant_id or "")
 
-@router.post("/conteos-fisicos/{conteo_id}/finalizar", response_model=ConteoFisicoResponse)
+@router.post("/{conteo_id}/finalizar", response_model=ConteoFisicoResponse)
 async def finalizar_conteo(
     conteo_id: str,
     current_user: User = Depends(get_current_active_user),
@@ -79,7 +79,7 @@ async def finalizar_conteo(
     """Cierra el conteo y lo marca como finalizado de solo lectura."""
     return await service.finalizar_conteo(conteo_id, current_user.tenant_id or "")
 
-@router.delete("/conteos-fisicos/{conteo_id}")
+@router.delete("/{conteo_id}")
 async def eliminar_conteo(
     conteo_id: str,
     current_user: User = Depends(require_roles(["SUPERADMIN", "ADMIN_MATRIZ", "ADMIN_SUCURSAL"])),
