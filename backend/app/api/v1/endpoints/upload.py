@@ -15,24 +15,41 @@ from app.domain.models.user import User
 
 router = APIRouter()
 
-import unicodedata
+def get_unique_column_mapping(columns: List[Any]) -> Dict[Any, str]:
+    col_map: Dict[Any, str] = {}
+    assigned_targets = set()
+    cleaned_dict = {col: clean_col_name(col) for col in columns}
 
-def clean_col_name(c) -> str:
-    if c is None:
-        return ""
-    text = unicodedata.normalize('NFKD', str(c)).encode('ASCII', 'ignore').decode('utf-8').upper()
-    return ''.join(ch for ch in text if ch.isalnum())
+    # Pass 1: Primary matches
+    for col, cleaned in cleaned_dict.items():
+        if 'FECHA' not in assigned_targets and ('FECHA' in cleaned or 'DATE' in cleaned or 'TIMESTAMP' in cleaned):
+            col_map[col] = 'FECHA'
+            assigned_targets.add('FECHA')
+        elif 'DESCRIPCION' not in assigned_targets and any(k in cleaned for k in ['DESCRIP', 'PRODUC', 'DETALLE', 'ITEM', 'NOMBRE', 'ARTICULO']):
+            col_map[col] = 'DESCRIPCION'
+            assigned_targets.add('DESCRIPCION')
+        elif 'CODIGO' not in assigned_targets and any(k in cleaned for k in ['CODIGO', 'BARCODE', 'SKU', 'EAN']):
+            col_map[col] = 'CODIGO'
+            assigned_targets.add('CODIGO')
+        elif 'CANTIDAD' not in assigned_targets and any(k in cleaned for k in ['CANTIDAD', 'CANT', 'QTY', 'UNIDADES']):
+            col_map[col] = 'CANTIDAD'
+            assigned_targets.add('CANTIDAD')
+        elif 'PRECIO_UNITARIO' not in assigned_targets and (cleaned in ['PU', 'PUNITARIO', 'PRECIOUNITARIO', 'PUNIT'] or 'PRECIO' in cleaned or 'UNIT' in cleaned):
+            col_map[col] = 'PRECIO_UNITARIO'
+            assigned_targets.add('PRECIO_UNITARIO')
+        elif 'TOTAL' not in assigned_targets and (any(k in cleaned for k in ['TOTAL', 'TOTAN', 'IMPORTE', 'SUBTOTAL', 'MONTO']) or cleaned == 'TOT'):
+            col_map[col] = 'TOTAL'
+            assigned_targets.add('TOTAL')
 
-def safe_num(val, default=0.0) -> float:
-    if val is None or pd.isna(val):
-        return default
-    if isinstance(val, (int, float)):
-        return float(val)
-    try:
-        s = str(val).strip().replace(',', '.')
-        return float(s)
-    except Exception:
-        return default
+    # Pass 2: Secondary fallbacks (e.g. SN for CODIGO if CODIGO wasn't found)
+    if 'CODIGO' not in assigned_targets:
+        for col, cleaned in cleaned_dict.items():
+            if col not in col_map and cleaned in ['SN', 'SERIE', 'ID']:
+                col_map[col] = 'CODIGO'
+                assigned_targets.add('CODIGO')
+                break
+
+    return col_map
 
 
 @router.post("/importar-historico")
@@ -77,7 +94,7 @@ async def importar(
 
         processed_dfs = []
         for df_item in raw_dfs:
-            if df_item is None or df_item.empty:
+            if df_item is None or len(df_item) == 0:
                 continue
 
             # Auto-detección de fila de cabecera si la primera fila no tiene las columnas requeridas
@@ -98,27 +115,14 @@ async def importar(
                     df_item = df_item.iloc[found_header_idx + 1:].copy()
                     df_item.columns = new_header
 
-            # Mapeo y normalización de columnas
-            col_map = {}
-            for col in df_item.columns:
-                cleaned = clean_col_name(col)
-                if 'FECHA' in cleaned or 'DATE' in cleaned or 'TIME' in cleaned:
-                    col_map[col] = 'FECHA'
-                elif any(k in cleaned for k in ['DESCRIP', 'PRODUC', 'DETALLE', 'ITEM', 'NOMBRE', 'ARTICULO']):
-                    col_map[col] = 'DESCRIPCION'
-                elif any(k in cleaned for k in ['CANT', 'QTY', 'UNID']):
-                    col_map[col] = 'CANTIDAD'
-                elif cleaned in ['PU', 'PUNITARIO', 'PRECIOUNITARIO', 'PUNIT'] or 'PRECIO' in cleaned or 'UNIT' in cleaned:
-                    col_map[col] = 'PRECIO UNITARIO'
-                elif any(k in cleaned for k in ['TOTAL', 'TOTAN', 'IMPORTE', 'SUBTOTAL', 'MONTO']) or cleaned == 'TOT':
-                    col_map[col] = 'TOTAL'
-                elif any(k in cleaned for k in ['CODIGO', 'BARCODE', 'SKU']) or cleaned in ['COD']:
-                    col_map[col] = 'CODIGO'
-                elif cleaned in ['SN', 'SERIE']:
-                    col_map[col] = 'S/N'
-
+            # Mapeo estricto sin duplicados
+            col_map = get_unique_column_mapping(df_item.columns)
             df_renamed = df_item.rename(columns=col_map)
-            processed_dfs.append(df_renamed)
+            
+            # Mantener solo columnas mapeadas conocidas para evitar ambigüedad de Series
+            keep_cols = [col for col in ['FECHA', 'DESCRIPCION', 'CODIGO', 'CANTIDAD', 'PRECIO_UNITARIO', 'TOTAL'] if col in df_renamed.columns]
+            if len(keep_cols) >= 2:
+                processed_dfs.append(df_renamed[keep_cols])
 
         if not processed_dfs:
             raise ValueError("El archivo subido está vacío o no contiene hojas válidas.")
@@ -139,69 +143,63 @@ async def importar(
             df_completo['FECHA'] = pd.to_datetime(df_completo['FECHA'], errors='coerce', dayfirst=True)
 
         df_completo = df_completo.dropna(subset=['FECHA'])
+
+        # Extracción a lista de diccionarios planos (inmune a errores de Series de pandas)
+        raw_records = df_completo.to_dict(orient='records')
         
-        # Asegurar columnas numéricas
-        if "CANTIDAD" in df_completo.columns:
-            df_completo["CANTIDAD"] = df_completo["CANTIDAD"].apply(lambda x: safe_num(x, default=1.0))
-        else:
-            df_completo["CANTIDAD"] = 1.0
+        grupos_tickets: Dict[str, Dict[str, Any]] = {}
+        for row in raw_records:
+            f_val = row.get("FECHA")
+            if f_val is None or pd.isna(f_val):
+                continue
+                
+            if hasattr(f_val, "strftime"):
+                numero_ticket = f_val.strftime("%Y-%m-%d %H:%M:%S")
+                created_at = f_val.to_pydatetime() if hasattr(f_val, "to_pydatetime") else f_val
+            else:
+                numero_ticket = str(f_val)
+                created_at = pd.to_datetime(f_val).to_pydatetime()
 
-        if "PRECIO UNITARIO" in df_completo.columns:
-            df_completo["PRECIO UNITARIO"] = df_completo["PRECIO UNITARIO"].apply(lambda x: safe_num(x, default=0.0))
-        else:
-            df_completo["PRECIO UNITARIO"] = 0.0
-
-        if "TOTAL" in df_completo.columns:
-            df_completo["TOTAL"] = df_completo["TOTAL"].apply(lambda x: safe_num(x, default=0.0))
-        else:
-            df_completo["TOTAL"] = df_completo["CANTIDAD"] * df_completo["PRECIO UNITARIO"]
-
-        grupos = df_completo.groupby('FECHA')
-        
-        registros = []
-        for fecha, grupo in grupos:
-            numero_ticket = str(fecha)
-            created_at = pd.to_datetime(fecha)
+            p_cant = safe_num(row.get("CANTIDAD"), default=1.0)
+            p_precio = safe_num(row.get("PRECIO_UNITARIO"), default=0.0)
+            p_tot = safe_num(row.get("TOTAL"), default=(p_cant * p_precio))
             
-            # Forzar suma explícita
-            total_ticket = round(grupo['TOTAL'].astype(float).sum(), 2)
-            
-            items = []
-            for _, fila in grupo.iterrows():
-                p_cant = safe_num(fila.get('CANTIDAD'), default=1.0)
-                p_precio = safe_num(fila.get('PRECIO UNITARIO'), default=0.0)
-                p_tot = safe_num(fila.get('TOTAL'), default=(p_cant * p_precio))
+            raw_cod = row.get("CODIGO")
+            p_cod = str(raw_cod).strip() if raw_cod is not None and not pd.isna(raw_cod) else "N/A"
+            if p_cod == "" or p_cod.lower() == "nan":
+                p_cod = "N/A"
                 
-                p_cod = str(fila.get('CODIGO') or fila.get('S/N') or "N/A").strip()
-                if p_cod == "" or p_cod.lower() == "nan":
-                    p_cod = "N/A"
-                
-                p_nom = str(fila.get('DESCRIPCION') or "Producto sin nombre").strip()
-                
-                items.append({
-                    "producto_id": p_cod,
-                    "nombre": p_nom,
-                    "cantidad": p_cant,
-                    "precio_unitario": p_precio,
-                    "subtotal": p_tot
-                })
-                
-            registro = {
-                "numero_ticket": numero_ticket,
-                "created_at": created_at,
-                "sucursal_id": sucursal_id,
-                "tenant_id": tenant_id,
-                "total": total_ticket,
-                "anulada": False,
-                "items": items,
-                "pagos": [],
-                "cajero_id": "HISTORICO",
-                "cajero_name": current_user.full_name or current_user.username
+            raw_nom = row.get("DESCRIPCION")
+            p_nom = str(raw_nom).strip() if raw_nom is not None and not pd.isna(raw_nom) else "Producto sin nombre"
+
+            item_obj = {
+                "producto_id": p_cod,
+                "nombre": p_nom,
+                "cantidad": p_cant,
+                "precio_unitario": p_precio,
+                "subtotal": p_tot
             }
-            registros.append(registro)
-            
+
+            if numero_ticket not in grupos_tickets:
+                grupos_tickets[numero_ticket] = {
+                    "numero_ticket": numero_ticket,
+                    "created_at": created_at,
+                    "sucursal_id": sucursal_id,
+                    "tenant_id": tenant_id,
+                    "total": 0.0,
+                    "anulada": False,
+                    "items": [],
+                    "pagos": [],
+                    "cajero_id": "HISTORICO",
+                    "cajero_name": current_user.full_name or current_user.username
+                }
+
+            grupos_tickets[numero_ticket]["items"].append(item_obj)
+            grupos_tickets[numero_ticket]["total"] = round(grupos_tickets[numero_ticket]["total"] + p_tot, 2)
+
+        registros = list(grupos_tickets.values())
         total_tickets_consolidados = len(registros)
-        print(f"[OK] Transformación ETL completada. Tickets Únicos (agrupados por fecha): {total_tickets_consolidados}")
+        print(f"[OK] Transformación ETL completada. Tickets Únicos agrupados: {total_tickets_consolidados}")
 
         if total_tickets_consolidados == 0:
             return {"status": "success", "message": "Archivo vacío o sin fechas válidas", "upserted": 0, "modified": 0, "ignored": 0, "total_procesado": 0}
