@@ -776,7 +776,7 @@ async def export_inventory_excel(
                 {"$match": {"tenant_id": tenant_id, "is_active": True}},
                 {
                     "$lookup": {
-                        "from": "Inventario",
+                        "from": "inventario",
                         "let": {"pid": "$_id"},
                         "pipeline": [
                             {
