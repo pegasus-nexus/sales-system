@@ -289,7 +289,7 @@ export default function TenantDashboard() {
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Activo Hoy (Vendiendo)</h2>
                             {metricsHoy.personal_activo.length === 0 ? (
-                                <p className="text-gray-500 text-center py-8">No hay personal con ventas hoy.</p>
+                                <p className="text-gray-500 text-center py-8">No hay personal activo o con ventas hoy.</p>
                             ) : (
                                 <div className="space-y-4">
                                     {metricsHoy.personal_activo.map((emp: any) => (
