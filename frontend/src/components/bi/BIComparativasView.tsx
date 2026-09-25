@@ -265,6 +265,12 @@ export const BIComparativasView: React.FC = () => {
         setSelectedSucursal('all');
     };
 
+    const handleYesterday = () => {
+        const yesterdayStr = getFormattedBoliviaDate(-1);
+        setStartDate(yesterdayStr);
+        setEndDate(yesterdayStr);
+    };
+
     const renderVariationBadge = (pct: number | null, estado: string) => {
         if (estado === 'SIN_BASE_COMPARATIVA' || pct === null) {
             return (
@@ -377,9 +383,16 @@ export const BIComparativasView: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         onClick={() => handleReset()}
-                        className="px-3.5 py-2 rounded-2xl bg-indigo-50 text-indigo-700 font-extrabold text-xs hover:bg-indigo-100 transition-all cursor-pointer"
+                        className="px-3.5 py-2 rounded-2xl bg-indigo-50 text-indigo-700 font-extrabold text-xs hover:bg-indigo-100 transition-all cursor-pointer shadow-xs active:scale-95"
                     >
                         Hoy
+                    </button>
+
+                    <button
+                        onClick={() => handleYesterday()}
+                        className="px-3.5 py-2 rounded-2xl bg-slate-100 text-slate-700 font-extrabold text-xs hover:bg-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+                    >
+                        Ayer
                     </button>
 
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl text-xs font-bold text-slate-700">
