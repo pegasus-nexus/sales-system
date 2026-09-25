@@ -742,12 +742,16 @@ async def export_inventory_excel(
     
     if current_user.role in [UserRole.CAJERO, UserRole.USER]:
         suc_id = current_user.sucursal_id or "CENTRAL"
-        sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id, Sucursal.sucursal_id == suc_id).to_list()
+        if suc_id == "CENTRAL":
+            sucursales = [Sucursal(tenant_id=tenant_id, nombre="Central", ciudad="", direccion="")]
+        else:
+            from beanie import PydanticObjectId
+            sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id, Sucursal.id == PydanticObjectId(suc_id)).to_list()
     else:
         sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
         
     if not sucursales:
-        sucursales = [Sucursal(tenant_id=tenant_id, sucursal_id="CENTRAL", name="Central")]
+        sucursales = [Sucursal(tenant_id=tenant_id, nombre="Central", ciudad="", direccion="")]
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -762,7 +766,7 @@ async def export_inventory_excel(
                             {
                                 "$match": {
                                     "$expr": {"$eq": ["$producto_id", {"$toString": "$$pid"}]},
-                                    "sucursal_id": suc.sucursal_id,
+                                    "sucursal_id": str(suc.id) if suc.id else "CENTRAL",
                                     "tenant_id": tenant_id
                                 }
                             }
@@ -806,7 +810,7 @@ async def export_inventory_excel(
                     doc.pop("_id", None)
                 df = pd.DataFrame(docs)
                 
-            sheet_name = str(suc.name)[:31].replace("[", "").replace("]", "").replace("*", "").replace(":", "")
+            sheet_name = str(suc.nombre)[:31].replace("[", "").replace("]", "").replace("*", "").replace(":", "")
             if not sheet_name.strip():
                 sheet_name = "Inventario"
             df.to_excel(writer, sheet_name=sheet_name, index=False)
