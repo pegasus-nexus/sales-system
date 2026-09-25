@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 from fastapi import HTTPException
 from app.domain.models.conteo_fisico import ConteoFisico, ConteoItem, EstadoConteo
+from app.domain.models.category import Category
 from app.domain.models.inventario import Inventario
 from app.domain.models.product import Product
 from app.domain.repositories.conteo_fisico_repository import ConteoFisicoRepository
@@ -85,6 +86,9 @@ class ConteoFisicoService:
         # Snapshot current system stock
         productos = await Product.find(Product.tenant_id == tenant_id, Product.is_active == True).to_list()
         
+        categorias = await Category.find(Category.tenant_id == tenant_id).to_list()
+        cat_map = {str(c.id): c.name for c in categorias}
+        
         # Load inventory for this branch
         inventarios = await Inventario.find(
             Inventario.tenant_id == tenant_id,
@@ -102,6 +106,9 @@ class ConteoFisicoService:
                 producto_id=str(p.id),
                 codigo_corto=p.codigo_corto,
                 descripcion=p.descripcion,
+                categoria_id=p.categoria_id,
+                categoria_nombre=cat_map.get(str(p.categoria_id), "Sin Categoría"),
+                proveedores=p.proveedores or [],
                 stock_sistema=qty,
                 stock_fisico=None,
                 diferencia=0.0,
