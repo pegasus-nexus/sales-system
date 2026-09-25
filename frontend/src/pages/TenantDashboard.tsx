@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
 import { Plus, Users, Package, DollarSign, Store, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
 import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
 import { toast } from 'sonner';
 
@@ -29,7 +28,6 @@ export default function TenantDashboard() {
     const [employeeForm, setEmployeeForm] = useState<EmployeeCreate>({ username: '', password: '', full_name: '', email: '' });
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [credentials, setCredentials] = useState<{ username: string; password: string; full_name: string } | null>(null);
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
@@ -64,7 +62,6 @@ export default function TenantDashboard() {
         mutationFn: (data: EmployeeCreate) => createEmployee(data),
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
-            setCredentials({ username: vars.username, password: vars.password!, full_name: vars.full_name });
             setShowEmployeeModal(false);
             setEmployeeForm({ username: '', password: '', full_name: '', email: '' });
             setConfirmPassword('');
