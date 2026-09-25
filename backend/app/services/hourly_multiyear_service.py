@@ -23,15 +23,18 @@ def _same_day_prev_year(ref: date, years_back: int) -> date:
 
 async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) -> Dict[int, float]:
     real_tenant_id = tenant_id if tenant_id and str(tenant_id).lower() not in ["none", "null", "undefined", ""] else DEFAULT_TENANT_ID
+    d_str = d.strftime("%Y-%m-%d")
 
     # 1. Si el año es 2026 o superior, consultar ventas en vivo de POS (db.sales)
     if d.year >= 2026:
         repo = MongoAnalyticsRepository()
-        start_dt, end_dt = get_day_range_bolivia(d.strftime("%Y-%m-%d"))
+        start_dt, end_dt = get_day_range_bolivia(d_str)
         dist = await repo.get_hourly_sales_distribution(real_tenant_id, start_dt, end_dt, sucursal)
-        return {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
+        res_live = {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
+        if res_live and sum(res_live.values()) > 0:
+            return res_live
 
-    # 2. Para años anteriores (2025, 2024, etc.), consultar siempre la colección histórica real (db.ventas_historicas_crudas)
+    # 2. Para años anteriores o si no hay datos en vivo, consultar db.ventas_historicas_crudas
     db = await get_raw_db()
     start_hist = datetime(d.year, d.month, d.day, 0, 0, 0)
     end_hist = datetime(d.year, d.month, d.day, 23, 59, 59)
@@ -69,8 +72,37 @@ async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) 
         {"$sort": {"_id": 1}}
     ]
 
-    res = await db.ventas_historicas_crudas.aggregate(pipeline).to_list(100)
-    return {r["_id"]: float(r["total"]) for r in res if r["_id"] is not None}
+    try:
+        res = await db.ventas_historicas_crudas.aggregate(pipeline).to_list(100)
+        res_map = {r["_id"]: float(r["total"]) for r in res if r["_id"] is not None}
+        if res_map and sum(res_map.values()) > 0 and sum(res_map.values()) != 625.0:
+            return res_map
+    except Exception as e:
+        print(f"Error consultando ventas_historicas_crudas: {e}")
+
+    # 3. Fallback unificado a HistoricalFactsService (datos limpios sin pruebas sintéticas)
+    try:
+        from app.application.services.historical_facts_service import HistoricalFactsService
+        sales = HistoricalFactsService.get_sales_for_date_range(d_str, d_str, sucursal)
+        if sales:
+            hourly_map: Dict[int, float] = {}
+            for s in sales:
+                c_at = s.get("created_at")
+                if isinstance(c_at, datetime):
+                    if c_at.tzinfo is not None:
+                        from app.core.config import BUSINESS_TIMEZONE
+                        from zoneinfo import ZoneInfo
+                        h = c_at.astimezone(ZoneInfo(BUSINESS_TIMEZONE)).hour
+                    else:
+                        h = c_at.hour
+                else:
+                    h = 12
+                hourly_map[h] = round(hourly_map.get(h, 0.0) + float(s.get("total", 0.0)), 2)
+            return hourly_map
+    except Exception as err:
+        print(f"Error en fallback HistoricalFactsService: {err}")
+
+    return {}
 
 async def get_hourly_multiyear(
     tenant_id: str,

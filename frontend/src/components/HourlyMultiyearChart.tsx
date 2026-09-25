@@ -58,6 +58,23 @@ const getTodayDateString = () => {
     }
 };
 
+const getYesterdayDateString = () => {
+    try {
+        const todayStr = getTodayDateString();
+        const [y, m, d] = todayStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        dateObj.setDate(dateObj.getDate() - 1);
+        const yr = dateObj.getFullYear();
+        const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dy = String(dateObj.getDate()).padStart(2, '0');
+        return `${yr}-${mo}-${dy}`;
+    } catch (e) {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+};
+
 const getEasterSunday = (year: number): Date => {
     const a = year % 19;
     const b = Math.floor(year / 100);
@@ -466,13 +483,24 @@ export function HourlyMultiyearChart({
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <button
                                 onClick={() => setFechaRef(getTodayDateString())}
-                                className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors ${
+                                className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer shadow-xs active:scale-95 ${
                                     fechaRef === getTodayDateString()
                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                                 }`}
                             >
                                 Hoy
+                            </button>
+
+                            <button
+                                onClick={() => setFechaRef(getYesterdayDateString())}
+                                className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer shadow-xs active:scale-95 ${
+                                    fechaRef === getYesterdayDateString()
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                }`}
+                            >
+                                Ayer
                             </button>
 
                             <CustomDatePicker fechaRef={fechaRef} setFechaRef={setFechaRef} />
