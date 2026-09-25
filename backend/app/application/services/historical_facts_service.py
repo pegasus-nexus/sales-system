@@ -117,6 +117,7 @@ class HistoricalFactsService:
                     "numero_ticket": num_ticket,
                     "created_at": dt_utc,
                     "fecha_bolivia": row['fecha_bolivia'],
+                    "hora_bolivia": int(row['hora_bolivia']),
                     "sucursal_id": suc,
                     "tenant_id": "default",
                     "total": 0.0,
