@@ -1,6 +1,7 @@
 import { BASE_URL } from '../api/client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../api/client';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
 import { Plus, Users, Package, DollarSign, ShoppingBag, Loader2, X, Upload, ImageIcon, Eye, EyeOff, XCircle, RefreshCw } from 'lucide-react';
 import type { Product, ProductCreate, EmployeeCreate, Sucursal } from '../api/types';
@@ -33,6 +34,7 @@ export default function TenantDashboard() {
 
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
+    const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { const res = await api.get('/dashboard-matriz/exchange-rates'); return res.data; }, refetchInterval: 1800000 });
     const { data: metricsHoy, isLoading: loadingHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
     const { data: metricsMensual, isLoading: loadingMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
     const { data: metricsDiario, isLoading: loadingDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
@@ -116,6 +118,25 @@ export default function TenantDashboard() {
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dashboard General</h1>
                     <p className="text-gray-500 mt-1 font-medium">Panel de control de Matriz</p>
                 </div>
+                
+                {exchangeRates && (
+                    <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                            <span className="text-lg">🏦</span>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Oficial BCB</span>
+                                <span className="text-sm font-black text-slate-700">Bs {exchangeRates.bcb_oficial}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <span className="text-lg">💱</span>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-yellow-700 uppercase tracking-wider">Binance P2P</span>
+                                <span className="text-sm font-black text-yellow-900">Bs {exchangeRates.binance_p2p}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 
                 <div className="flex flex-wrap items-center gap-4">
                     <button onClick={refetchAll} className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200/60 shadow-sm hover:bg-gray-50 transition-all active:scale-95" title="Actualizar datos">

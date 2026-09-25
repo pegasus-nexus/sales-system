@@ -8,6 +8,7 @@ from app.domain.models.sale import Sale
 from app.domain.models.compra import PurchaseOrder
 from app.domain.models.sucursal import Sucursal
 from app.domain.models.tenant import Tenant
+from app.application.services.exchange_service import ExchangeService
 import motor.motor_asyncio
 
 router = APIRouter()
@@ -231,3 +232,8 @@ async def get_dashboard_matriz(
         "mes_actual": now_lp.month,
         "dia_actual": now_lp.day
     }
+
+@router.get("/exchange-rates")
+async def get_exchange_rates(current_user: User = Depends(get_current_active_user)):
+    rates = await ExchangeService.get_rates()
+    return rates
