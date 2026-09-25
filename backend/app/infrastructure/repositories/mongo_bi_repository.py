@@ -51,13 +51,35 @@ class MongoBIRepository(BIRepository):
         docs = await cursor.to_list(length=None)
 
         result = []
+        seen_keys = set()
         for d in docs:
+            sid = str(d["_id"])
+            name = d.get("nombre", "Sin Nombre")
+            seen_keys.add(sid.lower())
+            seen_keys.add(name.lower())
             result.append({
-                "sucursal_id": str(d["_id"]),
-                "nombre": d.get("nombre", "Sin Nombre"),
+                "sucursal_id": sid,
+                "nombre": name,
                 "ciudad": d.get("ciudad", ""),
                 "direccion": d.get("direccion", "")
             })
+
+        # Incluir sucursales presentes en las ventas para soporte integral de datos históricos y en vivo
+        try:
+            distinct_sucs = await db.sales.distinct("sucursal_id")
+            for ds in distinct_sucs:
+                if ds and str(ds).lower() not in seen_keys and str(ds).upper() not in ["NONE", "NULL"]:
+                    s_str = str(ds)
+                    result.append({
+                        "sucursal_id": s_str,
+                        "nombre": s_str,
+                        "ciudad": "",
+                        "direccion": ""
+                    })
+                    seen_keys.add(s_str.lower())
+        except Exception:
+            pass
+
         return result
 
     async def get_products_dim(self, tenant_id: str) -> List[Dict[str, Any]]:

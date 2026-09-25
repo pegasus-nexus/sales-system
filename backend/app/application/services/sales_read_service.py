@@ -85,21 +85,35 @@ class SalesReadService:
         is_admin_matriz = user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.FACTURADOR]
         if not is_admin_matriz:
             user_suc = user.sucursal_id or "__none__"
+            user_suc_conds = [str(user_suc)]
             if ObjectId.is_valid(user_suc):
-                match_stage["$or"] = [
-                    {"sucursal_id": str(user_suc)},
-                    {"sucursal_id": ObjectId(user_suc)}
-                ]
-            else:
-                match_stage["sucursal_id"] = str(user_suc)
+                user_suc_conds.append(ObjectId(user_suc))
+                try:
+                    suc_doc = await db.sucursales.find_one({"_id": ObjectId(user_suc)})
+                    if suc_doc and suc_doc.get("nombre"):
+                        user_suc_conds.append(suc_doc.get("nombre"))
+                except Exception:
+                    pass
+            match_stage["sucursal_id"] = {"$in": user_suc_conds}
         elif sucursal_id and sucursal_id.lower() not in ["all", "todas", "global", ""]:
+            suc_conds = [str(sucursal_id)]
             if ObjectId.is_valid(sucursal_id):
-                match_stage["$or"] = [
-                    {"sucursal_id": str(sucursal_id)},
-                    {"sucursal_id": ObjectId(sucursal_id)}
-                ]
+                suc_conds.append(ObjectId(sucursal_id))
+                try:
+                    suc_doc = await db.sucursales.find_one({"_id": ObjectId(sucursal_id)})
+                    if suc_doc and suc_doc.get("nombre"):
+                        suc_conds.append(suc_doc.get("nombre"))
+                except Exception:
+                    pass
             else:
-                match_stage["sucursal_id"] = str(sucursal_id)
+                try:
+                    suc_doc = await db.sucursales.find_one({"nombre": {"$regex": f"^{sucursal_id}$", "$options": "i"}})
+                    if suc_doc:
+                        suc_conds.append(str(suc_doc["_id"]))
+                        suc_conds.append(suc_doc["_id"])
+                except Exception:
+                    pass
+            match_stage["sucursal_id"] = {"$in": suc_conds}
 
         # 4. Rango de Fechas Semiabierto en America/La_Paz y compatibilidad histórica
         if start_date_str.lower() not in ["all", "historial", "todo", ""]:
