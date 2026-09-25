@@ -60,7 +60,7 @@ export default function TenantDashboard() {
 
     const createEmployeeMutation = useMutation({
         mutationFn: (data: EmployeeCreate) => createEmployee(data),
-        onSuccess: (_, vars) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
             setShowEmployeeModal(false);
             setEmployeeForm({ username: '', password: '', full_name: '', email: '' });
