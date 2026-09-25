@@ -802,12 +802,12 @@ async def export_inventory_excel(
                         "Codigo Largo": "$codigo_largo",
                         "Producto": "$descripcion",
                         "Categoria": "$categoria_id",
-                        "Precio al Cliente": "$precio_final",
+                        "Precio al Cliente": "$precio_venta",
                         "Costo Unitario": "$costo_producto",
                         "Stock": {"$ifNull": ["$inv.cantidad", 0.0]},
                         "Precio Total Stock": {
                             "$multiply": [
-                                {"$ifNull": ["$precio_final", 0.0]},
+                                {"$ifNull": ["$precio_venta", 0.0]},
                                 {"$ifNull": ["$inv.cantidad", 0.0]}
                             ]
                         },

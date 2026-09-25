@@ -33,6 +33,7 @@ export default function InventarioPage() {
     const [tipoMovimiento, setTipoMovimiento] = useState('');
     const [kardexProductoId, setKardexProductoId] = useState<string | undefined>(undefined);
     const [kardexProductoNombre, setKardexProductoNombre] = useState<string | null>(null);
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
 
 
     const { data: sucursales = [] } = useQuery({
