@@ -138,7 +138,7 @@ const ControlInventarioPage = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left text-sm whitespace-nowrap">
+                <table className="w-full text-left text-sm whitespace-nowrap text-gray-900">
                     <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold text-xs">
                         <tr>
                             <th className="px-4 py-3">Fecha</th>
@@ -317,7 +317,7 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg overflow-auto flex-1">
-                <table className="w-full text-left text-sm whitespace-nowrap">
+                <table className="w-full text-left text-sm whitespace-nowrap text-gray-900">
                     <thead className="bg-gray-800 text-white sticky top-0 z-10">
                         <tr>
                             <th className="px-4 py-3 font-semibold w-24">Cód</th>
