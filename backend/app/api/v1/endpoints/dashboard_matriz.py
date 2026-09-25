@@ -5,7 +5,7 @@ import pytz
 from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User, UserRole
 from app.domain.models.sale import Sale
-from app.domain.models.compra import Compra
+from app.domain.models.compra import PurchaseOrder
 from app.domain.models.sucursal import Sucursal
 import motor.motor_asyncio
 
@@ -49,7 +49,7 @@ async def get_dashboard_matriz(
 
     # --- 2. Transacciones Compras Hoy ---
     compras_hoy_match = {**match_filter, "created_at": {"$gte": start_of_today_utc, "$lt": end_of_today_utc}}
-    compras_hoy_count = await Compra.find(compras_hoy_match).count()
+    compras_hoy_count = await PurchaseOrder.find(compras_hoy_match).count()
 
     # --- 3. Anulaciones Hoy ---
     anulaciones_match = {**match_filter, "created_at": {"$gte": start_of_today_utc, "$lt": end_of_today_utc}, "estado_pago": "ANULADO"}

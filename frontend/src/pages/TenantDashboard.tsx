@@ -1,3 +1,4 @@
+import { BASE_URL } from '../api/client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDashboardMatriz, getSucursales, getCategories, createProduct, updateProduct, createEmployee } from '../api/api';
@@ -103,7 +104,30 @@ Ingresa desde: https://taboada.app`;
         }
     };
 
+
+    const pf = (key: keyof ProductCreate, val: string | number) =>
+        setProductForm((prev) => ({ ...prev, [key]: val }));
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        toast.promise(
+            fetch(`${BASE_URL}/upload`, { method: 'POST', body: formData }).then(res => res.json()),
+            {
+                loading: 'Subiendo...',
+                success: (data) => {
+                    setProductForm(prev => ({ ...prev, image_url: data.url }));
+                    return 'Imagen subida';
+                },
+                error: 'Error al subir imagen'
+            }
+        );
+    };
+
     return (
+
         <div className="max-w-7xl mx-auto space-y-8 pb-20">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
