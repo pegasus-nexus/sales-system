@@ -33,14 +33,16 @@ const getFormattedBoliviaDate = (daysOffset: number = 0): string => {
     return `${year}-${month}-${day}`;
 };
 
-const getPrevYearDateStr = (dateStr: string, yearsOffset: number): string => {
+const getSameWeekdayPrevYearDateStr = (dateStr: string, yearsOffset: number): string => {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-').map(Number);
-    const prevY = y - yearsOffset;
-    const dt = new Date(prevY, m - 1, d);
-    const yr = dt.getFullYear();
-    const mo = String(dt.getMonth() + 1).padStart(2, '0');
-    const dy = String(dt.getDate()).padStart(2, '0');
+    const dateObj = new Date(y, m - 1, d);
+    // Restar 52 semanas por año (364 días) para alinear exacto el mismo día comercial de la semana (ej. Viernes vs Viernes)
+    dateObj.setDate(dateObj.getDate() - (52 * yearsOffset * 7));
+
+    const yr = dateObj.getFullYear();
+    const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dy = String(dateObj.getDate()).padStart(2, '0');
     return `${yr}-${mo}-${dy}`;
 };
 
@@ -64,13 +66,17 @@ const getAlignmentHistoryText = (dateStr: string) => {
     const [y, m, d] = dateStr.split('-').map(Number);
     
     const dCur = new Date(y, m - 1, d);
-    const strCur = `${dCur.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${dCur.toLocaleDateString('es-BO', { month: 'short' })} ${y}`;
+    const strCur = `${dCur.toLocaleDateString('es-BO', { weekday: 'short' })} ${dCur.getDate()} ${dCur.toLocaleDateString('es-BO', { month: 'short' })} ${dCur.getFullYear()}`;
     
-    const d1Ago = new Date(y - 1, m - 1, d);
-    const str1Ago = `${d1Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${d1Ago.toLocaleDateString('es-BO', { month: 'short' })} ${y - 1}`;
+    const d1AgoStr = getSameWeekdayPrevYearDateStr(dateStr, 1);
+    const [y1, m1, d1] = d1AgoStr.split('-').map(Number);
+    const d1Ago = new Date(y1, m1 - 1, d1);
+    const str1Ago = `${d1Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d1Ago.getDate()} ${d1Ago.toLocaleDateString('es-BO', { month: 'short' })} ${d1Ago.getFullYear()}`;
     
-    const d2Ago = new Date(y - 2, m - 1, d);
-    const str2Ago = `${d2Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d} ${d2Ago.toLocaleDateString('es-BO', { month: 'short' })} ${y - 2}`;
+    const d2AgoStr = getSameWeekdayPrevYearDateStr(dateStr, 2);
+    const [y2, m2, d2] = d2AgoStr.split('-').map(Number);
+    const d2Ago = new Date(y2, m2 - 1, d2);
+    const str2Ago = `${d2Ago.toLocaleDateString('es-BO', { weekday: 'short' })} ${d2Ago.getDate()} ${d2Ago.toLocaleDateString('es-BO', { month: 'short' })} ${d2Ago.getFullYear()}`;
     
     return `${strCur} vs ${str1Ago} vs ${str2Ago}`;
 };
@@ -210,8 +216,8 @@ export const BIComparativasView: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const date1Ago = getPrevYearDateStr(sDate, 1);
-            const date2Ago = getPrevYearDateStr(sDate, 2);
+            const date1Ago = getSameWeekdayPrevYearDateStr(sDate, 1);
+            const date2Ago = getSameWeekdayPrevYearDateStr(sDate, 2);
 
             const [resComp, pCur, p1Ago, p2Ago] = await Promise.all([
                 getBIComparativas(sDate, eDate, compMode, sucId),
