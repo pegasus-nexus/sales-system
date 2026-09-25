@@ -802,9 +802,15 @@ async def export_inventory_excel(
                         "Codigo Largo": "$codigo_largo",
                         "Producto": "$descripcion",
                         "Categoria": "$categoria_id",
-                        "Precio Final": "$precio_final",
+                        "Precio al Cliente": "$precio_final",
                         "Costo Unitario": "$costo_producto",
                         "Stock": {"$ifNull": ["$inv.cantidad", 0.0]},
+                        "Precio Total Stock": {
+                            "$multiply": [
+                                {"$ifNull": ["$precio_final", 0.0]},
+                                {"$ifNull": ["$inv.cantidad", 0.0]}
+                            ]
+                        },
                         "Costo Total Stock": {
                             "$multiply": [
                                 {"$ifNull": ["$costo_producto", 0.0]},
@@ -820,7 +826,7 @@ async def export_inventory_excel(
             docs = await cursor.to_list(length=None)
             
             if not docs:
-                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio Final", "Costo Unitario", "Stock", "Costo Total Stock"])
+                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio al Cliente", "Costo Unitario", "Stock", "Precio Total Stock", "Costo Total Stock"])
             else:
                 for doc in docs:
                     doc.pop("_id", None)
@@ -851,10 +857,11 @@ async def export_inventory_excel(
             worksheet.column_dimensions["B"].width = 15 # Codigo Largo
             worksheet.column_dimensions["C"].width = 45 # Producto
             worksheet.column_dimensions["D"].width = 25 # Categoria
-            worksheet.column_dimensions["E"].width = 15 # Precio Final
+            worksheet.column_dimensions["E"].width = 16 # Precio al Cliente
             worksheet.column_dimensions["F"].width = 15 # Costo
             worksheet.column_dimensions["G"].width = 12 # Stock
-            worksheet.column_dimensions["H"].width = 18 # Costo Total
+            worksheet.column_dimensions["H"].width = 18 # Precio Total
+            worksheet.column_dimensions["I"].width = 18 # Costo Total
             
             # Formato de números para dinero y stock
             for row in range(2, len(df) + 2):
@@ -862,6 +869,7 @@ async def export_inventory_excel(
                 worksheet[f"F{row}"].number_format = '#,##0.00'
                 worksheet[f"G{row}"].number_format = '#,##0.00'
                 worksheet[f"H{row}"].number_format = '#,##0.00'
+                worksheet[f"I{row}"].number_format = '#,##0.00'
 
             
     output.seek(0)
