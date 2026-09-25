@@ -4,6 +4,9 @@ export interface ConteoItem {
     producto_id: string;
     codigo_corto?: string;
     descripcion?: string;
+    categoria_id?: string;
+    categoria_nombre?: string;
+    proveedores?: string[];
     stock_sistema: number;
     stock_fisico: number | null;
     diferencia: number;
