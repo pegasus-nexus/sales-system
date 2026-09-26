@@ -372,10 +372,12 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                         <tr>
                             <th className="px-4 py-3 font-semibold w-24">Cód</th>
                             <th className="px-4 py-3 font-semibold">Producto</th>
-                            <th className="px-4 py-3 font-semibold text-right w-32">Stock Sistema</th>
-                            <th className="px-4 py-3 font-semibold text-center w-40 bg-indigo-900">STOCK FÍSICO</th>
-                            <th className="px-4 py-3 font-semibold text-right w-32">Diferencia</th>
-                            <th className="px-4 py-3 font-semibold text-right w-32">Valor (Bs)</th>
+                            <th className="px-4 py-3 font-semibold">Categoría</th>
+                            <th className="px-4 py-3 font-semibold">Proveedor</th>
+                            {isFinished && <th className="px-4 py-3 font-semibold text-right w-32">Stock Sistema</th>}
+                            <th className="px-4 py-3 font-semibold text-center w-40 bg-indigo-900">Stock Físico</th>
+                            {isFinished && <th className="px-4 py-3 font-semibold text-right w-32">Diferencia</th>}
+                            {isFinished && <th className="px-4 py-3 font-semibold text-right w-32">Valor (Bs)</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -385,7 +387,9 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                                 <tr key={item.producto_id} className="hover:bg-gray-50">
                                     <td className="px-4 py-2 font-mono text-xs">{item.codigo_corto || '-'}</td>
                                     <td className="px-4 py-2 max-w-[300px] truncate font-medium" title={item.descripcion}>{item.descripcion}</td>
-                                    <td className="px-4 py-2 text-right text-gray-500 font-mono">{item.stock_sistema.toFixed(2)}</td>
+                                    <td className="px-4 py-2 text-gray-600 text-xs">{item.categoria_nombre || '-'}</td>
+                                    <td className="px-4 py-2 text-gray-600 text-xs truncate max-w-[150px]" title={item.proveedores?.join(', ') || '-'}>{item.proveedores?.join(', ') || '-'}</td>
+                                    {isFinished && <td className="px-4 py-2 text-right text-gray-500 font-mono">{item.stock_sistema.toFixed(2)}</td>}
                                     <td className="px-4 py-1.5 bg-indigo-50">
                                         {isFinished ? (
                                             <div className="text-center font-bold font-mono">
@@ -402,12 +406,16 @@ const ActiveConteoView = ({ conteoId, onBack }: { conteoId: string, onBack: () =
                                             />
                                         )}
                                     </td>
-                                    <td className={`px-4 py-2 text-right font-bold font-mono ${item.diferencia < 0 ? 'text-red-600' : (item.diferencia > 0 ? 'text-blue-600' : 'text-gray-400')}`}>
-                                        {item.stock_fisico !== null ? (item.diferencia > 0 ? '+' : '') + item.diferencia.toFixed(2) : '-'}
-                                    </td>
-                                    <td className={`px-4 py-2 text-right font-mono ${item.valor_diferencia < 0 ? 'text-red-600' : (item.valor_diferencia > 0 ? 'text-blue-600' : 'text-gray-400')}`}>
-                                        {item.stock_fisico !== null ? item.valor_diferencia.toFixed(2) : '-'}
-                                    </td>
+                                    {isFinished && (
+                                        <td className={`px-4 py-2 text-right font-bold font-mono ${item.diferencia < 0 ? 'text-red-600' : (item.diferencia > 0 ? 'text-blue-600' : 'text-gray-400')}`}>
+                                            {item.stock_fisico !== null ? (item.diferencia > 0 ? '+' : '') + item.diferencia.toFixed(2) : '-'}
+                                        </td>
+                                    )}
+                                    {isFinished && (
+                                        <td className={`px-4 py-2 text-right font-mono ${item.valor_diferencia < 0 ? 'text-red-600' : (item.valor_diferencia > 0 ? 'text-blue-600' : 'text-gray-400')}`}>
+                                            {item.stock_fisico !== null ? item.valor_diferencia.toFixed(2) : '-'}
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}
