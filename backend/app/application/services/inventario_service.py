@@ -21,7 +21,7 @@ class InventarioService:
         if ajuste.cantidad < 0:
             raise HTTPException(status_code=400, detail="La cantidad del ajuste debe ser un valor absoluto (positivo o cero).")
 
-        tenant_id = current_user.tenant_id or ""
+        tenant_id = current_user.tenant_id or "default"
 
         product = await Product.get(ajuste.producto_id)
         if not product or (current_user.role != UserRole.SUPERADMIN and product.tenant_id != tenant_id):
