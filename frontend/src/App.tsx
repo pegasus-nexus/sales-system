@@ -45,6 +45,7 @@ const PedidosCompraPage = lazy(() => import('./pages/PedidosCompraPage'));
 const IngresoMercaderiaPage = lazy(() => import('./pages/IngresoMercaderiaPage'));
 const IngresoHistoricoPage = lazy(() => import('./pages/IngresoHistoricoPage'));
 const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage'));
+const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
@@ -398,6 +399,11 @@ function App() {
                       <Route path="/configuracion" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                           <ConfiguracionPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/contabilidad" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <ContabilidadPage />
                         </ProtectedRoute>
                       } />
 
