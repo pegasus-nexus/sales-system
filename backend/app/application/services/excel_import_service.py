@@ -205,6 +205,7 @@ class ExcelImportService:
                 
         productos_db = await Product.find(Product.tenant_id == tenant_id).to_list()
         prod_map = {p.codigo_corto: p for p in productos_db if p.codigo_corto}
+        prod_name_map = {p.descripcion.lower().strip(): p for p in productos_db if p.descripcion}
         
         inventarios_db = await Inventario.find(Inventario.tenant_id == tenant_id).to_list()
         inv_map = {}
@@ -263,8 +264,13 @@ class ExcelImportService:
             
             product_id = ""
             
+            p = None
             if codigo_corto in prod_map:
                 p = prod_map[codigo_corto]
+            elif descripcion and descripcion.lower().strip() in prod_name_map:
+                p = prod_name_map[descripcion.lower().strip()]
+
+            if p:
                 product_id = str(p.id)
                 update_fields = {}
                 if descripcion: update_fields["descripcion"] = descripcion
@@ -295,7 +301,10 @@ class ExcelImportService:
                 )
                 product_id = str(nuevo_prod.id)
                 productos_a_insertar.append(nuevo_prod)
-                prod_map[codigo_corto] = nuevo_prod
+                if codigo_corto:
+                    prod_map[codigo_corto] = nuevo_prod
+                if descripcion:
+                    prod_name_map[descripcion.lower().strip()] = nuevo_prod
                 cat_procesados += 1
                 
             for col in precio_cols:
