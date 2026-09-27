@@ -163,7 +163,7 @@ export default function ContabilidadPage() {
         )}
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar items-center print:hidden">
         {TAB_OPTIONS.map(tab => (
           <button
             key={tab.id}
@@ -178,6 +178,14 @@ export default function ContabilidadPage() {
             {tab.label}
           </button>
         ))}
+        
+        <button
+          onClick={() => window.print()}
+          className="ml-auto flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all whitespace-nowrap"
+        >
+          <FileText size={16} />
+          Imprimir / PDF
+        </button>
       </div>
 
       {activeTab === 'plan' && (
@@ -235,7 +243,7 @@ export default function ContabilidadPage() {
           {isLoadingResultados ? (
              <p className="text-center text-gray-500 py-10">Cargando...</p>
           ) : estadoResultados ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto w-full">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full mx-auto print:shadow-none print:border-none print:p-0">
               <h2 className="text-2xl font-black text-gray-900 text-center mb-6">Estado de Resultados</h2>
               
               <div className="space-y-4 text-sm">
@@ -275,11 +283,11 @@ export default function ContabilidadPage() {
                 <div className="flex gap-4 mt-8 pt-6 border-t border-gray-100 justify-center">
                   <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 flex flex-col items-center">
                     <span className="text-xs text-gray-500 font-bold uppercase mb-1">Margen Bruto</span>
-                    <span className="text-lg font-black text-gray-900">{estadoResultados.margen_bruto_pct.toFixed(2)}%</span>
+                    <span className="text-lg font-black text-gray-900">{(((estadoResultados.utilidad_bruta || 0) / (estadoResultados.ventas_netas || 1)) * 100).toFixed(2)}%</span>
                   </div>
                   <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 flex flex-col items-center">
                     <span className="text-xs text-gray-500 font-bold uppercase mb-1">Margen Neto</span>
-                    <span className="text-lg font-black text-gray-900">{estadoResultados.margen_neto_pct.toFixed(2)}%</span>
+                    <span className="text-lg font-black text-gray-900">{(((estadoResultados.utilidad_neta || 0) / (estadoResultados.ventas_netas || 1)) * 100).toFixed(2)}%</span>
                   </div>
                 </div>
               </div>
@@ -294,7 +302,7 @@ export default function ContabilidadPage() {
           {isLoadingBalance ? (
              <p className="text-center text-gray-500 py-10">Cargando...</p>
           ) : balanceGeneral ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-5xl mx-auto w-full">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full mx-auto print:shadow-none print:border-none print:p-0">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-black text-gray-900">Balance General</h2>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${balanceGeneral.ecuacion_contable_ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
@@ -367,7 +375,7 @@ export default function ContabilidadPage() {
           {isLoadingFlujo ? (
              <p className="text-center text-gray-500 py-10">Cargando...</p>
           ) : flujoEfectivo ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto w-full">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full mx-auto print:shadow-none print:border-none print:p-0">
               <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Estado de Flujo de Efectivo</h2>
 
               <div className="space-y-8">
