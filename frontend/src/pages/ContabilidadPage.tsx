@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   getPlanCuentas, 
@@ -133,7 +133,7 @@ export default function ContabilidadPage() {
         >
           <option value="">Todas las sucursales</option>
           {sucursales?.map(s => (
-            <option key={s.id} value={s.id}>{s.nombre}</option>
+            <option key={s._id} value={s._id}>{s.nombre}</option>
           ))}
         </select>
       </div>
