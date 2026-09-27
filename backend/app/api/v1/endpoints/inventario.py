@@ -33,7 +33,7 @@ async def get_inventario(
     Get inventory for a specific sucursal.
     Starts from Product to leverage Text Indexes, then lookups Inventario.
     """
-    tenant_id = current_user.tenant_id or ""
+    tenant_id = current_user.tenant_id or "default"
     skip = (page - 1) * limit
 
     # Seguridad: CAJERO y USER solo pueden ver su propia sucursal
@@ -157,7 +157,7 @@ async def ajustar_inventario(
     if ajuste.cantidad < 0:
         raise HTTPException(status_code=400, detail="La cantidad del ajuste debe ser un valor absoluto (positivo o cero).")
 
-    tenant_id = current_user.tenant_id or ""
+    tenant_id = current_user.tenant_id or "default"
 
     # Verify product belongs to tenant
     product = await Product.get(ajuste.producto_id)
@@ -301,7 +301,7 @@ async def ajustar_inventario_masivo(
     Manually adjust inventory for multiple products at once using Bulk Write and ACID Transactions.
     """
 
-    tenant_id = current_user.tenant_id or ""
+    tenant_id = current_user.tenant_id or "default"
     sucursal_id = req.sucursal_id
 
     from app.domain.models.inventario import TipoMovimiento, InventoryLog
@@ -465,7 +465,7 @@ async def get_movimientos_inventario(
     """
     Get movement history (Kárdex) for a branch and almacen, with server-side pagination.
     """
-    tenant_id = current_user.tenant_id or ""
+    tenant_id = current_user.tenant_id or "default"
     skip = (page - 1) * limit
 
     # Seguridad: CAJERO y USER solo pueden ver su propia sucursal
@@ -554,7 +554,7 @@ async def exportar_movimientos(
     """
     Exports the movement history (Kárdex) to Excel.
     """
-    tenant_id = current_user.tenant_id or ""
+    tenant_id = current_user.tenant_id or "default"
 
     # Seguridad: CAJERO y USER solo pueden exportar su propia sucursal
     if current_user.role in [UserRole.CAJERO, UserRole.USER]:

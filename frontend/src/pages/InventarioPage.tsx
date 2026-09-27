@@ -265,6 +265,7 @@ export default function InventarioPage() {
                                     className="w-full bg-gray-50 border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-2 py-2.5 outline-none transition-all text-[11px] font-bold text-gray-700 shadow-inner"
                                 >
                                     <option value="">Todos los Movimientos</option>
+                                    <option value="COMPRA">Compras / Ingresos</option>
                                     <option value="VENTA">Solo Ventas</option>
                                     <option value="ENTRADA_MANUAL">Entradas</option>
                                     <option value="SALIDA_MANUAL">Salidas / Mermas</option>

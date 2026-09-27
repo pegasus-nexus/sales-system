@@ -1,7 +1,7 @@
 import math
 from typing import List, Optional
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from app.domain.models.compra import PurchaseOrder, PurchaseReception, PurchaseOrderStatus
@@ -60,7 +60,7 @@ class CompraService:
         if not order:
             raise ValueError("Purchase order not found")
         order.estado = status
-        order.updated_at = datetime.utcnow()
+        order.updated_at = datetime.now(timezone.utc)
         return await self.purchase_orders.update(order)
 
     async def confirm_purchase_reception(
@@ -102,16 +102,25 @@ class CompraService:
                         elif some_received:
                             order.estado = PurchaseOrderStatus.PARCIAL
                         
-                        order.updated_at = datetime.utcnow()
+                        order.updated_at = datetime.now(timezone.utc)
                         await self.purchase_orders.update(order, session=session)
 
                 # 3. Procesar cada ítem recibido (Inventario, Kárdex, Precios)
                 for item in reception.detalles:
                     if reception.es_historico:
                         continue
-                    almacen_id = "default"
+
+                    # Fix Bug 2: Resolver almacen_id real de la sucursal
+                    from app.domain.models.almacen import Almacen
+                    almacen_default = await Almacen.find_one(
+                        Almacen.tenant_id == reception.tenant_id,
+                        Almacen.sucursal_id == reception.sucursal_id,
+                        Almacen.is_default == True,
+                        session=session
+                    )
+                    almacen_id = str(almacen_default.id) if almacen_default else "default"
                     
-                    # Fix: Prevenir duplicados manejando correctamente almacen_id nulos o faltantes
+                    # Buscar inventario existente (compatibilidad con "default" legacy)
                     inv_query = {
                         "tenant_id": reception.tenant_id,
                         "sucursal_id": reception.sucursal_id,
@@ -120,7 +129,7 @@ class CompraService:
                     if almacen_id == "default":
                         inv_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
                     else:
-                        inv_query["almacen_id"] = almacen_id
+                        inv_query["$or"] = [{"almacen_id": almacen_id}, {"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
 
                     inventario = await Inventario.find_one(inv_query, session=session)
                     
@@ -129,7 +138,9 @@ class CompraService:
                     
                     if inventario:
                         inventario.cantidad = nuevo_stock
-                        inventario.updated_at = datetime.utcnow()
+                        if almacen_id != "default" and inventario.almacen_id in (None, "default"):
+                            inventario.almacen_id = almacen_id
+                        inventario.updated_at = datetime.now(timezone.utc)
                         await inventario.save(session=session)
                     else:
                         inventario = Inventario(
@@ -160,55 +171,60 @@ class CompraService:
                             session=session
                         )
                     
+                    # Fix Bug 3: SIEMPRE crear InventoryLog, incluso sin producto
+                    new_cost = _to_decimal(item.costo_unitario_real)
+                    precio_venta_momento = Decimal("0")
+                    descripcion_log = getattr(item, "nombre_producto", None) or getattr(item, "codigo_producto", None) or item.producto_id
+                    producto_id_log = item.producto_id
+
                     if producto:
                         old_cost = _to_decimal(producto.costo_producto)
-                        new_cost = _to_decimal(item.costo_unitario_real)
+                        descripcion_log = producto.descripcion
+                        producto_id_log = str(producto.id)
                         
-                        # Para el precio de venta en este momento, usaremos el precio de la sucursal o el base.
-                        precio_venta_momento = Decimal("0")
                         if producto.precios_sucursales and reception.sucursal_id in producto.precios_sucursales:
                             precio_venta_momento = _to_decimal(producto.precios_sucursales[reception.sucursal_id])
                         else:
                             precio_venta_momento = _to_decimal(producto.precio_venta)
 
-                        log = InventoryLog(
-                            tenant_id=reception.tenant_id,
-                            sucursal_id=reception.sucursal_id,
-                            almacen_id=almacen_id,
-                            producto_id=item.producto_id,
-                            descripcion=producto.descripcion,
-                            tipo_movimiento=TipoMovimiento.COMPRA,
-                            cantidad_movida=item.cantidad_recibida,
-                            stock_resultante=nuevo_stock,
-                            costo_unitario_momento=DecimalMoney(str(new_cost)),
-                            precio_venta_momento=DecimalMoney(str(precio_venta_momento)),
-                            usuario_id=usuario_id,
-                            usuario_nombre=usuario_nombre,
-                            referencia_id=str(reception.id),
-                            notas=f"Ingreso por compra. Doc: {reception.numero_documento}",
-                            created_at=reception.created_at
-                        )
-                        await log.insert(session=session)
+                    log = InventoryLog(
+                        tenant_id=reception.tenant_id,
+                        sucursal_id=reception.sucursal_id,
+                        almacen_id=inventario.almacen_id if inventario else almacen_id,
+                        producto_id=producto_id_log,
+                        descripcion=descripcion_log,
+                        tipo_movimiento=TipoMovimiento.COMPRA,
+                        cantidad_movida=item.cantidad_recibida,
+                        stock_resultante=nuevo_stock,
+                        costo_unitario_momento=DecimalMoney(str(new_cost)),
+                        precio_venta_momento=DecimalMoney(str(precio_venta_momento)),
+                        usuario_id=usuario_id,
+                        usuario_nombre=usuario_nombre,
+                        referencia_id=str(reception.id),
+                        notas=f"Ingreso por compra. Doc: {reception.numero_documento}",
+                        created_at=reception.created_at
+                    )
+                    await log.insert(session=session)
+                    
+                    # --- Actualizar Costo y Precios si cambió ---
+                    if producto and new_cost != old_cost:
+                        producto.costo_producto = DecimalMoney(str(new_cost))
                         
-                        # --- Actualizar Costo y Precios si cambió ---
-                        if new_cost != old_cost:
-                            producto.costo_producto = DecimalMoney(str(new_cost))
+                        # Recalcular precio para esta sucursal específica
+                        if producto.precios_sucursales is None:
+                            producto.precios_sucursales = {}
                             
-                            # Recalcular precio para esta sucursal específica
-                            if producto.precios_sucursales is None:
-                                producto.precios_sucursales = {}
-                                
-                            old_price = Decimal("0")
-                            if reception.sucursal_id in producto.precios_sucursales:
-                                old_price = _to_decimal(producto.precios_sucursales[reception.sucursal_id])
-                            else:
-                                old_price = _to_decimal(producto.precio_venta)
-                                
-                            # Recalcular aplicando redondeo
-                            new_price = self._recalculate_price(old_price, old_cost, new_cost)
-                            producto.precios_sucursales[reception.sucursal_id] = DecimalMoney(str(new_price))
+                        old_price = Decimal("0")
+                        if reception.sucursal_id in producto.precios_sucursales:
+                            old_price = _to_decimal(producto.precios_sucursales[reception.sucursal_id])
+                        else:
+                            old_price = _to_decimal(producto.precio_venta)
                             
-                            await producto.save(session=session)
+                        # Recalcular aplicando redondeo
+                        new_price = self._recalculate_price(old_price, old_cost, new_cost)
+                        producto.precios_sucursales[reception.sucursal_id] = DecimalMoney(str(new_price))
+                        
+                        await producto.save(session=session)
 
                 # 4. Impacto Financiero
                 if reception.metodo_pago in ["CREDITO", "CONSIGNACION"]:

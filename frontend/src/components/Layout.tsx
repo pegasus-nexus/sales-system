@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -225,6 +225,14 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: Users, label: 'Clientes', path: '/clientes', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
                     { icon: Briefcase, label: 'Proveedores', path: '/proveedores', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
                     { icon: QrCode, label: 'Control QR', path: '/qr-control', feature: 'CONTROL_QR', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR'] },
+                ]
+            },
+            {
+                groupKey: 'contabilidad',
+                title: 'Contabilidad',
+                icon: BookOpen,
+                items: [
+                    { icon: BookOpen, label: 'Contabilidad', path: '/contabilidad', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] }
                 ]
             },
             {
