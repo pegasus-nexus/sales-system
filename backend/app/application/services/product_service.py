@@ -146,9 +146,20 @@ class ProductService:
             existing = await Product.find_one(
                 Product.tenant_id == tenant_id,
                 Product.codigo_corto == data.codigo_corto,
+                Product.is_active == True
             )
             if existing:
                 raise HTTPException(status_code=400, detail=f"El código corto '{data.codigo_corto}' ya existe en tu catálogo")
+
+        # Validate descripcion uniqueness within tenant (case-insensitive)
+        if data.descripcion:
+            existing_name = await Product.find_one(
+                Product.tenant_id == tenant_id,
+                Product.is_active == True,
+                {"descripcion": {"$regex": f"^{data.descripcion.strip()}$", "$options": "i"}}
+            )
+            if existing_name:
+                raise HTTPException(status_code=400, detail=f"El producto con nombre '{data.descripcion}' ya existe en tu catálogo")
     
         product = Product(
             tenant_id=tenant_id,
@@ -198,6 +209,26 @@ class ProductService:
         product = await Product.get(product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
+            
+        # Validate codigo_corto uniqueness
+        if data.codigo_corto and data.codigo_corto != product.codigo_corto:
+            existing = await Product.find_one(
+                Product.tenant_id == product.tenant_id,
+                Product.codigo_corto == data.codigo_corto,
+                Product.is_active == True
+            )
+            if existing and str(existing.id) != str(product.id):
+                raise HTTPException(status_code=400, detail=f"El código corto '{data.codigo_corto}' ya existe")
+
+        # Validate descripcion uniqueness
+        if data.descripcion and data.descripcion != product.descripcion:
+            existing_name = await Product.find_one(
+                Product.tenant_id == product.tenant_id,
+                Product.is_active == True,
+                {"descripcion": {"$regex": f"^{data.descripcion.strip()}$", "$options": "i"}}
+            )
+            if existing_name and str(existing_name.id) != str(product.id):
+                raise HTTPException(status_code=400, detail=f"Un producto con nombre '{data.descripcion}' ya existe")
         if current_user.role != UserRole.SUPERADMIN and product.tenant_id != current_user.tenant_id:
             raise HTTPException(status_code=403, detail="Product not found")
     
