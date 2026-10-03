@@ -38,7 +38,7 @@ const BRANCH_PALETTES: Record<string, {
         badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         badgeText: 'text-emerald-800',
         color: '#059669', // Verde Pastel
-        colorLight: '#cbd5e1', // Gris Claro para período anterior
+        colorLight: '#94a3b8', // Gris Claro para período anterior
         dotBg: 'bg-emerald-500'
     },
     'Recoleta': {
@@ -46,7 +46,7 @@ const BRANCH_PALETTES: Record<string, {
         badgeBg: 'bg-sky-50 text-sky-800 border-sky-200',
         badgeText: 'text-sky-800',
         color: '#0284c7', // Azul Pastel
-        colorLight: '#cbd5e1', // Gris Claro para período anterior
+        colorLight: '#94a3b8', // Gris Claro para período anterior
         dotBg: 'bg-sky-500'
     },
     'Calacoto': {
@@ -54,7 +54,7 @@ const BRANCH_PALETTES: Record<string, {
         badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
         badgeText: 'text-amber-800',
         color: '#d97706', // Naranja Pastel
-        colorLight: '#cbd5e1', // Gris Claro para período anterior
+        colorLight: '#94a3b8', // Gris Claro para período anterior
         dotBg: 'bg-amber-500'
     }
 };
@@ -119,14 +119,29 @@ export default function RegionalAndProductMix() {
             startB = new Date(yB, 0, 1, 0, 0, 0);
             endB = new Date(yB, 11, 31, 23, 59, 59, 999);
         } else {
-            // Modo Mes (Julio 2026 vs Junio 2026)
+            // Modo Mes con MTD (Month-To-Date)
             const yA = parseInt(currYear);
             startA = new Date(yA, currMonthIdx, 1, 0, 0, 0);
-            endA = new Date(yA, currMonthIdx + 1, 0, 23, 59, 59, 999);
+            
+            const isCurrentMonth = now.getFullYear() === yA && now.getMonth() === currMonthIdx;
+            
+            if (isCurrentMonth) {
+                // MTD para el mes actual
+                endA = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            } else {
+                // Mes completo
+                endA = new Date(yA, currMonthIdx + 1, 0, 23, 59, 59, 999);
+            }
 
             const yB = parseInt(prevYear);
             startB = new Date(yB, prevMonthIdx, 1, 0, 0, 0);
-            endB = new Date(yB, prevMonthIdx + 1, 0, 23, 59, 59, 999);
+            
+            if (isCurrentMonth) {
+                // Comparar exactamente los mismos dias
+                endB = new Date(yB, prevMonthIdx, now.getDate(), 23, 59, 59, 999);
+            } else {
+                endB = new Date(yB, prevMonthIdx + 1, 0, 23, 59, 59, 999);
+            }
         }
 
         return {
