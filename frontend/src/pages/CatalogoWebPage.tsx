@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { client } from '../api/client';
-import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
+import { Loader2, Globe, Eye, EyeOff, Search, ChevronDown, ChevronUp, Save, Star, FolderTree, Plus, Trash2, Edit2, X } from 'lucide-react';
 import type { Category, Product, ProductUpdate, WebCollection, WebCollectionCreate, WebCollectionUpdate } from '../api/types';
-import { uploadImage } from '../api/api';
 import { toast } from 'sonner';
+import { CollectionIconPicker } from '../components/catalog/CollectionIconPicker';
 
 function ManageCategoriesDropdown({ collection, activeCategories, onApply }: { collection: WebCollection, activeCategories: Category[], onApply: (collection: WebCollection, newIds: string[]) => void }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +69,9 @@ export default function CatalogoWebPage() {
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const [newCollectionName, setNewCollectionName] = useState('');
     const [newCollectionImage, setNewCollectionImage] = useState('');
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [editingCollection, setEditingCollection] = useState<WebCollection | null>(null);
+    const [editCollectionName, setEditCollectionName] = useState('');
+    const [editCollectionImage, setEditCollectionImage] = useState('');
 
     const { data: categories, isLoading: isLoadingCat } = useQuery({
         queryKey: ['categories'],
@@ -119,13 +121,36 @@ export default function CatalogoWebPage() {
         if (!newCollectionName.trim()) return toast.error("El nombre es requerido");
         try {
             await createCollectionMutation.mutateAsync({ name: newCollectionName, image_url: newCollectionImage });
-            toast.success("Colección creada");
+            toast.success("Colección creada exitosamente");
             setNewCollectionName('');
             setNewCollectionImage('');
             setIsCreatingCollection(false);
             queryClient.invalidateQueries({ queryKey: ['web_collections'] });
         } catch (e) {
             toast.error("Error creando colección");
+        }
+    };
+
+    const handleStartEdit = (col: WebCollection) => {
+        setEditingCollection(col);
+        setEditCollectionName(col.name);
+        setEditCollectionImage(col.image_url || '');
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingCollection) return;
+        if (!editCollectionName.trim()) return toast.error("El nombre es requerido");
+        try {
+            await updateCollectionMutation.mutateAsync({
+                id: editingCollection._id,
+                name: editCollectionName,
+                image_url: editCollectionImage
+            });
+            toast.success("Colección actualizada correctamente");
+            setEditingCollection(null);
+            queryClient.invalidateQueries({ queryKey: ['web_collections'] });
+        } catch (e) {
+            toast.error("Error actualizando colección");
         }
     };
 
@@ -331,67 +356,97 @@ export default function CatalogoWebPage() {
             </div>
 
             {isCreatingCollection && (
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-200 animate-in fade-in slide-in-from-top-4">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <FolderTree className="text-indigo-500" />
-                        Crear Nueva Colección
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-1">Nombre de la Colección</label>
-                            <input 
-                                type="text"
-                                placeholder="Ej: Día de la Madre 2026"
-                                className="w-full bg-white text-gray-900 font-medium placeholder-gray-400 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400 shadow-sm"
-                                value={newCollectionName}
-                                onChange={e => setNewCollectionName(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between mb-1">
-                                <label className="block text-sm font-bold text-gray-900">Imagen de Colección (Banner / Icono)</label>
-                                <label className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg cursor-pointer transition-colors border border-indigo-200">
-                                    {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                                    <span>Subir Imagen</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        disabled={isUploadingImage}
-                                        onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (!file) return;
-                                            setIsUploadingImage(true);
-                                            try {
-                                                const res = await uploadImage(file);
-                                                if (res.url) {
-                                                    setNewCollectionImage(res.url);
-                                                    toast.success("Imagen subida correctamente");
-                                                }
-                                            } catch (err: any) {
-                                                toast.error(err.message || "Error al subir imagen");
-                                            } finally {
-                                                setIsUploadingImage(false);
-                                            }
-                                        }}
-                                    />
-                                </label>
-                            </div>
-                            <input 
-                                type="text"
-                                placeholder="https://... o sube una imagen"
-                                className="w-full bg-white text-gray-900 font-medium text-sm placeholder-gray-400 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:border-indigo-400 shadow-sm"
-                                value={newCollectionImage}
-                                onChange={e => setNewCollectionImage(e.target.value)}
-                            />
-                        </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-200 animate-in fade-in slide-in-from-top-4 space-y-5">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <FolderTree className="text-indigo-500" />
+                            Crear Nueva Colección
+                        </h2>
+                        <button onClick={() => setIsCreatingCollection(false)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100">
+                            <X size={20} />
+                        </button>
                     </div>
-                    <div className="flex gap-2 justify-end">
-                        <button onClick={() => setIsCreatingCollection(false)} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                        <button onClick={handleCreateCollection} disabled={createCollectionMutation.isPending} className="px-6 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md flex items-center gap-2">
-                            {createCollectionMutation.isPending ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-900 mb-1">Nombre de la Colección <span className="text-red-500">*</span></label>
+                        <input 
+                            type="text"
+                            placeholder="Ej: Sorprender a alguien, Regalos corporativos, etc."
+                            className="w-full bg-white text-gray-900 font-medium placeholder-gray-400 border border-gray-200 rounded-xl py-2.5 px-4 outline-none focus:border-indigo-400 shadow-sm"
+                            value={newCollectionName}
+                            onChange={e => setNewCollectionName(e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-900 mb-2">Ícono / Imagen de la Colección</label>
+                        <CollectionIconPicker
+                            value={newCollectionImage}
+                            currentName={newCollectionName}
+                            onChange={(url, suggestedName) => {
+                                setNewCollectionImage(url);
+                                if (suggestedName && !newCollectionName.trim()) {
+                                    setNewCollectionName(suggestedName);
+                                }
+                            }}
+                        />
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                        <button onClick={() => setIsCreatingCollection(false)} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                        <button onClick={handleCreateCollection} disabled={createCollectionMutation.isPending} className="px-6 py-2.5 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md flex items-center gap-2 transition-all">
+                            {createCollectionMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                             Crear Colección
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para Editar Colección */}
+            {editingCollection && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <Edit2 className="text-indigo-500" size={20} />
+                                Editar Colección: {editingCollection.name}
+                            </h2>
+                            <button onClick={() => setEditingCollection(null)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-1">Nombre de la Colección <span className="text-red-500">*</span></label>
+                            <input 
+                                type="text"
+                                className="w-full bg-white text-gray-900 font-medium placeholder-gray-400 border border-gray-200 rounded-xl py-2.5 px-4 outline-none focus:border-indigo-400 shadow-sm"
+                                value={editCollectionName}
+                                onChange={e => setEditCollectionName(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">Ícono / Imagen de la Colección</label>
+                            <CollectionIconPicker
+                                value={editCollectionImage}
+                                currentName={editCollectionName}
+                                onChange={(url, suggestedName) => {
+                                    setEditCollectionImage(url);
+                                    if (suggestedName && !editCollectionName.trim()) {
+                                        setEditCollectionName(suggestedName);
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                            <button onClick={() => setEditingCollection(null)} className="px-4 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                            <button onClick={handleSaveEdit} disabled={updateCollectionMutation.isPending} className="px-6 py-2.5 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md flex items-center gap-2 transition-all">
+                                {updateCollectionMutation.isPending ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                Guardar Cambios
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -415,13 +470,20 @@ export default function CatalogoWebPage() {
                     <div key={collection._id} className="bg-white rounded-3xl shadow-sm border border-indigo-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 bg-indigo-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                {collection.image_url ? (
-                                    <img src={collection.image_url} alt={collection.name} className="w-16 h-16 rounded-xl object-cover shadow-sm" />
-                                ) : (
-                                    <div className="w-16 h-16 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-400">
-                                        <ImageIcon size={32} />
-                                    </div>
-                                )}
+                                <div className="w-16 h-16 rounded-2xl bg-stone-950 border border-amber-500/30 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-md">
+                                    {collection.image_url ? (
+                                        <img 
+                                            src={collection.image_url} 
+                                            alt={collection.name} 
+                                            className="w-8 h-8 object-contain" 
+                                            onError={(e) => {
+                                                e.currentTarget.src = 'https://api.iconify.design/lucide:star.svg?color=%23dcb041';
+                                            }} 
+                                        />
+                                    ) : (
+                                        <Star className="text-amber-400" size={28} />
+                                    )}
+                                </div>
                                 <div>
                                     <h2 className="text-2xl font-black text-indigo-900">{collection.name}</h2>
                                     <p className="text-sm font-medium text-indigo-600/70">{collection.categories_ids?.length || 0} categorías enlazadas</p>
@@ -434,7 +496,10 @@ export default function CatalogoWebPage() {
                                     activeCategories={activeCategories} 
                                     onApply={updateCategoriesInCollection} 
                                 />
-                                <button onClick={() => handleDeleteCollection(collection._id)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors">
+                                <button onClick={() => handleStartEdit(collection)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors" title="Editar Colección">
+                                    <Edit2 size={20} />
+                                </button>
+                                <button onClick={() => handleDeleteCollection(collection._id)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors" title="Eliminar Colección">
                                     <Trash2 size={20} />
                                 </button>
                             </div>
