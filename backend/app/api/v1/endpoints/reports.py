@@ -2070,6 +2070,15 @@ async def get_monthly_evolution(
 
     tx_latest = int(latest["transacciones"])
     tx_prev = int(prev["transacciones"])
+
+    unidades_latest = float(latest.get("unidades", 0.0))
+    unidades_prev = float(prev.get("unidades", 0.0))
+    diff_unidades_pct = ((unidades_latest - unidades_prev) / unidades_prev * 100.0) if unidades_prev > 0 else (100.0 if unidades_latest > 0 else 0.0)
+
+    tkt_prod_latest = round(unidades_latest / tx_latest, 2) if tx_latest > 0 else 0.0
+    tkt_prod_prev = round(unidades_prev / tx_prev, 2) if tx_prev > 0 else 0.0
+    diff_tkt_prod_pct = ((tkt_prod_latest - tkt_prod_prev) / tkt_prod_prev * 100.0) if tkt_prod_prev > 0 else (100.0 if tkt_prod_latest > 0 else 0.0)
+
     diff_tx_pct = ((tx_latest - tx_prev) / tx_prev * 100.0) if tx_prev > 0 else (100.0 if tx_latest > 0 else 0.0)
 
     tkt_latest = float(latest.get("ticket_promedio", 0.0))
@@ -2152,6 +2161,12 @@ async def get_monthly_evolution(
             "diferencia_pct": round(diff_pct, 1),
             "transacciones_actual": tx_latest,
             "transacciones_anterior": tx_prev,
+            "unidades_actual": round(unidades_latest, 2),
+            "unidades_anterior": round(unidades_prev, 2),
+            "diferencia_unidades_pct": round(diff_unidades_pct, 1),
+            "ticket_promedio_productos_actual": tkt_prod_latest,
+            "ticket_promedio_productos_anterior": tkt_prod_prev,
+            "diferencia_tkt_prod_pct": round(diff_tkt_prod_pct, 1),
             "diferencia_tx_pct": round(diff_tx_pct, 1),
             "ticket_promedio_actual": round(tkt_latest, 2),
             "ticket_promedio_anterior": round(tkt_prev, 2),

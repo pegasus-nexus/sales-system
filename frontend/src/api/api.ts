@@ -554,6 +554,12 @@ export interface MonthlyEvolutionResponse {
         transacciones_anterior: number;
 
         diferencia_tx_pct: number;
+        unidades_actual: number;
+        unidades_anterior: number;
+        diferencia_unidades_pct: number;
+        ticket_promedio_productos_actual: number;
+        ticket_promedio_productos_anterior: number;
+        diferencia_tkt_prod_pct: number;
 
         ticket_promedio_actual: number;
 
