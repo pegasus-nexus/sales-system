@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Gift, Plus, Trash2, Edit2, Save, X, Eye, EyeOff, Upload, Loader2, Calendar } from 'lucide-react';
 import { client, uploadImage } from '../api/api';
@@ -98,7 +98,7 @@ Se recomienda OCULTAR este premio y crear uno nuevo en lugar de editarlo.
         try {
             setIsUploading(true);
             const res = await uploadImage(file);
-            setEditForm({ ...editForm, img: res.url });
+            setEditForm(prev => ({ ...prev, img: res.url }));
             toast.success("Foto del premio subida correctamente");
         } catch (error) {
             toast.error("Error al subir la foto");
@@ -272,13 +272,20 @@ Lo recomendable es simplemente cambiar su estado a 'Oculto'.
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen del Premio</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Imagen del Premio</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border border-gray-200 bg-white text-gray-900 rounded-xl px-3 py-2 text-xs mb-2 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                    value={editForm.img || ''} 
+                                    onChange={e => setEditForm(prev => ({ ...prev, img: e.target.value }))} 
+                                    placeholder="URL de la imagen (https://...)" 
+                                />
                                 <div className="flex items-center gap-4">
                                     {editForm.img && (
-                                        <img src={editForm.img} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-gray-200 shadow-sm" />
+                                        <img src={editForm.img} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-gray-200 shadow-sm" onError={(e) => (e.currentTarget.style.display = 'none')} />
                                     )}
-                                    <label className={`flex-1 flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none border-gray-200' : 'border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400'}`}>
-                                        {isUploading ? <Loader2 size={24} className="text-indigo-500 animate-spin mb-1" /> : <Upload size={24} className="text-indigo-400 mb-1" />}
+                                    <label className={`flex-1 flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none border-gray-200' : 'border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400'}`}>
+                                        {isUploading ? <Loader2 size={20} className="text-indigo-500 animate-spin mb-1" /> : <Upload size={20} className="text-indigo-400 mb-1" />}
                                         <span className="text-xs font-semibold text-gray-600">{isUploading ? 'Subiendo...' : 'Subir a Cloudinary'}</span>
                                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                                     </label>

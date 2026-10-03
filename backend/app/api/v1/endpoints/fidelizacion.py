@@ -253,7 +253,11 @@ async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
             "club_benefit_description": web_config.club_benefit_description,
             "club_benefit_branch": web_config.club_benefit_branch,
             "club_benefit_valid_until": web_config.club_benefit_valid_until,
-            "rewards": [r.dict() for r in getattr(web_config, 'rewards', []) if not getattr(r, 'deleted', False)]
+            "rewards": [
+                (r.dict() if hasattr(r, 'dict') else (dict(r) if isinstance(r, dict) else {}))
+                for r in getattr(web_config, 'rewards', [])
+                if not (r.deleted if hasattr(r, 'deleted') else (r.get('deleted', False) if isinstance(r, dict) else False))
+            ]
         },
         "colecciones": col_list,
         "categorias": cat_list,
@@ -292,10 +296,12 @@ async def reclamar_cupon(data: ReclamoCuponInput, tenant_id: str = "69cd7f0a8f3f
             config = await WebConfig.find_one(WebConfig.tenant_id == tenant_id)
             if config and config.rewards:
                 for r in config.rewards:
-                    if r.get("id") == data.premio_id:
+                    r_id = r.id if hasattr(r, 'id') else (r.get("id") if isinstance(r, dict) else None)
+                    r_title = r.title if hasattr(r, 'title') else (r.get("title", data.premio_id) if isinstance(r, dict) else data.premio_id)
+                    if r_id == data.premio_id:
                         if "premios_canjeados_nombres" not in existing_cliente.datos_crm:
                             existing_cliente.datos_crm["premios_canjeados_nombres"] = {}
-                        existing_cliente.datos_crm["premios_canjeados_nombres"][data.premio_id] = r.get("title", data.premio_id)
+                        existing_cliente.datos_crm["premios_canjeados_nombres"][data.premio_id] = r_title
                         break
             
             await existing_cliente.save()

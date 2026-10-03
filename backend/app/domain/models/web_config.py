@@ -32,9 +32,6 @@ class WebConfig(Document):
     # Dynamic Rewards for Comunidad
     rewards: list[WebReward] = Field(default_factory=list)
     
-    # Dynamic Rewards for Comunidad
-    rewards: list[WebReward] = Field(default_factory=list)
-    
     # Club Taboada Benefit
     club_benefit_product_id: Optional[str] = None
     club_benefit_description: Optional[str] = None
