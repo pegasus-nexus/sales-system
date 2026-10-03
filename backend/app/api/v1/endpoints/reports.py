@@ -312,17 +312,23 @@ async def get_daily_report(
     total_creditos = _ZERO
     
     for s in sales:
-        if s.anulada:
+        if s.get("anulada", False) or str(s.get("estado", "")).lower() == "anulado":
             continue
 
-        if s.estado_pago in ["PENDIENTE", "PARCIAL"]:
-            pagado = sum((p.monto for p in s.pagos), _ZERO)
-            credito_otorgado = s.total - pagado
+        estado_pago = s.get("estado_pago", "PAGADO")
+        total_venta = Decimal(str(s.get("total", 0)))
+        pagos = s.get("pagos", [])
+
+        if estado_pago in ["PENDIENTE", "PARCIAL"]:
+            pagado = sum((Decimal(str(p.get("monto", 0))) for p in pagos if isinstance(p, dict)), _ZERO)
+            credito_otorgado = total_venta - pagado
             total_creditos += credito_otorgado
             
-        for p in s.pagos:
-            metodo = p.metodo.upper()
-            ventas_por_metodo[metodo] = ventas_por_metodo.get(metodo, _ZERO) + p.monto
+        for p in pagos:
+            if isinstance(p, dict):
+                metodo = p.get("metodo", "EFECTIVO").upper()
+                monto = Decimal(str(p.get("monto", 0)))
+                ventas_por_metodo[metodo] = ventas_por_metodo.get(metodo, _ZERO) + monto
 
     # 2. Expenses (Gastos) from CajaMovimiento
     movimientos = await CajaMovimiento.find(
