@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Heart, Coffee, Sun, Users, Building2, Smile, Star, Gift, 
     Cake, Wine, Gem, Flame, ShoppingBag, Sparkles, Tag, Package, 
-    Award, Compass, Upload, Loader2, Check, Image as ImageIcon 
+    Award, Compass, Utensils, Moon, Clock, PartyPopper, Crown, 
+    ShieldCheck, Percent, Truck, Zap, Upload, Loader2, Check, 
+    Image as ImageIcon, Palette
 } from 'lucide-react';
 import { uploadImage } from '../../api/api';
 import { toast } from 'sonner';
@@ -11,138 +13,71 @@ export interface PredefinedIcon {
     id: string;
     name: string;
     icon: React.ComponentType<{ className?: string; size?: number }>;
-    url: string;
-    category: string;
+    category: 'Ocasiones' | 'Regalos' | 'Gourmet' | 'Tienda';
 }
 
-export const PREDEFINED_COLLECTION_ICONS: PredefinedIcon[] = [
-    {
-        id: 'heart',
-        name: 'Sorprender a alguien',
-        icon: Heart,
-        url: 'https://api.iconify.design/lucide:heart.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'coffee',
-        name: 'Disfrutar con un café',
-        icon: Coffee,
-        url: 'https://api.iconify.design/lucide:coffee.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'sun',
-        name: 'Celebraciones y eventos',
-        icon: Sun,
-        url: 'https://api.iconify.design/lucide:sun.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'users',
-        name: 'Compartir en familia',
-        icon: Users,
-        url: 'https://api.iconify.design/lucide:users.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'building-2',
-        name: 'Regalos corporativos',
-        icon: Building2,
-        url: 'https://api.iconify.design/lucide:building-2.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'smile',
-        name: 'Para Niños',
-        icon: Smile,
-        url: 'https://api.iconify.design/lucide:smile.svg?color=%23dcb041',
-        category: 'Ocasiones'
-    },
-    {
-        id: 'star',
-        name: 'Ver Catálogo / Especiales',
-        icon: Star,
-        url: 'https://api.iconify.design/lucide:star.svg?color=%23dcb041',
-        category: 'Destacados'
-    },
-    {
-        id: 'gift',
-        name: 'Regalo & Sorpresa',
-        icon: Gift,
-        url: 'https://api.iconify.design/lucide:gift.svg?color=%23dcb041',
-        category: 'Regalos'
-    },
-    {
-        id: 'cake',
-        name: 'Cumpleaños & Fiestas',
-        icon: Cake,
-        url: 'https://api.iconify.design/lucide:cake.svg?color=%23dcb041',
-        category: 'Celebración'
-    },
-    {
-        id: 'wine',
-        name: 'Brindis & Maridaje',
-        icon: Wine,
-        url: 'https://api.iconify.design/lucide:wine.svg?color=%23dcb041',
-        category: 'Gourmet'
-    },
-    {
-        id: 'gem',
-        name: 'Línea Exclusiva / Premium',
-        icon: Gem,
-        url: 'https://api.iconify.design/lucide:gem.svg?color=%23dcb041',
-        category: 'Premium'
-    },
-    {
-        id: 'flame',
-        name: 'Novedades & Tendencias',
-        icon: Flame,
-        url: 'https://api.iconify.design/lucide:flame.svg?color=%23dcb041',
-        category: 'Tendencias'
-    },
-    {
-        id: 'shopping-bag',
-        name: 'Edición Especial',
-        icon: ShoppingBag,
-        url: 'https://api.iconify.design/lucide:shopping-bag.svg?color=%23dcb041',
-        category: 'Temporada'
-    },
-    {
-        id: 'sparkles',
-        name: 'Momentos Mágicos',
-        icon: Sparkles,
-        url: 'https://api.iconify.design/lucide:sparkles.svg?color=%23dcb041',
-        category: 'Especiales'
-    },
-    {
-        id: 'tag',
-        name: 'Promociones & Ofertas',
-        icon: Tag,
-        url: 'https://api.iconify.design/lucide:tag.svg?color=%23dcb041',
-        category: 'Ofertas'
-    },
-    {
-        id: 'package',
-        name: 'Cajas & Packs Especiales',
-        icon: Package,
-        url: 'https://api.iconify.design/lucide:package.svg?color=%23dcb041',
-        category: 'Packs'
-    },
-    {
-        id: 'award',
-        name: 'Colección de Temporada',
-        icon: Award,
-        url: 'https://api.iconify.design/lucide:award.svg?color=%23dcb041',
-        category: 'Destacados'
-    },
-    {
-        id: 'compass',
-        name: 'Tradición & Origen',
-        icon: Compass,
-        url: 'https://api.iconify.design/lucide:compass.svg?color=%23dcb041',
-        category: 'Tradición'
-    }
+export const PREDEFINED_ICONS: PredefinedIcon[] = [
+    // Ocasiones & Momentos
+    { id: 'heart', name: 'Sorprender a alguien / Amor', icon: Heart, category: 'Ocasiones' },
+    { id: 'coffee', name: 'Disfrutar con un café', icon: Coffee, category: 'Ocasiones' },
+    { id: 'sun', name: 'Celebraciones & Días especiales', icon: Sun, category: 'Ocasiones' },
+    { id: 'users', name: 'Compartir en familia & amigos', icon: Users, category: 'Ocasiones' },
+    { id: 'building-2', name: 'Regalos corporativos & Empresas', icon: Building2, category: 'Ocasiones' },
+    { id: 'smile', name: 'Para niños & Momentos alegres', icon: Smile, category: 'Ocasiones' },
+    { id: 'utensils', name: 'Desayunos, meriendas & antojos', icon: Utensils, category: 'Ocasiones' },
+    { id: 'moon', name: 'Noches dulces & Veladas', icon: Moon, category: 'Ocasiones' },
+    { id: 'clock', name: 'Antojos del momento / Express', icon: Clock, category: 'Ocasiones' },
+
+    // Fiestas & Regalos
+    { id: 'gift', name: 'Regalos & Sorpresas', icon: Gift, category: 'Regalos' },
+    { id: 'cake', name: 'Cumpleaños & Aniversarios', icon: Cake, category: 'Regalos' },
+    { id: 'party-popper', name: 'Fiestas, bodas & eventos', icon: PartyPopper, category: 'Regalos' },
+    { id: 'wine', name: 'Brindis & Maridaje fino', icon: Wine, category: 'Regalos' },
+    { id: 'sparkles', name: 'Momentos mágicos', icon: Sparkles, category: 'Regalos' },
+    { id: 'flame', name: 'Novedades & Tendencias calientes', icon: Flame, category: 'Regalos' },
+
+    // Gourmet & Premium
+    { id: 'gem', name: 'Línea Exclusiva / Diamante', icon: Gem, category: 'Gourmet' },
+    { id: 'crown', name: 'Edición Real / Colección Dorada', icon: Crown, category: 'Gourmet' },
+    { id: 'star', name: 'Favoritos de la casa / Especiales', icon: Star, category: 'Gourmet' },
+    { id: 'award', name: 'Colección de temporada premiada', icon: Award, category: 'Gourmet' },
+    { id: 'compass', name: 'Tradición, origen & herencia', icon: Compass, category: 'Gourmet' },
+    { id: 'shield-check', name: 'Artesanal & Calidad Taboada', icon: ShieldCheck, category: 'Gourmet' },
+
+    // Tienda & Packs
+    { id: 'package', name: 'Cajas & Packs combinados', icon: Package, category: 'Tienda' },
+    { id: 'shopping-bag', name: 'Edición especial de compras', icon: ShoppingBag, category: 'Tienda' },
+    { id: 'tag', name: 'Promociones & Descuentos', icon: Tag, category: 'Tienda' },
+    { id: 'percent', name: 'Super ofertas del mes', icon: Percent, category: 'Tienda' },
+    { id: 'truck', name: 'Envíos a todo el país', icon: Truck, category: 'Tienda' },
+    { id: 'zap', name: 'Edición limitada / Flash', icon: Zap, category: 'Tienda' }
 ];
+
+export const COLOR_PALETTES = [
+    { id: 'gold', name: 'Dorado Taboada', hex: '#DCB041', bgClass: 'bg-[#DCB041]', textClass: 'text-[#2A1612]', glow: 'rgba(220,176,65,0.45)' },
+    { id: 'chocolate', name: 'Chocolate Fino', hex: '#5D4037', bgClass: 'bg-[#5D4037]', textClass: 'text-amber-200', glow: 'rgba(93,64,55,0.45)' },
+    { id: 'cacao', name: 'Cacao Suave', hex: '#8F6C49', bgClass: 'bg-[#8F6C49]', textClass: 'text-white', glow: 'rgba(143,108,73,0.45)' },
+    { id: 'red', name: 'Rubí / Pasión', hex: '#DC2626', bgClass: 'bg-red-600', textClass: 'text-white', glow: 'rgba(220,38,38,0.45)' },
+    { id: 'pink', name: 'Rosa Fiesta', hex: '#DB2777', bgClass: 'bg-pink-600', textClass: 'text-white', glow: 'rgba(219,39,119,0.45)' },
+    { id: 'amber', name: 'Ámbar Cálido', hex: '#D97706', bgClass: 'bg-amber-600', textClass: 'text-white', glow: 'rgba(217,119,6,0.45)' },
+    { id: 'emerald', name: 'Esmeralda', hex: '#059669', bgClass: 'bg-emerald-600', textClass: 'text-white', glow: 'rgba(5,150,105,0.45)' },
+    { id: 'blue', name: 'Azul Zafiro', hex: '#2563EB', bgClass: 'bg-blue-600', textClass: 'text-white', glow: 'rgba(37,99,235,0.45)' },
+    { id: 'purple', name: 'Púrpura Imperial', hex: '#7C3AED', bgClass: 'bg-purple-600', textClass: 'text-white', glow: 'rgba(124,58,237,0.45)' }
+];
+
+const buildIconUrl = (iconId: string, hexColor: string) => {
+    const cleanHex = hexColor.replace('#', '');
+    return `https://api.iconify.design/lucide:${iconId}.svg?color=%23${cleanHex}`;
+};
+
+const parseIconUrl = (url: string) => {
+    if (!url) return null;
+    const match = url.match(/api\.iconify\.design\/lucide:([a-z0-9-]+)\.svg\?color=(?:%23|#)?([a-fA-F0-9]{6})/i);
+    if (match) {
+        return { iconId: match[1], hex: `#${match[2].toUpperCase()}` };
+    }
+    return null;
+};
 
 interface CollectionIconPickerProps {
     value: string;
@@ -156,10 +91,44 @@ export const CollectionIconPicker: React.FC<CollectionIconPickerProps> = ({
     currentName = ''
 }) => {
     const [mode, setMode] = useState<'icons' | 'custom'>('icons');
+    const [activeCategory, setActiveCategory] = useState<string>('Todas');
+    const [selectedColor, setSelectedColor] = useState<string>('#DCB041');
+    const [selectedIconId, setSelectedIconId] = useState<string>('heart');
+    const [hoveredIcon, setHoveredIcon] = useState<PredefinedIcon | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
+    // Synchronize parsed state on value change
+    useEffect(() => {
+        if (value) {
+            const parsed = parseIconUrl(value);
+            if (parsed) {
+                setSelectedIconId(parsed.iconId);
+                const matchedColor = COLOR_PALETTES.find(c => c.hex.toLowerCase() === parsed.hex.toLowerCase());
+                if (matchedColor) {
+                    setSelectedColor(matchedColor.hex);
+                } else {
+                    setSelectedColor(parsed.hex);
+                }
+                setMode('icons');
+            } else if (value.startsWith('http') || value.startsWith('/')) {
+                setMode('custom');
+            }
+        }
+    }, [value]);
+
     const handleSelectIcon = (iconItem: PredefinedIcon) => {
-        onChange(iconItem.url, iconItem.name);
+        setSelectedIconId(iconItem.id);
+        const newUrl = buildIconUrl(iconItem.id, selectedColor);
+        onChange(newUrl, iconItem.name);
+    };
+
+    const handleSelectColor = (colorHex: string) => {
+        setSelectedColor(colorHex);
+        if (selectedIconId) {
+            const newUrl = buildIconUrl(selectedIconId, colorHex);
+            const currentIcon = PREDEFINED_ICONS.find(i => i.id === selectedIconId);
+            onChange(newUrl, currentIcon?.name);
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,11 +148,18 @@ export const CollectionIconPicker: React.FC<CollectionIconPickerProps> = ({
         }
     };
 
-    const selectedPredefined = PREDEFINED_COLLECTION_ICONS.find(item => item.url === value);
+    const filteredIcons = activeCategory === 'Todas' 
+        ? PREDEFINED_ICONS 
+        : PREDEFINED_ICONS.filter(item => item.category === activeCategory);
+
+    const activeIconObj = PREDEFINED_ICONS.find(i => i.id === selectedIconId);
+    const activeColorObj = COLOR_PALETTES.find(c => c.hex.toLowerCase() === selectedColor.toLowerCase()) || COLOR_PALETTES[0];
+
+    const isCustomUrl = mode === 'custom' || (!parseIconUrl(value) && value.length > 0);
 
     return (
         <div className="space-y-4">
-            {/* Pestañas de Selección */}
+            {/* Cabecera / Pestañas de Selección */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                 <div className="flex gap-2">
                     <button
@@ -191,11 +167,11 @@ export const CollectionIconPicker: React.FC<CollectionIconPickerProps> = ({
                         onClick={() => setMode('icons')}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                             mode === 'icons' 
-                                ? 'bg-amber-500 text-white shadow-sm' 
+                                ? 'bg-[#dcb041] text-[#2A1612] shadow-sm ring-1 ring-[#dcb041]' 
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                     >
-                        <span>✨ Íconos de Ocasión</span>
+                        <span>✨ Galería de Íconos</span>
                     </button>
                     <button
                         type="button"
@@ -212,49 +188,104 @@ export const CollectionIconPicker: React.FC<CollectionIconPickerProps> = ({
                 </div>
             </div>
 
-            {/* MODO 1: GALERÍA DE ÍCONOS OFICIALES */}
+            {/* MODO 1: GALERÍA DE ÍCONOS CIRCULARES */}
             {mode === 'icons' && (
-                <div className="space-y-3">
-                    <p className="text-xs text-gray-500 font-medium">
-                        Selecciona un ícono para tu colección. Al hacer clic se configurará el diseño circular oficial de la web:
-                    </p>
+                <div className="space-y-3.5 bg-stone-900/95 p-4 rounded-2xl border border-stone-800 text-stone-100 shadow-sm">
+                    {/* Selector de Categorías (Chips) */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                        {['Todas', 'Ocasiones', 'Regalos', 'Gourmet', 'Tienda'].map((cat) => (
+                            <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap ${
+                                    activeCategory === cat
+                                        ? 'bg-[#dcb041] text-[#2A1612] shadow-sm'
+                                        : 'bg-stone-800 text-stone-300 hover:bg-stone-700 hover:text-white'
+                                }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 max-h-64 overflow-y-auto p-1 scrollbar-thin">
-                        {PREDEFINED_COLLECTION_ICONS.map((item) => {
+                    {/* Selector de Paleta de Colores para la Sección */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-800">
+                        <div className="flex items-center gap-1.5 text-xs text-stone-300 font-bold">
+                            <Palette size={14} className="text-[#dcb041]" />
+                            <span>Color del Ícono:</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            {COLOR_PALETTES.map((palette) => {
+                                const isColorSelected = selectedColor.toLowerCase() === palette.hex.toLowerCase();
+                                return (
+                                    <button
+                                        key={palette.id}
+                                        type="button"
+                                        title={palette.name}
+                                        onClick={() => handleSelectColor(palette.hex)}
+                                        className={`w-6 h-6 rounded-full transition-transform flex items-center justify-center ${
+                                            isColorSelected 
+                                                ? 'scale-125 ring-2 ring-white shadow-md' 
+                                                : 'opacity-70 hover:opacity-100 hover:scale-110'
+                                        }`}
+                                        style={{ backgroundColor: palette.hex }}
+                                    >
+                                        {isColorSelected && <Check size={12} className={palette.textClass} strokeWidth={3} />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Grid de Íconos Circulares Limpios (Sin texto abajo) */}
+                    <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5 max-h-52 overflow-y-auto p-1 scrollbar-thin">
+                        {filteredIcons.map((item) => {
                             const IconComp = item.icon;
-                            const isSelected = value === item.url;
+                            const isSelected = selectedIconId === item.id;
                             return (
                                 <button
                                     key={item.id}
                                     type="button"
+                                    title={item.name}
+                                    onMouseEnter={() => setHoveredIcon(item)}
+                                    onMouseLeave={() => setHoveredIcon(null)}
                                     onClick={() => handleSelectIcon(item)}
-                                    className={`group flex flex-col items-center gap-2 p-2.5 rounded-2xl border transition-all text-center relative cursor-pointer ${
+                                    className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer ${
                                         isSelected 
-                                            ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-400/40 shadow-sm scale-105' 
-                                            : 'bg-stone-900/95 border-stone-800 hover:border-amber-400/60 hover:scale-102'
+                                            ? 'scale-110 ring-2 ring-white shadow-lg' 
+                                            : 'bg-[#FAF5F0] border border-[#e8dccb] text-[#5D4037] hover:bg-[#dcb041] hover:text-[#2A1612] hover:scale-105'
                                     }`}
-                                >
-                                    {isSelected && (
-                                        <div className="absolute top-1 right-1 w-4 h-4 bg-amber-500 text-stone-950 rounded-full flex items-center justify-center shadow">
-                                            <Check size={11} strokeWidth={3} />
-                                        </div>
-                                    )}
-                                    {/* Círculo idéntico a la web oficial */}
-                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+                                    style={
                                         isSelected 
-                                            ? 'bg-amber-500 text-stone-950 shadow-[0_0_15px_rgba(220,176,65,0.6)]' 
-                                            : 'bg-stone-800/90 text-amber-400 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-stone-950'
-                                    }`}>
-                                        <IconComp size={20} />
-                                    </div>
-                                    <span className={`text-[11px] font-bold leading-tight line-clamp-2 ${
-                                        isSelected ? 'text-amber-900' : 'text-stone-200 group-hover:text-amber-300'
-                                    }`}>
-                                        {item.name}
-                                    </span>
+                                            ? { 
+                                                backgroundColor: activeColorObj.hex, 
+                                                color: activeColorObj.id === 'gold' ? '#2A1612' : '#FFFFFF',
+                                                boxShadow: `0 0 16px ${activeColorObj.glow}`
+                                              }
+                                            : {}
+                                    }
+                                >
+                                    <IconComp size={22} />
+                                    {isSelected && (
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-stone-900 rounded-full flex items-center justify-center shadow text-[9px] font-black">
+                                            ✓
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
+                    </div>
+
+                    {/* Nombre del ícono al hacer hover o selección activa */}
+                    <div className="pt-2 border-t border-stone-800 text-center">
+                        <span className="text-xs font-semibold text-stone-300">
+                            {hoveredIcon 
+                                ? `✨ ${hoveredIcon.name}` 
+                                : activeIconObj 
+                                    ? `Seleccionado: ${activeIconObj.name}` 
+                                    : 'Haz clic en un ícono circular para seleccionarlo'}
+                        </span>
                     </div>
                 </div>
             )}
@@ -288,17 +319,37 @@ export const CollectionIconPicker: React.FC<CollectionIconPickerProps> = ({
 
             {/* PREVISUALIZACIÓN DE LA COLECCIÓN EN VIVO */}
             {value && (
-                <div className="flex items-center gap-3 p-3 bg-stone-950 text-white rounded-2xl border border-stone-800 shadow-inner">
-                    <div className="w-12 h-12 rounded-full bg-stone-900 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0 overflow-hidden shadow">
-                        {selectedPredefined ? (
-                            <selectedPredefined.icon size={22} />
+                <div className="flex items-center gap-3.5 p-3.5 bg-stone-950 text-white rounded-2xl border border-stone-800 shadow-inner">
+                    <div 
+                        className="w-13 h-13 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden shadow-md transition-all"
+                        style={{
+                            backgroundColor: !isCustomUrl ? activeColorObj.hex : '#2A1612',
+                            color: !isCustomUrl && activeColorObj.id === 'gold' ? '#2A1612' : '#FFFFFF',
+                            boxShadow: !isCustomUrl ? `0 0 16px ${activeColorObj.glow}` : undefined,
+                            border: '1px solid rgba(255,255,255,0.2)'
+                        }}
+                    >
+                        {!isCustomUrl && activeIconObj ? (
+                            <activeIconObj.icon size={24} />
                         ) : (
-                            <img src={value} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                            <img 
+                                src={value} 
+                                alt="Preview" 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => (e.currentTarget.style.display = 'none')} 
+                            />
                         )}
                     </div>
                     <div className="min-w-0">
-                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-400 block">Vista Previa en Tienda Web</span>
-                        <p className="text-sm font-bold text-stone-100 truncate">{currentName || (selectedPredefined ? selectedPredefined.name : 'Colección sin título')}</p>
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#dcb041] block">
+                            Vista Previa en Tienda Oficial
+                        </span>
+                        <p className="text-sm font-bold text-stone-100 truncate">
+                            {currentName || (activeIconObj ? activeIconObj.name : 'Colección sin título')}
+                        </p>
+                        <p className="text-[11px] text-stone-400 font-medium">
+                            {isCustomUrl ? 'Imagen personalizada' : `Ícono circular • Color: ${activeColorObj.name}`}
+                        </p>
                     </div>
                 </div>
             )}
