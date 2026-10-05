@@ -1,4 +1,4 @@
-﻿import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../store/authStore';
 
 export const formatCurrency = (amount: number, showSymbol: boolean = true): string => {
   const settings = useAuthStore.getState().tenantSettings;
@@ -12,7 +12,7 @@ export const formatCurrency = (amount: number, showSymbol: boolean = true): stri
   const formattedAmount = formatter.format(amount);
   
   if (showSymbol) {
-    return \\ \\;
+    return `${symbol} ${formattedAmount}`;
   }
   return formattedAmount;
 };
