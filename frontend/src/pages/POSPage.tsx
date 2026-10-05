@@ -1,3 +1,4 @@
+import { formatCurrency, getCurrencySymbol } from "../utils/currency";
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
@@ -101,7 +102,7 @@ export default function POSPage() {
     });
     
     const [fechaVenta, setFechaVenta] = useState<string>('');
-    const esSupermercado = sucursales.find(s => s._id === sucursalId)?.nombre.toLowerCase().includes('supermercado');
+    const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
 
     const { data: almacenes = [] } = useQuery({ 
         queryKey: ['almacenes', sucursalId], 
@@ -746,7 +747,7 @@ export default function POSPage() {
                                     onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false })}
                                     disabled={ticketCovered}
                                 />
-                                {esSupermercado && (
+                                {canEditDate && (
                                     <div className="pt-2 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
                                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha de Venta (Histórica)</span>
                                         <input 

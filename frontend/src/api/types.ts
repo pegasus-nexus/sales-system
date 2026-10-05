@@ -23,6 +23,8 @@ export interface WhatsAppSettings {
 }
 
 export interface TenantSettings {
+  currency_code?: string;
+  currency_symbol?: string;
     ticket_footer?: string;
     report_watermark?: string;
     logo_base64?: string;

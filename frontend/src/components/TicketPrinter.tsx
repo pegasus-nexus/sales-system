@@ -1,3 +1,4 @@
+import { formatCurrency, getCurrencySymbol } from "../utils/currency";
 import type { Sale } from '../api/types';
 import { formatFullDate } from '../utils/dateUtils';
 
@@ -14,9 +15,7 @@ interface TicketPrinterProps {
 
 export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName = 'EMPRESA', sucursalName, ticketFooter, logoBase64, direccion, telefono }) => {
     // Format currency
-    const fmt = (n: number) => {
-        return new Intl.NumberFormat('es-BO', { style: 'decimal', minimumFractionDigits: 2 }).format(n);
-    };
+    const fmt = (n: number) => { return formatCurrency(n, false); };
 
 
 
@@ -99,7 +98,7 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
             <div style={{ borderTop: '1px solid #000', paddingTop: '5px' }}>
                 {sale.descuento && sale.descuento.valor > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '2px' }}>
-                        <span>SUBTOTAL BS:</span>
+                        <span>SUBTOTAL ${getCurrencySymbol()}:</span>
                         <span>{fmt(sale.total + (sale.items.reduce((acc, i) => acc + i.subtotal, 0) - sale.total))}</span>
                     </div>
                 )}
@@ -112,7 +111,7 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '15px', padding: '4px 0', borderBottom: '2px solid #000', marginBottom: '8px' }}>
-                    <span>TOTAL BS:</span>
+                    <span>TOTAL ${getCurrencySymbol()}:</span>
                     <span>{fmt(sale.total)}</span>
                 </div>
             </div>
@@ -132,7 +131,7 @@ export const TicketPrinter: React.FC<TicketPrinterProps> = ({ sale, tenantName =
                     if (cambio > 0.01) {
                         return (
                             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', borderTop: '1px dashed #ccc', paddingTop: '2px' }}>
-                                <span style={{ fontWeight: 'bold' }}>CAMBIO BS:</span>
+                                <span style={{ fontWeight: 'bold' }}>CAMBIO ${getCurrencySymbol()}:</span>
                                 <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{fmt(cambio)}</span>
                             </div>
                         )

@@ -10,9 +10,11 @@ class WhatsAppSettings(BaseModel):
     provider: str = "GREENAPI"
     instance_id: Optional[str] = None
     api_token: Optional[str] = None
-    default_message: str = "Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. ¡Gracias por tu preferencia!"
+    default_message: str = "Hola {cliente}, adjuntamos el comprobante de tu compra por {currency_symbol} {total}. ¡Gracias por tu preferencia!"
 
 class TenantSettings(BaseModel):
+    currency_code: str = "BOB"
+    currency_symbol: str = "Bs."
     whatsapp: WhatsAppSettings = Field(default_factory=WhatsAppSettings)
     ticket_footer: Optional[str] = "¡Gracias por su preferencia!"
     report_watermark: Optional[str] = "Sales System • Confidencial"
