@@ -19,6 +19,7 @@ class CajeroCreate(BaseModel):
     )
     full_name: str
     role: Optional[str] = "CAJERO"
+    permisos_especiales: Optional[List[str]] = Field(default_factory=list)
     # NOTE: sucursal_id is intentionally NOT here — it is extracted from the JWT token
 
     @field_validator("password")
@@ -40,6 +41,7 @@ class EmployeeUpdate(BaseModel):
     full_name: Optional[str] = None
     role: Optional[str] = None
     password: Optional[str] = None
+    permisos_especiales: Optional[List[str]] = None
 
     @field_validator("password")
     @classmethod
@@ -68,6 +70,7 @@ class UserResponse(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     role: UserRole
+    permisos_especiales: List[str] = []
     tenant_id: Optional[str] = None
     sucursal_id: Optional[str] = None
     is_active: bool = True

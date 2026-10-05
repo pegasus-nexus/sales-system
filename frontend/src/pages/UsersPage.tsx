@@ -201,7 +201,7 @@ export default function UsersPage() {
                                                         <button 
                                                             onClick={() => { 
                                                                 setEditingEmployee(emp); 
-                                                                setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
+                                                                setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '', permisos_especiales: (emp as any).permisos_especiales || [] }); 
                                                                 setConfirmPassword(''); 
                                                             }} 
                                                             className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
@@ -261,7 +261,7 @@ export default function UsersPage() {
                                             <button 
                                                 onClick={() => { 
                                                     setEditingEmployee(emp); 
-                                                    setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '' }); 
+                                                    setForm({ username: emp.username, email: (emp as any).email || '', full_name: emp.full_name || '', role: emp.role as any, password: '', permisos_especiales: (emp as any).permisos_especiales || [] }); 
                                                     setConfirmPassword(''); 
                                                 }} 
                                                 className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
@@ -409,7 +409,7 @@ export default function UsersPage() {
                         <form onSubmit={e => {
                             e.preventDefault();
                             if (form.password && !canSubmit) return;
-                            const payload: any = { full_name: form.full_name, role: form.role, username: form.username, email: form.email };
+                            const payload: any = { full_name: form.full_name, role: form.role, username: form.username, email: form.email, permisos_especiales: form.permisos_especiales };
                             if (form.password) payload.password = form.password;
                             updateMutation.mutate({ id: editingEmployee._id, data: payload });
                         }} className="space-y-4">

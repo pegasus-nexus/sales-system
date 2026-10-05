@@ -146,14 +146,18 @@ const ProtectedRoute = ({
   children,
   allowedRoles,
   requiredFeature,
+  customCondition,
 }: {
   children: React.ReactNode;
   allowedRoles?: string[];
   requiredFeature?: string;
+  customCondition?: boolean;
 }) => {
   const { isAuthenticated, role, hasFeature } = useAuthStore();
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
+  
+  if (customCondition === false) return <Navigate to="/" replace />;
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
@@ -313,7 +317,10 @@ function App() {
                         </ProtectedRoute>
                       } />
                       <Route path="/compras/historico" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL']}>
+                        <ProtectedRoute 
+                          allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'VENDEDOR', 'FACTURADOR', 'SUPERVISOR']}
+                          customCondition={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(useAuthStore.getState().role || '') || !!useAuthStore.getState().user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO')}
+                        >
                           <IngresoHistoricoPage />
                         </ProtectedRoute>
                       } />

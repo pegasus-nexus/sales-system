@@ -685,14 +685,11 @@ async def update_sale_date(request: Request, sale_id: str, payload: SaleDateUpda
     if current_user.role not in allowed_roles:
         raise HTTPException(status_code=403, detail='No tienes permisos para modificar la fecha de una venta')
         
-    # If CAJERO, verify their sucursal is a supermarket
+    # If CAJERO, verify they have the special permission
     if current_user.role == UserRole.CAJERO:
-        from app.domain.models.sucursal import Sucursal
-        if not current_user.sucursal_id:
-            raise HTTPException(status_code=403, detail='No tienes permisos (sin sucursal asignada)')
-        suc = await Sucursal.get(current_user.sucursal_id)
-        if not suc or "supermercado" not in str(suc.nombre).lower():
-            raise HTTPException(status_code=403, detail='Solo los cajeros de supermercado pueden cambiar la fecha')
+        permisos = getattr(current_user, "permisos_especiales", [])
+        if "EDITAR_FECHA_VENTA" not in permisos:
+            raise HTTPException(status_code=403, detail='No tienes el permiso especial "EDITAR_FECHA_VENTA" asignado')
             
     updated_sale = await SalesService.update_sale_date(tenant_id, sale_id, payload.nueva_fecha, current_user)
     return {'status': 'success', 'message': 'Fecha actualizada masivamente', 'sale': updated_sale}
