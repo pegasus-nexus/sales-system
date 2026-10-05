@@ -47,6 +47,7 @@ class Product(Document, SoftDeleteMixin):
     categoria_nombre: Optional[str] = None
     image_url: Optional[str] = None
     precios_sucursales: Optional[dict[str, DecimalMoney]] = None
+    sucursales_permitidas: list[str] = []  # Si esta vacio, es global. Si tiene IDs, solo esas sucursales lo ven.
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

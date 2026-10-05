@@ -131,8 +131,10 @@ class ProductService:
 
     @staticmethod
     async def create_product(data: ProductCreate, current_user: User) -> Product:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
-            raise HTTPException(status_code=403, detail="Solo administradores de matriz pueden crear nuevos productos")
+        if current_user.role in [UserRole.ADMIN_SUCURSAL] and current_user.sucursal_id:
+            data.sucursales_permitidas = [current_user.sucursal_id]
+        elif current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
+            raise HTTPException(status_code=403, detail="Rol no autorizado para crear productos")
 
         tenant_id = current_user.tenant_id or "default"
     

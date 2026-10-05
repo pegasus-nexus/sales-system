@@ -24,6 +24,7 @@ class ProductCreate(BaseModel):
     codigo_corto: Optional[str] = None
     image_url: Optional[str] = None
     precios_sucursales: Optional[dict[str, float]] = None
+    sucursales_permitidas: Optional[List[str]] = []
     meal_plan_template_id: Optional[str] = None
     tipo_item: Optional[TipoItem] = TipoItem.FISICO
     show_on_web: Optional[bool] = True
@@ -42,6 +43,7 @@ class ProductUpdate(BaseModel):
     image_url: Optional[str] = None
     is_active: Optional[bool] = None
     precios_sucursales: Optional[dict[str, float]] = None
+    sucursales_permitidas: Optional[List[str]] = []
     meal_plan_template_id: Optional[str] = None
     tipo_item: Optional[TipoItem] = None
     show_on_web: Optional[bool] = None
