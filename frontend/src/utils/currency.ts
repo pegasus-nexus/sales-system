@@ -1,4 +1,4 @@
-import { useAuthStore } from '../store/authStore';
+﻿import { useAuthStore } from '../store/authStore';
 
 export const formatCurrency = (amount: number, showSymbol: boolean = true): string => {
   const settings = useAuthStore.getState().tenantSettings;

@@ -22,14 +22,14 @@ class WebConfigUpdate(BaseModel):
     rewards: Optional[list[WebReward]] = None
 
 
-
 @router.get("/web-config", response_model=WebConfig)
 async def get_web_config(current_user: User = Depends(get_current_active_user)):
     """Get the web config for the current tenant. Creates default if none exists."""
-    tenant_id = current_user.tenant_id or DEFAULT_TENANT_ID
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="Usuario sin tenant asignado")
+        
     config = await WebConfig.find_one(WebConfig.tenant_id == tenant_id)
-    if not config and tenant_id != DEFAULT_TENANT_ID:
-        config = await WebConfig.find_one(WebConfig.tenant_id == DEFAULT_TENANT_ID)
     if not config:
         config = WebConfig(tenant_id=tenant_id)
         await config.create()
@@ -44,7 +44,10 @@ async def update_web_config(
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    tenant_id = current_user.tenant_id or DEFAULT_TENANT_ID
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="Usuario sin tenant asignado")
+        
     config = await WebConfig.find_one(WebConfig.tenant_id == tenant_id)
     if not config:
         config = WebConfig(tenant_id=tenant_id)
@@ -56,20 +59,5 @@ async def update_web_config(
             setattr(config, key, value)
         config.updated_at = datetime.now(timezone.utc)
         await config.save()
-
-    # Synchronize default/primary tenant so public catalog always gets the latest
-    if tenant_id != DEFAULT_TENANT_ID:
-        primary_config = await WebConfig.find_one(WebConfig.tenant_id == DEFAULT_TENANT_ID)
-        if primary_config:
-            for key, value in update_data.items():
-                setattr(primary_config, key, value)
-            primary_config.updated_at = datetime.now(timezone.utc)
-            await primary_config.save()
-        else:
-            primary_config = WebConfig(tenant_id=DEFAULT_TENANT_ID)
-            for key, value in update_data.items():
-                setattr(primary_config, key, value)
-            primary_config.updated_at = datetime.now(timezone.utc)
-            await primary_config.create()
 
     return config
