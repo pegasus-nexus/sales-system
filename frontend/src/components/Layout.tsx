@@ -453,6 +453,7 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* ── Main Content Shell ── */}
             <main className={cn("flex-1 flex flex-col min-w-0 bg-[#0a0a0a] md:pr-4 md:py-4", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
+                <TrialWarningBanner />
                 {/* Desktop Exit Impersonation Banner */}
                 {useAuthStore(state => state.originalToken) && (
                     <div className="hidden md:flex mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">

@@ -588,6 +588,8 @@ function ImportModal({ onClose }: { onClose: () => void }) {
 }
 
 function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin, proveedores = [] }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[], isBranchAdmin?: boolean, proveedores?: any[] }) {
+    const { user } = useAuthStore();
+    const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
     const isEditing = !!product;
     const queryClient = useQueryClient();
     const [isUploading, setIsUploading] = useState(false);

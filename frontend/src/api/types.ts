@@ -9,6 +9,7 @@ export interface User {
     sucursal_id?: string;
     sucursal_nombre?: string;
     is_active?: boolean;
+    permisos_especiales?: Record<string, boolean>;
     is_online?: boolean;
     last_active_text?: string;
     last_active_at?: string;
@@ -360,6 +361,7 @@ export interface EmployeeCreate {
     password: string;
     full_name: string;
     role?: 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR' | 'FACTURADOR';
+    permisos_especiales?: Record<string, boolean>;
 }
 
 export interface CartItem {

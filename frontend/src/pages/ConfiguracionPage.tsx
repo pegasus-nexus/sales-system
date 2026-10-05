@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Globe, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Globe, getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
+﻿import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
 import type { TenantSettings } from '../api/types';
 import { Globe, Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle, Eye, EyeOff } from 'lucide-react';
-import { Globe, toast } from 'sonner';
+import { toast } from 'sonner';
 
 export default function ConfiguracionPage() {
     const qc = useQueryClient();
@@ -27,7 +27,7 @@ export default function ConfiguracionPage() {
             provider: 'GREENAPI',
             instance_id: '',
             api_token: '',
-            default_message: 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. ¡Gracias por tu preferencia!'
+            default_message: 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. Â¡Gracias por tu preferencia!'
         }
     });
 
@@ -54,7 +54,7 @@ export default function ConfiguracionPage() {
                     provider: tenant.settings.whatsapp?.provider || 'GREENAPI',
                     instance_id: tenant.settings.whatsapp?.instance_id || '',
                     api_token: tenant.settings.whatsapp?.api_token || '',
-                    default_message: tenant.settings.whatsapp?.default_message || 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. ¡Gracias por tu preferencia!'
+                    default_message: tenant.settings.whatsapp?.default_message || 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. Â¡Gracias por tu preferencia!'
                 }
             });
             if (tenant.settings.brand_color) {
@@ -82,10 +82,10 @@ export default function ConfiguracionPage() {
         mutationFn: (newSettings: TenantSettings) => updateMyTenantSettings(newSettings),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['myTenant'] });
-            toast.success("Configuración guardada exitosamente.");
+            toast.success("ConfiguraciÃ³n guardada exitosamente.");
         },
         onError: () => {
-            toast.error("Error al guardar la configuración.");
+            toast.error("Error al guardar la configuraciÃ³n.");
         }
     });
 
@@ -93,10 +93,10 @@ export default function ConfiguracionPage() {
         mutationFn: (newConfig: Record<string, any>) => updateMyTenantConfiguracion(newConfig),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['myTenant'] });
-            toast.success("Políticas del POS guardadas exitosamente.");
+            toast.success("PolÃ­ticas del POS guardadas exitosamente.");
         },
         onError: () => {
-            toast.error("Error al guardar las políticas del POS.");
+            toast.error("Error al guardar las polÃ­ticas del POS.");
         }
     });
 
@@ -138,11 +138,11 @@ export default function ConfiguracionPage() {
     return (
         <div className="max-w-4xl mx-auto px-4 py-8 pb-24 md:pb-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Configuración del Sistema</h1>
-                <p className="text-gray-500 font-medium">Personaliza los parámetros visuales, de comunicación y políticas del POS.</p>
+                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">ConfiguraciÃ³n del Sistema</h1>
+                <p className="text-gray-500 font-medium">Personaliza los parÃ¡metros visuales, de comunicaciÃ³n y polÃ­ticas del POS.</p>
             </div>
 
-            {/* Selector de Pestañas */}
+            {/* Selector de PestaÃ±as */}
             <div className="flex border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap">
                 <button
                     type="button"
@@ -210,8 +210,8 @@ export default function ConfiguracionPage() {
                                         />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">Tema Dinámico</p>
-                                        <p className="text-xs text-gray-500">Selecciona tu color corporativo. Botones e indicadores cambiarán automáticamente.</p>
+                                        <p className="text-sm font-semibold text-gray-900">Tema DinÃ¡mico</p>
+                                        <p className="text-xs text-gray-500">Selecciona tu color corporativo. Botones e indicadores cambiarÃ¡n automÃ¡ticamente.</p>
                                     </div>
                                 </div>
                             </div>
@@ -230,7 +230,7 @@ export default function ConfiguracionPage() {
                                 <input 
                                     type="text" 
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="¡Gracias por su preferencia!"
+                                    placeholder="Â¡Gracias por su preferencia!"
                                     value={settings.ticket_footer}
                                     onChange={e => setSettings(s => ({ ...s, ticket_footer: e.target.value }))}
                                 />
@@ -248,7 +248,7 @@ export default function ConfiguracionPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Dirección de la Empresa</label>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">DirecciÃ³n de la Empresa</label>
                                 <input 
                                     type="text" 
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
@@ -259,7 +259,7 @@ export default function ConfiguracionPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Teléfono de Contacto</label>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">TelÃ©fono de Contacto</label>
                                 <input 
                                     type="text" 
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
@@ -275,12 +275,12 @@ export default function ConfiguracionPage() {
                     {/* REGIONALIZACION */}
                     <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm">
                         <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                            <Globe className="text-indigo-500" /> Regionalización y Moneda
+                            <Globe className="text-indigo-500" /> RegionalizaciÃ³n y Moneda
                         </h2>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Código de Moneda (ISO)</label>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">CÃ³digo de Moneda (ISO)</label>
                                 <input 
                                     type="text" 
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
@@ -291,11 +291,11 @@ export default function ConfiguracionPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Símbolo de Moneda</label>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">SÃ­mbolo de Moneda</label>
                                 <input 
                                     type="text" 
                                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="Ej. Bs., $, €"
+                                    placeholder="Ej. Bs., $, â‚¬"
                                     value={settings.currency_symbol || "Bs."}
                                     onChange={e => setSettings(s => ({ ...s, currency_symbol: e.target.value }))}
                                 />
@@ -307,7 +307,7 @@ export default function ConfiguracionPage() {
                     <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                                <MessageCircle className="text-green-500" /> Integración de WhatsApp
+                                <MessageCircle className="text-green-500" /> IntegraciÃ³n de WhatsApp
                             </h2>
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input 
@@ -351,7 +351,7 @@ export default function ConfiguracionPage() {
                                         <input 
                                             type={showApiToken ? "text" : "password"} 
                                             className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-5 pr-12 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                            placeholder="••••••••••••••••"
+                                            placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                                             value={settings.whatsapp?.api_token}
                                             onChange={e => setSettings(s => ({ ...s, whatsapp: { ...s.whatsapp!, api_token: e.target.value } }))}
                                         />
@@ -387,7 +387,7 @@ export default function ConfiguracionPage() {
                             className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-black/20 hover:bg-gray-800 transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                         >
                             {mut.isPending ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                            Guardar Configuración
+                            Guardar ConfiguraciÃ³n
                         </button>
                     </div>
 
@@ -400,17 +400,17 @@ export default function ConfiguracionPage() {
                                 <Store className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black text-gray-900">Políticas y Configuración del POS</h2>
-                                <p className="text-xs text-gray-500">Define los comportamientos y políticas de negocio para el punto de venta.</p>
+                                <h2 className="text-lg font-black text-gray-900">PolÃ­ticas y ConfiguraciÃ³n del POS</h2>
+                                <p className="text-xs text-gray-500">Define los comportamientos y polÃ­ticas de negocio para el punto de venta.</p>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            {/* Impresión de Ticket Automática */}
+                            {/* ImpresiÃ³n de Ticket AutomÃ¡tica */}
                             <div className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100/50 transition-colors rounded-2xl border border-gray-100/80">
                                 <div className="pr-4">
-                                    <h3 className="text-sm font-bold text-gray-900">Impresión de Ticket Automática</h3>
-                                    <p className="text-xs text-gray-500">Imprime el recibo automáticamente después de confirmar cada venta.</p>
+                                    <h3 className="text-sm font-bold text-gray-900">ImpresiÃ³n de Ticket AutomÃ¡tica</h3>
+                                    <p className="text-xs text-gray-500">Imprime el recibo automÃ¡ticamente despuÃ©s de confirmar cada venta.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
                                     <input 
@@ -457,11 +457,11 @@ export default function ConfiguracionPage() {
                                 </label>
                             </div>
 
-                            {/* Descuento requiere autorización */}
+                            {/* Descuento requiere autorizaciÃ³n */}
                             <div className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100/50 transition-colors rounded-2xl border border-gray-100/80">
                                 <div className="pr-4">
-                                    <h3 className="text-sm font-bold text-gray-900">Descuentos requieren autorización del supervisor</h3>
-                                    <p className="text-xs text-gray-500">Exige aprobación para aplicar cualquier tipo de descuento en el POS.</p>
+                                    <h3 className="text-sm font-bold text-gray-900">Descuentos requieren autorizaciÃ³n del supervisor</h3>
+                                    <p className="text-xs text-gray-500">Exige aprobaciÃ³n para aplicar cualquier tipo de descuento en el POS.</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
                                     <input 
@@ -483,7 +483,7 @@ export default function ConfiguracionPage() {
                             className="bg-black text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-black/20 hover:bg-gray-800 transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                         >
                             {configMut.isPending ? <Loader2 className="animate-spin w-5 h-5" /> : <Save className="w-5 h-5" />}
-                            Guardar Configuración POS
+                            Guardar ConfiguraciÃ³n POS
                         </button>
                     </div>
                 </form>
@@ -491,3 +491,4 @@ export default function ConfiguracionPage() {
         </div>
     );
 }
+
