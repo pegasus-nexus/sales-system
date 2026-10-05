@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
+import { Globe, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Globe, getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
 import type { TenantSettings } from '../api/types';
-import { Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { Globe, Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle, Eye, EyeOff } from 'lucide-react';
+import { Globe, toast } from 'sonner';
 
 export default function ConfiguracionPage() {
     const qc = useQueryClient();
@@ -266,6 +266,38 @@ export default function ConfiguracionPage() {
                                     placeholder="+591 77712345"
                                     value={settings.telefono}
                                     onChange={e => setSettings(s => ({ ...s, telefono: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    {/* REGIONALIZACION */}
+                    <div className="bg-white p-6 md:p-8 rounded-[32px] border border-gray-100 shadow-sm">
+                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                            <Globe className="text-indigo-500" /> Regionalización y Moneda
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Código de Moneda (ISO)</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
+                                    placeholder="Ej. BOB, USD, MXN"
+                                    maxLength={3}
+                                    value={settings.currency_code || "BOB"}
+                                    onChange={e => setSettings(s => ({ ...s, currency_code: e.target.value.toUpperCase() }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Símbolo de Moneda</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
+                                    placeholder="Ej. Bs., $, €"
+                                    value={settings.currency_symbol || "Bs."}
+                                    onChange={e => setSettings(s => ({ ...s, currency_symbol: e.target.value }))}
                                 />
                             </div>
                         </div>

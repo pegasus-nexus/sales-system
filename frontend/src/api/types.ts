@@ -124,7 +124,9 @@ export interface Product {
     precio_venta: number;         // retail price
     image_url?: string;
     is_active?: boolean;
-    precios_sucursales?: Record<string, number>; // sucursal_id -> branch specific price
+    precios_sucursales?: Record<string, number>;
+    sucursales_permitidas?: string[]; // sucursal_id -> branch specific price
+    sucursales_permitidas?: string[];
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
@@ -141,6 +143,7 @@ export interface ProductCreate {
     proveedores?: string[];
     image_url?: string;
     precios_sucursales?: Record<string, number>;
+    sucursales_permitidas?: string[];
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
