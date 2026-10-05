@@ -33,9 +33,9 @@ async def get_general_reports(
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver los reportes.")
         
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -272,9 +272,9 @@ async def get_daily_report(
     Returns a detailed daily report for a specific branch.
     Accessible by Matriz admins (for any branch) or Branch admins (only for their branch).
     """
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -437,9 +437,9 @@ async def get_financial_report(
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver este reporte.")
         
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -583,9 +583,9 @@ async def get_anulaciones_report(
     """
     Returns a detailed report of all cancelled (anulada) sales.
     """
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -945,9 +945,9 @@ async def get_sales_by_hour(
     """
     Returns total sales grouped by hour for a specific day.
     """
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -1014,9 +1014,9 @@ async def get_staff_performance(
     """
     Returns sales grouped by cashier and by vendor for a specific day or date range.
     """
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     
@@ -1231,9 +1231,9 @@ async def get_sales_matrix(
     """
     Returns sales matrix grouped by product and day.
     """
-    tenant_id = current_user.tenant_id or "default"
-    if tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    tenant_id = current_user.tenant_id
+    if not tenant_id or tenant_id == "default":
+        raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
     

@@ -330,7 +330,7 @@ async def importar(
                 
                 # Match por numero_ticket y sucursal_id con operadores $set y $setOnInsert
                 op = UpdateOne(
-                    {"numero_ticket": reg["numero_ticket"], "sucursal_id": sucursal_id},
+                    {"tenant_id": current_user.tenant_id, "numero_ticket": reg["numero_ticket"], "sucursal_id": sucursal_id},
                     {
                         "$set": reg,
                         "$setOnInsert": {"_id": sale_id_obj}

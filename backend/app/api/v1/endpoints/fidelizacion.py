@@ -1,3 +1,4 @@
+from app.infrastructure.core.config import settings
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -12,7 +13,7 @@ class PublicClientRegister(BaseModel):
     telefono: str = Field(..., description="Número de teléfono celular")
 
 @router.post("/register")
-async def register_public_client(data: PublicClientRegister, tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+async def register_public_client(data: PublicClientRegister, tenant_id: str = settings.DEFAULT_PUBLIC_TENANT_ID):
     """
     Endpoint público para el registro de clientes desde la landing page.
     No requiere autenticación de empleado.
@@ -96,7 +97,7 @@ class PublicClientLogin(BaseModel):
     telefono: str = Field(..., description="Número de teléfono celular")
 
 @router.post("/login")
-async def login_public_client(data: PublicClientLogin, tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+async def login_public_client(data: PublicClientLogin, tenant_id: str = settings.DEFAULT_PUBLIC_TENANT_ID):
     """
     Endpoint para iniciar sesión solo con el celular.
     """
@@ -145,7 +146,7 @@ from app.domain.models.web_collection import WebCollection
 from app.domain.models.web_config import WebConfig
 
 @router.get("/catalog")
-async def get_public_catalog(tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+async def get_public_catalog(tenant_id: str = settings.DEFAULT_PUBLIC_TENANT_ID):
     """
     Retorna el catálogo público:
     - Categorías activas
@@ -269,7 +270,7 @@ class ReclamoCuponInput(BaseModel):
     premio_id: str
 
 @router.post("/reclamar_cupon")
-async def reclamar_cupon(data: ReclamoCuponInput, tenant_id: str = "69cd7f0a8f3f6866d4cfbb62"):
+async def reclamar_cupon(data: ReclamoCuponInput, tenant_id: str = settings.DEFAULT_PUBLIC_TENANT_ID):
     existing_cliente = await Cliente.find_one(
         Cliente.tenant_id == tenant_id,
         Cliente.telefono == data.telefono

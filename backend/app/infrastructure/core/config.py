@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    DEFAULT_PUBLIC_TENANT_ID: str = "69cd7f0a8f3f6866d4cfbb62"
     PROJECT_NAME: str = "Pegasus SalesSystem API"
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "sales_system_dev"

@@ -21,7 +21,7 @@ class WebConfigUpdate(BaseModel):
     club_benefit_valid_until: Optional[str] = None
     rewards: Optional[list[WebReward]] = None
 
-DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
+
 
 @router.get("/web-config", response_model=WebConfig)
 async def get_web_config(current_user: User = Depends(get_current_active_user)):
