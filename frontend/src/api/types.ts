@@ -126,8 +126,7 @@ export interface Product {
     image_url?: string;
     is_active?: boolean;
     precios_sucursales?: Record<string, number>;
-    sucursales_permitidas?: string[]; // sucursal_id -> branch specific price
-    sucursales_permitidas?: string[];
+    sucursales_permitidas?: string[]; // branch scope
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
