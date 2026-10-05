@@ -38,6 +38,24 @@ interface NavGroup {
     items: NavSubItem[];
 }
 
+function TrialWarningBanner() {
+    const { planExpiresAt, role } = useAuthStore();
+    if (role === "SUPERADMIN" || role === "SUPERADMIN_STAFF" || !planExpiresAt) return null;
+    const today = new Date();
+    const expiry = new Date(planExpiresAt);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 7 && diffDays > 0) {
+        return (
+            <div className="mb-2 bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold flex justify-center items-center text-center shadow-md z-50 animate-pulse">
+                ⚠️ Tu periodo de prueba vence en {diffDays} {diffDays === 1 ? "día" : "días"}. Contacta a soporte para renovar tu suscripción.
+            </div>
+        );
+    }
+    return null;
+}
+
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role, hasFeature } = useAuthStore();
@@ -199,7 +217,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: Package, label: 'Pedidos Compra', path: '/compras/pedidos', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
                     { icon: ShoppingCart, label: 'Ingresar Compra', path: '/compras/recepciones', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
-                    { icon: History, label: 'Ingreso Histórico', path: '/compras/historico', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
+                    { icon: History, label: 'Ingreso Histórico', path: '/compras/historico', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', ...(user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO') ? ['CAJERO', 'VENDEDOR', 'FACTURADOR', 'SUPERVISOR'] : [])] },
                     { icon: ClipboardList, label: 'Historial Ingresos', path: '/compras/historial', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
                     { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
