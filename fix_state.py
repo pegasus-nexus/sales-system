@@ -1,12 +1,25 @@
-﻿import sys
+﻿import os
 
-file_path = "frontend/src/pages/InventarioPage.tsx"
-with open(file_path, "r", encoding="utf-8") as f:
-    content = f.read()
+path = 'frontend/src/components/ExpensesReportView.tsx'
+with open(path, 'r', encoding='utf-8') as f:
+    data = f.read()
 
-state_anchor = "const [kardexProductoNombre, setKardexProductoNombre] = useState<string | null>(null);"
-if "const [isExportingExcel, setIsExportingExcel]" not in content:
-    content = content.replace(state_anchor, state_anchor + "\n    const [isExportingExcel, setIsExportingExcel] = useState(false);")
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(content)
-    print("Added state successfully")
+import re
+data = re.sub(
+    r'const \[newCatName, setNewCatName\] = useState\(\'\'\);\s+const \[newCatDesc, setNewCatDesc\] = useState\(\'\'\);',
+    '''const [newCatName, setNewCatName] = useState('');
+    const [newCatDesc, setNewCatDesc] = useState('');
+    const [newCatPartida, setNewCatPartida] = useState('');
+    const [newCatPadreId, setNewCatPadreId] = useState('');''',
+    data
+)
+
+data = re.sub(
+    r"onSuccess: \(\) => { refetchCats\(\); setNewCatName\(''\); setNewCatDesc\(''\); }",
+    "onSuccess: () => { refetchCats(); setNewCatName(''); setNewCatDesc(''); setNewCatPartida(''); setNewCatPadreId(''); }",
+    data
+)
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(data)
+print("State fixed")

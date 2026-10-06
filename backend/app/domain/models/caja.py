@@ -64,6 +64,8 @@ class CajaGastoCategoria(Document, SoftDeleteMixin):
     nombre:      str
     descripcion: Optional[str] = None
     icono:       Optional[str] = "receipt"   # lucide icon name
+    partida:     Optional[str] = None        # e.g. "01" or "010001" for accounting integration
+    padre_id:    Optional[str] = None        # Optional parent ID for subcategories
     created_at:  datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

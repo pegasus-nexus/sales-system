@@ -29,9 +29,10 @@ export interface CajaMovimiento {
     subtipo: 'APERTURA' | 'VENTA_EFECTIVO' | 'VENTA_QR' | 'VENTA_TARJETA' | 'CAMBIO' | 'GASTO' | 'AJUSTE' | 'INGRESO_EFECTIVO' | 'INGRESO_QR' | 'INGRESO_TARJETA';
     tipo: 'INGRESO' | 'EGRESO';
     monto: number;
-    descripcion: string;
+    descripcion?: string;
     cajero_name: string;
     categoria_id?: string;
+    subcategoria_id?: string;
     sale_id?: string;
     fecha: string;
 }
@@ -42,6 +43,8 @@ export interface CajaGastoCategoria {
     nombre: string;
     descripcion?: string;
     icono: string;
+    partida?: string;
+    padre_id?: string;
 }
 
 export interface ResumenCaja {
@@ -108,8 +111,9 @@ export interface CerrarCajaIn {
 
 export interface GastoIn {
     monto: number;
-    descripcion: string;
+    descripcion?: string;
     categoria_id?: string;
+    subcategoria_id?: string;
 }
 
 export interface IngresoIn {
@@ -122,6 +126,8 @@ export interface CategoriaGastoIn {
     nombre: string;
     descripcion?: string;
     icono?: string;
+    partida?: string;
+    padre_id?: string;
 }
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────

@@ -25,8 +25,9 @@ class CerrarCajaIn(BaseModel):
 class GastoIn(BaseModel):
     """Request body to register a manual expense."""
     monto: float
-    descripcion: str
+    descripcion: Optional[str] = "Sin descripción"
     categoria_id: Optional[str] = None
+    subcategoria_id: Optional[str] = None
 
 
 class IngresoIn(BaseModel):
@@ -41,6 +42,8 @@ class CategoriaGastoIn(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
     icono: Optional[str] = "receipt"
+    partida: Optional[str] = None
+    padre_id: Optional[str] = None
 
 
 class ResumenCaja(BaseModel):

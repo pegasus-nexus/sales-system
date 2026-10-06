@@ -1492,6 +1492,7 @@ async def get_expenses_report(
     end_date: str,   # YYYY-MM-DD
     sucursal_id: Optional[str] = None,
     categoria_id: Optional[str] = None,
+    subcategoria_id: Optional[str] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     """
@@ -1525,6 +1526,8 @@ async def get_expenses_report(
         query["sucursal_id"] = target_sucursal
     if categoria_id and categoria_id != "all":
         query["categoria_id"] = categoria_id
+    if subcategoria_id and subcategoria_id != "all":
+        query["subcategoria_id"] = subcategoria_id
 
     # Get movements
     movimientos = await CajaMovimiento.find(query).sort("-fecha").limit(500).to_list()

@@ -28,26 +28,30 @@ export default function ExpensesReportView() {
     const [draftEndDate, setDraftEndDate] = useState(today);
     const [draftSucursal, setDraftSucursal] = useState(defaultSucursal);
     const [draftCategory, setDraftCategory] = useState('all');
+    const [draftSubcategory, setDraftSubcategory] = useState('all');
 
     // Applied Filters
     const [appliedFilters, setAppliedFilters] = useState({
         startDate: today,
         endDate: today,
         sucursal: defaultSucursal,
-        category: 'all'
+        category: 'all',
+        subcategory: 'all'
     });
 
     const isFilterDirty = draftStartDate !== appliedFilters.startDate ||
                           draftEndDate !== appliedFilters.endDate ||
                           draftSucursal !== appliedFilters.sucursal ||
-                          draftCategory !== appliedFilters.category;
+                          draftCategory !== appliedFilters.category ||
+                          draftSubcategory !== appliedFilters.subcategory;
 
     const handleApplyFilters = () => {
         setAppliedFilters({
             startDate: draftStartDate,
             endDate: draftEndDate,
             sucursal: draftSucursal,
-            category: draftCategory
+            category: draftCategory,
+            subcategory: draftSubcategory
         });
     };
 
@@ -57,6 +61,8 @@ export default function ExpensesReportView() {
     const [deletingCatId, setDeletingCatId] = useState<string | null>(null);
     const [newCatName, setNewCatName] = useState('');
     const [newCatDesc, setNewCatDesc] = useState('');
+    const [newCatPartida, setNewCatPartida] = useState('');
+    const [newCatPadreId, setNewCatPadreId] = useState('');
 
     // Queries
     const { data: sucursales = [] } = useQuery({
@@ -71,15 +77,15 @@ export default function ExpensesReportView() {
     });
 
     const { data: reportData, isLoading } = useQuery({
-        queryKey: ['expenses-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category],
-        queryFn: () => getExpensesReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category)
+        queryKey: ['expenses-report', appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category, appliedFilters.subcategory],
+        queryFn: () => getExpensesReport(appliedFilters.startDate, appliedFilters.endDate, appliedFilters.sucursal, appliedFilters.category, appliedFilters.subcategory)
     });
     const report: any = reportData;
 
     // Mutations
     const createCatMut = useMutation({
         mutationFn: createCategoriaGasto,
-        onSuccess: () => { refetchCats(); setNewCatName(''); setNewCatDesc(''); }
+        onSuccess: () => { refetchCats(); setNewCatName(''); setNewCatDesc(''); setNewCatPartida(''); setNewCatPadreId(''); }
     });
     const updateCatMut = useMutation({
         mutationFn: ({ id, data }: any) => updateCategoriaGasto(id, data),
@@ -109,7 +115,7 @@ export default function ExpensesReportView() {
                         onClick={() => setShowCategoryManager(!showCategoryManager)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${showCategoryManager ? 'bg-amber-100 text-amber-700' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                     >
-                        <Tag size={16} /> Gestionar Categorías
+                        <Tag size={16} /> Gestionar CategorA-as
                     </button>
                     <button 
                         onClick={handleDownloadPDF}
@@ -133,7 +139,7 @@ export default function ExpensesReportView() {
                         <div className="bg-amber-50/50 border-2 border-amber-100 rounded-[24px] p-6 mb-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-black text-amber-900 flex items-center gap-2 uppercase tracking-widest text-xs">
-                                    <Tag size={16} /> Administración de Categorías
+                                    <Tag size={16} /> Administración de CategorA-as
                                 </h3>
                                 <button onClick={() => setShowCategoryManager(false)} className="text-amber-400 hover:text-amber-600">
                                     <X size={20} />
@@ -143,7 +149,7 @@ export default function ExpensesReportView() {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 {/* Form to add */}
                                 <div className="space-y-4">
-                                    <p className="text-xs font-bold text-amber-700 uppercase">Nueva Categoría</p>
+                                    <p className="text-xs font-bold text-amber-700 uppercase">Nueva CategorA-a</p>
                                     <div className="space-y-3">
                                         <input 
                                             type="text" 
@@ -154,27 +160,44 @@ export default function ExpensesReportView() {
                                         />
                                         <input 
                                             type="text" 
+                                            placeholder="Partida Contable (ej. 01)"
+                                            value={newCatPartida}
+                                            onChange={e => setNewCatPartida(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                        />
+                                        <select 
+                                            value={newCatPadreId}
+                                            onChange={e => setNewCatPadreId(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                        >
+                                            <option value="">(Es categoría principal)</option>
+                                            {categories.filter((c:any) => !c.padre_id).map((c:any) => (
+                                                <option key={c._id} value={c._id}>Subcategoría de: {c.nombre}</option>
+                                            ))}
+                                        </select>
+                                        <input 
+                                            type="text" 
                                             placeholder="Descripción corta"
                                             value={newCatDesc}
                                             onChange={e => setNewCatDesc(e.target.value)}
                                             className="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none transition-all"
                                         />
                                         <button 
-                                            onClick={() => createCatMut.mutate({ nombre: newCatName, descripcion: newCatDesc })}
+                                            onClick={() => createCatMut.mutate({ nombre: newCatName, descripcion: newCatDesc, partida: newCatPartida, padre_id: newCatPadreId || undefined })}
                                             disabled={!newCatName || createCatMut.isPending}
                                             className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-50"
                                         >
-                                            {createCatMut.isPending ? 'Agregando...' : 'Agregar Categoría'}
+                                            {createCatMut.isPending ? 'Agregando...' : 'Agregar CategorA-a'}
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* List of categories */}
                                 <div className="lg:col-span-2">
-                                    <p className="text-xs font-bold text-amber-700 uppercase mb-4">Categorías Existentes</p>
+                                    <p className="text-xs font-bold text-amber-700 uppercase mb-4">CategorA-as Existentes</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
                                         {categories.map((cat: any) => (
-                                            <div key={cat._id} className="bg-white p-3 rounded-xl border border-amber-100 flex items-center justify-between group hover:shadow-sm transition-all min-h-[58px]">
+                                            <div key={cat._id} className={"bg-white p-3 rounded-xl border flex items-center justify-between group hover:shadow-sm transition-all min-h-[58px] " + (cat.padre_id ? "border-gray-200 ml-6 bg-gray-50/50" : "border-amber-100")}>
                                                 {deletingCatId === cat._id ? (
                                                     <div className="flex-1 flex items-center justify-between bg-red-50/50 p-1.5 rounded-lg border border-red-100 animate-in fade-in duration-200">
                                                         <span className="text-[10px] font-black text-red-700 uppercase tracking-wider">¿Eliminar {cat.nombre}?</span>
@@ -211,7 +234,7 @@ export default function ExpensesReportView() {
                                                                 <Receipt size={14} />
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-800">{cat.nombre}</p>
+                                                                <p className="text-xs font-bold text-gray-800">{cat.partida && <span className="text-gray-400 mr-1">[{cat.partida}]</span>}{cat.nombre} {cat.padre_id && <span className="text-[9px] ml-1 bg-gray-200 px-1 rounded text-gray-500">Sub</span>}</p>
                                                                 {cat.descripcion && <p className="text-[10px] text-gray-400">{cat.descripcion}</p>}
                                                             </div>
                                                         </div>
@@ -264,16 +287,29 @@ export default function ExpensesReportView() {
                     </select>
                 )}
 
-                <select
+                <select 
                     value={draftCategory}
-                    onChange={(e) => setDraftCategory(e.target.value)}
+                    onChange={(e) => { setDraftCategory(e.target.value); setDraftSubcategory('all'); }}
                     className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
                 >
-                    <option value="all">Todas las Categorías</option>
-                    {categories.map((c: any) => (
-                        <option key={c._id} value={c._id}>{c.nombre}</option>
+                    <option value="all">Todas las CategorA-as</option>
+                    {categories.filter((c:any) => !c.padre_id).map((c: any) => (
+                        <option key={c._id} value={c._id}>{c.partida ? `[${c.partida}] ` : ''}{c.nombre}</option>
                     ))}
                 </select>
+
+                {draftCategory !== 'all' && categories.some((c:any) => c.padre_id === draftCategory) && (
+                    <select 
+                        value={draftSubcategory}
+                        onChange={(e) => setDraftSubcategory(e.target.value)}
+                        className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer animate-in fade-in"
+                    >
+                        <option value="all">Todas las Subcategorías</option>
+                        {categories.filter((c:any) => c.padre_id === draftCategory).map((c: any) => (
+                            <option key={c._id} value={c._id}>{c.partida ? `[${c.partida}] ` : ''}{c.nombre}</option>
+                        ))}
+                    </select>
+                )}
 
                 <button
                     onClick={handleApplyFilters}
@@ -321,7 +357,7 @@ export default function ExpensesReportView() {
                                 <thead className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-widest">
                                     <tr>
                                         <th className="px-6 py-4">Fecha/Hora</th>
-                                        <th className="px-6 py-4">Categoría</th>
+                                        <th className="px-6 py-4">CategorA-a</th>
                                         <th className="px-6 py-4">Descripción</th>
                                         <th className="px-6 py-4 text-right">Monto</th>
                                     </tr>
@@ -357,7 +393,7 @@ export default function ExpensesReportView() {
                     <div className="space-y-6">
                         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-widest text-[10px] text-gray-400">
-                                Gastos por Categoría
+                                Gastos por CategorA-a
                             </h3>
                             <div className="space-y-4">
                                 {Object.entries(report?.por_categoria || {}).sort((a:any, b:any) => b[1] - a[1]).map(([cat, monto]) => (
