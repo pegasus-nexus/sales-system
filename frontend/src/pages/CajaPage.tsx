@@ -557,6 +557,8 @@ export default function CajaPage() {
     const [gastoMonto, setGastoMonto] = useState('');
     const [gastoDesc, setGastoDesc] = useState('');
     const [gastoCategId, setGastoCategId] = useState('');
+    // @ts-ignore
+    const [gastoSubCategId, setGastoSubCategId] = useState('');
 
     // ingreso manual
     const [ingresoMonto, setIngresoMonto] = useState('');
@@ -625,6 +627,7 @@ export default function CajaPage() {
             monto: parseFloat(gastoMonto),
             descripcion: gastoDesc,
             categoria_id: gastoCategId || undefined,
+            subcategoria_id: gastoSubCategId || undefined,
         }, {
             onSuccess: () => { setGastoMonto(''); setGastoDesc(''); setGastoCategId(''); closeModal(); },
             onSettled: () => setIsSubmittingLocal(false)
@@ -1131,7 +1134,7 @@ export default function CajaPage() {
                                         </div>
                                     </div>
 
-                                    <button onClick={handleGasto} disabled={!gastoMonto || !gastoDesc || gastoMut.isPending}
+                                    <button onClick={handleGasto} disabled={!gastoMonto || gastoMut.isPending}
                                         className="w-full mt-5 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-colors">
                                         {gastoMut.isPending ? 'Guardando...' : 'Registrar Gasto'}
                                     </button>

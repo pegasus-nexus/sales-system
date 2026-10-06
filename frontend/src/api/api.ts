@@ -655,14 +655,14 @@ export const getMonthlyEvolution = (months: number = 12, sucursalId?: string, ca
 
 
 
-export const getExpensesReport = (startDate: string, endDate: string, sucursalId?: string, categoriaId?: string) => {
+export const getExpensesReport = (startDate: string, endDate: string, sucursalId?: string, categoriaId?: string, subcategoriaId?: string) => {
 
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
 
     if (sucursalId && sucursalId !== 'all') params.set('sucursal_id', sucursalId);
 
     if (categoriaId && categoriaId !== 'all') params.set('categoria_id', categoriaId);
-
+    if (subcategoriaId && subcategoriaId !== 'all') params.set('subcategoria_id', subcategoriaId);
     return client<unknown>(`/reports/expenses-report?${params.toString()}`);
 
 };

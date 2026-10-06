@@ -441,6 +441,8 @@ async def create_categoria(body: CategoriaGastoIn, current_user: User = Depends(
         nombre      = body.nombre,
         descripcion = body.descripcion,
         icono       = body.icono or "receipt",
+        partida     = body.partida,
+        padre_id    = body.padre_id,
     )
     await cat.create()
     return cat
