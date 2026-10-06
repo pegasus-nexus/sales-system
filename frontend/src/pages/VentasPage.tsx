@@ -781,7 +781,7 @@ export default function VentasPage() {
                                                             Anular Venta
                                                         </button>
                                                     )}
-                                                    {!isAnulado && (user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '')) && (
+                                                    {!isAnulado && (user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ'].includes(user?.role || '')) && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setUpdateDateVenta(venta); setNuevaFecha(venta.created_at.slice(0, 16)); }}
                                                             className="flex items-center gap-1.5 bg-white border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all"

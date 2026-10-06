@@ -1,11 +1,14 @@
-with open('frontend/src/pages/VentasPage.tsx', 'r', encoding='utf-8') as f:
-    content = f.read()
+﻿import os
 
-old_logic = '''{!isAnulado && (sucursales.find(s => s._id === venta.sucursal_id)?.nombre || "").toLowerCase().includes("supermercado") && ('''
-new_logic = '''{!isAnulado && (user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '')) && ('''
+path = "frontend/src/pages/VentasPage.tsx"
+with open(path, "r", encoding="utf-8") as f:
+    data = f.read()
 
-content = content.replace(old_logic, new_logic)
+target = """{!isAnulado && (user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '')) && ("""
+replacement = """{!isAnulado && (user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ'].includes(user?.role || '')) && ("""
 
-with open('frontend/src/pages/VentasPage.tsx', 'w', encoding='utf-8') as f:
-    f.write(content)
-print("Patched VentasPage.tsx")
+data = data.replace(target, replacement)
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(data)
+print("VentasPage.tsx patched")

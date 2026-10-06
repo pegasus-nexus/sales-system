@@ -22,9 +22,14 @@ async def create_purchase_order(
     """
     tenant_id = current_user.tenant_id or "default"
     
-    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
-        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
-            raise HTTPException(status_code=403, detail="No tienes permisos especiales para ingresar historial")
+    if reception_in.es_historico:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+            if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+                raise HTTPException(status_code=403, detail="No tienes permisos para realizar ingresos historicos")
+    else:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
+            if "INGRESO_INVENTARIO" not in (current_user.permisos_especiales or []):
+                raise HTTPException(status_code=403, detail="No tienes permisos para ingresar recepciones")
 
     detalles = [
         PurchaseOrderItem(
@@ -114,9 +119,14 @@ async def create_purchase_reception(
     """
     tenant_id = current_user.tenant_id or "default"
     
-    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
-        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
-            raise HTTPException(status_code=403, detail="No tienes permisos especiales para ingresar historial")
+    if reception_in.es_historico:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+            if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+                raise HTTPException(status_code=403, detail="No tienes permisos para realizar ingresos historicos")
+    else:
+        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
+            if "INGRESO_INVENTARIO" not in (current_user.permisos_especiales or []):
+                raise HTTPException(status_code=403, detail="No tienes permisos para ingresar recepciones")
 
     detalles = [
         PurchaseReceptionItem(
