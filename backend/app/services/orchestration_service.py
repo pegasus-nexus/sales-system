@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 
 from app.schemas.analytics import (
@@ -12,7 +12,7 @@ from app.schemas.analytics import (
 
 async def get_dashboard_orchestration(tenant_id: str, days: int = 30) -> OrchestrationResponse:
     # 1. Base Query
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=days)
     prev_start_date = start_date - timedelta(days=days)
     

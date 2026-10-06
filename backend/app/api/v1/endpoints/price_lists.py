@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 
 from app.domain.models.price_list import ListaPrecio, ListaPrecioItem, TipoListaPrecio
@@ -123,7 +123,7 @@ async def eliminar_lista_precio(
         raise HTTPException(status_code=404, detail="Lista de precio no encontrada")
         
     lista.is_active = False
-    lista.deleted_at = datetime.utcnow()
+    lista.deleted_at = datetime.now(timezone.utc)
     lista.deleted_by = str(current_user.id)
     await lista.save()
     return {"message": "Lista eliminada exitosamente"}
@@ -198,7 +198,7 @@ async def actualizar_item_lista(
     if data.cantidad_minima is not None:
         item.cantidad_minima = data.cantidad_minima
         
-    item.updated_at = datetime.utcnow()
+    item.updated_at = datetime.now(timezone.utc)
     await item.save()
     return item.model_dump(by_alias=True)
 
@@ -214,5 +214,5 @@ async def eliminar_item_lista(
     if not item or item.tenant_id != tenant_id or item.lista_id != lista_id:
         raise HTTPException(status_code=404, detail="Item de lista no encontrado")
 
-    await item.delete()
+    await item.soft_delete()
     return {"message": "Item eliminado exitosamente"}

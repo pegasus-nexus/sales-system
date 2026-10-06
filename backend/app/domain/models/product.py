@@ -1,7 +1,7 @@
 from typing import Optional, List
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -49,7 +49,7 @@ class Product(Document, SoftDeleteMixin):
     precios_sucursales: Optional[dict[str, DecimalMoney]] = None
     sucursales_permitidas: list[str] = []  # Si esta vacio, es global. Si tiene IDs, solo esas sucursales lo ven.
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "products"

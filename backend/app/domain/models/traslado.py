@@ -2,7 +2,7 @@ from typing import List, Optional
 from enum import Enum
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import DecimalMoney
 
 class EstadoTraslado(str, Enum):
@@ -43,7 +43,7 @@ class TrasladoInventario(Document):
     
     notas: Optional[str] = None
     
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completado_at: Optional[datetime] = None
     cancelado_at: Optional[datetime] = None
     cancelado_por_id: Optional[str] = None

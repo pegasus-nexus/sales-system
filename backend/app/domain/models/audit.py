@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pymongo import IndexModel
 
@@ -14,7 +14,7 @@ class AuditLog(Document):
     entity: str  # PRODUCT, USER, TENANT
     entity_id: str
     details: Optional[Dict[str, Any]] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "audit_logs"

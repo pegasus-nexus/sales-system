@@ -47,8 +47,10 @@ app.add_middleware(ObservabilityRequestLoggingMiddleware)
 app.add_middleware(TenantContextMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
+from slowapi.middleware import SlowAPIMiddleware
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 import traceback
 import uuid

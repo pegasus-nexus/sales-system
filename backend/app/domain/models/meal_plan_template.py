@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from .base import DecimalMoney, SoftDeleteMixin
 
@@ -16,7 +16,7 @@ class MealPlanTemplate(Document, SoftDeleteMixin):
     precio_sugerido: DecimalMoney = DecimalMoney("0.0")
     es_flexible: bool = True # Si false, se programan días consecutivos, si true el cliente elige qué días no come
     is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "meal_plan_templates"

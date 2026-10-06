@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from .almacen import TipoAlmacen
 
 class RecipeIngredient(Document):
@@ -15,7 +15,7 @@ class RecipeIngredient(Document):
     tipo_almacen_origen: TipoAlmacen = TipoAlmacen.MATERIA_PRIMA # Para deducir del almacén correcto de la sucursal
     es_opcional: bool = False
     notas: str = ""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "recipe_ingredients"

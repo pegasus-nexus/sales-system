@@ -76,7 +76,7 @@ async def delete_meal_plan_template(
 
 from app.domain.models.client_meal_plan import ClientMealPlan
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 
 @router.get("/clientes/{cliente_id}/meal-plans")
 async def list_client_meal_plans(
@@ -114,8 +114,8 @@ async def assign_plan_to_client(
     if not template or template.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Plantilla de plan no encontrada")
         
-    from datetime import timedelta
-    fecha_ini = data.fecha_inicio or datetime.utcnow()
+    from datetime import timedelta, timezone
+    fecha_ini = data.fecha_inicio or datetime.now(timezone.utc)
     fecha_fin = fecha_ini + timedelta(days=template.dias_vigencia)
     
     new_plan = ClientMealPlan(

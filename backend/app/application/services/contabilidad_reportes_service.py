@@ -2,7 +2,6 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from decimal import Decimal
 from app.domain.models.sale import Sale
-from app.domain.models.sale_item import SaleItem
 from app.domain.models.caja import CajaMovimiento
 from app.domain.models.inventario import Inventario
 from app.domain.models.product import Product

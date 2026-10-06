@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from pydantic import BaseModel
 from beanie.operators import In
@@ -42,7 +42,7 @@ class ComunidadService:
             
         # Aumentar contador de visitas de este usuario
         user.visitas_pagina += 1
-        user.ultima_visita = datetime.utcnow()
+        user.ultima_visita = datetime.now(timezone.utc)
         await user.save()
         
         return user
@@ -69,7 +69,7 @@ class ComunidadService:
         user.email = data.email
         user.premio_reclamado = data.premio
         user.ha_reclamado = True
-        user.reclamado_at = datetime.utcnow()
+        user.reclamado_at = datetime.now(timezone.utc)
         
         await user.save()
         

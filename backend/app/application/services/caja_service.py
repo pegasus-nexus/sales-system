@@ -1,7 +1,7 @@
 from app.infrastructure.db import get_client
 import logging
 from app.utils.errors import CajaErrors, handle_service_error
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 
 from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, SubtipoMovimiento
@@ -71,7 +71,7 @@ class CajaService:
             raise HTTPException(status_code=400, detail=CajaErrors.SESION_YA_CERRADA)
 
         sesion.estado                = EstadoSesion.CERRADA
-        sesion.cerrada_at            = datetime.utcnow()
+        sesion.cerrada_at            = datetime.now(timezone.utc)
         sesion.monto_cierre_fisico   = DecimalMoney(str(round(body.monto_fisico_contado, 1)))
         sesion.notas_cierre          = body.notas
         await sesion.save()

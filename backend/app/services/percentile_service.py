@@ -9,7 +9,7 @@ Servicio de Percentiles de Ventas — Basado exclusivamente en datos históricos
 import traceback
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from typing import Any, Dict, List
 
 from app.db import get_raw_db
@@ -42,7 +42,7 @@ async def get_sales_percentiles(
     try:
         db = await get_raw_db()
 
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         end_dt   = datetime(today.year, today.month, today.day, 23, 59, 59)
         start_dt = end_dt - timedelta(days=days_history)
 

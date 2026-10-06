@@ -109,7 +109,7 @@ async def update_recipe(
         # Eliminar ingredientes anteriores
         old_ingredients = await RecipeIngredient.find(RecipeIngredient.recipe_id == recipe_id).to_list()
         for old in old_ingredients:
-            await old.delete()
+            await old.soft_delete()
             
         # Insertar nuevos ingredientes
         for ing in ingredientes:

@@ -1,7 +1,7 @@
 from typing import Optional
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ClientWallet(Document):
     """
@@ -13,7 +13,7 @@ class ClientWallet(Document):
     producto_paquete_id: str
     saldo_creditos: float = Field(default=0.0)
     fecha_vencimiento: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "client_wallets"

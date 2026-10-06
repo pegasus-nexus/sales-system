@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import List, Optional
 from fastapi import HTTPException
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.domain.models.credito import (
     CuentaCredito, Deuda, TransaccionCredito, PagoCreditoItemInfo,
@@ -56,7 +56,7 @@ class CreditoService:
         
         # 3. Update CuentaCredito
         cuenta.saldo_total = DecimalMoney(str(Decimal(str(cuenta.saldo_total)) + monto_deuda))
-        cuenta.updated_at = datetime.utcnow()
+        cuenta.updated_at = datetime.now(timezone.utc)
         await cuenta.save(session=session)
         
         # 4. Transaccion de Cargo
@@ -161,7 +161,7 @@ class CreditoService:
             else:
                 deuda.estado = EstadoDeuda.PARCIAL
                 
-            deuda.updated_at = datetime.utcnow()
+            deuda.updated_at = datetime.now(timezone.utc)
             await deuda.save()
             
             # Removed backward-compatible logic of appending EFECTIVO payments back to the Sale.
@@ -187,7 +187,7 @@ class CreditoService:
         if Decimal(str(cuenta.saldo_total)) <= Decimal("0.01"):
             cuenta.estado_cuenta = EstadoCuenta.AL_DIA
         # else remains MOROSO or AL_DIA based on other factors
-        cuenta.updated_at = datetime.utcnow()
+        cuenta.updated_at = datetime.now(timezone.utc)
         await cuenta.save()
         
         # 6. Create Transaction
@@ -305,7 +305,7 @@ class CreditoService:
                 else:
                     deuda.estado = EstadoDeuda.PARCIAL
                 
-                deuda.updated_at = datetime.utcnow()
+                deuda.updated_at = datetime.now(timezone.utc)
                 await deuda.save()
                 
                 # Check sale to revert status
@@ -324,7 +324,7 @@ class CreditoService:
         if Decimal(str(cuenta.saldo_total)) > Decimal("0.01"):
             # Should technically check if any debt is past due, but keeping it simple
             cuenta.estado_cuenta = EstadoCuenta.MOROSO
-        cuenta.updated_at = datetime.utcnow()
+        cuenta.updated_at = datetime.now(timezone.utc)
         await cuenta.save()
         
         # 4. Generar Movimiento EGRESO revertiendo la balanza en caja

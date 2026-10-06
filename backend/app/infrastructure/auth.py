@@ -26,7 +26,7 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -66,6 +66,26 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+        
+    # Free Trial Validation (14 days hard limit)
+    if current_user.tenant_id and current_user.role != UserRole.SUPERADMIN:
+        from app.domain.models.tenant import Tenant, PlanType
+        tenant = await Tenant.get(current_user.tenant_id)
+        if tenant and tenant.plan == PlanType.BASICO:
+            from datetime import timedelta
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            # Make sure created_at is aware
+            created_at = tenant.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+                
+            if now > created_at + timedelta(days=14):
+                raise HTTPException(
+                    status_code=402, 
+                    detail="Tu prueba gratuita de 14 días ha expirado. Por favor, actualiza tu plan para continuar."
+                )
+
     return current_user
 
 

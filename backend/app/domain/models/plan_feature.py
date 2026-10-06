@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from beanie import Document
 from pydantic import Field
 
@@ -38,7 +38,7 @@ class PlanFeatureDocument(Document):
     code: str
     name: str
     description: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "plan_features"

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from app.domain.models.b2b import (
     NotaDevolucionMerma, ItemMovimientoB2B, EstadoReclamo,
@@ -69,7 +69,7 @@ class B2BService:
             if inv:
                 # Even if negative, let it go through as it's an emergency swap
                 inv.cantidad -= input_item.cantidad
-                inv.updated_at = datetime.utcnow()
+                inv.updated_at = datetime.now(timezone.utc)
                 await inv.save()
                 
                 # Register Log
@@ -131,6 +131,6 @@ class B2BService:
             raise HTTPException(status_code=400, detail="El reclamo ya ha sido compensado.")
             
         nota.estado_reclamo = EstadoReclamo.COMPENSADO
-        nota.fecha_compensacion = datetime.utcnow()
+        nota.fecha_compensacion = datetime.now(timezone.utc)
         await nota.save()
         return nota

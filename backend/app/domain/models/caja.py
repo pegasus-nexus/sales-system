@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Any
 from beanie import Document
@@ -37,7 +37,7 @@ class CajaSesion(Document):
     cajero_name:         str
     monto_inicial:       DecimalMoney = DecimalMoney("0.0")
     estado:              EstadoSesion = EstadoSesion.ABIERTA
-    abierta_at:          datetime = Field(default_factory=datetime.utcnow)
+    abierta_at:          datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     cerrada_at:          Optional[datetime] = None
     monto_cierre_fisico: Optional[DecimalMoney] = None
     monto_diferencia:    Optional[DecimalMoney] = None
@@ -47,7 +47,7 @@ class CajaSesion(Document):
     user_agent_apertura: Optional[str] = None
 
     notas_cierre:        Optional[str] = None
-    created_at:          datetime = Field(default_factory=datetime.utcnow)
+    created_at:          datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Handled by DecimalMoney annotation now.
 
@@ -66,7 +66,7 @@ class CajaGastoCategoria(Document, SoftDeleteMixin):
     icono:       Optional[str] = "receipt"   # lucide icon name
     partida:     Optional[str] = None        # e.g. "01" or "010001" for accounting integration
     padre_id:    Optional[str] = None        # Optional parent ID for subcategories
-    created_at:  datetime = Field(default_factory=datetime.utcnow)
+    created_at:  datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "caja_gasto_categorias"
@@ -89,8 +89,8 @@ class CajaMovimiento(Document):
     descripcion:  str
     categoria_id: Optional[str] = None         # for GASTO
     sale_id:      Optional[str] = None         # for VENTA_EFECTIVO / CAMBIO
-    fecha:        datetime = Field(default_factory=datetime.utcnow)
-    created_at:   datetime = Field(default_factory=datetime.utcnow)
+    fecha:        datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at:   datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Handled by DecimalMoney annotation now.
 

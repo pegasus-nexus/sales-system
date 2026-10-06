@@ -10,7 +10,7 @@ from app.db import get_raw_db
 
 async def predict_demand(tenant_id: str, sucursal_id: Optional[str] = None, predict_days: int = 7) -> DemandPredictionResponse:
     # OPTIMIZACIÓN: Solo traer el último año (365 días) de datos para no desbordar la memoria
-    start_date = datetime.utcnow() - timedelta(days=365)
+    start_date = datetime.now(timezone.utc) - timedelta(days=365)
     query = {"tenant_id": tenant_id, "anulada": False, "created_at": {"$gte": start_date}}
     if sucursal_id:
         query["sucursal_id"] = sucursal_id

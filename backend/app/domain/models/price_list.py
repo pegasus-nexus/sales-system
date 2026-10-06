@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo import IndexModel
 
 class TipoListaPrecio(str, Enum):
@@ -19,7 +19,7 @@ class ListaPrecio(Document):
     is_active: bool = True
     deleted_at: Optional[datetime] = None
     deleted_by: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "listas_precios"
@@ -30,8 +30,8 @@ class ListaPrecioItem(Document):
     producto_id: str
     precio_especial: DecimalMoney = Field(ge=0)
     cantidad_minima: int = Field(ge=1, default=1)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "lista_precios_items"

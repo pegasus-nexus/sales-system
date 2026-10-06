@@ -1,13 +1,12 @@
 from app.infrastructure.db import get_client
 import logging
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from bson import ObjectId
 from pymongo import ReturnDocument
 
 from app.domain.models.pedido_interno import PedidoInterno, PedidoItem, EstadoPedido
-from app.domain.models.pedido_item import PedidoItemDocument
 from app.domain.models.inventario import Inventario, TipoMovimiento, InventoryLog
 from app.domain.models.product import Product
 from app.domain.models.user import User, UserRole
@@ -85,9 +84,9 @@ class PedidosService:
 
                     if data.transferencia_directa:
                         pedido.estado = EstadoPedido.RECIBIDO
-                        pedido.aceptado_at = datetime.utcnow()
-                        pedido.despachado_at = datetime.utcnow()
-                        pedido.recibido_at = datetime.utcnow()
+                        pedido.aceptado_at = datetime.now(timezone.utc)
+                        pedido.despachado_at = datetime.now(timezone.utc)
+                        pedido.recibido_at = datetime.now(timezone.utc)
                         pedido.aceptado_por = str(current_user.id)
                         pedido.despachado_por = str(current_user.id)
                         pedido.recibido_por = str(current_user.id)
@@ -137,24 +136,7 @@ class PedidosService:
 
                     await pedido.create(session=session)
 
-                    items_docs = [
-                        PedidoItemDocument(
-                            tenant_id=pedido.tenant_id,
-                            pedido_id=str(pedido.id),
-                            sucursal_origen_id=pedido.sucursal_origen_id,
-                            sucursal_destino_id=pedido.sucursal_destino_id,
-                            pedido_fecha=pedido.created_at,
-                            producto_id=item.producto_id,
-                            descripcion=item.descripcion,
-                            cantidad=item.cantidad,
-                            precio_mayorista=item.precio_mayorista,
-                            subtotal=item.subtotal
-                        )
-                        for item in items
-                    ]
-                    # Beanie insert_many with session
-                    if items_docs:
-                        await PedidoItemDocument.insert_many(items_docs, session=session)
+
 
                     return pedido
         except HTTPException:
@@ -175,7 +157,7 @@ class PedidosService:
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
 
         pedido.estado = EstadoPedido.CANCELADO
-        pedido.cancelado_at = datetime.utcnow()
+        pedido.cancelado_at = datetime.now(timezone.utc)
         pedido.cancelado_por = str(current_user.id)
         await pedido.save()
         return pedido
@@ -196,7 +178,7 @@ class PedidosService:
             raise HTTPException(status_code=400, detail=f"No se puede aceptar un pedido en estado {pedido.estado}")
 
         pedido.estado = EstadoPedido.ACEPTADO
-        pedido.aceptado_at = datetime.utcnow()
+        pedido.aceptado_at = datetime.now(timezone.utc)
         pedido.aceptado_por = str(current_user.id)
         await pedido.save()
         return pedido
@@ -275,7 +257,7 @@ class PedidosService:
 
                     total = sum(item.cantidad * item.precio_mayorista for item in pedido.items)
                     pedido.estado = EstadoPedido.DESPACHADO
-                    pedido.despachado_at = datetime.utcnow()
+                    pedido.despachado_at = datetime.now(timezone.utc)
                     pedido.despachado_por = str(current_user.id)
                     pedido.total_mayorista = total
                     await pedido.save(session=session)
@@ -357,7 +339,7 @@ class PedidosService:
                         ).create(session=session)
 
                     pedido.estado = EstadoPedido.RECIBIDO
-                    pedido.recibido_at = datetime.utcnow()
+                    pedido.recibido_at = datetime.now(timezone.utc)
                     pedido.recibido_por = str(current_user.id)
                     await pedido.save(session=session)
                     return pedido

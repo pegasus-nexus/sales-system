@@ -2,7 +2,7 @@ from typing import Optional
 from enum import Enum
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import SoftDeleteMixin
 
 class TipoAlmacen(str, Enum):
@@ -21,7 +21,7 @@ class Almacen(Document, SoftDeleteMixin):
     nombre: str
     tipo: TipoAlmacen = TipoAlmacen.GENERAL
     is_default: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "almacenes"

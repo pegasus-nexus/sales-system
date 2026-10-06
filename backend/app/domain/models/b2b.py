@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from beanie import Document
 from enum import Enum
@@ -28,7 +28,7 @@ class NotaDevolucionMerma(Document):
     supermercado_id: str  # Referencia FK a Clientes
     supermercado_nombre: str
     
-    fecha_recuperacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_recuperacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     items: List[ItemMovimientoB2B]
     
     # El monto total de pérdida que la fábrica nos debe compensar basado en costo_unitario:
@@ -69,7 +69,7 @@ class NotaTraspaso(Document):
     items_despachados: List[ItemMovimientoB2B]
     monto_total_publico: DecimalMoney = DecimalMoney("0") # Suma para ventas
     
-    fecha_despacho: datetime = Field(default_factory=datetime.utcnow)
+    fecha_despacho: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_entrega: Optional[datetime] = None
     notas: Optional[str] = None
     

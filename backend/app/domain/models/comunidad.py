@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from beanie import Document
 from enum import Enum
@@ -34,9 +34,9 @@ class ComunidadUser(Document):
     
     # Métricas
     visitas_pagina: int = 0
-    ultima_visita: datetime = Field(default_factory=datetime.utcnow)
+    ultima_visita: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Settings:
         name = "comunidad_users"
@@ -50,7 +50,7 @@ class VisitaRegistro(Document):
     ip: Optional[str] = None
     user_agent: Optional[str] = None
     endpoint: str = "/"
-    fecha: datetime = Field(default_factory=datetime.utcnow)
+    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "comunidad_visitas"

@@ -398,7 +398,7 @@ async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current
         raise HTTPException(status_code=404, detail="Tenant not found")
         
     # Hard delete the tenant for MVP cleanup
-    await tenant.delete()
+    await tenant.soft_delete()
     
     # Cascade delete all related entities so credentials and codes are freed
     from app.domain.models.user import User
@@ -713,6 +713,6 @@ async def delete_plan(plan_id: str, current_user: User = Depends(get_current_act
     if in_use > 0:
         raise HTTPException(status_code=400, detail="El plan está en uso por una o más empresas.")
         
-    await plan.delete()
+    await plan.soft_delete()
     return {"message": "Plan eliminado correctamente"}
 

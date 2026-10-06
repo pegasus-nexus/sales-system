@@ -2,7 +2,7 @@ from typing import List, Optional, Literal
 from enum import Enum
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo import IndexModel
 from .base import DecimalMoney
 
@@ -27,7 +27,7 @@ class PagoItem(BaseModel):
     """One segment of a split payment or later amortization."""
     metodo: Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA", "CREDITO"]
     monto: DecimalMoney
-    fecha: datetime = Field(default_factory=datetime.utcnow)
+    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class DescuentoInfo(BaseModel):
@@ -74,7 +74,7 @@ class Sale(Document):
     estado_pago: EstadoPago = EstadoPago.PAGADO
     factura_emitida: bool = False
     idempotency_key: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # ── Auditoría de anulación ────────────────────────────────────────────────
     motivo_anulacion: Optional[str] = None          # Categoría del motivo
