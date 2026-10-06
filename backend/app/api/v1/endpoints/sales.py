@@ -680,14 +680,9 @@ async def update_qr_info(
 @router.patch('/sales/{sale_id}/fecha')
 async def update_sale_date(request: Request, sale_id: str, payload: SaleDateUpdate, current_user: User = Depends(get_current_active_user)):
     tenant_id = current_user.tenant_id or "default"
-    allowed_roles = [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]
-    if current_user.role not in allowed_roles:
-        raise HTTPException(status_code=403, detail='No tienes permisos para modificar la fecha de una venta')
-        
-    # If CAJERO, verify they have the special permission
-    if current_user.role == UserRole.CAJERO:
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ]:
         permisos = getattr(current_user, "permisos_especiales", [])
-        if "EDITAR_FECHA_VENTA" not in permisos:
+        if "EDITAR_FECHA_VENTA" not in (permisos or []):
             raise HTTPException(status_code=403, detail='No tienes el permiso especial "EDITAR_FECHA_VENTA" asignado')
             
     updated_sale = await SalesService.update_sale_date(tenant_id, sale_id, payload.nueva_fecha, current_user)
