@@ -1482,7 +1482,8 @@ async def get_inventory_reconciliation(
         "ganancia_bruta": float(ganancia_bruta),
         "inventario_final_costo": float(inventario_final_costo),
         "desglose_ingresos": desglose_ingresos,
-        "desglose_salidas": desglose_salidas
+        "desglose_salidas": desglose_salidas,
+        "detalles_anomalias": detalles_anomalias
     }
 
 @router.get("/expenses-report")
