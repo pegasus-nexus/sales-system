@@ -25,6 +25,8 @@ interface CuentaCredito {
 export interface Deuda {
     id: string;
     sale_id_corto: string;
+    numero_ticket?: string;
+    resumen_items?: string;
     estado: string;
     fecha_emision: string;
     monto_original: number;
