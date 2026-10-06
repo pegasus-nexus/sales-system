@@ -67,7 +67,7 @@ export default function CalculadoraMargenesPage() {
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
                         <Calculator className="text-indigo-600" />
-                        Calculadora y GestiA3n de MA!rgenes
+                        Calculadora y Gestión de Márgenes
                     </h1>
                     <p className="text-sm text-gray-500 mt-1 font-medium">
                         Simula y ajusta los precios de venta basados en el margen de utilidad deseado.
@@ -90,7 +90,7 @@ export default function CalculadoraMargenesPage() {
                 {isLoading ? (
                     <div className="h-64 flex flex-col items-center justify-center text-gray-400 gap-3">
                         <RefreshCw className="animate-spin text-indigo-500" size={32} />
-                        <p className="font-bold">Cargando catA!logo...</p>
+                        <p className="font-bold">Cargando catálogo...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -98,11 +98,11 @@ export default function CalculadoraMargenesPage() {
                             <thead>
                                 <tr className="text-left">
                                     <th className="px-4 py-3 text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Producto</th>
-                                    <th className="px-4 py-3 text-right text-xs font-black text-rose-400 uppercase tracking-widest border-b border-gray-100">Costo FA!brica</th>
+                                    <th className="px-4 py-3 text-right text-xs font-black text-rose-400 uppercase tracking-widest border-b border-gray-100">Costo Fábrica</th>
                                     <th className="px-4 py-3 text-center text-xs font-black text-indigo-400 uppercase tracking-widest border-b border-gray-100">Margen Deseado (%)</th>
                                     <th className="px-4 py-3 text-right text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-gray-100">Utilidad Neta (Bs)</th>
                                     <th className="px-4 py-3 text-right text-xs font-black text-gray-900 uppercase tracking-widest border-b border-gray-100">Precio Venta (Bs)</th>
-                                    <th className="px-4 py-3 text-center text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">AcciA3n</th>
+                                    <th className="px-4 py-3 text-center text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Acción</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -136,7 +136,7 @@ export default function CalculadoraMargenesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4 text-right">
-                                                <span className={	ext-sm font-black }>
+                                                <span className={`text-sm font-black ${utility > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                                                     Bs. {utility.toFixed(2)}
                                                 </span>
                                             </td>
@@ -164,7 +164,7 @@ export default function CalculadoraMargenesPage() {
                                                 ) : successId === p._id ? (
                                                     <span className="inline-flex items-center gap-1 text-emerald-500 text-xs font-black bg-emerald-50 px-3 py-1.5 rounded-xl">
                                                         <CheckCircle2 size={14} />
-                                                        A!xito
+                                                        áxito
                                                     </span>
                                                 ) : (
                                                     <span className="text-xs font-bold text-gray-300">Sin cambios</span>
@@ -186,3 +186,4 @@ export default function CalculadoraMargenesPage() {
         </div>
     );
 }
+
