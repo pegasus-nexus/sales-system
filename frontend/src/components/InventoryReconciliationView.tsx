@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { client, getSucursales } from '../api/api';
 import { 
@@ -17,8 +17,12 @@ interface ReconciliationData {
     salidas_mermas_costo: number;
     costo_ventas: number;
     ventas_netas: number;
+    ventas_promocion?: number;
+    ventas_regulares?: number;
     ganancia_bruta: number;
     inventario_final_costo: number;
+    desglose_ingresos?: Record<string, number>;
+    desglose_salidas?: Record<string, number>;
 }
 
 export default function InventoryReconciliationView() {

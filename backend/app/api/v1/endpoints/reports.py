@@ -1369,16 +1369,21 @@ async def get_inventory_reconciliation(
     salidas_mermas_costo = Decimal("0.0")
     costo_ventas_kardex = Decimal("0.0")
     
+    desglose_ingresos = {}
+    desglose_salidas = {}
+    
     for r in raw_logs:
         tipo = r["_id"]
         valor = Decimal(str(r["valor_costo"]))
         if valor > 0: 
             ingresos_costo += valor
+            desglose_ingresos[tipo] = float(valor)
         else: 
             if tipo == "VENTA":
                 costo_ventas_kardex += abs(valor)
             else:
                 salidas_mermas_costo += abs(valor)
+                desglose_salidas[tipo] = float(abs(valor))
                 
     sale_query = {
         "tenant_id": tenant_id, **({"sucursal_id": sucursal_id} if "sucursal_id" in locals() and sucursal_id and sucursal_id != "all" else {}),
@@ -1401,6 +1406,8 @@ async def get_inventory_reconciliation(
     raw_sales = await cursor_sales.to_list(length=1)
     
     ventas_netas = Decimal(str(raw_sales[0]["total_ventas"])) if raw_sales else Decimal("0.0")
+    ventas_promocion = Decimal(str(raw_sales[0]["ventas_promocion"])) if raw_sales else Decimal("0.0")
+    ventas_regulares = Decimal(str(raw_sales[0]["ventas_regulares"])) if raw_sales else Decimal("0.0")
     ganancia_bruta = ventas_netas - costo_ventas_kardex
     
     # Calculate inventario_final_costo strictly at end_dt using InventoryLog to ensure 100% match with valued-inventory
@@ -1470,8 +1477,12 @@ async def get_inventory_reconciliation(
         "salidas_mermas_costo": float(salidas_mermas_costo),
         "costo_ventas": float(costo_ventas_kardex),
         "ventas_netas": float(ventas_netas),
+        "ventas_promocion": float(ventas_promocion),
+        "ventas_regulares": float(ventas_regulares),
         "ganancia_bruta": float(ganancia_bruta),
-        "inventario_final_costo": float(inventario_final_costo)
+        "inventario_final_costo": float(inventario_final_costo),
+        "desglose_ingresos": desglose_ingresos,
+        "desglose_salidas": desglose_salidas
     }
 
 @router.get("/expenses-report")
