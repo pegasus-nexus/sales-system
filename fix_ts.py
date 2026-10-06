@@ -1,17 +1,16 @@
-﻿import re
+﻿import sys
 
-with open("frontend/src/pages/ComunidadPage.tsx", "r", encoding="utf-8") as f:
+file_path = "frontend/src/pages/ControlInventarioPage.tsx"
+with open(file_path, "r", encoding="utf-8") as f:
     content = f.read()
 
-# Remove the PercentIcon function
-content = re.sub(
-    r'function PercentIcon\(\)\s*\{\s*return\s*\(\s*<svg[^>]*>.*?</svg>\s*\)\s*\}',
-    '',
-    content,
-    flags=re.DOTALL
-)
+# Remove unused confirmModal from ControlInventarioPage
+content = content.replace("const confirmModal = useConfirm();\n\n    const handleStart", "const handleStart")
 
-with open("frontend/src/pages/ComunidadPage.tsx", "w", encoding="utf-8") as f:
+# Add confirmModal to ActiveConteoView correctly
+import re
+content = re.sub(r"(function ActiveConteoView.*?\{)", r"\1\n    const confirmModal = useConfirm();", content, count=1, flags=re.DOTALL)
+
+with open(file_path, "w", encoding="utf-8") as f:
     f.write(content)
-
-print("PercentIcon removed.")
+print("Fixed TS errors")

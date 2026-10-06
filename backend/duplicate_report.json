@@ -1,0 +1,1208 @@
+[
+  {
+    "type": "NAME",
+    "key": "bombones a la crema (tradicional) 100 gr taboada",
+    "items": [
+      {
+        "id": "69a6fe979515c926b5a12629",
+        "codigo": "7771706000054",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f987c",
+        "codigo": "144",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 20.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba1",
+        "codigo": "144",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 135.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d047431b75defd6dbbc8",
+        "codigo": "N-EA06",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 100 gr taboada",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 46.0,
+        "inv_records": 2
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "granel 2.0 bs",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9860",
+        "codigo": "2001",
+        "descripcion": "GRANEL 2.0 BS",
+        "categoria": "A granel",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb84",
+        "codigo": "2005",
+        "descripcion": "GRANEL 2.0 BS",
+        "categoria": "A granel",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 9.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "granel 3.5 bs",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9863",
+        "codigo": "2004",
+        "descripcion": "GRANEL 3.5 BS",
+        "categoria": "A granel",
+        "proveedor": "",
+        "stock_total": 231.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb87",
+        "codigo": "2003",
+        "descripcion": "GRANEL 3.5 BS",
+        "categoria": "A granel",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 107.0,
+        "inv_records": 11
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "paleta doble corazon colores 30 gr",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9869",
+        "codigo": "763",
+        "descripcion": "PALETA DOBLE CORAZON COLORES 30 GR",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 27.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb8e",
+        "codigo": "763",
+        "descripcion": "PALETA DOBLE CORAZON COLORES 30 GR",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 47.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "tableta de chocolate",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f986d",
+        "codigo": "681",
+        "descripcion": "TABLETA DE CHOCOLATE",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 20.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb92",
+        "codigo": "681",
+        "descripcion": "TABLETA DE CHOCOLATE",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 68.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister gomitas con chocolate",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f986e",
+        "codigo": "129",
+        "descripcion": "BLISTER GOMITAS CON CHOCOLATE",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 11.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb93",
+        "codigo": "129",
+        "descripcion": "BLISTER GOMITAS CON CHOCOLATE",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 18.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister pastillas de goma p",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9872",
+        "codigo": "136",
+        "descripcion": "BLISTER PASTILLAS DE GOMA P",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 5.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb97",
+        "codigo": "136",
+        "descripcion": "BLISTER PASTILLAS DE GOMA P",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 15.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister trufas al ron p",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9874",
+        "codigo": "134",
+        "descripcion": "BLISTER TRUFAS AL RON P",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 6.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb99",
+        "codigo": "134",
+        "descripcion": "BLISTER TRUFAS AL RON P",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 50.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones a la crema (tradicional) 150 gr taboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f987d",
+        "codigo": "145",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba2",
+        "codigo": "145",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 129.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d049431b75defd6dbbcb",
+        "codigo": "N-FE88",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 150 gr taboada",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 22.0,
+        "inv_records": 2
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones especiales 150 gr taboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9884",
+        "codigo": "184",
+        "descripcion": "BOMBONES ESPECIALES 150 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 15.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba9",
+        "codigo": "184",
+        "descripcion": "BOMBONES ESPECIALES 150 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 71.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones especiales 200 gr taboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9885",
+        "codigo": "183",
+        "descripcion": "BOMBONES ESPECIALES 200 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 30.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbaa",
+        "codigo": "183",
+        "descripcion": "BOMBONES ESPECIALES 200 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 72.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "chocolates y bombones a granel",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9886",
+        "codigo": "340",
+        "descripcion": "CHOCOLATES Y BOMBONES A GRANEL",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbab",
+        "codigo": "340",
+        "descripcion": "CHOCOLATES Y BOMBONES A GRANEL",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 0.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "crema blanqueadora",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9888",
+        "codigo": "55034",
+        "descripcion": "Crema Blanqueadora",
+        "categoria": "Cremas",
+        "proveedor": "",
+        "stock_total": 4.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbad",
+        "codigo": "55034",
+        "descripcion": "Crema Blanqueadora",
+        "categoria": "Cremas",
+        "proveedor": "CREMAS ALEPH",
+        "stock_total": 4.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "crema de limpieza 55 gr.",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9889",
+        "codigo": "55001",
+        "descripcion": "Crema de limpieza 55 gr.",
+        "categoria": "Cremas",
+        "proveedor": "",
+        "stock_total": 11.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbae",
+        "codigo": "55001",
+        "descripcion": "Crema de limpieza 55 gr.",
+        "categoria": "Cremas",
+        "proveedor": "CREMAS ALEPH",
+        "stock_total": 5.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "crema de placenta 2 oz.",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f988a",
+        "codigo": "55004",
+        "descripcion": "Crema de Placenta 2 oz.",
+        "categoria": "Cremas",
+        "proveedor": "",
+        "stock_total": 11.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbaf",
+        "codigo": "55004",
+        "descripcion": "Crema de Placenta 2 oz.",
+        "categoria": "Cremas",
+        "proveedor": "CREMAS ALEPH",
+        "stock_total": 5.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "granel 3.0 bs",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9862",
+        "codigo": "2003",
+        "descripcion": "GRANEL 3.0 BS",
+        "categoria": "A granel",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb86",
+        "codigo": "2002",
+        "descripcion": "GRANEL 3.0 BS\t",
+        "categoria": "A granel",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 1351.0,
+        "inv_records": 11
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "tableta con frases",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f986c",
+        "codigo": "680",
+        "descripcion": "TABLETA CON FRASES",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 17.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb91",
+        "codigo": "680",
+        "descripcion": "TABLETA CON FRASES",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 48.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister marrox 24 unid.",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9871",
+        "codigo": "137",
+        "descripcion": "BLISTER MARROX 24 UNID.",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb96",
+        "codigo": "137",
+        "descripcion": "BLISTER MARROX 24 UNID.",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 4.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "regalo bs 1",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9878",
+        "codigo": "2012",
+        "descripcion": "REGALO BS 1",
+        "categoria": "Bolsas h",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb9d",
+        "codigo": "2012",
+        "descripcion": "REGALO BS 1",
+        "categoria": "Bolsas h",
+        "proveedor": "VARIOS",
+        "stock_total": 0.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "regalo bs 2.5",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f987a",
+        "codigo": "3002",
+        "descripcion": "REGALO BS 2.5",
+        "categoria": "Bolsas h",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb9f",
+        "codigo": "3002",
+        "descripcion": "REGALO BS 2.5",
+        "categoria": "Bolsas h",
+        "proveedor": "VARIOS",
+        "stock_total": 0.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "regalo bs 3",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f987b",
+        "codigo": "3003",
+        "descripcion": "REGALO BS 3",
+        "categoria": "Bolsas h",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba0",
+        "codigo": "3003",
+        "descripcion": "REGALO BS 3",
+        "categoria": "Bolsas h",
+        "proveedor": "VARIOS",
+        "stock_total": 0.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "anti-manchas luz facial extra fuerte4",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9887",
+        "codigo": "55064",
+        "descripcion": "ANTI-MANCHAS Luz facial Extra Fuerte4",
+        "categoria": "Cremas",
+        "proveedor": "",
+        "stock_total": 2.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbbac",
+        "codigo": "55064",
+        "descripcion": "ANTI-MANCHAS Luz facial Extra Fuerte4",
+        "categoria": "Cremas",
+        "proveedor": "CREMAS ALEPH",
+        "stock_total": 1.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "caja paletas rosas 40 gr taboada",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb8a",
+        "codigo": "M278",
+        "descripcion": "CAJA PALETAS ROSAS 40 gr taboada",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 82.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9865",
+        "codigo": "M278",
+        "descripcion": "CAJA PALETAS ROSAS 40 gr taboada",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 26.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "choc. corazón hinchado",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb8b",
+        "codigo": "324",
+        "descripcion": "CHOC. CORAZÓN HINCHADO",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 96.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9866",
+        "codigo": "324",
+        "descripcion": "CHOC. CORAZÓN HINCHADO",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 83.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "cono de choc.surtidos 50g",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb8c",
+        "codigo": "4006",
+        "descripcion": "CONO DE CHOC.SURTIDOS 50G",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 0.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9867",
+        "codigo": "4006",
+        "descripcion": "CONO DE CHOC.SURTIDOS 50G",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister gomitas con chocolate p",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb94",
+        "codigo": "130",
+        "descripcion": "BLISTER GOMITAS CON CHOCOLATE P",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 13.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f986f",
+        "codigo": "130",
+        "descripcion": "BLISTER GOMITAS CON CHOCOLATE P",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 1.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blsiter pastillas de goma",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb9a",
+        "codigo": "135",
+        "descripcion": "BLSITER PASTILLAS DE GOMA",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 23.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9875",
+        "codigo": "135",
+        "descripcion": "BLSITER PASTILLAS DE GOMA",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 5.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bolsas doradas grande",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb9c",
+        "codigo": "20071",
+        "descripcion": "BOLSAS DORADAS grande",
+        "categoria": "Bolsas",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 150.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9877",
+        "codigo": "20071",
+        "descripcion": "BOLSAS DORADAS grande",
+        "categoria": "Bolsas",
+        "proveedor": "",
+        "stock_total": 171.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones de frutas 400 gr taboada",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbba7",
+        "codigo": "200",
+        "descripcion": "BOMBONES DE FRUTAS 400 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 9.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9882",
+        "codigo": "200",
+        "descripcion": "BOMBONES DE FRUTAS 400 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "paleta doble corazon pintado 30 g",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb8f",
+        "codigo": "761",
+        "descripcion": "PALETA DOBLE CORAZON PINTADO 30 G",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 21.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f986a",
+        "codigo": "761",
+        "descripcion": "PALETA DOBLE CORAZON PINTADO 30 G",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 47.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bolsas doradas",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb9b",
+        "codigo": "20061",
+        "descripcion": "BOLSAS DORADAS",
+        "categoria": "Bolsas",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 129.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9876",
+        "codigo": "20061",
+        "descripcion": "BOLSAS DORADAS",
+        "categoria": "Bolsas",
+        "proveedor": "",
+        "stock_total": 5.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones a la crema (tradicional) 400 gr taboada",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbba4",
+        "codigo": "142",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 48.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f987f",
+        "codigo": "142",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 15.0,
+        "inv_records": 1
+      },
+      {
+        "id": "6a85d046431b75defd6dbbc7",
+        "codigo": "N-1446",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 400 gr taboada",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 12.0,
+        "inv_records": 3
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "caja trufa ( rojo y café) 120 gr taboada",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbbfd",
+        "codigo": "295",
+        "descripcion": "CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada",
+        "categoria": "Regalo",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 52.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d04a431b75defd6dbbcc",
+        "codigo": "N-526A",
+        "descripcion": "CAJA TRUFA ( ROJO Y CAFÉ) 120 gr taboada",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 27.0,
+        "inv_records": 2
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister trufas al ron",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9873",
+        "codigo": "133",
+        "descripcion": "BLISTER TRUFAS AL RON",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 7.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb98",
+        "codigo": "133",
+        "descripcion": "BLISTER TRUFAS AL RON",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 43.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones a la crema (tradicional) 200 grtaboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f987e",
+        "codigo": "143",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 28.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba3",
+        "codigo": "143",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 165.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d046431b75defd6dbbc6",
+        "codigo": "N-70F7",
+        "descripcion": "BOMBONES A LA CREMA (TRADICIONAL) 200 grtaboada",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 45.0,
+        "inv_records": 2
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones de frutas 150 gr taboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9881",
+        "codigo": "201",
+        "descripcion": "BOMBONES DE FRUTAS 150 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 16.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba6",
+        "codigo": "201",
+        "descripcion": "BOMBONES DE FRUTAS 150 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 93.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "bombones de menta 150 gr taboada",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9883",
+        "codigo": "160",
+        "descripcion": "BOMBONES DE MENTA 150 gr taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 15.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba8",
+        "codigo": "160",
+        "descripcion": "BOMBONES DE MENTA 150 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 98.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "paleta corazón grande",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9868",
+        "codigo": "776",
+        "descripcion": "PALETA CORAZÓN GRANDE",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 23.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb8d",
+        "codigo": "776",
+        "descripcion": "PALETA CORAZÓN GRANDE",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 41.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "paleta flor margarita 26g(colores variados)",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f986b",
+        "codigo": "4005",
+        "descripcion": "PALETA FLOR MARGARITA 26G(COLORES VARIADOS)",
+        "categoria": "Amor",
+        "proveedor": "",
+        "stock_total": 23.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb90",
+        "codigo": "4005",
+        "descripcion": "PALETA FLOR MARGARITA 26G(COLORES VARIADOS)",
+        "categoria": "Amor",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 38.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d04e431b75defd6dbbce",
+        "codigo": "N-0820",
+        "descripcion": "PALETA FLOR MARGARITA 26G(COLORES VARIADOS)",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 8.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "blister marrox 12 unid.p",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9870",
+        "codigo": "138",
+        "descripcion": "BLISTER MARROX 12 UNID.P",
+        "categoria": "Blster",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb95",
+        "codigo": "138",
+        "descripcion": "BLISTER MARROX 12 UNID.P",
+        "categoria": "Blster",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 6.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "regalo bs 2",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9879",
+        "codigo": "3001",
+        "descripcion": "REGALO BS 2",
+        "categoria": "Bolsas h",
+        "proveedor": "",
+        "stock_total": 0,
+        "inv_records": 0
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbb9e",
+        "codigo": "3001",
+        "descripcion": "REGALO BS 2",
+        "categoria": "Bolsas h",
+        "proveedor": "VARIOS",
+        "stock_total": 10.0,
+        "inv_records": 11
+      }
+    ]
+  },
+  {
+    "type": "NAME",
+    "key": "marrox (persipan de maní)",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbbc5",
+        "codigo": "541",
+        "descripcion": "MARROX (PERSIPAN DE MANÍ)",
+        "categoria": "Detalles",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 125.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6a85d04a431b75defd6dbbcd",
+        "codigo": "N-F90C",
+        "descripcion": "MARROX (PERSIPAN DE MANÍ)",
+        "categoria": "Nuevos CSV",
+        "proveedor": "",
+        "stock_total": 57.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "2001",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb85",
+        "codigo": "2001",
+        "descripcion": "GRANEL 2.5 BS",
+        "categoria": "A granel",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 38.0,
+        "inv_records": 11
+      },
+      {
+        "id": "6a21f6008663a8872b3733fd",
+        "codigo": "2001",
+        "descripcion": "Salteado",
+        "categoria": "BOWLS",
+        "proveedor": "",
+        "stock_total": 100.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "221",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9880",
+        "codigo": "221",
+        "descripcion": "BOMBONES DE COCO 150 gr  taboada",
+        "categoria": "BOMBONES",
+        "proveedor": "",
+        "stock_total": 23.0,
+        "inv_records": 1
+      },
+      {
+        "id": "69cd81b68f3f6866d4cfbba5",
+        "codigo": "221",
+        "descripcion": "BOMBONES DE COCO 150 gr taboada",
+        "categoria": "Bombones",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 103.0,
+        "inv_records": 10
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "2006",
+    "items": [
+      {
+        "id": "69cd81b68f3f6866d4cfbb89",
+        "codigo": "2006",
+        "descripcion": "GRANEL 5.0 BS",
+        "categoria": "A granel",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 409.0,
+        "inv_records": 10
+      },
+      {
+        "id": "69a7bafdd0fa79d2299f9864",
+        "codigo": "2006",
+        "descripcion": "GRANEL 4.5 BS",
+        "categoria": "A granel",
+        "proveedor": "",
+        "stock_total": 145.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "2002",
+    "items": [
+      {
+        "id": "69a7bafdd0fa79d2299f9861",
+        "codigo": "2002",
+        "descripcion": "GRANEL 2.5BS",
+        "categoria": "A granel",
+        "proveedor": "",
+        "stock_total": 943.0,
+        "inv_records": 1
+      },
+      {
+        "id": "6a21f90d8663a8872b37340b",
+        "codigo": "2002",
+        "descripcion": "Fresco",
+        "categoria": "BOWLS",
+        "proveedor": "",
+        "stock_total": 100.0,
+        "inv_records": 1
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "10001",
+    "items": [
+      {
+        "id": "6a0cbce9602790441a2d599a",
+        "codigo": "10001",
+        "descripcion": "Artículo Promocional A",
+        "categoria": "Packs",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 0.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6aa31796a91e54b56d77283b",
+        "codigo": "10001",
+        "descripcion": "Yogurt Griego 140 ml - prueba",
+        "categoria": "Lacteos",
+        "proveedor": "Lactimads",
+        "stock_total": 0,
+        "inv_records": 0
+      }
+    ]
+  },
+  {
+    "type": "CODE",
+    "key": "10002",
+    "items": [
+      {
+        "id": "6a0cbd21602790441a2d599b",
+        "codigo": "10002",
+        "descripcion": "Artículo Promocional B",
+        "categoria": "Packs",
+        "proveedor": "CHOCOLATES TABOADA",
+        "stock_total": 0.0,
+        "inv_records": 10
+      },
+      {
+        "id": "6aa317ffa91e54b56d77283d",
+        "codigo": "10002",
+        "descripcion": "Bolos de Yogurt - prueba",
+        "categoria": "Lacteos",
+        "proveedor": "Lactimads",
+        "stock_total": 0,
+        "inv_records": 0
+      }
+    ]
+  }
+]

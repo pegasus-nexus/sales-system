@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any, Optional
 from decimal import Decimal
 from app.infrastructure.auth import get_current_active_user, require_roles
@@ -520,7 +520,7 @@ async def get_financial_report(
                         "$reduce": {
                             "input": filtered_items_expr,
                             "initialValue": 0,
-                            "in": {"$add": ["$$value", {"$multiply": [{"$ifNull": ["$$this.precio_unitario", 0]}, {"$ifNull": ["$$this.cantidad", 0]}]}]}
+                            "in": {"$add": ["$$value", {"$ifNull": ["$$this.subtotal", {"$multiply": [{"$ifNull": ["$$this.precio_unitario", 0]}, {"$ifNull": ["$$this.cantidad", 0]}]}]}]}
                         }
                     }
                 },
@@ -542,7 +542,7 @@ async def get_financial_report(
                 "total_publico": 1,
                 "total_fabrica": 1,
                 "margen_distribuidor": {"$multiply": ["$total_fabrica", 0.15]},
-                "margen_retail": {"$subtract": ["$total_publico", "$total_fabrica"]},
+                "margen_retail": {"$subtract": ["$total_publico", {"$add": ["$total_fabrica", {"$multiply": ["$total_fabrica", 0.15]}]}]},
                 "_id": 0
             }
         },
@@ -2183,5 +2183,6 @@ async def get_monthly_evolution(
         "participacion_categorias": participacion_categorias,
         "participacion_productos": participacion_productos[:25]
     }
+
 
 
