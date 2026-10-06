@@ -23,6 +23,15 @@ interface ReconciliationData {
     inventario_final_costo: number;
     desglose_ingresos?: Record<string, number>;
     desglose_salidas?: Record<string, number>;
+    detalles_anomalias?: {
+        id: string;
+        tipo: string;
+        producto: string;
+        cantidad: number;
+        costo: number;
+        fecha: string;
+        usuario_id: string;
+    }[];
 }
 
 export default function InventoryReconciliationView() {
@@ -279,6 +288,46 @@ export default function InventoryReconciliationView() {
                             <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                             <div>
                                 <strong>Atención:</strong> Tuviste salidas de inventario o mermas por un valor al costo de {formatBs(report.salidas_mermas_costo)} que no generaron ingresos en caja. Esta mercadería "perdida" afecta tu rentabilidad final.
+                            </div>
+                        </div>
+                    )}
+
+                    {report.detalles_anomalias && report.detalles_anomalias.length > 0 && (
+                        <div className="mt-8">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
+                                <AlertTriangle size={18} className="text-amber-500" /> Registro Detallado de Anomalías (Mermas, Ajustes y Salidas Manuales)
+                            </h3>
+                            <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl">
+                                <table className="w-full text-left text-sm whitespace-nowrap">
+                                    <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
+                                        <tr>
+                                            <th className="px-4 py-3">Fecha</th>
+                                            <th className="px-4 py-3">Tipo</th>
+                                            <th className="px-4 py-3">Producto</th>
+                                            <th className="px-4 py-3 text-right">Cantidad</th>
+                                            <th className="px-4 py-3 text-right">Impacto (Bs)</th>
+                                            <th className="px-4 py-3">Usuario / Ref</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {report.detalles_anomalias.map(an => (
+                                            <tr key={an.id} className="hover:bg-gray-50">
+                                                <td className="px-4 py-3 text-gray-600">{new Date(an.fecha).toLocaleString()}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={an.costo < 0 ? "px-2 py-1 rounded text-[10px] font-bold bg-red-100 text-red-700" : "px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700"}>
+                                                        {an.tipo.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 font-medium text-gray-900">{an.producto}</td>
+                                                <td className="px-4 py-3 text-right text-gray-700">{an.cantidad}</td>
+                                                <td className={an.costo < 0 ? "px-4 py-3 text-right font-bold text-red-600" : "px-4 py-3 text-right font-bold text-emerald-600"}>
+                                                    {formatBs(Math.abs(an.costo))}
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[150px]">{an.usuario_id}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
