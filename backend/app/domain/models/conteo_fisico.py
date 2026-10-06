@@ -1,7 +1,7 @@
 ﻿from typing import List, Optional
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from .base import SoftDeleteMixin
@@ -27,7 +27,7 @@ class ConteoFisico(Document, SoftDeleteMixin):
     tenant_id: str
     sucursal_id: str
     estado: EstadoConteo = EstadoConteo.BORRADOR
-    fecha_inicio: datetime = Field(default_factory=datetime.utcnow)
+    fecha_inicio: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_cierre: Optional[datetime] = None
     creado_por: str  # ID o nombre del usuario
     creado_por_nombre: Optional[str] = None

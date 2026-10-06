@@ -2,7 +2,7 @@ from .base import DecimalMoney
 from typing import Optional, List, Dict, Any
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 class TipoCliente(str, Enum):
@@ -38,7 +38,7 @@ class Cliente(Document):
     is_active: bool = True
     deleted_at: Optional[datetime] = None
     deleted_by: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "clientes"

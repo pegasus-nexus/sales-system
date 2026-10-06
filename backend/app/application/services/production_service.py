@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
 
@@ -104,7 +104,7 @@ class ProductionService:
 
             if not schedule.recetas_ids:
                 schedule.estado = MealScheduleStatus.ENTREGADO
-                schedule.entregado_at = datetime.utcnow()
+                schedule.entregado_at = datetime.now(timezone.utc)
                 await self.schedule_repo.update(schedule)
                 return schedule
 
@@ -142,7 +142,7 @@ class ProductionService:
                 await self.inventory_log_repo.add(log) # Esto internamente no pasa la sesion, habra que arreglarlo en MongoBaseRepository
 
             schedule.estado = MealScheduleStatus.ENTREGADO
-            schedule.entregado_at = datetime.utcnow()
+            schedule.entregado_at = datetime.now(timezone.utc)
             await self.schedule_repo.update(schedule)
 
             plan = await self.client_plan_repo.get_by_id(schedule.client_meal_plan_id)

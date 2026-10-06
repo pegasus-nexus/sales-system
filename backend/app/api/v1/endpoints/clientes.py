@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from typing import Annotated
 from pydantic import BeforeValidator
@@ -177,7 +177,7 @@ async def eliminar_cliente(
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
         
     cliente.is_active = False
-    cliente.deleted_at = datetime.utcnow()
+    cliente.deleted_at = datetime.now(timezone.utc)
     cliente.deleted_by = str(current_user.id)
     await cliente.save()
     return {"message": "Cliente eliminado exitosamente"}

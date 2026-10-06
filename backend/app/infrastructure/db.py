@@ -14,11 +14,9 @@ from app.domain.models.audit import AuditLog
 from app.domain.models.descuento import Descuento
 from app.domain.models.caja import CajaMovimiento, CajaSesion, CajaGastoCategoria
 from app.domain.models.plan import Plan
-from app.domain.models.sale_item import SaleItem
 from app.domain.models.cost_history import ProductCostHistory
 from app.domain.models.price_request import PriceChangeRequest
 from app.domain.models.plan_feature import PlanFeatureDocument
-from app.domain.models.pedido_item import PedidoItemDocument
 from app.domain.models.cliente import Cliente
 from app.domain.models.price_list import ListaPrecio, ListaPrecioItem
 from app.domain.models.credito import CuentaCredito, Deuda, TransaccionCredito
@@ -99,12 +97,10 @@ async def init_db():
             CajaSesion,
             CajaGastoCategoria,
             Plan,
-            SaleItem,
-            ProductCostHistory,
+                ProductCostHistory,
             PriceChangeRequest,
             PlanFeatureDocument,
-            PedidoItemDocument,
-            Cliente,
+                Cliente,
             Proveedor,
             ListaPrecio,
             ListaPrecioItem,

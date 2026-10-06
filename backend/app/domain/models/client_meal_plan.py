@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from enum import Enum
 
@@ -22,7 +22,7 @@ class ClientMealPlan(Document):
     comidas_totales: int
     comidas_consumidas: int = 0
     estado: ClientMealPlanStatus = ClientMealPlanStatus.ACTIVO
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "client_meal_plans"

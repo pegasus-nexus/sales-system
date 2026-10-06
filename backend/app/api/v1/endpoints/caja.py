@@ -294,7 +294,7 @@ async def get_resumen(sesion_id: str, current_user: User = Depends(get_current_a
     saldo_calculado = monto_inicial + total_ventas_ef + total_ingresos_ef - total_cambio - total_gastos + total_ajustes
 
     # ── Sales made during this session (for digital channel totals) ───────────
-    cerrada_at = sesion.cerrada_at or datetime.utcnow()
+    cerrada_at = sesion.cerrada_at or datetime.now(timezone.utc)
     sales_in_session = await Sale.find(
         Sale.tenant_id    == tenant_id,
         Sale.sucursal_id  == (sesion.sucursal_id),
@@ -474,6 +474,6 @@ async def delete_categoria(cat_id: str, current_user: User = Depends(get_current
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     
     cat.is_active = False
-    cat.deleted_at = datetime.utcnow()
+    cat.deleted_at = datetime.now(timezone.utc)
     await cat.save()
     return {"status": "deleted"}

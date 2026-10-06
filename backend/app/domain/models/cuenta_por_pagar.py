@@ -1,7 +1,7 @@
 from typing import Optional, List
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from .base import DecimalMoney
 
@@ -19,8 +19,8 @@ class EstadoCuentaPorPagar(str, Enum):
     CANCELADO = "CANCELADO"
 
 class TransaccionPagoProveedor(BaseModel):
-    id_transaccion: str = Field(default_factory=lambda: datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-    fecha_pago: datetime = Field(default_factory=datetime.utcnow)
+    id_transaccion: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S"))
+    fecha_pago: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     monto: DecimalMoney
     metodo_pago: str
     referencia: Optional[str] = None
@@ -42,14 +42,14 @@ class CuentaPorPagar(Document):
     saldo_pendiente: DecimalMoney
     
     estado: EstadoCuentaPorPagar = EstadoCuentaPorPagar.PENDIENTE
-    fecha_emision: datetime = Field(default_factory=datetime.utcnow)
+    fecha_emision: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_vencimiento: Optional[datetime] = None
     
     pagos: List[TransaccionPagoProveedor] = []
     notas: Optional[str] = None
     
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "cuentas_por_pagar"

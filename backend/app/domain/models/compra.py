@@ -1,7 +1,7 @@
 from typing import List, Optional
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from .base import DecimalMoney
 
@@ -31,15 +31,15 @@ class PurchaseOrder(Document):
     proveedor_nombre: str
     numero_pedido: str
     estado: PurchaseOrderStatus = PurchaseOrderStatus.BORRADOR
-    fecha_emision: datetime = Field(default_factory=datetime.utcnow)
+    fecha_emision: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_esperada: Optional[datetime] = None
     detalles: List[PurchaseOrderItem] = []
     total_estimado: DecimalMoney = DecimalMoney("0.0")
     notas: Optional[str] = None
     creado_por: str  # usuario_id
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "purchase_orders"
@@ -70,7 +70,7 @@ class PurchaseReception(Document):
     proveedor_nombre: str
     purchase_order_id: Optional[str] = None
     numero_documento: str  # Factura, Recibo, Guía
-    fecha_recepcion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_recepcion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     detalles: List[PurchaseReceptionItem] = []
     total_real: DecimalMoney = DecimalMoney("0.0")
     
@@ -83,7 +83,7 @@ class PurchaseReception(Document):
     es_historico: bool = False
     creado_por: str  # usuario_id
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "purchase_receptions"

@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, List
 from enum import Enum
 
@@ -22,7 +22,7 @@ class MealSchedule(Document):
     estado: MealScheduleStatus = MealScheduleStatus.PROGRAMADO
     motivo_postergacion: Optional[str] = None
     entregado_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "meal_schedules"

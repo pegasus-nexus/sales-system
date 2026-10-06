@@ -3,7 +3,6 @@ from typing import Dict, Any, Optional
 from decimal import Decimal
 from app.infrastructure.auth import get_current_active_user, require_roles
 from app.domain.models.user import User, UserRole
-from app.domain.models.sale_item import SaleItem
 from app.domain.models.sucursal import Sucursal
 from app.domain.models.sale import Sale
 from app.domain.models.caja import CajaMovimiento, SubtipoMovimiento, CajaGastoCategoria

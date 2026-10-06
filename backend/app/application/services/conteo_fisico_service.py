@@ -1,5 +1,5 @@
 ﻿from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import pytz
 from fastapi import HTTPException
 from app.domain.models.conteo_fisico import ConteoFisico, ConteoItem, EstadoConteo
@@ -179,7 +179,7 @@ class ConteoFisicoService:
             raise HTTPException(status_code=400, detail="El conteo ya está finalizado")
             
         conteo.estado = EstadoConteo.FINALIZADO
-        conteo.fecha_cierre = datetime.utcnow()
+        conteo.fecha_cierre = datetime.now(timezone.utc)
         await self.repository.update(conteo)
         return await self.get_conteo(conteo_id, tenant_id)
         
@@ -190,6 +190,6 @@ class ConteoFisicoService:
             
         # Soft delete
         conteo.is_active = False
-        conteo.deleted_at = datetime.utcnow()
+        conteo.deleted_at = datetime.now(timezone.utc)
         await self.repository.update(conteo)
         return True

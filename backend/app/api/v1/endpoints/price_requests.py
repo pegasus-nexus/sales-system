@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.domain.models.price_request import PriceChangeRequest, PriceRequestStatus
@@ -110,7 +110,7 @@ async def responder_solicitud_precio(
     request.estado = data.estado
     request.motivo_rechazo = data.motivo_rechazo
     request.respondido_por = str(current_user.id)
-    request.responded_at = datetime.utcnow()
+    request.responded_at = datetime.now(timezone.utc)
 
     if data.estado == PriceRequestStatus.APROBADO:
         # Update Inventario price override
@@ -122,14 +122,14 @@ async def responder_solicitud_precio(
         update = {
             "$set": {
                 "precio_sucursal": request.precio_propuesto,
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.now(timezone.utc)
             },
             "$setOnInsert": {
                 "tenant_id": request.tenant_id,
                 "sucursal_id": request.sucursal_id,
                 "producto_id": request.producto_id,
                 "cantidad": 0,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
         }
         await Inventario.get_pymongo_collection().find_one_and_update(query, update, upsert=True)
@@ -159,20 +159,20 @@ async def override_branch_price(
     
     if nuevo_precio is None:
         update = {
-            "$set": {"precio_sucursal": None, "updated_at": datetime.utcnow()}
+            "$set": {"precio_sucursal": None, "updated_at": datetime.now(timezone.utc)}
         }
     else:
         update = {
             "$set": {
                 "precio_sucursal": nuevo_precio,
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.now(timezone.utc)
             },
             "$setOnInsert": {
                 "tenant_id": tenant_id,
                 "sucursal_id": sucursal_id,
                 "producto_id": producto_id,
                 "cantidad": 0,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
         }
         

@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo import IndexModel
 from .base import DecimalMoney
 from typing import Optional
@@ -19,8 +19,8 @@ class Inventario(Document):
     producto_id: str      # Product._id
     cantidad: float = 0.0
     precio_sucursal: Optional[DecimalMoney] = None  # Branch-specific price override
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "inventario"
@@ -68,7 +68,7 @@ class InventoryLog(Document):
     usuario_nombre: str
     notas: str = ""
     referencia_id: str = ""      # e.g., Sale ID, Transfer ID
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "inventory_logs"

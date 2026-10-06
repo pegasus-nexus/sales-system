@@ -4,7 +4,7 @@ from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.domain.models.descuento import DescuentoCreate, DescuentoUpdate, DescuentoResponse, Descuento
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -96,7 +96,7 @@ async def update_descuento(
     if update_data:
         for key, value in update_data.items():
             setattr(existente, key, value)
-        existente.updated_at = datetime.utcnow()
+        existente.updated_at = datetime.now(timezone.utc)
         await existente.save()
     
     return DescuentoResponse(**existente.model_dump(), _id=str(existente.id))
@@ -126,4 +126,4 @@ async def delete_descuento(
     if current_user.role == "ADMIN_SUCURSAL" and existente.creado_por_rol in ["ADMIN", "SUPERADMIN", "ADMIN_MATRIZ"]:
         raise HTTPException(status_code=403, detail="No puedes eliminar un descuento administrado por la Matriz")
         
-    await existente.delete()
+    await existente.soft_delete()

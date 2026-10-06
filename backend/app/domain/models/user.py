@@ -2,7 +2,7 @@ from typing import Optional, List
 from enum import Enum
 from beanie import Document
 from pydantic import Field, EmailStr
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 from .base import SoftDeleteMixin
@@ -33,7 +33,7 @@ class User(Document, SoftDeleteMixin):
     sucursal_id: Optional[str] = None  # Links to Sucursal, None = Matriz level
     last_active_at: Optional[datetime] = None
     permisos_especiales: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "users"

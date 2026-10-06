@@ -2,7 +2,7 @@ from typing import Optional
 from enum import Enum
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 from .base import SoftDeleteMixin
@@ -26,7 +26,7 @@ class Sucursal(Document, SoftDeleteMixin):
     direccion: str                       # full street address
     telefono: Optional[str] = None
     tipo: TipoSucursal = TipoSucursal.FISICA
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "sucursales"

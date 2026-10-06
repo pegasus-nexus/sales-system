@@ -130,7 +130,7 @@ async def delete_saas_staff(
     if not staff or staff.role != UserRole.SUPERADMIN_STAFF:
         raise HTTPException(status_code=404, detail="SaaS Staff user not found")
 
-    await staff.delete()
+    await staff.soft_delete()
 
 @router.put("/{user_id}", response_model=SaasStaffResponse)
 async def update_saas_staff(

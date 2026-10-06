@@ -1,6 +1,6 @@
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from enum import Enum
 from .base import SoftDeleteMixin
@@ -24,7 +24,7 @@ class Recipe(Document, SoftDeleteMixin):
     tipo: RecipeType = RecipeType.PLATO_FINAL
     precio_extra: Optional[float] = 0.0 # Por si este topping tiene costo extra en el bowl
     is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "recipes"

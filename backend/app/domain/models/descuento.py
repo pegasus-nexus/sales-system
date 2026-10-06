@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from typing import Optional, Literal
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from beanie import Document
 
@@ -21,8 +21,8 @@ class Descuento(Document, SoftDeleteMixin):
     uso_maximo: Optional[int] = None
     uso_actual: int = 0
     creado_por_rol: str = "ADMIN_MATRIZ"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @model_validator(mode="after")
     def validar_sucursal(self):

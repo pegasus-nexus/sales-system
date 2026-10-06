@@ -5,7 +5,7 @@ import logging
 import asyncio
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from fastapi import HTTPException
 from pymongo import ReturnDocument
@@ -13,7 +13,6 @@ from pymongo.errors import DuplicateKeyError
 from decimal import Decimal
 
 from app.domain.models.sale import Sale, SaleItem, PagoItem, ClienteInfo, QRInfo, EstadoPago
-from app.domain.models.sale_item import SaleItem as SaleItemAnalytics
 from app.domain.models.product import Product
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.caja import CajaMovimiento, CajaSesion, EstadoSesion, SubtipoMovimiento
@@ -76,7 +75,7 @@ class SalesService:
                 return existing_sale
 
         # ── Lock Anti-Duplicado Secundario (Ventana de 5 segundos) ──────────────
-        five_sec_ago = datetime.utcnow() - timedelta(seconds=5)
+        five_sec_ago = datetime.now(timezone.utc) - timedelta(seconds=5)
         new_items_summary = sorted([(i.producto_id, i.cantidad) for i in sale_in.items])
 
         recent_sales = await Sale.find({
@@ -102,7 +101,7 @@ class SalesService:
         client = get_client()
 
         async def _run_transaction() -> Sale:
-            fecha_transaccion = sale_in.fecha_venta if sale_in.fecha_venta else datetime.utcnow()
+            fecha_transaccion = sale_in.fecha_venta if sale_in.fecha_venta else datetime.now(timezone.utc)
             async with await client.start_session() as session:
                 async with session.start_transaction():
                     sale_items: List[SaleItem] = []
@@ -208,19 +207,7 @@ class SalesService:
                                 created_at=fecha_transaccion
                             ).create(session=session)
 
-                        await SaleItemAnalytics(
-                            tenant_id=tenant_id,
-                            sucursal_id=sucursal_id,
-                            sale_id="PENDING",
-                            sale_date=fecha_transaccion,
-                            producto_id=str(product.id),
-                            descripcion=product.descripcion,
-                            cantidad=item.cantidad,
-                            precio_unitario=unit_price,
-                            costo_unitario=product.costo_producto,
-                            descuento_unitario=desc,
-                            subtotal=subtotal
-                        ).create(session=session)
+                        
 
                     if sale_in.descuento:
                         val = DecimalMoney(sale_in.descuento.valor)
@@ -433,7 +420,7 @@ class SalesService:
                             raise HTTPException(status_code=400, detail="No puedes vender un Plan sin asignar la venta a un cliente.")
                         from app.domain.models.meal_plan_template import MealPlanTemplate
                         from app.domain.models.client_meal_plan import ClientMealPlan
-                        from datetime import timedelta
+                        from datetime import timedelta, timezone
                         for template_id, cantidad_vendida in meal_plans_to_create:
                             template = await MealPlanTemplate.get(template_id, session=session)
                             if not template:
@@ -445,8 +432,8 @@ class SalesService:
                                     cliente_id=sale.cliente_id,
                                     template_id=template_id,
                                     sale_id=str(sale.id),
-                                    fecha_inicio=datetime.utcnow(),
-                                    fecha_fin_estimada=datetime.utcnow() + timedelta(days=template.dias_vigencia),
+                                    fecha_inicio=datetime.now(timezone.utc),
+                                    fecha_fin_estimada=datetime.now(timezone.utc) + timedelta(days=template.dias_vigencia),
                                     comidas_totales=template.cantidad_comidas,
                                     comidas_consumidas=0
                                 )

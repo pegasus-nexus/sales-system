@@ -197,7 +197,7 @@ async def ajustar_inventario(
 
     from app.domain.models.inventario import TipoMovimiento, InventoryLog
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     set_on_insert = {
         "tenant_id": tenant_id,
         "sucursal_id": sucursal_id,
@@ -332,7 +332,7 @@ async def ajustar_inventario_masivo(
     if not ajustes_permitidos:
         return {"message": "No se encontraron productos válidos o autorizados", "procesados": 0}
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     operaciones_update = []
     logs_a_insertar = []
     resultados = []

@@ -1,5 +1,5 @@
 from typing import List, Optional, Literal
-from datetime import datetime
+from datetime import datetime, timezone
 from beanie import Document
 from pydantic import BaseModel, Field
 from .base import DecimalMoney
@@ -18,8 +18,8 @@ class CuentaCredito(Document):
     saldo_total: DecimalMoney = DecimalMoney("0")
     limite_credito: Optional[DecimalMoney] = None
     estado_cuenta: EstadoCuenta = EstadoCuenta.AL_DIA
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "cuentas_credito"
@@ -45,8 +45,8 @@ class Deuda(Document):
     fecha_vencimiento: Optional[datetime] = None  # Opcional si hay plazos fijos futuro
     estado: EstadoDeuda = EstadoDeuda.PENDIENTE
     
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "deudas"
@@ -85,7 +85,7 @@ class TransaccionCredito(Document):
     anulada_por: Optional[str] = None
     
     notas: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "transacciones_credito"

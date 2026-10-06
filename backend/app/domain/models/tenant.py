@@ -2,7 +2,7 @@ from typing import Optional, List
 from enum import Enum
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import Field, BaseModel
 
 class WhatsAppSettings(BaseModel):
@@ -76,7 +76,7 @@ class Tenant(Document, SoftDeleteMixin):
     configuracion: dict = Field(default_factory=dict)
     rubro: RubroEmpresa = Field(default=RubroEmpresa.RETAIL)
     modulos_activos: List[str] = Field(default_factory=lambda: ["INVENTARIO", "POS", "KARDEX"])
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "tenants"

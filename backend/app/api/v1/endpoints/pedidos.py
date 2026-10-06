@@ -11,7 +11,6 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from app.domain.models.pedido_interno import PedidoInterno, PedidoItem, EstadoPedido
-from app.domain.models.pedido_item import PedidoItemDocument
 from app.domain.models.inventario import Inventario, TipoMovimiento, InventoryLog
 from pymongo import ReturnDocument
 from app.domain.models.product import Product

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.utils.date_utils import get_now_bolivia
 
@@ -12,7 +12,6 @@ from pydantic import BaseModel
 
 from app.domain.models.sale import Sale, ClienteInfo, PagoItem, SaleItem
 
-from app.domain.models.sale_item import SaleItem as SaleItemAnalytics
 
 from app.domain.models.product import Product
 
@@ -666,7 +665,7 @@ async def update_qr_info(
 
     sale.qr_info.confirmado = True
 
-    sale.qr_info.confirmado_at = datetime.utcnow()
+    sale.qr_info.confirmado_at = datetime.now(timezone.utc)
 
     sale.qr_info.confirmado_por = current_user.full_name or current_user.username
 

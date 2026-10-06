@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
@@ -11,7 +11,6 @@ from app.domain.models.cliente import Cliente
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.product import Product
 from app.domain.models.sale import EstadoPago, PagoItem, Sale, SaleItem
-from app.domain.models.sale_item import SaleItem as SaleItemAnalytics
 from app.domain.models.user import User, UserRole
 from app.domain.models.base import DecimalMoney
 from app.infrastructure.core.config import settings
@@ -82,7 +81,7 @@ class SalesAnulacionService:
                     if current_user.role == UserRole.CAJERO:
                         if sale.cashier_id != str(current_user.id):
                             raise HTTPException(status_code=403, detail="Los cajeros solo pueden anular sus propias ventas")
-                        hours_diff = (datetime.utcnow() - sale.created_at).total_seconds() / 3600
+                        hours_diff = (datetime.now(timezone.utc) - sale.created_at).total_seconds() / 3600
                         if hours_diff > 24:
                             raise HTTPException(status_code=403, detail="Un cajero no puede anular una venta pasada de 24 horas.")
 
@@ -141,7 +140,7 @@ class SalesAnulacionService:
                                 from decimal import Decimal
                                 nuevo_saldo = max(Decimal("0"), Decimal(str(cuenta.saldo_total)) - Decimal(str(deuda.saldo_pendiente)))
                                 cuenta.saldo_total = DecimalMoney(str(nuevo_saldo))
-                                cuenta.updated_at = datetime.utcnow()
+                                cuenta.updated_at = datetime.now(timezone.utc)
                                 await cuenta.save(session=session)
 
                             transaccion = TransaccionCredito(
@@ -160,7 +159,7 @@ class SalesAnulacionService:
 
                             deuda.saldo_pendiente = DecimalMoney("0")
                             deuda.estado = EstadoDeuda.ANULADA
-                            deuda.updated_at = datetime.utcnow()
+                            deuda.updated_at = datetime.now(timezone.utc)
                             await deuda.save(session=session)
 
                     if sale.cliente_id:
@@ -245,15 +244,11 @@ class SalesAnulacionService:
                     sale.notas_anulacion      = notas
                     sale.anulada_por_id       = str(current_user.id)
                     sale.anulada_por_nombre   = current_user.full_name or current_user.username
-                    sale.anulada_at           = datetime.utcnow()
+                    sale.anulada_at           = datetime.now(timezone.utc)
                     sale.metodo_pago_correcto = metodo_pago_correcto
                     await SalesAnulacionService._get_sale_repo().update(sale, session=session)
 
-                    await SaleItemAnalytics.find(
-                        SaleItemAnalytics.tenant_id == tenant_id,
-                        SaleItemAnalytics.sale_id == str(sale.id),
-                        session=session
-                    ).delete(session=session)
+                    
 
                     # ── 4. CLONAR Y CREAR NUEVA VENTA CON MÉTODO CORRECTO (Para ERROR_COBRO) ──
                     if motivo == "ERROR_COBRO":
@@ -304,7 +299,7 @@ class SalesAnulacionService:
                                 tenant_id=tenant_id,
                                 sucursal_id=sucursal_id,
                                 sale_id=new_sale_id,
-                                sale_date=datetime.utcnow(),
+                                sale_date=datetime.now(timezone.utc),
                                 producto_id=item.producto_id,
                                 descripcion=item.descripcion,
                                 cantidad=item.cantidad,
@@ -332,7 +327,7 @@ class SalesAnulacionService:
                             vendedor_id=sale.vendedor_id,
                             vendedor_name=sale.vendedor_name,
                             anulada=False,
-                            created_at=datetime.utcnow(),
+                            created_at=datetime.now(timezone.utc),
                             notas_anulacion=f"[Creada automáticamente por corrección del Ticket #{str(sale.id)[-6:].upper()}]"
                         )
                         await SalesAnulacionService._get_sale_repo().add(new_sale, session=session)

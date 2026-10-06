@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from fastapi import HTTPException
 from pymongo import ReturnDocument
@@ -123,7 +123,7 @@ class TrasladoService:
 
                     # For CLIENT transfers: immediately COMPLETADO (goods delivered in hand)
                     estado_inicial = EstadoTraslado.COMPLETADO if destino_tipo == "CLIENTE" else EstadoTraslado.EN_TRANSITO
-                    completado_at = datetime.utcnow() if destino_tipo == "CLIENTE" else None
+                    completado_at = datetime.now(timezone.utc) if destino_tipo == "CLIENTE" else None
 
                     # Mark items as received if cliente (complete immediately)
                     if destino_tipo == "CLIENTE":
@@ -221,8 +221,8 @@ class TrasladoService:
                                     "$inc": {"cantidad": qty_recibida},
                                     "$setOnInsert": {
                                         "almacen_id": almacen_destino,
-                                        "created_at": datetime.utcnow(),
-                                        "updated_at": datetime.utcnow()
+                                        "created_at": datetime.now(timezone.utc),
+                                        "updated_at": datetime.now(timezone.utc)
                                     }
                                 },
                                 upsert=True,
@@ -249,7 +249,7 @@ class TrasladoService:
 
                     traslado.estado = EstadoTraslado.COMPLETADO
                     traslado.valor_total_recibido = valor_total_recibido
-                    traslado.completado_at = datetime.utcnow()
+                    traslado.completado_at = datetime.now(timezone.utc)
                     traslado.recibido_por_id = str(current_user.id)
                     traslado.recibido_por_nombre = current_user.full_name or current_user.username
                     if body.notas:
@@ -312,7 +312,7 @@ class TrasladoService:
                         ).create(session=session)
 
                     traslado.estado = EstadoTraslado.CANCELADO
-                    traslado.cancelado_at = datetime.utcnow()
+                    traslado.cancelado_at = datetime.now(timezone.utc)
                     traslado.cancelado_por_id = str(current_user.id)
                     traslado.cancelado_por_nombre = current_user.full_name or current_user.username
                     await traslado.save(session=session)

@@ -313,7 +313,7 @@ async def toggle_employee_status(
         raise HTTPException(status_code=400, detail="No puedes desactivar tu propio usuario")
         
     target_user.is_active = is_active
-    target_user.deleted_at = None if is_active else datetime.utcnow()
+    target_user.deleted_at = None if is_active else datetime.now(timezone.utc)
     await target_user.save()
     from app.infrastructure.core.audit import log_audit
     action = "ACTIVATE_USER" if is_active else "DEACTIVATE_USER"

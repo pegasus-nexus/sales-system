@@ -32,7 +32,7 @@ class InventarioService:
         async with await client.start_session() as session:
             async with session.start_transaction():
                 from pymongo import ReturnDocument
-                from datetime import datetime
+                from datetime import datetime, timezone
 
                 motor_coll = Inventario.get_pymongo_collection()
                 query = {
@@ -44,7 +44,7 @@ class InventarioService:
                 entry_before = await motor_coll.find_one(query, session=session)
                 stock_anterior = entry_before["cantidad"] if entry_before else 0
                 
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 set_on_insert = {
                     "tenant_id": tenant_id,
                     "sucursal_id": sucursal_id,

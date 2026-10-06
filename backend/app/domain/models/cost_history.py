@@ -2,7 +2,7 @@ from .base import DecimalMoney
 from typing import Optional
 from beanie import Document
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ProductCostHistory(Document):
     """
@@ -17,7 +17,7 @@ class ProductCostHistory(Document):
     motivo: Optional[str] = None
     cambiado_por: str              # user_id
     cambiado_por_nombre: str       # Snapshot of user name
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "product_cost_history"

@@ -2,7 +2,7 @@ from typing import List, Optional
 from enum import Enum
 from beanie import Document
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import DecimalMoney
 
 
@@ -43,7 +43,7 @@ class PedidoInterno(Document):
     etiquetas_ids: List[str] = Field(default_factory=list)
     total_mayorista: DecimalMoney = DecimalMoney("0.0")        # calculated on despacho
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     aceptado_at: Optional[datetime] = None
     despachado_at: Optional[datetime] = None
     recibido_at: Optional[datetime] = None
