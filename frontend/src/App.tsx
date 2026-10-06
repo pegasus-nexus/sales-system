@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+﻿import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
@@ -46,6 +46,7 @@ const IngresoMercaderiaPage = lazy(() => import('./pages/IngresoMercaderiaPage')
 const IngresoHistoricoPage = lazy(() => import('./pages/IngresoHistoricoPage'));
 const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage'));
 const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
+const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant } from './api/api';
 import { Toaster } from 'sonner';
@@ -411,6 +412,11 @@ function App() {
                       <Route path="/contabilidad" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                           <ContabilidadPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/calculadora-margenes" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <CalculadoraMargenesPage />
                         </ProtectedRoute>
                       } />
 

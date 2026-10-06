@@ -1,0 +1,83 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=3cm}
+
+\title{\textbf{Reporte Estratégico de Escalabilidad, Costos y Beneficios} \\ \Large Pegasus SaaS}
+\author{Ingeniería de Arquitectura y Negocios}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+El presente informe detalla la capacidad operativa actual de la infraestructura de Pegasus SalesSystem, las proyecciones de escalabilidad frente a usuarios concurrentes, y un análisis de rentabilidad (punto de equilibrio) basado en los costos de infraestructura en la nube.
+\end{abstract}
+
+\section{Análisis de Infraestructura Actual}
+Actualmente, el sistema opera con una arquitectura \textit{Serverless} en Vercel y MongoDB Atlas. En este modelo, el número de conexiones a la base de datos ($C$) crece linealmente con el número de peticiones concurrentes ($P$), ya que cada ejecución sin servidor abre una conexión independiente.
+
+Aplicando la Ley de Little, el número promedio de conexiones concurrentes en el sistema está dado por:
+\begin{equation}
+    C = \lambda \times W
+\end{equation}
+Donde:
+\begin{itemize}
+    \item $\lambda$ = Tasa de llegada de peticiones (peticiones por segundo).
+    \item $W$ = Tiempo promedio de procesamiento en Vercel (incluyendo tiempo de red).
+\end{itemize}
+
+\subsection{Límites Técnicos de Usuarios}
+Asumiendo que un clúster estándar de MongoDB (Ej. M10) soporta un máximo de $C_{max} = 1500$ conexiones. Si el tiempo promedio de respuesta es $W = 0.5$ segundos, la capacidad máxima teórica es:
+\begin{equation}
+    \lambda_{max} = \frac{C_{max}}{W} = \frac{1500}{0.5} = 3000 \text{ peticiones/segundo}
+\end{equation}
+Considerando que un usuario activo (cajero) realiza en promedio 1 petición cada 10 segundos ($\frac{1}{10}$ req/s), la infraestructura actual sin optimizar soporta:
+\begin{equation}
+    U_{max} = \frac{\lambda_{max}}{0.1} = 30,000 \text{ usuarios activos simultáneos}
+\end{equation}
+\textbf{Advertencia:} Vercel impone límites de ejecución paralela antes de llegar a este punto, por lo cual la limitante real se encuentra cerca de los \textbf{1,000 usuarios concurrentes} (aprox. 300 empresas/sucursales conectadas a la vez) en su plan gratuito/pro.
+
+\section{Estructura de Costos (OPEX)}
+Para soportar la primera fase de crecimiento (500 tenants/empresas), la estructura de costos mensuales ($C_T$) se modela como:
+\begin{equation}
+    C_T(u) = C_{fijo} + (C_{var} \times u)
+\end{equation}
+Donde $u$ es el número de empresas (tenants).
+\begin{itemize}
+    \item $C_{fijo}$ = \$80 USD (Vercel Pro \$20 + MongoDB M10 \$60).
+    \item $C_{var}$ = \$0.50 USD (Costo estimado de almacenamiento de imágenes, backups y ancho de banda por tenant).
+\end{itemize}
+
+\section{Análisis de Rentabilidad y Punto de Equilibrio}
+Definimos el Ingreso Total ($I_T$) basado en una tarifa de suscripción mensual ($P$) promedio de \$30 USD por tenant:
+\begin{equation}
+    I_T(u) = P \times u = 30u
+\end{equation}
+
+El \textit{Break-Even Point} (Punto de Equilibrio $u_{eq}$) ocurre cuando $I_T(u) = C_T(u)$:
+\begin{equation}
+    30u = 80 + 0.50u
+\end{equation}
+\begin{equation}
+    29.5u = 80 \implies u_{eq} \approx 2.71 \text{ empresas}
+\end{equation}
+\textbf{Conclusión Financiera:} El sistema requiere únicamente de \textbf{3 empresas pagando suscripción} para ser operativamente rentable y cubrir los costos de los servidores base. A partir del cliente número 4, el modelo entra en margen de ganancia neta.
+
+\section{Estrategia de Mitigación: Free Trials}
+Si se ofrecen pruebas gratuitas, estas empresas representan un costo variable sin ingresos. Si $u_f$ es el número de usuarios gratuitos, el costo perdido mensual es $C_{var} \times u_f$. 
+Para evitar escenarios de pérdida, se debe programar un \textit{Hard Limit} (borrado lógico a los 14 días), limitando la acumulación de $u_f$.
+
+\section{Conclusión}
+La infraestructura actual es idónea para la Fase 1 (hasta 300 empresas). Sin embargo, al sobrepasar la barrera de 1,000 usuarios concurrentes, el Backend debe ser migrado de Vercel (Serverless) a una arquitectura de Contenedores en Render o Google Cloud Run para establecer un \textit{Connection Pooler} permanente y evitar el colapso de la base de datos por saturación de la ecuación de Little.
+
+\end{document}

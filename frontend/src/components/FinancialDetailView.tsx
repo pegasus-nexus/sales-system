@@ -9,8 +9,7 @@ import { getBoliviaTodayISO } from '../utils/dateUtils';
 import { descargarPDFFinanzas } from '../utils/reportPDF';
 
 import { 
-    ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, Legend, PieChart, Pie, Cell
+    ResponsiveContainer, AreaChart, Area, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell
 } from 'recharts';
 
 const formatBs = (num?: number) => `Bs. ${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -19,7 +18,7 @@ export default function FinancialDetailView() {
     const today = getBoliviaTodayISO();
     const sevenDaysAgo = (() => {
         const d = new Date(today);
-        d.setDate(d.getDate() - 7);
+        d.setDate(d.getDate() - 6);
         return d.toISOString().split('T')[0];
     })();
     
@@ -328,10 +327,10 @@ export default function FinancialDetailView() {
                             </h3>
                             <div className="h-[300px] w-full">
                                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-                                    <AreaChart data={report}>
+                                    <ComposedChart data={report}>
                                         <defs>
-                                            <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#818cf8" stopOpacity={0.1}/>
+                                            <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#818cf8" stopOpacity={0.15}/>
                                                 <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
@@ -342,10 +341,12 @@ export default function FinancialDetailView() {
                                             contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
                                             formatter={(value) => `Bs. ${Number(value).toFixed(2)}`}
                                         />
-                                        <Legend verticalAlign="top" height={36}/>
-                                        <Area type="monotone" dataKey="margen_total" name="Margen Total" stroke="#818cf8" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={3} />
-                                        <Area type="monotone" dataKey="margen_distribuidor" name="Comisión Matriz" stroke="#10b981" fill="transparent" strokeWidth={2} strokeDasharray="5 5" />
-                                    </AreaChart>
+                                        <Legend verticalAlign="top" height={36} wrapperStyle={{fontSize: '11px', fontWeight: 'bold'}} />
+                                        <Area type="monotone" dataKey="total_publico" name="Ventas Totales" stroke="#818cf8" fillOpacity={1} fill="url(#colorVentas)" strokeWidth={2} />
+                                        <Line type="monotone" dataKey="margen_total" name="Margen Total" stroke="#10b981" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+                                        <Line type="monotone" dataKey="margen_retail" name="Margen Retail" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                                        <Line type="monotone" dataKey="margen_distribuidor" name="Utilidad 15%" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                                    </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
@@ -451,3 +452,5 @@ export default function FinancialDetailView() {
         </div>
     );
 }
+
+

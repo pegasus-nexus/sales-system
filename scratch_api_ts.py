@@ -1,0 +1,21 @@
+﻿import sys
+
+with open("frontend/src/api/api.ts", "a", encoding="utf-8") as f:
+    f.write("\n")
+    f.write("export interface DashboardMatrizMetrics {\n")
+    f.write("    ventas_hoy: number;\n")
+    f.write("    transacciones_ventas: number;\n")
+    f.write("    transacciones_compras: number;\n")
+    f.write("    anulaciones_hoy: number;\n")
+    f.write("    personal_activo: { id: string; nombre: string; ventas_hoy: number; transacciones: number }[];\n")
+    f.write("    productos_mas_vendidos: { producto_id: string; nombre: string; cantidad: number; ingresos: number }[];\n")
+    f.write("    grafico_mensual: { mes: string; mes_index: number; ventas_totales: number; margen_distribuidor: number; margen_cliente: number }[];\n")
+    f.write("    grafico_diario: { dia: number; ventas_totales: number; margen_distribuidor: number; margen_cliente: number }[];\n")
+    f.write("    mes_actual: number;\n")
+    f.write("    dia_actual: number;\n")
+    f.write("}\n")
+    f.write("\n")
+    f.write("export const getDashboardMatriz = (sucursal_id?: string) => {\n")
+    f.write("    const url = sucursal_id && sucursal_id !== 'all' ? `/dashboard-matriz?sucursal_id=${sucursal_id}` : '/dashboard-matriz';\n")
+    f.write("    return client<DashboardMatrizMetrics>(url);\n")
+    f.write("};\n")

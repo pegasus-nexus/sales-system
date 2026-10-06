@@ -210,6 +210,7 @@ export default function Layout({ children }: LayoutProps) {
                 icon: Package,
                 items: [
                     { icon: Package, label: 'Catálogo', path: '/catalogo', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
+                    { icon: Calculator, label: 'Simulador de Márgenes', path: '/calculadora-margenes', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: Warehouse, label: 'Inventario', path: '/inventario', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: ClipboardList, label: 'Conteo Fisico', path: '/auditoria-inventario', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
                     { icon: Tag, label: 'Categorías', path: '/categories', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
