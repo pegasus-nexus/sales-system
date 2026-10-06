@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
-    LayoutDashboard, Wallet, ShoppingBag, LogOut,
+    LayoutDashboard, Wallet, ShoppingBag, LogOut, Calculator,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen
@@ -773,3 +773,4 @@ export default function Layout({ children }: LayoutProps) {
         </div>
     );
 }
+

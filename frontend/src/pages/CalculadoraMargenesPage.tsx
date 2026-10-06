@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, Save, Search, TrendingUp, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+﻿import { useState, useEffect, useMemo } from 'react';
+import { Calculator, Save, Search, CheckCircle2, RefreshCw } from 'lucide-react';
 import { getProducts, updateProduct } from '../api/api';
 import type { Product } from '../api/types';
 
@@ -17,7 +17,7 @@ export default function CalculadoraMargenesPage() {
         const fetchProducts = async () => {
             try {
                 const data = await getProducts();
-                setProducts(data);
+                setProducts(data.items || []);
             } catch (error) {
                 console.error(error);
             } finally {
@@ -58,7 +58,7 @@ export default function CalculadoraMargenesPage() {
     };
 
     const filteredProducts = useMemo(() => {
-        return products.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+        return products.filter(p => p.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [products, searchTerm]);
 
     return (
@@ -116,7 +116,7 @@ export default function CalculadoraMargenesPage() {
                                     return (
                                         <tr key={p._id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-4 py-4">
-                                                <p className="text-sm font-bold text-gray-900">{p.nombre}</p>
+                                                <p className="text-sm font-bold text-gray-900">{p.descripcion}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase">{p.categoria_nombre}</p>
                                             </td>
                                             <td className="px-4 py-4 text-right">
@@ -186,4 +186,5 @@ export default function CalculadoraMargenesPage() {
         </div>
     );
 }
+
 
