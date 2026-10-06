@@ -107,9 +107,6 @@ class CompraService:
 
                 # 3. Procesar cada ítem recibido (Inventario, Kárdex, Precios)
                 for item in reception.detalles:
-                    if reception.es_historico:
-                        continue
-
                     # Fix Bug 2: Resolver almacen_id real de la sucursal
                     from app.domain.models.almacen import Almacen
                     almacen_default = await Almacen.find_one(
@@ -131,26 +128,38 @@ class CompraService:
                     else:
                         inv_query["$or"] = [{"almacen_id": almacen_id}, {"almacen_id": "default"}, {"almacen_id": {"$exists": False}}, {"almacen_id": None}]
 
-                    inventario = await Inventario.find_one(inv_query, session=session)
+                    from pymongo import ReturnDocument
                     
-                    stock_previo = inventario.cantidad if inventario else 0.0
-                    nuevo_stock = stock_previo + item.cantidad_recibida
+                    # Usar find_one_and_update para operacion atomica
+                    inventario_pre = await Inventario.find_one(inv_query, session=session)
+                    stock_previo = inventario_pre.cantidad if inventario_pre else 0.0
                     
-                    if inventario:
-                        inventario.cantidad = nuevo_stock
-                        if almacen_id != "default" and inventario.almacen_id in (None, "default"):
-                            inventario.almacen_id = almacen_id
-                        inventario.updated_at = datetime.now(timezone.utc)
-                        await inventario.save(session=session)
-                    else:
-                        inventario = Inventario(
-                            tenant_id=reception.tenant_id,
-                            sucursal_id=reception.sucursal_id,
-                            almacen_id=almacen_id,
-                            producto_id=item.producto_id,
-                            cantidad=nuevo_stock
+                    if not reception.es_historico:
+                        # Incremento atomico
+                        update_op = {
+                            "$inc": {"cantidad": item.cantidad_recibida},
+                            "$set": {"updated_at": datetime.now(timezone.utc)},
+                            "$setOnInsert": {
+                                "tenant_id": reception.tenant_id,
+                                "sucursal_id": reception.sucursal_id,
+                                "almacen_id": almacen_id,
+                                "producto_id": item.producto_id,
+                                "created_at": datetime.now(timezone.utc)
+                            }
+                        }
+                        raw_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                            inv_query,
+                            update_op,
+                            upsert=True,
+                            return_document=ReturnDocument.AFTER,
+                            session=session.client_session if hasattr(session, "client_session") else session
                         )
-                        await inventario.insert(session=session)
+                        nuevo_stock = raw_inv["cantidad"]
+                        almacen_final = raw_inv.get("almacen_id", almacen_id)
+                    else:
+                        # Es historico: no incrementamos stock real
+                        nuevo_stock = stock_previo
+                        almacen_final = inventario_pre.almacen_id if inventario_pre else almacen_id
                     
                     # --- Obtener Producto para Kárdex y Actualización de Precios ---
                     producto = None
@@ -190,7 +199,7 @@ class CompraService:
                     log = InventoryLog(
                         tenant_id=reception.tenant_id,
                         sucursal_id=reception.sucursal_id,
-                        almacen_id=inventario.almacen_id if inventario else almacen_id,
+                        almacen_id=almacen_final,
                         producto_id=producto_id_log,
                         descripcion=descripcion_log,
                         tipo_movimiento=TipoMovimiento.COMPRA,

@@ -22,6 +22,10 @@ async def create_purchase_order(
     """
     tenant_id = current_user.tenant_id or "default"
     
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
+        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+            raise HTTPException(status_code=403, detail="No tienes permisos especiales para ingresar historial")
+
     detalles = [
         PurchaseOrderItem(
             producto_id=item.producto_id,
@@ -52,9 +56,13 @@ async def create_purchase_order(
 @router.get("/orders/{sucursal_id}", response_model=List[PurchaseOrder])
 async def list_purchase_orders(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.FACTURADOR])),
     service: CompraService = Depends(get_compra_service)
 ):
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
+        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+            raise HTTPException(status_code=403, detail="No tienes permisos para listar ordenes")
+
     """
     Lista todos los pedidos de compra para una sucursal específica.
     """
@@ -97,7 +105,7 @@ async def update_purchase_order_status(
 @router.post("/receptions", response_model=PurchaseReception, status_code=status.HTTP_201_CREATED)
 async def create_purchase_reception(
     reception_in: PurchaseReceptionCreate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.FACTURADOR])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -106,6 +114,10 @@ async def create_purchase_reception(
     """
     tenant_id = current_user.tenant_id or "default"
     
+    if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
+        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+            raise HTTPException(status_code=403, detail="No tienes permisos especiales para ingresar historial")
+
     detalles = [
         PurchaseReceptionItem(
             producto_id=item.producto_id,
