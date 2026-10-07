@@ -1,17 +1,17 @@
-import re
+﻿import os
 
-with open('frontend/src/api/api.ts', 'r', encoding='utf-8') as f:
-    content = f.read()
+path = "frontend/src/api/api.ts"
+with open(path, "r", encoding="utf-8") as f:
+    data = f.read()
 
-if 'unidades_actual' not in content:
-    content = content.replace('diferencia_tx_pct: number;', '''diferencia_tx_pct: number;
-        unidades_actual: number;
-        unidades_anterior: number;
-        diferencia_unidades_pct: number;
-        ticket_promedio_productos_actual: number;
-        ticket_promedio_productos_anterior: number;
-        diferencia_tkt_prod_pct: number;''')
+target = """export const getInventario = (sucursalId: string, almacenId: string = 'default', page: number = 1, limit: number = 50, search: string = '', categoriaId: string = '', stockBajo: boolean = false) => {"""
 
-    with open('frontend/src/api/api.ts', 'w', encoding='utf-8') as f:
-        f.write(content)
-    print("Patched API successfully")
+replacement = """export const corregirKardexProducto = (productoId: string, sucursalId: string) => client<any>(`/inventario/corregir-kardex/${productoId}?sucursal_id=${sucursalId}`, { method: 'POST' });
+
+export const getInventario = (sucursalId: string, almacenId: string = 'default', page: number = 1, limit: number = 50, search: string = '', categoriaId: string = '', stockBajo: boolean = false) => {"""
+
+data = data.replace(target, replacement)
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(data)
+print("api.ts patched")
