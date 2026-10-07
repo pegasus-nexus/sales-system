@@ -21,15 +21,6 @@ async def create_purchase_order(
     Crea un nuevo Pedido de Compra al proveedor.
     """
     tenant_id = current_user.tenant_id or "default"
-    
-    if reception_in.es_historico:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
-            if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
-                raise HTTPException(status_code=403, detail="No tienes permisos para realizar ingresos historicos")
-    else:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
-            if "INGRESO_INVENTARIO" not in (current_user.permisos_especiales or []):
-                raise HTTPException(status_code=403, detail="No tienes permisos para ingresar recepciones")
 
     detalles = [
         PurchaseOrderItem(

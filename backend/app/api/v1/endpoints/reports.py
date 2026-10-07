@@ -210,7 +210,7 @@ async def get_general_reports(
         {"$sort": {"cantidad_vendida": -1}},
         {"$limit": 10}
     ]
-    cursor = SaleItem.get_pymongo_collection().aggregate(top_products_pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(top_products_pipeline)
     top_productos = [normalize_bson(r) for r in await cursor.to_list(length=10)]
     
     # ─── 4. Evolucion Diaria ──────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ async def get_general_reports(
         },
         {"$sort": {"fecha": 1}}
     ]
-    cursor = SaleItem.get_pymongo_collection().aggregate(diaria_pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(diaria_pipeline)
     evolucion_diaria = [normalize_bson(r) for r in await cursor.to_list(length=100)]
     
     return {
@@ -386,7 +386,7 @@ async def get_daily_report(
         },
         {"$sort": {"cantidad": -1}}
     ]
-    cursor = SaleItem.get_pymongo_collection().aggregate(items_vendidos_pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(items_vendidos_pipeline)
     items_summary = await cursor.to_list(length=100)
     items_list = [
         {
@@ -1370,6 +1370,7 @@ async def get_inventory_reconciliation(
     
     desglose_ingresos = {}
     desglose_salidas = {}
+    detalles_anomalias = []
     
     for r in raw_logs:
         tipo = r["_id"]
@@ -1654,7 +1655,7 @@ async def get_product_stats(
         {"$sort": {"fecha": 1}}
     ]
 
-    cursor = SaleItem.get_pymongo_collection().aggregate(pipeline)
+    cursor = Sale.get_pymongo_collection().aggregate(pipeline)
     raw_results = await cursor.to_list(length=5000)
     
     # We must format the data in a way that is easily consumable by Recharts.

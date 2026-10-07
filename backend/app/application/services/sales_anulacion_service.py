@@ -295,20 +295,6 @@ class SalesAnulacionService:
                                         referencia_id=new_sale_id
                                     ).create(session=session)
 
-                            await SaleItemAnalytics(
-                                tenant_id=tenant_id,
-                                sucursal_id=sucursal_id,
-                                sale_id=new_sale_id,
-                                sale_date=datetime.now(timezone.utc),
-                                producto_id=item.producto_id,
-                                descripcion=item.descripcion,
-                                cantidad=item.cantidad,
-                                precio_unitario=item.precio_unitario,
-                                costo_unitario=item.costo_unitario,
-                                descuento_unitario=item.descuento_unitario,
-                                subtotal=item.subtotal
-                            ).create(session=session)
-
                         new_pagos = [PagoItem(metodo=metodo_pago_correcto, monto=sale.total)]
 
                         new_sale = Sale(

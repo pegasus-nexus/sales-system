@@ -166,7 +166,7 @@ async def ajustar_inventario(
 
     # Implementación Atómica con pymongo para evitar DuplicateKeyError y Condiciones de Carrera
     from pymongo import ReturnDocument
-    from datetime import datetime
+    from datetime import datetime, timezone
     import pymongo
 
     motor_coll = Inventario.get_pymongo_collection()
@@ -306,7 +306,7 @@ async def ajustar_inventario_masivo(
 
     from app.domain.models.inventario import TipoMovimiento, InventoryLog
     from pymongo import UpdateOne
-    from datetime import datetime
+    from datetime import datetime, timezone
     import bson
 
     # Filtrar solo ajustes válidos
@@ -597,7 +597,7 @@ async def exportar_movimientos(
             
     from app.domain.models.inventario import InventoryLog
     from app.utils.date_utils import BOLIVIA_TZ
-    from datetime import datetime
+    from datetime import datetime, timezone
     
     if producto_id:
         cursor = InventoryLog.get_motor_collection().find(query).sort("created_at", -1)
@@ -746,7 +746,7 @@ async def export_inventory_excel(
     from fastapi.responses import StreamingResponse
     from app.domain.models.sucursal import Sucursal
     from app.domain.models.product import Product
-    from datetime import datetime
+    from datetime import datetime, timezone
     import pytz
 
     tenant_id = current_user.tenant_id or ""
