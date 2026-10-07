@@ -5,7 +5,7 @@ import logging
 import asyncio
 import random
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import HTTPException
 from pymongo import ReturnDocument
@@ -45,8 +45,6 @@ class SalesService:
             async with session.start_transaction():
                 sale.created_at = nueva_fecha
                 await sale.save(session=session)
-                
-                await SaleItemAnalytics.find(SaleItemAnalytics.sale_id == sale_id, session=session).update({"$set": {"sale_date": nueva_fecha}}, session=session)
                 
                 await InventoryLog.find(InventoryLog.referencia_id == sale_id, session=session).update({"$set": {"created_at": nueva_fecha}}, session=session)
                 
@@ -292,12 +290,6 @@ class SalesService:
                     )
                     await SalesService._get_sale_repo().add(sale, session=session)
 
-                    await SaleItemAnalytics.find(
-                        SaleItemAnalytics.tenant_id == tenant_id,
-                        SaleItemAnalytics.sale_id == "PENDING",
-                        session=session
-                    ).update({"$set": {"sale_id": str(sale.id)}}, session=session)
-
                     await InventoryLog.find(
                         InventoryLog.tenant_id == tenant_id,
                         InventoryLog.referencia_id == "PENDING",
@@ -420,7 +412,6 @@ class SalesService:
                             raise HTTPException(status_code=400, detail="No puedes vender un Plan sin asignar la venta a un cliente.")
                         from app.domain.models.meal_plan_template import MealPlanTemplate
                         from app.domain.models.client_meal_plan import ClientMealPlan
-                        from datetime import timedelta, timezone
                         for template_id, cantidad_vendida in meal_plans_to_create:
                             template = await MealPlanTemplate.get(template_id, session=session)
                             if not template:
