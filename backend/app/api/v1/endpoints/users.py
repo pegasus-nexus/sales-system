@@ -121,7 +121,8 @@ def format_user_response(user: User) -> dict:
         "last_active_at": user.last_active_at,
         "is_online": is_online,
         "last_active_text": last_active_text,
-        "created_at": user.created_at
+        "created_at": user.created_at,
+        "permisos_especiales": getattr(user, "permisos_especiales", [])
     }
 
 
@@ -223,6 +224,7 @@ async def create_cajero(
         hashed_password=hashed,
         full_name=data.full_name,
         role=data.role,
+        permisos_especiales=data.permisos_especiales or [],
         tenant_id=current_user.tenant_id,
         sucursal_id=sucursal_id,  # dynamically assigned
     )
@@ -282,6 +284,8 @@ async def update_employee(
         target_user.full_name = data.full_name
     if data.role is not None:
         target_user.role = data.role
+    if data.permisos_especiales is not None:
+        target_user.permisos_especiales = data.permisos_especiales
     if data.password:
         target_user.hashed_password = get_password_hash(data.password)
         
