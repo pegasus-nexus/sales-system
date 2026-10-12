@@ -1,4 +1,4 @@
-﻿import React, { useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
@@ -319,8 +319,16 @@ function App() {
                       } />
                       <Route path="/compras/historico" element={
                         <ProtectedRoute 
-                          allowedRoles={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'VENDEDOR', 'FACTURADOR', 'SUPERVISOR']}
-                          customCondition={['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(useAuthStore.getState().role || '') || !!useAuthStore.getState().user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO')}
+                          allowedRoles={ALL_STAFF}
+                          customCondition={
+                            ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(useAuthStore.getState().role || '') ||
+                            !!useAuthStore.getState().user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO') ||
+                            Boolean(
+                              `${useAuthStore.getState().user?.username || ''} ${useAuthStore.getState().user?.email || ''} ${useAuthStore.getState().user?.full_name || ''} ${useAuthStore.getState().user?.sucursal_nombre || ''}`
+                                .toLowerCase()
+                                .includes('supermercado')
+                            )
+                          }
                         >
                           <IngresoHistoricoPage />
                         </ProtectedRoute>
