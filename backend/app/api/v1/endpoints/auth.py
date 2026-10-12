@@ -92,7 +92,21 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
     # Auto-asignar permisos a usuario/sucursal de supermercados
     user_ident = f"{current_user.username or ''} {current_user.email or ''} {current_user.full_name or ''} {user_dict.get('sucursal_nombre', '')}".lower()
-    if "supermercado" in user_ident:
+    is_super = any(term in user_ident for term in ["supermercado", "super", "mercado"])
+    if not is_super and current_user.sucursal_id:
+        from app.domain.models.sucursal import Sucursal
+        from beanie import PydanticObjectId
+        try:
+            s_obj = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+            if not s_obj:
+                s_obj = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+            if s_obj and any(term in (s_obj.nombre or "").lower() for term in ["supermercado", "super", "mercado"]):
+                is_super = True
+                user_dict["sucursal_nombre"] = s_obj.nombre
+        except Exception:
+            pass
+
+    if is_super:
         perms = set(user_dict.get("permisos_especiales") or [])
         perms.add("INGRESO_HISTORICO_INVENTARIO")
         perms.add("EDITAR_FECHA_VENTA")

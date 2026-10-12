@@ -326,7 +326,10 @@ function App() {
                             Boolean(
                               `${useAuthStore.getState().user?.username || ''} ${useAuthStore.getState().user?.email || ''} ${useAuthStore.getState().user?.full_name || ''} ${useAuthStore.getState().user?.sucursal_nombre || ''}`
                                 .toLowerCase()
-                                .includes('supermercado')
+                                .includes('supermercado') ||
+                              `${useAuthStore.getState().user?.username || ''} ${useAuthStore.getState().user?.email || ''} ${useAuthStore.getState().user?.full_name || ''} ${useAuthStore.getState().user?.sucursal_nombre || ''}`
+                                .toLowerCase()
+                                .includes('super')
                             )
                           }
                         >

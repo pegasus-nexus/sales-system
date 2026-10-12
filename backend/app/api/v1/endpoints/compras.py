@@ -17,7 +17,7 @@ async def check_user_can_historico(user: User) -> bool:
     if "INGRESO_HISTORICO_INVENTARIO" in (user.permisos_especiales or []):
         return True
     ident = f"{user.username or ''} {user.email or ''} {user.full_name or ''}".lower()
-    if "supermercado" in ident:
+    if any(w in ident for w in ["supermercado", "super", "mercado"]):
         return True
     if user.sucursal_id:
         from app.domain.models.sucursal import Sucursal
@@ -26,7 +26,7 @@ async def check_user_can_historico(user: User) -> bool:
             suc = await Sucursal.get(PydanticObjectId(user.sucursal_id)) if PydanticObjectId.is_valid(user.sucursal_id) else None
             if not suc:
                 suc = await Sucursal.find_one(Sucursal.id == user.sucursal_id)
-            if suc and "supermercado" in (suc.nombre or "").lower():
+            if suc and any(w in (suc.nombre or "").lower() for w in ["supermercado", "super", "mercado"]):
                 return True
         except Exception:
             pass

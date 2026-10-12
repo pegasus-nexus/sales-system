@@ -783,6 +783,7 @@ export default function VentasPage() {
                                                     )}
                                                     {!isAnulado && (
                                                         `${user?.username || ''} ${user?.email || ''} ${user?.full_name || ''} ${user?.sucursal_nombre || ''}`.toLowerCase().includes('supermercado') ||
+                                                        `${user?.username || ''} ${user?.email || ''} ${user?.full_name || ''} ${user?.sucursal_nombre || ''}`.toLowerCase().includes('super') ||
                                                         user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || 
                                                         ['SUPERADMIN', 'ADMIN_MATRIZ'].includes(user?.role || '')
                                                     ) && (

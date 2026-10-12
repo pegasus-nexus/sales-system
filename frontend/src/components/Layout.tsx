@@ -11,7 +11,8 @@ import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getMe, pingUser, changePassword } from '../api/api';
+import { getMe, pingUser, changePassword, getSucursales } from '../api/api';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 
@@ -87,8 +88,19 @@ export default function Layout({ children }: LayoutProps) {
         sistema: false
     });
 
+    const { data: sucursales = [] } = useQuery({
+        queryKey: ['sucursales_layout'],
+        queryFn: () => getSucursales(true),
+        staleTime: 5 * 60 * 1000,
+    });
+
     React.useEffect(() => {
         pingUser().catch(() => {});
+        getMe().then(freshUser => {
+            if (freshUser) {
+                useAuthStore.setState({ user: freshUser, role: freshUser.role });
+            }
+        }).catch(() => {});
         const interval = setInterval(() => {
             pingUser().catch(() => {});
         }, 45000);
@@ -157,10 +169,14 @@ export default function Layout({ children }: LayoutProps) {
             ];
         }
 
+        const userSucursal = sucursales.find(s => s._id === user?.sucursal_id);
+        const sucursalName = (userSucursal?.nombre || user?.sucursal_nombre || '').toLowerCase();
+        const userText = `${user?.username || ''} ${user?.email || ''} ${user?.full_name || ''} ${sucursalName}`.toLowerCase();
         const isSupermercado = Boolean(
-            `${user?.username || ''} ${user?.email || ''} ${user?.full_name || ''} ${user?.sucursal_nombre || ''}`
-                .toLowerCase()
-                .includes('supermercado')
+            userText.includes('supermercado') ||
+            userText.includes('super') ||
+            sucursalName.includes('super') ||
+            sucursalName.includes('mercado')
         );
         const hasHistoricoAccess = Boolean(
             ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(role || '') ||
