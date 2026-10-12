@@ -3,6 +3,7 @@ export type UserRole = 'SUPERADMIN' | 'SUPERADMIN_STAFF' | 'ADMIN_MATRIZ' | 'ADM
 export interface User {
     _id: string;
     username: string;
+    email?: string;
     role: UserRole;
     full_name?: string;
     tenant_id?: string;

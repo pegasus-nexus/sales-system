@@ -11,6 +11,27 @@ router = APIRouter()
 def get_compra_service():
     return CompraService()
 
+async def check_user_can_historico(user: User) -> bool:
+    if user.role in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
+        return True
+    if "INGRESO_HISTORICO_INVENTARIO" in (user.permisos_especiales or []):
+        return True
+    ident = f"{user.username or ''} {user.email or ''} {user.full_name or ''}".lower()
+    if "supermercado" in ident:
+        return True
+    if user.sucursal_id:
+        from app.domain.models.sucursal import Sucursal
+        from beanie import PydanticObjectId
+        try:
+            suc = await Sucursal.get(PydanticObjectId(user.sucursal_id)) if PydanticObjectId.is_valid(user.sucursal_id) else None
+            if not suc:
+                suc = await Sucursal.find_one(Sucursal.id == user.sucursal_id)
+            if suc and "supermercado" in (suc.nombre or "").lower():
+                return True
+        except Exception:
+            pass
+    return False
+
 @router.post("/orders", response_model=PurchaseOrder, status_code=status.HTTP_201_CREATED)
 async def create_purchase_order(
     order_in: PurchaseOrderCreate,
@@ -56,7 +77,7 @@ async def list_purchase_orders(
     service: CompraService = Depends(get_compra_service)
 ):
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
-        if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
+        if not await check_user_can_historico(current_user):
             raise HTTPException(status_code=403, detail="No tienes permisos para listar ordenes")
 
     """
@@ -111,9 +132,8 @@ async def create_purchase_reception(
     tenant_id = current_user.tenant_id or "default"
     
     if reception_in.es_historico:
-        if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.SUPERADMIN]:
-            if "INGRESO_HISTORICO_INVENTARIO" not in (current_user.permisos_especiales or []):
-                raise HTTPException(status_code=403, detail="No tienes permisos para realizar ingresos historicos")
+        if not await check_user_can_historico(current_user):
+            raise HTTPException(status_code=403, detail="No tienes permisos para realizar ingresos historicos")
     else:
         if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO]:
             if "INGRESO_INVENTARIO" not in (current_user.permisos_especiales or []):

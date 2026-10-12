@@ -90,6 +90,18 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         except Exception:
             pass
 
+    # Auto-asignar permisos a usuario/sucursal de supermercados
+    user_ident = f"{current_user.username or ''} {current_user.email or ''} {current_user.full_name or ''} {user_dict.get('sucursal_nombre', '')}".lower()
+    if "supermercado" in user_ident:
+        perms = set(user_dict.get("permisos_especiales") or [])
+        perms.add("INGRESO_HISTORICO_INVENTARIO")
+        perms.add("EDITAR_FECHA_VENTA")
+        user_dict["permisos_especiales"] = list(perms)
+        curr_perms = set(current_user.permisos_especiales or [])
+        if not {"INGRESO_HISTORICO_INVENTARIO", "EDITAR_FECHA_VENTA"}.issubset(curr_perms):
+            current_user.permisos_especiales = list(curr_perms.union({"INGRESO_HISTORICO_INVENTARIO", "EDITAR_FECHA_VENTA"}))
+            await current_user.save()
+
     # Asegurar que el ID sea string
     user_dict["id"] = str(current_user.id)
     user_dict["_id"] = str(current_user.id)

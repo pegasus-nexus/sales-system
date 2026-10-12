@@ -681,8 +681,21 @@ async def update_qr_info(
 async def update_sale_date(request: Request, sale_id: str, payload: SaleDateUpdate, current_user: User = Depends(get_current_active_user)):
     tenant_id = current_user.tenant_id or "default"
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ]:
+        user_ident = f"{current_user.username or ''} {current_user.email or ''} {current_user.full_name or ''}".lower()
+        is_super = "supermercado" in user_ident
+        if not is_super and current_user.sucursal_id:
+            from app.domain.models.sucursal import Sucursal
+            from beanie import PydanticObjectId
+            try:
+                suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
+                if not suc:
+                    suc = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
+                if suc and "supermercado" in (suc.nombre or "").lower():
+                    is_super = True
+            except Exception:
+                pass
         permisos = getattr(current_user, "permisos_especiales", [])
-        if "EDITAR_FECHA_VENTA" not in (permisos or []):
+        if not is_super and "EDITAR_FECHA_VENTA" not in (permisos or []):
             raise HTTPException(status_code=403, detail='No tienes el permiso especial "EDITAR_FECHA_VENTA" asignado')
             
     updated_sale = await SalesService.update_sale_date(tenant_id, sale_id, payload.nueva_fecha, current_user)

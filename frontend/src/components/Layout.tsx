@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut, Calculator,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
@@ -157,6 +157,17 @@ export default function Layout({ children }: LayoutProps) {
             ];
         }
 
+        const isSupermercado = Boolean(
+            `${user?.username || ''} ${user?.email || ''} ${user?.full_name || ''} ${user?.sucursal_nombre || ''}`
+                .toLowerCase()
+                .includes('supermercado')
+        );
+        const hasHistoricoAccess = Boolean(
+            ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(role || '') ||
+            user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO') ||
+            isSupermercado
+        );
+
         const rawGroups: NavGroup[] = [
             {
                 groupKey: 'dashboard',
@@ -218,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: ClipboardList, label: 'Pedidos Internos', path: '/pedidos', feature: 'PEDIDOS_INTERNOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: Package, label: 'Pedidos Compra', path: '/compras/pedidos', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR'] },
                     { icon: ShoppingCart, label: 'Ingresar Compra', path: '/compras/recepciones', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
-                    { icon: History, label: 'Ingreso Histórico', path: '/compras/historico', feature: 'INVENTARIO', roles: ['SUPERADMIN', 'ADMIN_MATRIZ', ...(user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO') ? ['ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'VENDEDOR', 'FACTURADOR', 'SUPERVISOR'] : [])] },
+                    { icon: History, label: 'Ingreso Histórico', path: '/compras/historico', feature: 'INVENTARIO', roles: hasHistoricoAccess ? ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'VENDEDOR', 'FACTURADOR', 'SUPERVISOR', 'USER'] : ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'] },
                     { icon: ClipboardList, label: 'Historial Ingresos', path: '/compras/historial', feature: 'INVENTARIO', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERVISOR', 'CAJERO'] },
                     { icon: Percent, label: 'Descuentos', path: '/descuentos', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'] },
                     { icon: Tag, label: 'Solicitudes Precio', path: '/solicitudes-precio', feature: 'LISTAS_PRECIOS', roles: ['ADMIN_MATRIZ', 'ADMIN'] },
