@@ -48,7 +48,7 @@ const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage')
 const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
 import { useAuthStore } from './store/authStore';
-import { getMyFeatures, getMyTenant } from './api/api';
+import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
 import { ErrorModalProvider, useErrorModal } from './components/ErrorModal';
 import { ConfirmProvider } from './components/ConfirmModal';
@@ -95,7 +95,7 @@ function FeaturesFetcher() {
         .catch(() => {});
     }
 
-    // Siempre refrescar settings al iniciar
+    // Siempre refrescar settings y usuario al iniciar
     getMyTenant()
       .then(tenant => {
           if (tenant.settings) {
@@ -106,6 +106,14 @@ function FeaturesFetcher() {
           }
           if (tenant.plan_expires_at !== undefined) {
               setPlanExpiresAt(tenant.plan_expires_at);
+          }
+      })
+      .catch(() => {});
+
+    getMe()
+      .then(freshUser => {
+          if (freshUser) {
+              useAuthStore.setState({ user: freshUser, role: freshUser.role });
           }
       })
       .catch(() => {});
@@ -318,21 +326,7 @@ function App() {
                         </ProtectedRoute>
                       } />
                       <Route path="/compras/historico" element={
-                        <ProtectedRoute 
-                          allowedRoles={ALL_STAFF}
-                          customCondition={
-                            ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN'].includes(useAuthStore.getState().role || '') ||
-                            !!useAuthStore.getState().user?.permisos_especiales?.includes('INGRESO_HISTORICO_INVENTARIO') ||
-                            Boolean(
-                              `${useAuthStore.getState().user?.username || ''} ${useAuthStore.getState().user?.email || ''} ${useAuthStore.getState().user?.full_name || ''} ${useAuthStore.getState().user?.sucursal_nombre || ''}`
-                                .toLowerCase()
-                                .includes('supermercado') ||
-                              `${useAuthStore.getState().user?.username || ''} ${useAuthStore.getState().user?.email || ''} ${useAuthStore.getState().user?.full_name || ''} ${useAuthStore.getState().user?.sucursal_nombre || ''}`
-                                .toLowerCase()
-                                .includes('super')
-                            )
-                          }
-                        >
+                        <ProtectedRoute allowedRoles={ALL_STAFF} requiredFeature="INVENTARIO">
                           <IngresoHistoricoPage />
                         </ProtectedRoute>
                       } />
