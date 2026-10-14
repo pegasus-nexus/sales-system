@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from app.domain.models.base import DecimalMoney
@@ -33,6 +33,8 @@ class PurchaseReceptionItemCreate(BaseModel):
     cantidad_recibida: float
     costo_unitario_real: DecimalMoney
     subtotal: DecimalMoney
+    lote_codigo: Optional[str] = None
+    fecha_vencimiento: Optional[datetime] = None
 
 class PurchaseReceptionCreate(BaseModel):
     sucursal_id: str

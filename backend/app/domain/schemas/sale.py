@@ -23,6 +23,7 @@ class SaleItemIn(BaseModel):
     precio_unitario: float = Field(default=0.0, ge=0.0)  # if 0, falls back to product.precio_venta
     descuento_unitario: float = Field(default=0.0, ge=0.0)
     almacen_id: str | None = None  # Override por-ítem. Si None, hereda almacen_id global de SaleCreate
+    lote_codigo: str | None = None  # Lote específico opcional asignado en el POS
 
 
 class PagoIn(BaseModel):

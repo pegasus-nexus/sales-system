@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import type { AjusteInventario } from '../api/types';
 import Pagination from '../components/Pagination';
 import BulkAjusteView from '../components/BulkAjusteView';
+import LotesTab from '../components/inventario/LotesTab';
 
 import { formatFullDate as formatDate } from '../utils/dateUtils';
 
@@ -23,7 +24,7 @@ export default function InventarioPage() {
     const esAdminSucursal = esMatriz || user?.role === 'ADMIN_SUCURSAL';
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? 'CENTRAL' : (user?.sucursal_id || 'CENTRAL'));
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>('default');
-    const [tab, setTab] = useLocalStorage<'stock' | 'kardex' | 'masivo'>('inventario-tab', 'stock');
+    const [tab, setTab] = useLocalStorage<'stock' | 'kardex' | 'masivo' | 'lotes'>('inventario-tab', 'stock');
     const [searchTerm, setSearchTerm] = useLocalStorage('inventario-search', '');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
     const [categorySearch, setCategorySearch] = useState('');
@@ -320,6 +321,13 @@ export default function InventarioPage() {
                                     <span>Ajuste Rápido</span>
                                 </button>
                             )}
+                            <button
+                                onClick={() => setTab('lotes')}
+                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'lotes' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <Clock size={16} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
+                                <span>Lotes & Caducidades</span>
+                            </button>
                         </div>
                         {tab === 'stock' && esAdminSucursal && (
                             <button 
@@ -621,6 +629,10 @@ export default function InventarioPage() {
                         />
                     )}
                 </div>
+            )}
+
+            {tab === 'lotes' && (
+                <LotesTab selectedSucursal={selectedSucursal} selectedAlmacen={selectedAlmacen} />
             )}
 
             {/* Modal de Cambio de Precio */}

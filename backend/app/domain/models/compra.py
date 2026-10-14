@@ -59,6 +59,8 @@ class PurchaseReceptionItem(BaseModel):
     cantidad_recibida: float
     costo_unitario_real: DecimalMoney = DecimalMoney("0.0")
     subtotal: DecimalMoney = DecimalMoney("0.0")
+    lote_codigo: Optional[str] = None
+    fecha_vencimiento: Optional[datetime] = None
 
 class PurchaseReception(Document):
     """

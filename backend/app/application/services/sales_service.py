@@ -1,8 +1,5 @@
 from app.infrastructure.db import get_client
-from app.infrastructure.core.config import settings
-import math
 import logging
-import asyncio
 import random
 import string
 from datetime import datetime, timezone, timedelta
@@ -17,12 +14,11 @@ from app.domain.models.product import Product
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.caja import CajaMovimiento, CajaSesion, EstadoSesion, SubtipoMovimiento
 from app.domain.models.cliente import Cliente
-from app.domain.models.sucursal import Sucursal
 from app.domain.models.user import User, UserRole
 from app.domain.schemas.sale import SaleCreate
 from app.utils.pricing import resolver_precio
 from app.domain.models.base import DecimalMoney
-from app.utils.errors import VentasErrors, handle_service_error, retry_on_write_conflict
+from app.utils.errors import retry_on_write_conflict
 
 logger = logging.getLogger("SalesService")
 
@@ -175,6 +171,39 @@ class SalesService:
                         subtotal = final_unit_price * Decimal(item.cantidad)
                         computed_total += subtotal
 
+                        # Descuento de lotes (FEFO / FIFO) si existen lotes activos
+                        lot_code_used = getattr(item, "lote_codigo", None)
+                        if es_fisico:
+                            from app.domain.models.lote import LoteInventario
+                            lote_query = {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": sucursal_id,
+                                "producto_id": str(product.id),
+                                "cantidad_actual": {"$gt": 0},
+                                "estado": "ACTIVO"
+                            }
+                            if lot_code_used:
+                                lote_query["lote_codigo"] = lot_code_used
+
+                            lotes_disponibles = await LoteInventario.find(
+                                lote_query, session=session
+                            ).sort("+fecha_vencimiento", "+created_at").to_list()
+
+                            cant_restante = float(item.cantidad)
+                            for lote in lotes_disponibles:
+                                if cant_restante <= 0:
+                                    break
+                                desc_lote = min(lote.cantidad_actual, cant_restante)
+                                lote.cantidad_actual -= desc_lote
+                                cant_restante -= desc_lote
+                                if lote.cantidad_actual <= 0:
+                                    lote.cantidad_actual = 0.0
+                                    lote.estado = "AGOTADO"
+                                lote.updated_at = datetime.now(timezone.utc)
+                                await lote.save(session=session)
+                                if not lot_code_used:
+                                    lot_code_used = lote.lote_codigo
+
                         sale_items.append(SaleItem(
                             producto_id=str(product.id),
                             descripcion=product.descripcion,
@@ -184,6 +213,7 @@ class SalesService:
                             descuento_unitario=desc,
                             subtotal=subtotal,
                             almacen_id=item_almacen_id,  # Snapshot del almacén real usado
+                            lote_codigo=lot_code_used,
                         ))
 
                         if es_fisico:
@@ -200,8 +230,9 @@ class SalesService:
                                 precio_venta_momento=unit_price,
                                 usuario_id=str(current_user.id),
                                 usuario_nombre=current_user.full_name or current_user.username,
-                                notas="Salida por Venta POS",
+                                notas="Salida por Venta POS" + (f" | Lote: {lot_code_used}" if lot_code_used else ""),
                                 referencia_id="PENDING",
+                                lote_codigo=lot_code_used,
                                 created_at=fecha_transaccion
                             ).create(session=session)
 
@@ -489,6 +520,17 @@ class SalesService:
                                 fecha       = fecha_transaccion,
                                 created_at  = fecha_transaccion
                             ).create(session=session)
+
+                    # Generar Asiento Contable Automático (ERP General Ledger)
+                    try:
+                        from app.application.services.contabilidad_auto_posting_service import ContabilidadAutoPostingService
+                        await ContabilidadAutoPostingService.post_sale(
+                            sale=sale,
+                            usuario_nombre=current_user.full_name or current_user.username,
+                            session=session
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error generando asiento contable de venta: {e}")
 
                     return sale
 
