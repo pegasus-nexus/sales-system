@@ -16,12 +16,15 @@ import {
   Play, 
   CheckCircle, 
   XCircle,
-  Calendar
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 import { toast } from 'sonner';
+import LibroDiarioTab from '../components/contabilidad/LibroDiarioTab';
 
 const TAB_OPTIONS = [
   { id: 'plan', label: 'Plan de Cuentas', icon: BookOpen },
+  { id: 'diario', label: 'Libro Diario (Asientos)', icon: FileSpreadsheet },
   { id: 'resultados', label: 'Estado de Resultados', icon: FileText },
   { id: 'balance', label: 'Balance General', icon: Scale },
   { id: 'flujo', label: 'Flujo de Efectivo', icon: TrendingUp },
@@ -236,6 +239,8 @@ export default function ContabilidadPage() {
           </div>
         </div>
       )}
+
+      {activeTab === 'diario' && <LibroDiarioTab />}
 
       {activeTab === 'resultados' && (
         <div className="flex flex-col gap-6">

@@ -68,6 +68,8 @@ class InventoryLog(Document):
     usuario_nombre: str
     notas: str = ""
     referencia_id: str = ""      # e.g., Sale ID, Transfer ID
+    lote_codigo: Optional[str] = None
+    fecha_vencimiento: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:

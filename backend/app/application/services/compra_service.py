@@ -1,6 +1,5 @@
 import math
 from typing import List, Optional
-from bson import ObjectId
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -10,7 +9,7 @@ from app.domain.models.product import Product
 from app.domain.models.base import DecimalMoney
 from app.infrastructure.db import get_client
 from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, SubtipoMovimiento
-from app.domain.models.cuenta_por_pagar import CuentaPorPagar, MetodoPagoCompra
+from app.domain.models.cuenta_por_pagar import CuentaPorPagar
 from app.infrastructure.repositories.compra import PurchaseOrderRepository, PurchaseReceptionRepository
 
 def _to_decimal(val) -> Decimal:
@@ -196,6 +195,50 @@ class CompraService:
                         else:
                             precio_venta_momento = _to_decimal(producto.precio_venta)
 
+                    # --- Gestión de Lotes y Vencimientos (ERP) ---
+                    lote_code = item.lote_codigo.strip() if getattr(item, "lote_codigo", None) else None
+                    fecha_venc = getattr(item, "fecha_vencimiento", None)
+                    if lote_code and not reception.es_historico:
+                        from app.domain.models.lote import LoteInventario
+                        lote_existente = await LoteInventario.find_one(
+                            LoteInventario.tenant_id == reception.tenant_id,
+                            LoteInventario.sucursal_id == reception.sucursal_id,
+                            LoteInventario.almacen_id == almacen_final,
+                            LoteInventario.producto_id == producto_id_log,
+                            LoteInventario.lote_codigo == lote_code,
+                            session=session
+                        )
+                        if lote_existente:
+                            lote_existente.cantidad_actual += item.cantidad_recibida
+                            lote_existente.cantidad_inicial += item.cantidad_recibida
+                            if fecha_venc:
+                                lote_existente.fecha_vencimiento = fecha_venc
+                            lote_existente.costo_unitario = DecimalMoney(str(new_cost))
+                            lote_existente.estado = "ACTIVO"
+                            lote_existente.proveedor_id = reception.proveedor_id
+                            lote_existente.proveedor_nombre = reception.proveedor_nombre
+                            lote_existente.updated_at = datetime.now(timezone.utc)
+                            await lote_existente.save(session=session)
+                        else:
+                            nuevo_lote = LoteInventario(
+                                tenant_id=reception.tenant_id,
+                                sucursal_id=reception.sucursal_id,
+                                almacen_id=almacen_final,
+                                producto_id=producto_id_log,
+                                lote_codigo=lote_code,
+                                fecha_vencimiento=fecha_venc,
+                                cantidad_inicial=item.cantidad_recibida,
+                                cantidad_actual=item.cantidad_recibida,
+                                costo_unitario=DecimalMoney(str(new_cost)),
+                                estado="ACTIVO",
+                                proveedor_id=reception.proveedor_id,
+                                proveedor_nombre=reception.proveedor_nombre,
+                                reception_id=str(reception.id),
+                                created_at=reception.created_at,
+                                updated_at=datetime.now(timezone.utc)
+                            )
+                            await nuevo_lote.insert(session=session)
+
                     log = InventoryLog(
                         tenant_id=reception.tenant_id,
                         sucursal_id=reception.sucursal_id,
@@ -210,7 +253,9 @@ class CompraService:
                         usuario_id=usuario_id,
                         usuario_nombre=usuario_nombre,
                         referencia_id=str(reception.id),
-                        notas=f"Ingreso por compra. Doc: {reception.numero_documento}",
+                        lote_codigo=lote_code,
+                        fecha_vencimiento=fecha_venc,
+                        notas=f"Ingreso por compra. Doc: {reception.numero_documento}" + (f" | Lote: {lote_code}" if lote_code else ""),
                         created_at=reception.created_at
                     )
                     await log.insert(session=session)
@@ -276,6 +321,20 @@ class CompraService:
                     reception.estado_pago = "PAGADO"
                 
                 await reception.save(session=session)
+
+                # 5. Generar Asiento Contable Automático (ERP General Ledger)
+                if not reception.es_historico:
+                    try:
+                        from app.application.services.contabilidad_auto_posting_service import ContabilidadAutoPostingService
+                        await ContabilidadAutoPostingService.post_purchase_reception(
+                            reception=reception,
+                            usuario_nombre=usuario_nombre,
+                            session=session
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.getLogger("CompraService").warning(f"Error generando asiento contable de compra: {e}")
+
                 return reception
 
     async def list_purchase_orders(self, tenant_id: str, sucursal_id: str) -> List[PurchaseOrder]:

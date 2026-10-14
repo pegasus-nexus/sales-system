@@ -89,3 +89,53 @@ export const getFlujoEfectivo = (fechaInicio: string, fechaFin: string, sucursal
   if (sucursalId) params.append('sucursal_id', sucursalId);
   return client<FlujoEfectivo>(`/contabilidad/flujo-efectivo?${params}`);
 };
+
+export interface LineaAsiento {
+  cuenta_id: string;
+  cuenta_codigo: string;
+  cuenta_nombre: string;
+  debe: number;
+  haber: number;
+  descripcion?: string | null;
+}
+
+export interface AsientoContable {
+  id: string;
+  numero: number;
+  fecha: string;
+  descripcion: string;
+  lineas: LineaAsiento[];
+  total_debe: number;
+  total_haber: number;
+  referencia_tipo?: string | null;
+  referencia_id?: string | null;
+  es_automatico: boolean;
+  anulado: boolean;
+  creado_por?: string | null;
+  created_at: string;
+}
+
+export interface AsientosPaginated {
+  items: AsientoContable[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export const getAsientos = (params: {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  referencia_tipo?: string;
+  page?: number;
+  limit?: number;
+} = {}) => {
+  const q = new URLSearchParams();
+  if (params.fecha_inicio) q.append('fecha_inicio', params.fecha_inicio);
+  if (params.fecha_fin) q.append('fecha_fin', params.fecha_fin);
+  if (params.referencia_tipo && params.referencia_tipo !== 'TODOS') q.append('referencia_tipo', params.referencia_tipo);
+  if (params.page) q.append('page', String(params.page));
+  if (params.limit) q.append('limit', String(params.limit));
+  const queryStr = q.toString() ? `?${q.toString()}` : '';
+  return client<AsientosPaginated>(`/contabilidad/asientos${queryStr}`);
+};
+
