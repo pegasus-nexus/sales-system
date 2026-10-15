@@ -816,7 +816,8 @@ async def export_inventory_excel(
                                 {"$ifNull": ["$costo_producto", 0.0]},
                                 {"$ifNull": ["$inv.cantidad", 0.0]}
                             ]
-                        }
+                        },
+                        "Imagen URL": {"$ifNull": ["$image_url", ""]}
                     }
                 },
                 {"$sort": {"Producto": 1}}
@@ -826,7 +827,7 @@ async def export_inventory_excel(
             docs = await cursor.to_list(length=None)
             
             if not docs:
-                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio al Cliente", "Costo Unitario", "Stock", "Precio Total Stock", "Costo Total Stock"])
+                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio al Cliente", "Costo Unitario", "Stock", "Precio Total Stock", "Costo Total Stock", "Imagen URL"])
             else:
                 for doc in docs:
                     doc.pop("_id", None)
@@ -862,14 +863,21 @@ async def export_inventory_excel(
             worksheet.column_dimensions["G"].width = 12 # Stock
             worksheet.column_dimensions["H"].width = 18 # Precio Total
             worksheet.column_dimensions["I"].width = 18 # Costo Total
+            worksheet.column_dimensions["J"].width = 45 # Imagen URL
             
-            # Formato de números para dinero y stock
+            # Formato de números para dinero, stock y links
+            link_font = Font(color="2563EB", underline="single")
             for row in range(2, len(df) + 2):
                 worksheet[f"E{row}"].number_format = '#,##0.00'
                 worksheet[f"F{row}"].number_format = '#,##0.00'
                 worksheet[f"G{row}"].number_format = '#,##0.00'
                 worksheet[f"H{row}"].number_format = '#,##0.00'
                 worksheet[f"I{row}"].number_format = '#,##0.00'
+                
+                cell_j = worksheet[f"J{row}"]
+                if cell_j.value and str(cell_j.value).startswith("http"):
+                    cell_j.hyperlink = str(cell_j.value)
+                    cell_j.font = link_font
 
             
     output.seek(0)
