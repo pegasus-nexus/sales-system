@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any, Optional
 from decimal import Decimal
 from app.infrastructure.auth import get_current_active_user, require_roles
@@ -423,7 +423,7 @@ async def get_daily_report(
 async def get_financial_report(
     start_date: str, # YYYY-MM-DD
     end_date: str,   # YYYY-MM-DD
-    sucursal_id: Optional[str] = "all", 
+    sucursal_id: Optional[str] = "retail", 
     category: Optional[str] = None,
     proveedor: Optional[str] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
@@ -432,6 +432,7 @@ async def get_financial_report(
     Returns a financial detail report for General Admins.
     Shows Público, Fábrica, Margen 15%, Margen Retail and Margen Total.
     Supports optional category and proveedor filters.
+    Defaults to retail branches (Recoleta, Heroínas, Calacoto).
     """
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
         raise HTTPException(status_code=403, detail="Acceso denegado. Solo administradores generales pueden ver este reporte.")
@@ -454,7 +455,17 @@ async def get_financial_report(
         "created_at": {"$gte": start_dt, "$lte": end_dt}
     }
     
-    if sucursal_id and sucursal_id != "all":
+    if sucursal_id in ["retail", "default", None]:
+        # Por defecto solo toma sucursales retail físicas (Recoleta, Heroínas, Calacoto)
+        all_sucs = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
+        retail_ids = [
+            str(s.id) for s in all_sucs
+            if any(k in str(s.nombre).lower() for k in ["heroinas", "heroína", "calacoto", "recoleta"])
+            and not any(bad in str(s.nombre).lower() for bad in ["vendedor", "distribucion", "supermercado"])
+        ]
+        if retail_ids:
+            match_filter["sucursal_id"] = {"$in": retail_ids}
+    elif sucursal_id != "all":
         match_filter["sucursal_id"] = sucursal_id
 
     matching_ids = []

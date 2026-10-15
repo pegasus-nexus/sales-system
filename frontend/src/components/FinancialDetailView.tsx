@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getFinancialReport, getSucursales, getCategories, getProducts, getProveedores } from '../api/api';
 import { 
@@ -25,7 +25,7 @@ export default function FinancialDetailView() {
     // Draft filter state (user selections)
     const [startDate, setStartDate] = useState(sevenDaysAgo);
     const [endDate, setEndDate] = useState(today);
-    const [selectedSucursal, setSelectedSucursal] = useState('all');
+    const [selectedSucursal, setSelectedSucursal] = useState('retail');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedProveedor, setSelectedProveedor] = useState('');
 
@@ -33,7 +33,7 @@ export default function FinancialDetailView() {
     const [appliedFilters, setAppliedFilters] = useState({
         startDate: sevenDaysAgo,
         endDate: today,
-        sucursal: 'all',
+        sucursal: 'retail',
         category: '',
         proveedor: ''
     });
@@ -49,8 +49,8 @@ export default function FinancialDetailView() {
     };
 
     const { data: sucursales } = useQuery({
-        queryKey: ['sucursales'],
-        queryFn: getSucursales
+        queryKey: ['sucursales_all'],
+        queryFn: () => getSucursales(true)
     });
 
     const { data: categories } = useQuery({
@@ -178,12 +178,15 @@ export default function FinancialDetailView() {
                             <select 
                                 value={selectedSucursal}
                                 onChange={(e) => setSelectedSucursal(e.target.value)}
-                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-700 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                className="w-full bg-white border border-gray-100 rounded-xl py-2 pl-10 pr-3 text-sm font-bold text-gray-900 outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                             >
-                                <option value="all">Todas las Sucursales</option>
-                                {sucursales?.map((s: any) => (
-                                    <option key={s._id} value={s._id}>{s.nombre}</option>
-                                ))}
+                                <option value="retail">Sucursales Retail (Recoleta, Heroínas, Calacoto)</option>
+                                <option value="all">Todas las Sucursales (Consolidado Total)</option>
+                                <optgroup label="Sucursales Individuales">
+                                    {sucursales?.map((s: any) => (
+                                        <option key={s._id} value={s._id}>{s.nombre}</option>
+                                    ))}
+                                </optgroup>
                             </select>
                         </div>
                     </div>
@@ -242,7 +245,11 @@ export default function FinancialDetailView() {
                     <button 
                         onClick={() => {
                             if (report && totals) {
-                                const sucNombre = appliedFilters.sucursal === 'all' ? 'Todas las Sucursales' : (sucursales?.find((s: any) => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
+                                const sucNombre = appliedFilters.sucursal === 'retail'
+                                    ? 'Sucursales Retail (Recoleta, Heroínas, Calacoto)'
+                                    : appliedFilters.sucursal === 'all'
+                                    ? 'Todas las Sucursales'
+                                    : (sucursales?.find((s: any) => s._id === appliedFilters.sucursal)?.nombre || appliedFilters.sucursal);
                                 descargarPDFFinanzas(report, totals, appliedFilters.startDate, appliedFilters.endDate, sucNombre);
                             }
                         }}
