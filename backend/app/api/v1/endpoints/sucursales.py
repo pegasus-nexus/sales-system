@@ -53,13 +53,20 @@ class SucursalCreatedResponse(BaseModel):
 @router.get("/sucursales", response_model=List[Sucursal])
 async def list_sucursales(
     all_branches: bool = True,
+    tenant_id: Optional[str] = None,
     current_user: User = Depends(get_current_active_user)
 ):
-    """List all branches for the current tenant."""
-    if not current_user.tenant_id:
-        raise HTTPException(status_code=403, detail="No tenant context")
-        
-    sucursales = await Sucursal.find(Sucursal.tenant_id == current_user.tenant_id).to_list()
+    """List all branches for the current tenant or all branches if superadmin without tenant context."""
+    if current_user.role in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
+        target_tenant = tenant_id or current_user.tenant_id
+        if target_tenant:
+            sucursales = await Sucursal.find(Sucursal.tenant_id == target_tenant).to_list()
+        else:
+            sucursales = await Sucursal.find().to_list()
+    else:
+        if not current_user.tenant_id:
+            raise HTTPException(status_code=403, detail="No tenant context")
+        sucursales = await Sucursal.find(Sucursal.tenant_id == current_user.tenant_id).to_list()
     
     if all_branches:
         return sucursales
@@ -158,7 +165,7 @@ async def update_sucursal(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     sucursal = await Sucursal.get(sucursal_id)
-    if not sucursal or sucursal.tenant_id != current_user.tenant_id:
+    if not sucursal or (current_user.role != UserRole.SUPERADMIN and sucursal.tenant_id != current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Branch not found")
 
     updates = data.model_dump(exclude_none=True)
@@ -177,7 +184,7 @@ async def deactivate_sucursal(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     sucursal = await Sucursal.get(sucursal_id)
-    if not sucursal or sucursal.tenant_id != current_user.tenant_id:
+    if not sucursal or (current_user.role != UserRole.SUPERADMIN and sucursal.tenant_id != current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Branch not found")
 
     sucursal.is_active = False
