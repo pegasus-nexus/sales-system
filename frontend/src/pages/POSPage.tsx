@@ -172,11 +172,11 @@ export default function POSPage() {
                 if (canFinalize()) {
                     // Validaciones de Cliente
                     if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
-                        toast.error('El formato del correo electrÃ³nico es invÃ¡lido');
+                        toast.error('El formato del correo electrónico es inválido');
                         return;
                     }
-                    if (cliente.razon_social && !/^[a-zA-ZÃ¡Ã©Ã­Ã³ÃºÃÃ‰ÃÃ“ÃšÃ±Ã‘\s]+$/.test(cliente.razon_social)) {
-                        toast.error('El nombre/razÃ³n social solo puede contener letras y espacios');
+                    if (cliente.razon_social && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-'&()/#]+$/i.test(cliente.razon_social.trim())) {
+                        toast.error('El nombre/razón social contiene caracteres no válidos');
                         return;
                     }
                     setConfirmSale(true);
@@ -342,13 +342,13 @@ export default function POSPage() {
 
         // Validaciones de Cliente
         if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
-            toast.error('El formato del correo electrÃ³nico es invÃ¡lido');
+            toast.error('El formato del correo electrónico es inválido');
             return;
         }
         
-        // Letras y espacios unicamente. No numeros ni caracteres especiales.
-        if (cliente.razon_social && !/^[a-zA-ZÃ¡Ã©Ã­Ã³ÃºÃÃ‰ÃÃ“ÃšÃ±Ã‘\s]+$/.test(cliente.razon_social)) {
-            toast.error('El nombre/razÃ³n social solo puede contener letras y espacios');
+        // Letras, números, espacios y caracteres estándar de razón social (ñ, puntos, comas, guiones, etc.)
+        if (cliente.razon_social && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-'&()/#]+$/i.test(cliente.razon_social.trim())) {
+            toast.error('El nombre/razón social contiene caracteres no válidos');
             return;
         }
 
@@ -795,7 +795,7 @@ export default function POSPage() {
                                                 placeholder="Email" />
                                             <input value={cliente.razon_social} onChange={e => setCliente({ razon_social: e.target.value })}
                                                 className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
-                                                placeholder="RazÃ³n Social" />
+                                                placeholder="Razón Social" />
                                             <input 
                                                 type="text"
                                                 inputMode="numeric"
