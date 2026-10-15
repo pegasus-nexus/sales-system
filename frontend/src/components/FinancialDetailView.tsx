@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFinancialReport, getSucursales, getCategories, getProducts, getProveedores } from '../api/api';
+import { getFinancialReport, getSucursales, getCategories, getProducts, getProveedores, getMyTenant } from '../api/api';
 import { 
     Loader2, Calendar, Store, TrendingUp, DollarSign, 
     FileDown, FileSpreadsheet, Tag, Truck, Filter, AlertCircle
@@ -47,6 +47,9 @@ export default function FinancialDetailView() {
             proveedor: selectedProveedor
         });
     };
+
+    const { data: tenant } = useQuery({ queryKey: ['myTenant'], queryFn: getMyTenant });
+    const comisionPct = tenant?.settings?.margen_distribuidor !== undefined ? Math.round(tenant.settings.margen_distribuidor * 100) : 15;
 
     const { data: sucursales } = useQuery({
         queryKey: ['sucursales_all'],
@@ -313,7 +316,7 @@ export default function FinancialDetailView() {
                             <h3 className="text-2xl font-black text-gray-900">{formatBs(totals?.total_publico)}</h3>
                         </div>
                         <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Comisión Matriz (15%)</p>
+                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Comisión Matriz ({comisionPct}%)</p>
                             <h3 className="text-2xl font-black text-emerald-600">{formatBs(totals?.margen_distribuidor)}</h3>
                         </div>
                         <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
@@ -352,7 +355,7 @@ export default function FinancialDetailView() {
                                         <Area type="monotone" dataKey="total_publico" name="Ventas Totales" stroke="#818cf8" fillOpacity={1} fill="url(#colorVentas)" strokeWidth={2} />
                                         <Line type="monotone" dataKey="margen_total" name="Margen Total" stroke="#10b981" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
                                         <Line type="monotone" dataKey="margen_retail" name="Margen Retail" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={false} />
-                                        <Line type="monotone" dataKey="margen_distribuidor" name="Utilidad 15%" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                                        <Line type="monotone" dataKey="margen_distribuidor" name={`Comisión Matriz (${comisionPct}%)`} stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                                     </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
@@ -403,7 +406,7 @@ export default function FinancialDetailView() {
                                         <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Sucursal</th>
                                         <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Venta Cliente</th>
                                         <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Costo Fábrica</th>
-                                        <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest border-b border-gray-100">Utilidad 15%</th>
+                                        <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest border-b border-gray-100">Comisión {comisionPct}%</th>
                                         <th className="px-6 py-4 text-right text-[10px] font-black text-blue-500 uppercase tracking-widest border-b border-gray-100">Margen Retail</th>
                                         <th className="px-6 py-4 text-right text-[10px] font-black text-gray-900 uppercase tracking-widest border-b border-gray-100">Margen Total</th>
                                     </tr>

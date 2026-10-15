@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
 import type { TenantSettings } from '../api/types';
@@ -22,12 +22,13 @@ export default function ConfiguracionPage() {
         direccion: '',
         telefono: '',
         brand_color: '#4f46e5',
+        margen_distribuidor: 0.15,
         whatsapp: {
             enabled: false,
             provider: 'GREENAPI',
             instance_id: '',
             api_token: '',
-            default_message: 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. Â¡Gracias por tu preferencia!'
+            default_message: 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. ¡Gracias por tu preferencia!'
         }
     });
 
@@ -49,12 +50,13 @@ export default function ConfiguracionPage() {
                 direccion: tenant.settings.direccion || '',
                 telefono: tenant.settings.telefono || '',
                 brand_color: tenant.settings.brand_color || '#4f46e5',
+                margen_distribuidor: tenant.settings.margen_distribuidor !== undefined ? tenant.settings.margen_distribuidor : 0.15,
                 whatsapp: {
                     enabled: tenant.settings.whatsapp?.enabled || false,
                     provider: tenant.settings.whatsapp?.provider || 'GREENAPI',
                     instance_id: tenant.settings.whatsapp?.instance_id || '',
                     api_token: tenant.settings.whatsapp?.api_token || '',
-                    default_message: tenant.settings.whatsapp?.default_message || 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. Â¡Gracias por tu preferencia!'
+                    default_message: tenant.settings.whatsapp?.default_message || 'Hola {cliente}, adjuntamos el comprobante de tu compra por Bs. {total}. ¡Gracias por tu preferencia!'
                 }
             });
             if (tenant.settings.brand_color) {
@@ -227,46 +229,40 @@ export default function ConfiguracionPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mensaje al final del ticket</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="Â¡Gracias por su preferencia!"
-                                    value={settings.ticket_footer}
-                                    onChange={e => setSettings(s => ({ ...s, ticket_footer: e.target.value }))}
-                                />
+                                <input type="text" className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold" placeholder="¡Gracias por su preferencia!" value={settings.ticket_footer} onChange={e => setSettings(s => ({ ...s, ticket_footer: e.target.value }))} />
                             </div>
-
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Marca de Agua en Reportes</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="Confidencial"
-                                    value={settings.report_watermark}
-                                    onChange={e => setSettings(s => ({ ...s, report_watermark: e.target.value }))}
-                                />
+                                <input type="text" className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold" placeholder="Confidencial" value={settings.report_watermark} onChange={e => setSettings(s => ({ ...s, report_watermark: e.target.value }))} />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">DirecciÃ³n de la Empresa</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="Av. Principal #123"
-                                    value={settings.direccion}
-                                    onChange={e => setSettings(s => ({ ...s, direccion: e.target.value }))}
-                                />
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Dirección de la Empresa</label>
+                                <input type="text" className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold" placeholder="Av. Principal #123" value={settings.direccion} onChange={e => setSettings(s => ({ ...s, direccion: e.target.value }))} />
                             </div>
-
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">TelÃ©fono de Contacto</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold"
-                                    placeholder="+591 77712345"
-                                    value={settings.telefono}
-                                    onChange={e => setSettings(s => ({ ...s, telefono: e.target.value }))}
-                                />
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Teléfono de Contacto</label>
+                                <input type="text" className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold" placeholder="+591 77712345" value={settings.telefono} onChange={e => setSettings(s => ({ ...s, telefono: e.target.value }))} />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Comisión Matriz / Distribuidor (%)</label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        step="1" 
+                                        min="0" 
+                                        max="100" 
+                                        className="w-full bg-white border border-gray-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-bold" 
+                                        placeholder="15" 
+                                        value={settings.margen_distribuidor !== undefined ? Math.round((settings.margen_distribuidor || 0) * 100) : 15} 
+                                        onChange={e => {
+                                            const val = parseFloat(e.target.value);
+                                            setSettings(s => ({ ...s, margen_distribuidor: isNaN(val) ? 0 : val / 100 }));
+                                        }} 
+                                    />
+                                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
+                                </div>
+                                <p className="text-[11px] text-gray-400 mt-1.5 ml-1">Porcentaje sobre el costo de producción asignado a Matriz en reportes financieros (0% si no aplica comisión).</p>
                             </div>
                         </div>
                     </div>

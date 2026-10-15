@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Any, List
 from app.db import get_raw_db
 from app.domain.models.user import User
+from app.domain.models.tenant import Tenant
 from app.application.services.sales_read_service import SalesReadService, safe_float
 
 class FinancialService:
@@ -19,6 +20,20 @@ class FinancialService:
     ) -> Dict[str, float]:
         db = await get_raw_db()
         tenant_id = str(user.tenant_id) if user.tenant_id else "default"
+
+        tenant = await Tenant.find_one({"tenant_id": tenant_id})
+        if not tenant:
+            tenant = await Tenant.find_one(Tenant.name == tenant_id)
+        if not tenant:
+            try:
+                from beanie import PydanticObjectId
+                tenant = await Tenant.get(PydanticObjectId(tenant_id))
+            except Exception:
+                pass
+
+        comision_rate = 0.15
+        if tenant and getattr(tenant, "settings", None) and getattr(tenant.settings, "margen_distribuidor", None) is not None:
+            comision_rate = float(tenant.settings.margen_distribuidor)
 
         start_utc, end_utc = SalesReadService.calculate_bolivia_date_range(start_date_str, end_date_str)
 
@@ -62,7 +77,7 @@ class FinancialService:
                 "$project": {
                     "total_publico": 1,
                     "total_fabrica": 1,
-                    "margen_distribuidor": {"$multiply": ["$total_fabrica", 0.15]},
+                    "margen_distribuidor": {"$multiply": ["$total_fabrica", comision_rate]},
                     "margen_retail": {"$subtract": ["$total_publico", "$total_fabrica"]},
                     "_id": 0
                 }

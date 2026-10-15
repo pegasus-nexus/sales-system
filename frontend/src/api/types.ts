@@ -33,6 +33,7 @@ export interface TenantSettings {
     direccion?: string;
     telefono?: string;
     brand_color?: string;
+    margen_distribuidor?: number;
     whatsapp?: WhatsAppSettings;
 }
 
