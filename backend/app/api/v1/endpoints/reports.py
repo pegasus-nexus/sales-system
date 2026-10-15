@@ -4,6 +4,7 @@ from decimal import Decimal
 from app.infrastructure.auth import get_current_active_user, require_roles
 from app.domain.models.user import User, UserRole
 from app.domain.models.sucursal import Sucursal
+from app.domain.models.tenant import Tenant
 from app.domain.models.sale import Sale
 from app.domain.models.caja import CajaMovimiento, SubtipoMovimiento, CajaGastoCategoria
 from app.domain.models.inventario import Inventario
@@ -442,6 +443,21 @@ async def get_financial_report(
         raise HTTPException(status_code=400, detail="El usuario no tiene un tenant_id asigando.")
     if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id:
         sucursal_id = current_user.sucursal_id
+
+    # Obtener configuración del margen del distribuidor / comisión matriz por tenant
+    tenant = await Tenant.find_one({"tenant_id": tenant_id})
+    if not tenant:
+        tenant = await Tenant.find_one(Tenant.name == tenant_id)
+    if not tenant:
+        try:
+            from beanie import PydanticObjectId
+            tenant = await Tenant.get(PydanticObjectId(tenant_id))
+        except Exception:
+            pass
+
+    comision_rate = 0.15
+    if tenant and getattr(tenant, "settings", None) and getattr(tenant.settings, "margen_distribuidor", None) is not None:
+        comision_rate = float(tenant.settings.margen_distribuidor)
     
     try:
         start_dt, _ = get_day_range_bolivia(start_date)
@@ -551,8 +567,8 @@ async def get_financial_report(
                 "sucursal_id": "$_id.sucursal_id",
                 "total_publico": 1,
                 "total_fabrica": 1,
-                "margen_distribuidor": {"$multiply": ["$total_fabrica", 0.15]},
-                "margen_retail": {"$subtract": ["$total_publico", {"$add": ["$total_fabrica", {"$multiply": ["$total_fabrica", 0.15]}]}]},
+                "margen_distribuidor": {"$multiply": ["$total_fabrica", comision_rate]},
+                "margen_retail": {"$subtract": ["$total_publico", "$total_fabrica"]},
                 "_id": 0
             }
         },

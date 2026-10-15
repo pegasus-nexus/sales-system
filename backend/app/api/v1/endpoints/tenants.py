@@ -432,6 +432,8 @@ class TenantSettingsUpdate(BaseModel):
     logo_base64: Optional[str] = None
     direccion: Optional[str] = None
     telefono: Optional[str] = None
+    brand_color: Optional[str] = None
+    margen_distribuidor: Optional[float] = None
     whatsapp: Optional[WhatsAppSettingsUpdate] = None
 
 @router.get("/tenants/me", response_model=Tenant)
@@ -470,6 +472,10 @@ async def update_my_tenant_settings(
         tenant.settings.direccion = settings_in.direccion
     if settings_in.telefono is not None:
         tenant.settings.telefono = settings_in.telefono
+    if settings_in.brand_color is not None:
+        tenant.settings.brand_color = settings_in.brand_color
+    if settings_in.margen_distribuidor is not None:
+        tenant.settings.margen_distribuidor = settings_in.margen_distribuidor
     if settings_in.whatsapp is not None:
         if settings_in.whatsapp.enabled is not None:
             tenant.settings.whatsapp.enabled = settings_in.whatsapp.enabled
