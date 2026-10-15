@@ -92,6 +92,7 @@ export default function Layout({ children }: LayoutProps) {
         queryKey: ['sucursales_layout'],
         queryFn: () => getSucursales(true),
         staleTime: 5 * 60 * 1000,
+        enabled: !!user?.tenant_id,
     });
 
     React.useEffect(() => {
