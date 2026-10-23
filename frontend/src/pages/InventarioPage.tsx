@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock } from 'lucide-react';
-import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario } from '../api/api';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock, RefreshCw } from 'lucide-react';
+import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
@@ -35,6 +35,7 @@ export default function InventarioPage() {
     const [kardexProductoId, setKardexProductoId] = useState<string | undefined>(undefined);
     const [kardexProductoNombre, setKardexProductoNombre] = useState<string | null>(null);
     const [isExportingExcel, setIsExportingExcel] = useState(false);
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
 
     const { data: sucursales = [] } = useQuery({
@@ -340,6 +341,33 @@ export default function InventarioPage() {
                         )}
                         {tab === 'kardex' && (
                             <div className="flex items-center gap-2">
+                                {esAdminSucursal && (
+                                    <button
+                                        onClick={async () => {
+                                            const targetText = kardexProductoNombre ? `el producto "${kardexProductoNombre}"` : 'TODOS los productos de esta sucursal';
+                                            if (!window.confirm(`⚠️ ¿Deseas recalcular y alinear el Kárdex para ${targetText}? Esto verificará cronológicamente cada movimiento y alineará el stock físico real.`)) {
+                                                return;
+                                            }
+                                            setIsRecalculating(true);
+                                            try {
+                                                const res = await recalcularKardex(kardexProductoId || 'ALL', selectedSucursal, selectedAlmacen);
+                                                toast.success(`Kárdex recalculado: ${res.data.corregidos} productos procesados, ${res.data.inventarios_modificados} stock(s) alineado(s).`);
+                                                queryClient.invalidateQueries({ queryKey: ['inventario'] });
+                                                queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+                                            } catch (err: any) {
+                                                toast.error(err?.message || 'Error al recalcular el Kárdex');
+                                            } finally {
+                                                setIsRecalculating(false);
+                                            }
+                                        }}
+                                        disabled={isRecalculating}
+                                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap disabled:opacity-50"
+                                        title="Recalcular sumas/restas y alinear stock real"
+                                    >
+                                        <RefreshCw size={16} className={isRecalculating ? 'animate-spin text-amber-700' : 'text-amber-700'} />
+                                        <span>{isRecalculating ? 'Alineando...' : 'Alinear y Recalcular'}</span>
+                                    </button>
+                                )}
                                 <button 
                                     onClick={() => exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
                                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"

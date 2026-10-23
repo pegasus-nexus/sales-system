@@ -816,7 +816,8 @@ async def export_inventory_excel(
                                 {"$ifNull": ["$costo_producto", 0.0]},
                                 {"$ifNull": ["$inv.cantidad", 0.0]}
                             ]
-                        }
+                        },
+                        "Imagen URL": {"$ifNull": ["$image_url", ""]}
                     }
                 },
                 {"$sort": {"Producto": 1}}
@@ -826,7 +827,7 @@ async def export_inventory_excel(
             docs = await cursor.to_list(length=None)
             
             if not docs:
-                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio al Cliente", "Costo Unitario", "Stock", "Precio Total Stock", "Costo Total Stock"])
+                df = pd.DataFrame(columns=["Codigo Corto", "Codigo Largo", "Producto", "Categoria", "Precio al Cliente", "Costo Unitario", "Stock", "Precio Total Stock", "Costo Total Stock", "Imagen URL"])
             else:
                 for doc in docs:
                     doc.pop("_id", None)
@@ -862,14 +863,21 @@ async def export_inventory_excel(
             worksheet.column_dimensions["G"].width = 12 # Stock
             worksheet.column_dimensions["H"].width = 18 # Precio Total
             worksheet.column_dimensions["I"].width = 18 # Costo Total
+            worksheet.column_dimensions["J"].width = 45 # Imagen URL
             
-            # Formato de números para dinero y stock
+            # Formato de números para dinero, stock y links
+            link_font = Font(color="2563EB", underline="single")
             for row in range(2, len(df) + 2):
                 worksheet[f"E{row}"].number_format = '#,##0.00'
                 worksheet[f"F{row}"].number_format = '#,##0.00'
                 worksheet[f"G{row}"].number_format = '#,##0.00'
                 worksheet[f"H{row}"].number_format = '#,##0.00'
                 worksheet[f"I{row}"].number_format = '#,##0.00'
+                
+                cell_j = worksheet[f"J{row}"]
+                if cell_j.value and str(cell_j.value).startswith("http"):
+                    cell_j.hyperlink = str(cell_j.value)
+                    cell_j.font = link_font
 
             
     output.seek(0)
@@ -888,60 +896,144 @@ async def export_inventory_excel(
 async def corregir_kardex(
     producto_id: str,
     sucursal_id: str = "CENTRAL",
+    almacen_id: str = "default",
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN]))
 ):
-    """Recalcula secuencialmente el Kárdex y alinea el Inventario actual con el resultado matemático."""
+    """
+    Recalcula secuencialmente el Kardex y alinea el Inventario actual
+    con el resultado matematico real (sum de todos los cantidad_movida).
+    Soporta producto_id = "ALL" para recalcular todos los productos.
+    """
     tenant_id = current_user.tenant_id or "default"
-    
+
     from app.domain.models.inventario import InventoryLog, Inventario
-    from decimal import Decimal
-    
-    query_prod = {"tenant_id": tenant_id, "sucursal_id": sucursal_id}
+    from app.domain.models.product import Product as ProductModel
+
+    TOLERANCE = 0.001
+
+    # --- Determinar que productos recalcular ---
+    log_base_query: dict = {"tenant_id": tenant_id, "sucursal_id": sucursal_id}
     if producto_id != "ALL":
-        query_prod["producto_id"] = producto_id
-        
-    almacenes_distinct = await InventoryLog.distinct("almacen_id", query_prod)
-    productos_distinct = await InventoryLog.distinct("producto_id", query_prod) if producto_id == "ALL" else [producto_id]
-    
-    resultados = {"corregidos": 0, "logs_modificados": 0, "inventarios_modificados": 0}
-    
+        log_base_query["producto_id"] = producto_id
+
+    # Filtrar logs por almacen_id (tolerando "default" legacy)
+    if almacen_id == "default":
+        log_base_query["$or"] = [
+            {"almacen_id": "default"},
+            {"almacen_id": {"$exists": False}},
+            {"almacen_id": None},
+        ]
+    else:
+        log_base_query["almacen_id"] = almacen_id
+
+    # Obtener todos los producto_ids distintos que tengan logs
+    log_coll = InventoryLog.get_motor_collection()
+    productos_distinct = await log_coll.distinct("producto_id", log_base_query)
+
+    if not productos_distinct:
+        return {"message": "No se encontraron movimientos para recalcular.", "data": {
+            "corregidos": 0, "logs_modificados": 0, "inventarios_modificados": 0, "detalles": []
+        }}
+
+    # Pre-cargar nombres de productos para el reporte
+    product_names: dict = {}
+    try:
+        import bson
+        valid_oids = [bson.ObjectId(p) for p in productos_distinct if bson.ObjectId.is_valid(p)]
+        if valid_oids:
+            prods = await ProductModel.get_pymongo_collection().find(
+                {"_id": {"$in": valid_oids}}, {"descripcion": 1}
+            ).to_list(length=None)
+            product_names = {str(p["_id"]): p.get("descripcion", "Sin nombre") for p in prods}
+    except Exception:
+        pass
+
+    resultados: dict = {"corregidos": 0, "logs_modificados": 0, "inventarios_modificados": 0, "detalles": []}
+
     for pid in productos_distinct:
-        for almacen_id in almacenes_distinct:
-            logs = await InventoryLog.find(
-                InventoryLog.tenant_id == tenant_id,
-                InventoryLog.sucursal_id == sucursal_id,
-                InventoryLog.almacen_id == almacen_id,
-                InventoryLog.producto_id == pid
-            ).sort(+InventoryLog.created_at).to_list()
-            
-            if not logs: continue
-            
-            stock_actual = 0.0
-            for log in logs:
-                stock_actual += float(str(log.cantidad_movida))
-                if float(str(log.stock_resultante)) != stock_actual:
-                    log.stock_resultante = Decimal(str(stock_actual))
-                    await log.save()
-                    resultados["logs_modificados"] += 1
-                    
-            inv_query = {
-                "tenant_id": tenant_id,
-                "sucursal_id": sucursal_id,
-                "almacen_id": almacen_id,
-                "producto_id": pid
-            }
-            inventario = await Inventario.find_one(inv_query)
-            if inventario:
-                if float(str(inventario.cantidad)) != stock_actual:
-                    inventario.cantidad = stock_actual
-                    await inventario.save()
-                    resultados["inventarios_modificados"] += 1
-            else:
-                if stock_actual != 0:
-                    inventario = Inventario(**inv_query, cantidad=stock_actual)
-                    await inventario.insert()
-                    resultados["inventarios_modificados"] += 1
-                    
-            resultados["corregidos"] += 1
-            
-    return {"message": "Kárdex recalculado exitosamente", "data": resultados}
+        # --- Obtener todos los logs de este producto, ordenados cronologicamente ---
+        per_product_query: dict = {
+            "tenant_id": tenant_id,
+            "sucursal_id": sucursal_id,
+            "producto_id": pid,
+        }
+        if almacen_id == "default":
+            per_product_query["$or"] = [
+                {"almacen_id": "default"},
+                {"almacen_id": {"$exists": False}},
+                {"almacen_id": None},
+            ]
+        else:
+            per_product_query["almacen_id"] = almacen_id
+
+        logs = await InventoryLog.find(per_product_query).sort("+created_at").to_list()
+        if not logs:
+            continue
+
+        # --- Recalcular stock_resultante secuencialmente ---
+        stock_running = 0.0
+        for log in logs:
+            stock_running += float(str(log.cantidad_movida))
+            expected = round(stock_running, 4)
+            actual = round(float(str(log.stock_resultante)), 4)
+            if abs(expected - actual) > TOLERANCE:
+                log.stock_resultante = expected
+                await log.save()
+                resultados["logs_modificados"] += 1
+
+        # --- Alinear el documento de Inventario con el stock final calculado ---
+        inv_query: dict = {
+            "tenant_id": tenant_id,
+            "sucursal_id": sucursal_id,
+            "producto_id": pid,
+        }
+        if almacen_id == "default":
+            inv_query["$or"] = [
+                {"almacen_id": "default"},
+                {"almacen_id": {"$exists": False}},
+                {"almacen_id": None},
+            ]
+        else:
+            inv_query["almacen_id"] = almacen_id
+
+        inventario = await Inventario.find_one(inv_query)
+        stock_anterior = float(str(inventario.cantidad)) if inventario else 0.0
+        stock_final = round(stock_running, 4)
+
+        if inventario:
+            if abs(stock_anterior - stock_final) > TOLERANCE:
+                inventario.cantidad = stock_final
+                # Sanar almacen_id si es legacy
+                if not getattr(inventario, "almacen_id", None) or inventario.almacen_id is None:
+                    inventario.almacen_id = almacen_id
+                await inventario.save()
+                resultados["inventarios_modificados"] += 1
+                resultados["detalles"].append({
+                    "producto_id": pid,
+                    "descripcion": product_names.get(pid, pid),
+                    "stock_anterior": stock_anterior,
+                    "stock_nuevo": stock_final,
+                })
+        else:
+            if abs(stock_final) > TOLERANCE:
+                from datetime import datetime, timezone
+                new_inv = Inventario(
+                    tenant_id=tenant_id,
+                    sucursal_id=sucursal_id,
+                    almacen_id=almacen_id,
+                    producto_id=pid,
+                    cantidad=stock_final,
+                    created_at=datetime.now(timezone.utc),
+                )
+                await new_inv.insert()
+                resultados["inventarios_modificados"] += 1
+                resultados["detalles"].append({
+                    "producto_id": pid,
+                    "descripcion": product_names.get(pid, pid),
+                    "stock_anterior": 0.0,
+                    "stock_nuevo": stock_final,
+                })
+
+        resultados["corregidos"] += 1
+
+    return {"message": "Kardex recalculado exitosamente", "data": resultados}
