@@ -1123,6 +1123,11 @@ export const getMovimientosInventario = (
 
 
 
+export const recalcularKardex = (productoId: string, sucursalId: string, almacenId: string = 'default') =>
+    client<{ message: string, data: { corregidos: number, logs_modificados: number, inventarios_modificados: number, detalles: Array<{ producto_id: string, descripcion: string, stock_anterior: number, stock_nuevo: number }> } }>(`/inventario/corregir-kardex/${productoId}?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
+        method: 'POST'
+    });
+
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
 
     const token = localStorage.getItem('choco-token') || JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.token;
