@@ -864,20 +864,58 @@ async def export_inventory_excel(
             worksheet.column_dimensions["H"].width = 18 # Precio Total
             worksheet.column_dimensions["I"].width = 18 # Costo Total
             worksheet.column_dimensions["J"].width = 45 # Imagen URL
-            
+            worksheet.column_dimensions["K"].width = 14 # Miniatura Visual
+
+            # Encabezado para miniatura
+            worksheet["K1"] = "Miniatura"
+            worksheet["K1"].fill = header_fill
+            worksheet["K1"].font = header_font
+            worksheet["K1"].alignment = Alignment(horizontal="center", vertical="center")
+
             # Formato de números para dinero, stock y links
             link_font = Font(color="2563EB", underline="single")
-            for row in range(2, len(df) + 2):
-                worksheet[f"E{row}"].number_format = '#,##0.00'
-                worksheet[f"F{row}"].number_format = '#,##0.00'
-                worksheet[f"G{row}"].number_format = '#,##0.00'
-                worksheet[f"H{row}"].number_format = '#,##0.00'
-                worksheet[f"I{row}"].number_format = '#,##0.00'
-                
-                cell_j = worksheet[f"J{row}"]
-                if cell_j.value and str(cell_j.value).startswith("http"):
-                    cell_j.hyperlink = str(cell_j.value)
-                    cell_j.font = link_font
+            center_align = Alignment(horizontal="center", vertical="center")
+
+            import httpx
+            from PIL import Image as PILImage
+            from openpyxl.drawing.image import Image as OpenpyxlImage
+
+            with httpx.Client(timeout=4.0) as http_client:
+                for row in range(2, len(df) + 2):
+                    worksheet.row_dimensions[row].height = 42
+                    worksheet[f"E{row}"].number_format = '#,##0.00'
+                    worksheet[f"F{row}"].number_format = '#,##0.00'
+                    worksheet[f"G{row}"].number_format = '#,##0.00'
+                    worksheet[f"H{row}"].number_format = '#,##0.00'
+                    worksheet[f"I{row}"].number_format = '#,##0.00'
+                    
+                    cell_j = worksheet[f"J{row}"]
+                    img_url = str(cell_j.value or "").strip()
+                    if img_url.startswith("http"):
+                        cell_j.hyperlink = img_url
+                        cell_j.font = link_font
+
+                        # Incrustar miniatura física en la columna K
+                        try:
+                            # Optimizar descarga usando transformaciones directas de Cloudinary si aplica
+                            thumb_url = img_url
+                            if "res.cloudinary.com" in img_url and "/upload/" in img_url:
+                                thumb_url = img_url.replace("/upload/", "/upload/w_100,h_100,c_fit,f_auto,q_auto/")
+
+                            resp = http_client.get(thumb_url)
+                            if resp.status_code == 200:
+                                pil_img = PILImage.open(io.BytesIO(resp.content))
+                                pil_img.thumbnail((48, 48))
+                                img_buf = io.BytesIO()
+                                pil_img.convert("RGB").save(img_buf, format="JPEG", quality=75)
+                                img_buf.seek(0)
+
+                                xl_img = OpenpyxlImage(img_buf)
+                                xl_img.width = pil_img.width
+                                xl_img.height = pil_img.height
+                                worksheet.add_image(xl_img, f"K{row}")
+                        except Exception:
+                            pass
 
             
     output.seek(0)
