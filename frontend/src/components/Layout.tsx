@@ -230,6 +230,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: RotateCcw, label: 'Ventas', path: '/ventas', feature: 'VENTAS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'FACTURADOR', 'CAJERO'] },
                     { icon: Wallet, label: 'Caja', path: '/caja', feature: 'CAJA', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
                     { icon: Banknote, label: 'Créditos', path: '/creditos', feature: 'CREDITOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: FileText, label: 'Cotizaciones (B2B)', path: '/cotizaciones', feature: 'COTIZACIONES', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                 ]
             },
             {

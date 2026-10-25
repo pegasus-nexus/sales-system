@@ -27,6 +27,7 @@ from .base import SoftDeleteMixin
 
 
 class PlanType(str, Enum):
+    FREE       = "FREE"        # Plan Gratuito (Emprendedor)
     BASICO     = "BASICO"
     PRO        = "PRO"
     ENTERPRISE = "ENTERPRISE"

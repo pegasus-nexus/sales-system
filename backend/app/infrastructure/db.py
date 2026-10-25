@@ -38,6 +38,7 @@ from app.domain.models.cuenta_por_pagar import CuentaPorPagar
 from app.domain.models.branch_operating_hours import BranchOperatingHours
 from app.domain.models.contabilidad import CuentaContable, AsientoContable
 from app.domain.models.lote import LoteInventario
+from app.domain.models.cotizacion import Cotizacion
 
 from app.infrastructure.core.config import settings
 
@@ -130,6 +131,7 @@ async def init_db():
             CuentaContable,
             AsientoContable,
             LoteInventario,
+            Cotizacion,
             Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True

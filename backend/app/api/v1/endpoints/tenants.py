@@ -513,6 +513,19 @@ async def update_tenant_configuracion(
 
 _PLAN_DEFINITIONS = [
     {
+        "code": "FREE",
+        "name": "Plan Gratuito",
+        "max_sucursales": 1,
+        "max_usuarios_por_sucursal": 2,
+        "precio_mensual": "0.00",
+        "is_public": True,
+        "features": [
+            PlanFeature.VENTAS, PlanFeature.INVENTARIO, PlanFeature.CAJA,
+            PlanFeature.CLIENTES, PlanFeature.CREDITOS, PlanFeature.COMPRAS,
+            PlanFeature.CONTROL_QR, PlanFeature.COTIZACIONES,
+        ],
+    },
+    {
         "code": "BASICO",
         "name": "Plan Básico",
         "max_sucursales": 1,

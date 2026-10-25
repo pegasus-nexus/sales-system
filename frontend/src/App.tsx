@@ -27,6 +27,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const DescuentosPage = lazy(() => import('./pages/DescuentosPage'));
 const DashboardSucursal = lazy(() => import('./pages/DashboardSucursal'));
 const VentasPage = lazy(() => import('./pages/VentasPage'));
+const CotizacionesPage = lazy(() => import('./pages/CotizacionesPage'));
 const ControlQRPage = lazy(() => import('./pages/ControlQRPage'));
 const PriceRequestsPage = lazy(() => import('./pages/PriceRequestsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
@@ -347,6 +348,11 @@ function App() {
                       <Route path="/ventas" element={
                         <ProtectedRoute allowedRoles={[...ALL_STAFF, 'FACTURADOR']} requiredFeature="VENTAS">
                           <VentasPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/cotizaciones" element={
+                        <ProtectedRoute allowedRoles={[...ALL_STAFF, 'FACTURADOR']} requiredFeature="COTIZACIONES">
+                          <CotizacionesPage />
                         </ProtectedRoute>
                       } />
 

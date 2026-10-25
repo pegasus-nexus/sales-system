@@ -10,6 +10,8 @@ class PlanFeature(str, Enum):
     CAJA                 = "CAJA"                 # Módulo de caja básico
     CLIENTES             = "CLIENTES"             # CRM de clientes
     CREDITOS             = "CREDITOS"             # Módulo de créditos
+    COMPRAS              = "COMPRAS"              # Compras y recepción de mercadería
+    COTIZACIONES         = "COTIZACIONES"         # Cotizaciones y proformas B2B
 
     # ── Módulos Pro ───────────────────────────────────────────────────────────
     CAJA_AVANZADA        = "CAJA_AVANZADA"        # Arqueo guiado, insights
