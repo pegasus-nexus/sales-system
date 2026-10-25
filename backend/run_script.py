@@ -37,6 +37,10 @@ candidates = [
     os.path.join(os.path.dirname(__file__), "scripts", "debug", script_name + ".py"),
     os.path.join(os.path.dirname(__file__), "scripts", "admin", script_name),
     os.path.join(os.path.dirname(__file__), "scripts", "admin", script_name + ".py"),
+    os.path.join(os.path.dirname(__file__), "scripts", "migrations", script_name),
+    os.path.join(os.path.dirname(__file__), "scripts", "migrations", script_name + ".py"),
+    os.path.join(os.path.dirname(__file__), "scripts", "ops", script_name),
+    os.path.join(os.path.dirname(__file__), "scripts", "ops", script_name + ".py"),
 ]
 
 for candidate in candidates:

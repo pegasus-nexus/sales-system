@@ -89,3 +89,13 @@ pnpm-debug.log*
 # Deploy (Vercel / Otros)
 # ==========================================
 .vercel/
+
+
+# ==========================================
+# Scripts Huérfanos y Temporales en Raíz
+# ==========================================
+/*.py
+!run_*.py
+fix_*.js
+*.log
+temp_*.txt
