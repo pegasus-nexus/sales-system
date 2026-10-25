@@ -1,6 +1,7 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import PyJWTError as JWTError
 from app.infrastructure.core.config import settings
 
 SECRET_KEY = settings.JWT_SECRET_KEY
