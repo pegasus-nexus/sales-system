@@ -7,7 +7,7 @@ from app.api.v1.endpoints import (
     sucursales, inventario, pedidos, descuentos,
     price_requests, clientes, price_lists, reports, creditos, b2b,
     comunidad, traslados, audit, almacenes, recipes, meal_plans, production, proveedores, fidelizacion,
-    saas_staff, compras, web_collections, web_config, bi, bi_productos, bi_clientes, bi_sucursales, bi_inventario, bi_rentabilidad, bi_descuentos, bi_productividad, bi_ejecutivo, bi_ai, operating_hours, contabilidad, lotes
+    saas_staff, compras, web_collections, web_config, bi, bi_productos, bi_clientes, bi_sucursales, bi_inventario, bi_rentabilidad, bi_descuentos, bi_productividad, bi_ejecutivo, bi_ai, operating_hours, contabilidad, lotes, cotizaciones
     # chat,  # DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
 )
 
@@ -34,6 +34,7 @@ api_router.include_router(products.router, tags=["products"])
 api_router.include_router(inventario.router, tags=["inventario"])
 api_router.include_router(pedidos.router, tags=["pedidos"])
 api_router.include_router(sales.router, tags=["sales"])
+api_router.include_router(cotizaciones.router, tags=["cotizaciones"])
 api_router.include_router(creditos.router, tags=["creditos"])
 api_router.include_router(caja.router, prefix="/caja", tags=["caja"])
 api_router.include_router(categories.router, tags=["categories"])

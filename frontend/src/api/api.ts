@@ -2135,3 +2135,64 @@ export async function exportInventarioExcel(): Promise<void> {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Cotizaciones / Presupuestos B2B
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CotizacionItemPayload {
+    producto_id: string;
+    descripcion?: string;
+    codigo_corto?: string;
+    cantidad: number;
+    precio_unitario: number;
+    descuento_unitario?: number;
+    subtotal?: number;
+}
+
+export interface CotizacionClientePayload {
+    cliente_id?: string;
+    nombre_razon_social: string;
+    nit_ci?: string;
+    telefono?: string;
+    email?: string;
+    direccion?: string;
+}
+
+export interface CotizacionPayload {
+    sucursal_id: string;
+    almacen_id?: string;
+    cliente: CotizacionClientePayload;
+    items: CotizacionItemPayload[];
+    validez_dias?: number;
+    notas?: string;
+    condiciones_comerciales?: string;
+}
+
+export const getCotizaciones = (sucursal_id?: string, estado?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (sucursal_id && sucursal_id !== 'ALL') params.append('sucursal_id', sucursal_id);
+    if (estado) params.append('estado', estado);
+    if (search) params.append('search', search);
+    return client<any[]>(`/cotizaciones?${params.toString()}`);
+};
+
+export const getCotizacion = (id: string) => client<any>(`/cotizaciones/${id}`);
+
+export const createCotizacion = (data: CotizacionPayload) =>
+    client<any>('/cotizaciones', {
+        method: 'POST',
+        body: data
+    });
+
+export const cambiarEstadoCotizacion = (id: string, nuevoEstado: string) =>
+    client<any>(`/cotizaciones/${id}/estado?nuevo_estado=${nuevoEstado}`, {
+        method: 'PUT'
+    });
+
+export const convertirCotizacionAVenta = (id: string, metodoPago: string = 'EFECTIVO') =>
+    client<{ message: string, sale_id: string, cotizacion_id: string, numero_cotizacion: string }>(`/cotizaciones/${id}/convertir-a-venta`, {
+        method: 'POST',
+        body: { metodo_pago: metodoPago }
+    });
