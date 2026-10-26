@@ -200,7 +200,7 @@ export default function Layout({ children }: LayoutProps) {
                 title: 'Analítica & Reportes',
                 icon: BarChart3,
                 items: [
-                    { icon: BarChart3, label: 'Panel General BI', path: '/reportes?tab=bi', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
+                    { icon: BarChart3, label: 'Panel General BI', path: '/reportes?tab=bi', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: BarChart3, label: 'Plataforma Analítica BI', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: TrendingUp, label: 'Evolución Mensual (MoM)', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: TrendingUp, label: 'Visión General', path: '/reportes?tab=general', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
