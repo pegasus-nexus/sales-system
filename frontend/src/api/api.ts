@@ -2076,6 +2076,8 @@ export const deleteSaasStaff = (id: string) => client<{ message: string }>(`/saa
 
 export const changePassword = (data: { current_password: string; new_password: string }) => client<{ message: string }>('/auth/change-password', { method: 'POST', body: data });
 
+export const updateMyProfile = (data: { full_name?: string; avatar_url?: string }) => client<{ message: string; user: any }>('/auth/users/me/profile', { method: 'PUT', body: data });
+
 
 
 // â”€â”€â”€ COMPRAS (Purchase Orders & Receptions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

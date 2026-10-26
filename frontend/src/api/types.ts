@@ -6,6 +6,7 @@ export interface User {
     email?: string;
     role: UserRole;
     full_name?: string;
+    avatar_url?: string;
     tenant_id?: string;
     sucursal_id?: string;
     sucursal_nombre?: string;
