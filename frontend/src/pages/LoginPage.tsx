@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, ShieldCheck, Zap, BarChart3, Store } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BASE_URL } from '../api/client';
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
         setError('');
 
         try {
-            // 1. Get Token
+            // 1. Obtener Token
             const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('password', password);
@@ -39,7 +39,7 @@ export default function LoginPage() {
             const data = await response.json();
             const token = data.access_token;
 
-            // 2. Get User Details
+            // 2. Obtener datos del usuario
             const userResponse = await fetch(`${BASE_URL}/users/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -50,125 +50,197 @@ export default function LoginPage() {
 
             const userData = await userResponse.json();
 
-            // 3. Update Store
+            // 3. Actualizar estado y redirigir
             login(token, userData);
             navigate('/');
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Error de autenticación');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Abstract Background Shapes with slow breathing animation */}
-            <motion.div
-                animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/30 rounded-full blur-[120px]"
-            />
-            <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/30 rounded-full blur-[120px]"
-            />
+        <div className="min-h-screen bg-[#07090e] flex flex-col lg:flex-row relative overflow-hidden font-sans">
+            {/* ── PANEL IZQUIERDO: Branding & Presentación (Desktop) ── */}
+            <div className="hidden lg:flex lg:w-7/12 relative flex-col justify-between p-12 xl:p-16 border-r border-white/10 overflow-hidden bg-gradient-to-br from-[#090d16] via-[#07090e] to-[#04060a]">
+                {/* Luces de ambiente sutiles */}
+                <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-600/15 rounded-full blur-[140px] pointer-events-none" />
 
-            <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="bg-[#111111]/80 border border-white/5 w-full max-w-sm p-8 rounded-3xl shadow-2xl relative z-10 backdrop-blur-2xl"
-            >
-                <div className="text-center mb-8">
-                    <motion.div
-                        initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
-                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                        transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
-                        className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(16,185,129,0.3)] relative group"
-                    >
-                        <span className="text-2xl font-bold text-white relative z-10">C</span>
-                        <div className="absolute inset-0 rounded-2xl bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                    </motion.div>
-                    <motion.h1
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                        className="text-2xl font-bold text-white tracking-tight mb-1"
-                    >
-                        Bienvenido
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                        className="text-gray-400 text-sm"
-                    >
-                        Ingresa a tu cuenta para continuar
-                    </motion.p>
+                {/* Encabezado Logo */}
+                <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/30">
+                        <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <span className="text-xl font-black text-white tracking-tight">PEGASUS <span className="text-indigo-400">NEXUS</span></span>
+                        <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Retail & Enterprise ERP</span>
+                    </div>
                 </div>
 
-                <AnimatePresence>
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                            animate={{ opacity: 1, height: 'auto', marginBottom: 20 }}
-                            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                            className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium text-center flex items-center justify-center gap-2 overflow-hidden"
-                        >
-                            {error}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* Cuerpo del Mensaje Central */}
+                <div className="relative z-10 max-w-lg my-auto py-12">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-6">
+                        <ShieldCheck className="w-4 h-4 text-indigo-400" /> Plataforma Segura Multi-Sucursal
+                    </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block ml-1">Usuario</label>
-                        <div className="relative group">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-400 transition-colors" size={18} />
-                            <input
-                                type="text"
-                                required
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="w-full bg-[#1a1a1a] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all font-medium text-sm hover:border-white/10"
-                                placeholder="ej. admin"
-                            />
+                    <h1 className="text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15] mb-6">
+                        Potencia tus operaciones retail con <span className="bg-gradient-to-r from-indigo-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">velocidad y precisión</span>.
+                    </h1>
+
+                    <p className="text-gray-400 text-base leading-relaxed mb-8">
+                        Control total en tiempo real: Punto de venta ágil, trazabilidad exacta de inventarios, reportes inteligentes y cotizaciones B2B unificadas.
+                    </p>
+
+                    {/* Características clave */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm">
+                            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
+                                <Store className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-bold text-white">POS Ultra Rápido</h4>
+                                <p className="text-[11px] text-gray-400">Cobros fluidos con tickets y QR.</p>
+                            </div>
                         </div>
-                    </motion.div>
 
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block ml-1">Contraseña</label>
-                        <div className="relative group">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-400 transition-colors" size={18} />
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-[#1a1a1a] border border-white/5 rounded-xl py-3 pl-10 pr-10 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all font-medium text-sm hover:border-white/10"
-                                placeholder="••••••••"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                        <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm">
+                            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
+                                <BarChart3 className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-bold text-white">Analítica & Kárdex</h4>
+                                <p className="text-[11px] text-gray-400">Stock auditado y márgenes reales.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer del panel izquierdo */}
+                <div className="relative z-10 flex items-center justify-between text-xs text-gray-500 border-t border-white/5 pt-6">
+                    <span>© 2026 Pegasus SalesSystem</span>
+                    <span>Versión 2.0 • Cloud High Performance</span>
+                </div>
+            </div>
+
+            {/* ── PANEL DERECHO: Formulario de Acceso ── */}
+            <div className="w-full lg:w-5/12 flex items-center justify-center p-6 sm:p-10 relative z-10 my-auto min-h-screen">
+                <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="w-full max-w-md bg-[#0f131c]/90 border border-white/10 p-8 sm:p-10 rounded-3xl shadow-2xl backdrop-blur-xl relative"
+                >
+                    {/* Header para Mobile con Logo */}
+                    <div className="lg:hidden flex items-center gap-3 mb-6 pb-6 border-b border-white/5">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-md">
+                            <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <span className="text-lg font-black text-white">PEGASUS <span className="text-indigo-400">NEXUS</span></span>
+                            <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Retail ERP</span>
+                        </div>
+                    </div>
+
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-black text-white tracking-tight">Iniciar Sesión</h2>
+                        <p className="text-gray-400 text-sm mt-1.5">
+                            Ingresa tus credenciales corporativas para acceder.
+                        </p>
+                    </div>
+
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                animate={{ opacity: 1, height: 'auto', marginBottom: 20 }}
+                                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                className="p-3.5 bg-red-500/10 border border-red-500/25 rounded-xl text-red-400 text-xs font-semibold text-center overflow-hidden"
                             >
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
+                                {error}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-300 tracking-wide block">
+                                Usuario o Correo
+                            </label>
+                            <div className="relative group">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                                <input
+                                    type="text"
+                                    required
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="w-full bg-[#181d29] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500 transition-all text-sm font-medium hover:border-white/20"
+                                    placeholder="ej. administrador o correo"
+                                />
+                            </div>
                         </div>
-                    </motion.div>
 
-                    <motion.button
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-white text-black font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] text-sm disabled:opacity-70 disabled:active:scale-100"
-                    >
-                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : <>Ingresar <ArrowRight size={18} /></>}
-                    </motion.button>
-                </form>
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-gray-300 tracking-wide block">
+                                    Contraseña
+                                </label>
+                            </div>
+                            <div className="relative group">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full bg-[#181d29] border border-white/10 rounded-xl py-3 pl-11 pr-11 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500 transition-all text-sm font-medium hover:border-white/20"
+                                    placeholder="••••••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
 
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-6 text-center text-xs text-gray-500">
-                    ¿No tienes cuenta? <span className="text-white font-medium hover:underline cursor-pointer">Contacta soporte</span>
-                </motion.p>
-            </motion.div>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 mt-2 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 text-sm disabled:opacity-60 cursor-pointer"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={18} />
+                                    <span>Verificando acceso...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Ingresar al Sistema</span>
+                                    <ArrowRight size={18} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                        <p className="text-xs text-gray-400">
+                            ¿Necesitas ayuda con tu cuenta?{' '}
+                            <a
+                                href="https://wa.me/59170000000"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-indigo-400 font-semibold hover:text-indigo-300 transition-colors"
+                            >
+                                Contactar a Soporte
+                            </a>
+                        </p>
+                    </div>
+                </motion.div>
+            </div>
         </div>
     );
 }
