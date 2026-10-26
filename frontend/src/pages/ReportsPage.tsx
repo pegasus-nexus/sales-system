@@ -40,9 +40,20 @@ export default function ReportsPage() {
         );
     }
 
+    // El reporte y plataforma de BI es exclusivo de Administración General (Matriz).
+    if (activeTab === 'bi' && !esMatriz) {
+        return (
+            <div className="flex flex-col items-center justify-center p-20 text-center">
+                <AlertTriangle className="text-amber-500 mb-4" size={48} />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Restringido a BI</h2>
+                <p className="text-gray-500 max-w-md">El Centro de Inteligencia de Negocios (BI) consolidado es de visualización exclusiva para la Administración General (Matriz).</p>
+            </div>
+        );
+    }
+
     return (
         <div className={activeTab === 'bi' ? "w-full px-1 sm:px-2 md:px-3 py-3 space-y-6 pb-20 md:pb-8" : "max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8"}>
-            {activeTab === 'bi' ? (
+            {activeTab === 'bi' && esMatriz ? (
                 <BIView />
             ) : activeTab === 'evolucion_mensual' ? (
                 <MonthlyEvolutionView />

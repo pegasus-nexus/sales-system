@@ -331,13 +331,40 @@ export default function InventarioPage() {
                             </button>
                         </div>
                         {tab === 'stock' && esAdminSucursal && (
-                            <button 
-                                onClick={() => setIsImportModalOpen(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-                            >
-                                <FileSpreadsheet size={16} />
-                                Importar Excel
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={async () => {
+                                        const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
+                                        if (!window.confirm("⚠️ ¿Deseas cuadrar el inventario de " + sucName + "?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.")) {
+                                            return;
+                                        }
+                                        setIsRecalculating(true);
+                                        try {
+                                            const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
+                                            toast.success("Inventario cuadrado: " + res.data.corregidos + " productos procesados, " + res.data.inventarios_modificados + " stock(s) alineado(s).");
+                                            queryClient.invalidateQueries({ queryKey: ['inventario'] });
+                                            queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+                                        } catch (err: any) {
+                                            toast.error(err?.message || 'Error al cuadrar el inventario con el Kárdex');
+                                        } finally {
+                                            setIsRecalculating(false);
+                                        }
+                                    }}
+                                    disabled={isRecalculating}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap disabled:opacity-50"
+                                    title="Cuadrar inventario recalculando sumas y restas de movimientos en Kárdex"
+                                >
+                                    <RefreshCw size={16} className={isRecalculating ? "animate-spin text-amber-700" : "text-amber-700"} />
+                                    <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
+                                </button>
+                                <button 
+                                    onClick={() => setIsImportModalOpen(true)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
+                                >
+                                    <FileSpreadsheet size={16} />
+                                    Importar Excel
+                                </button>
+                            </div>
                         )}
                         {tab === 'kardex' && (
                             <div className="flex items-center gap-2">
