@@ -60,4 +60,4 @@ jobs:
           BUSINESS_TIMEZONE: "America/La_Paz"
         run: |
           cd backend
-          python run_script.py verify_pipeline_eje6_master_gate.py
+          pytest tests/ -v
