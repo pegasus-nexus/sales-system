@@ -1,8 +1,8 @@
 ﻿fastapi
 uvicorn
-beanie
-motor
-pymongo>=4.9.0
+beanie==1.30.0
+motor==3.5.3
+pymongo==4.8.0
 pydantic-settings
 python-multipart
 passlib[bcrypt]
