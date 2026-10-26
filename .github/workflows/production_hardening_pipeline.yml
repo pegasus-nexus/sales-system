@@ -51,6 +51,7 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
+          pip install pytest pytest-asyncio
 
       - name: Run Master Hardening & CI/CD Gate Suite
         env:
@@ -60,4 +61,4 @@ jobs:
           BUSINESS_TIMEZONE: "America/La_Paz"
         run: |
           cd backend
-          pytest tests/ -v
+          python -m pytest tests/ -v
