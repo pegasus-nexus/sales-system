@@ -210,3 +210,37 @@ async def change_password(
     current_user.hashed_password = get_password_hash(data.new_password)
     await current_user.save()
     return {"message": "Contraseña actualizada exitosamente"}
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+@router.put("/users/me/profile")
+async def update_my_profile(
+    data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Permite al usuario autenticado actualizar su nombre completo y foto de perfil.
+    """
+    if data.full_name is not None:
+        current_user.full_name = data.full_name.strip() or None
+    if data.avatar_url is not None:
+        current_user.avatar_url = data.avatar_url.strip() or None
+
+    await current_user.save()
+    return {
+        "message": "Perfil actualizado exitosamente",
+        "user": {
+            "id": str(current_user.id),
+            "username": current_user.username,
+            "full_name": current_user.full_name,
+            "email": current_user.email,
+            "role": current_user.role,
+            "avatar_url": current_user.avatar_url,
+            "sucursal_id": current_user.sucursal_id,
+            "tenant_id": current_user.tenant_id
+        }
+    }

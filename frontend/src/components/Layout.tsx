@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
+    User as UserIcon, Camera, Check, Loader2,
     LayoutDashboard, Wallet, ShoppingBag, LogOut, Calculator,
-    Tag, Store, Package, ClipboardList, Warehouse, Users, Search, Globe,
+    Tag, Store, Package, ClipboardList, Warehouse, Users, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen
 } from 'lucide-react';
@@ -11,7 +12,7 @@ import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getMe, pingUser, changePassword, getSucursales } from '../api/api';
+import { getMe, pingUser, changePassword, getSucursales, updateMyProfile, uploadImage } from '../api/api';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
@@ -109,6 +110,55 @@ export default function Layout({ children }: LayoutProps) {
     }, []);
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [profileTab, setProfileTab] = useState<'profile' | 'password'>('profile');
+    const [fullNameInput, setFullNameInput] = useState('');
+    const [avatarUrlInput, setAvatarUrlInput] = useState('');
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const openProfileModal = (tab: 'profile' | 'password' = 'profile') => {
+        setFullNameInput(user?.full_name || '');
+        setAvatarUrlInput(user?.avatar_url || '');
+        setProfileTab(tab);
+        setIsChangePasswordOpen(true);
+    };
+
+    const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsUploadingAvatar(true);
+        try {
+            const res = await uploadImage(file);
+            setAvatarUrlInput(res.url);
+            toast.success('Foto subida. Haz clic en "Guardar Cambios" para confirmar.');
+        } catch (err: any) {
+            toast.error(err.message || 'Error al subir la imagen');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingProfile(true);
+        try {
+            await updateMyProfile({
+                full_name: fullNameInput,
+                avatar_url: avatarUrlInput
+            });
+            toast.success('Perfil actualizado correctamente');
+            useAuthStore.setState(prev => ({
+                user: prev.user ? { ...prev.user, full_name: fullNameInput, avatar_url: avatarUrlInput } : prev.user
+            }));
+            setIsChangePasswordOpen(false);
+        } catch (err: any) {
+            toast.error(err.message || 'Error al actualizar perfil');
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -429,18 +479,43 @@ export default function Layout({ children }: LayoutProps) {
                     </nav>
 
                     {/* User Profile / Logout */}
-                    <div className="mt-auto pt-3 border-t border-gray-800 flex flex-col gap-2">
-                        <div className={cn("flex items-center gap-2 p-1 rounded-xl", isCollapsed ? "justify-center" : "")}>
-                            <div className="w-8 h-8 rounded-full border-2 border-gray-700 bg-white/10 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-bold text-white uppercase">
-                                    {(user?.username || 'U')[0].toUpperCase()}
-                                </span>
+                    <div className="mt-auto pt-3 border-t border-gray-800 flex flex-col gap-1.5">
+                        <button 
+                            onClick={() => openProfileModal('profile')}
+                            title={isCollapsed ? (user?.full_name || user?.username || 'Mi Perfil') : 'Personalizar mi perfil y contraseña'}
+                            className={cn(
+                                "flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/10 transition-all text-left group w-full border border-transparent hover:border-white/10 cursor-pointer",
+                                isCollapsed ? "justify-center p-1" : ""
+                            )}
+                        >
+                            <div className="relative shrink-0">
+                                {user?.avatar_url ? (
+                                    <img
+                                        src={user.avatar_url}
+                                        alt={user.username}
+                                        className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-xs"
+                                    />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full border border-gray-700 bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-xs">
+                                        <span className="text-xs font-bold text-white uppercase">
+                                            {(user?.full_name || user?.username || 'U')[0].toUpperCase()}
+                                        </span>
+                                    </div>
+                                )}
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 border-2 border-[#0a0a0a] rounded-full" />
                             </div>
-                            <div className={cn("overflow-hidden transition-all duration-300 flex flex-col justify-center", isCollapsed ? "w-0 opacity-0" : "w-full opacity-100")}>
-                                <p className="text-xs font-medium text-white truncate">{user?.username || 'Usuario'}</p>
-                                <p className="text-[10px] text-gray-500 truncate">{user?.role || 'Miembro'}</p>
+                            <div className={cn("overflow-hidden transition-all duration-300 flex flex-col justify-center", isCollapsed ? "w-0 opacity-0 hidden" : "w-full opacity-100")}>
+                                <p className="text-xs font-bold text-white truncate leading-tight group-hover:text-indigo-300 transition-colors">
+                                    {user?.full_name || user?.username || 'Usuario'}
+                                </p>
+                                <p className="text-[10px] text-gray-400 truncate flex items-center gap-1">
+                                    <span>{user?.role || 'Miembro'}</span>
+                                    <span className="text-gray-600">•</span>
+                                    <span className="text-indigo-400 font-semibold group-hover:underline">Perfil</span>
+                                </p>
                             </div>
-                        </div>
+                        </button>
+
                         <button onClick={() => setShowLogoutConfirm(true)} title={isCollapsed ? "Cerrar Sesión" : undefined} className={cn("flex items-center gap-2 w-full p-2 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors group", isCollapsed ? "justify-center" : "")}>
                             <LogOut size={16} className="shrink-0" />
                             <div className={cn("overflow-hidden transition-all duration-300 flex items-center", isCollapsed ? "w-0 opacity-0" : "w-full opacity-100")}>
@@ -515,38 +590,24 @@ export default function Layout({ children }: LayoutProps) {
                 )}
                 
                 <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
-                    {/* Top Bar with Global View Search */}
-                    <div className="bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
-                        <div className="flex items-center gap-3">
-                            <div className="md:hidden flex items-center gap-2">
-                                <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
-                            </div>
-                            {/* Buscador de Vistas */}
-                            <button
-                                onClick={() => setSearchModalOpen(true)}
-                                className="flex items-center gap-2.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200/80 text-gray-500 rounded-xl text-xs font-medium transition-all border border-gray-200/60 shadow-xs hover:text-gray-800 w-48 sm:w-72"
-                            >
-                                <Search size={14} className="text-indigo-600 shrink-0" />
-                                <span className="truncate">Buscar vista rápida...</span>
-                                <kbd className="hidden sm:inline-block ml-auto text-[10px] font-bold bg-white text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded shadow-2xs">
-                                    Ctrl+K
-                                </kbd>
-                            </button>
+                    {/* Top Bar móvil (limpio en desktop para maximizar espacio de trabajo) */}
+                    <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
+                        <div className="flex items-center gap-2">
+                            <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
+                            <span className="font-bold text-xs text-gray-900">Pegasus Nexus</span>
                         </div>
-
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setIsChangePasswordOpen(true)}
-                                className="text-xs font-bold text-gray-700 hover:text-black bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl transition-all border border-gray-200 flex items-center gap-2 shadow-2xs"
-                                title="Cambiar mi contraseña"
+                                onClick={() => openProfileModal('profile')}
+                                className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg border border-gray-200 flex items-center gap-1.5"
                             >
-                                <KeyRound size={14} className="text-indigo-600" />
-                                <span>{user?.username} ({role})</span>
+                                <UserIcon size={14} className="text-indigo-600" />
+                                <span>Perfil</span>
                             </button>
                             {role !== 'CAJERO' && (
                                 <button
                                     onClick={() => setMobileMenuOpen(true)}
-                                    className="md:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
+                                    className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
                                 >
                                     <Menu size={18} />
                                 </button>
@@ -699,102 +760,265 @@ export default function Layout({ children }: LayoutProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {/* ── Change Password Modal ── */}
+            {/* ── Modal de Personalización de Perfil & Seguridad ── */}
             <AnimatePresence>
                 {isChangePasswordOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden flex flex-col p-6 text-gray-900">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <KeyRound className="w-5 h-5 text-indigo-600" />
-                                    Cambiar mi Contraseña
-                                </h3>
-                                <button onClick={() => setIsChangePasswordOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                    <X size={20} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col text-gray-900 border border-gray-100">
+                            {/* Modal Header */}
+                            <div className="bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 px-6 py-5 text-white flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+                                        <UserIcon className="w-5 h-5 text-indigo-300" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold tracking-tight">Mi Perfil & Seguridad</h3>
+                                        <p className="text-xs text-gray-400 font-medium">Personaliza tus datos de acceso en Pegasus Nexus</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setIsChangePasswordOpen(false)} 
+                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-gray-300 hover:text-white"
+                                >
+                                    <X size={16} />
                                 </button>
                             </div>
 
-                            <p className="text-xs text-gray-500 mb-4">Actualiza la contraseña de tu cuenta actual ({user?.username}).</p>
+                            {/* Tabs Switcher */}
+                            <div className="flex border-b border-gray-200 bg-gray-50/70 p-1.5 gap-2 px-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setProfileTab('profile')}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                                        profileTab === 'profile'
+                                            ? "bg-white text-indigo-700 shadow-sm border border-gray-200/80"
+                                            : "text-gray-500 hover:text-gray-800"
+                                    )}
+                                >
+                                    <UserIcon size={14} />
+                                    <span>Datos Personales & Foto</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setProfileTab('password')}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                                        profileTab === 'password'
+                                            ? "bg-white text-indigo-700 shadow-sm border border-gray-200/80"
+                                            : "text-gray-500 hover:text-gray-800"
+                                    )}
+                                >
+                                    <KeyRound size={14} />
+                                    <span>Cambiar Contraseña</span>
+                                </button>
+                            </div>
 
-                            <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Contraseña Actual</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type={showCurrentPw ? 'text' : 'password'}
-                                            required
-                                            value={currentPassword}
-                                            onChange={(e) => setCurrentPassword(e.target.value)}
-                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
-                                            placeholder="Ingresa tu contraseña actual"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCurrentPw(prev => !prev)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
+                            {/* Modal Body */}
+                            <div className="p-6">
+                                {profileTab === 'profile' ? (
+                                    <form onSubmit={handleSaveProfile} className="space-y-5">
+                                        {/* Avatar Picker */}
+                                        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <div className="relative group shrink-0">
+                                                {avatarUrlInput ? (
+                                                    <img
+                                                        src={avatarUrlInput}
+                                                        alt="Foto de perfil"
+                                                        className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-500 shadow-md"
+                                                    />
+                                                ) : (
+                                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center border-2 border-indigo-200 shadow-md">
+                                                        <span className="text-2xl font-black text-white uppercase">
+                                                            {(fullNameInput || user?.username || 'U')[0].toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    disabled={isUploadingAvatar}
+                                                    className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold gap-1"
+                                                >
+                                                    {isUploadingAvatar ? (
+                                                        <Loader2 size={16} className="animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <Camera size={16} />
+                                                            <span>Cambiar</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Nueva Contraseña</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type={showNewPw ? 'text' : 'password'}
-                                            required
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
-                                            placeholder="Mín. 8 caracteres, números y símbolos"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowNewPw(prev => !prev)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
+                                            <div className="flex-1 text-center sm:text-left space-y-1.5">
+                                                <h4 className="text-sm font-bold text-gray-900">Foto de Perfil</h4>
+                                                <p className="text-xs text-gray-500">Sube una imagen cuadrada (.jpg, .png) para personalizar tu avatar.</p>
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleAvatarFileSelect}
+                                                    className="hidden"
+                                                />
+                                                <div className="flex flex-wrap gap-2 pt-1 justify-center sm:justify-start">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        disabled={isUploadingAvatar}
+                                                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        {isUploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+                                                        <span>Subir foto</span>
+                                                    </button>
+                                                    {avatarUrlInput && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAvatarUrlInput('')}
+                                                            className="px-2.5 py-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors font-medium"
+                                                        >
+                                                            Quitar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type={showConfirmPw ? 'text' : 'password'}
-                                            required
-                                            value={confirmNewPassword}
-                                            onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                            className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent text-sm"
-                                            placeholder="Repite la nueva contraseña"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPw(prev => !prev)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                                            tabIndex={-1}
-                                        >
-                                            {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
+                                        {/* Full Name */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Nombre Completo</label>
+                                            <input
+                                                type="text"
+                                                value={fullNameInput}
+                                                onChange={(e) => setFullNameInput(e.target.value)}
+                                                placeholder="Ej. Juan Pérez"
+                                                className="w-full px-3.5 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium outline-none transition-all"
+                                            />
+                                        </div>
 
-                                <div className="pt-2 flex gap-3">
-                                    <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm">
-                                        Cancelar
-                                    </button>
-                                    <button type="submit" disabled={isChangingPassword} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-black hover:bg-gray-800 transition-colors text-sm disabled:opacity-50">
-                                        {isChangingPassword ? 'Guardando...' : 'Cambiar Contraseña'}
-                                    </button>
-                                </div>
-                            </form>
+                                        {/* Read-Only Info Pills */}
+                                        <div className="grid grid-cols-2 gap-3 pt-1">
+                                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Usuario / Login</span>
+                                                <span className="text-xs font-bold text-gray-800 truncate block mt-0.5">{user?.username}</span>
+                                            </div>
+                                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rol de Sistema</span>
+                                                <span className="text-xs font-bold text-indigo-600 truncate block mt-0.5">{user?.role}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-3 flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsChangePasswordOpen(false)} 
+                                                className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                disabled={isSavingProfile || isUploadingAvatar} 
+                                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                                            >
+                                                {isSavingProfile ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                                <span>{isSavingProfile ? 'Guardando...' : 'Guardar Cambios'}</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
+                                        <p className="text-xs text-gray-500 mb-2">Para proteger tu cuenta ({user?.username}), ingresa tu contraseña actual y luego define una nueva segura.</p>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-1">Contraseña Actual</label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type={showCurrentPw ? 'text' : 'password'}
+                                                    required
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                    className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm outline-none"
+                                                    placeholder="Ingresa tu contraseña actual"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCurrentPw(prev => !prev)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña</label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type={showNewPw ? 'text' : 'password'}
+                                                    required
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm outline-none"
+                                                    placeholder="Mín. 8 caracteres, números y símbolos"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewPw(prev => !prev)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type={showConfirmPw ? 'text' : 'password'}
+                                                    required
+                                                    value={confirmNewPassword}
+                                                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                                    className="w-full pl-9 pr-10 py-2.5 bg-gray-50 text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm outline-none"
+                                                    placeholder="Repite la nueva contraseña"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPw(prev => !prev)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                                    tabIndex={-1}
+                                                >
+                                                    {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-3 flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsChangePasswordOpen(false)} 
+                                                className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-sm"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                disabled={isChangingPassword} 
+                                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                                            >
+                                                {isChangingPassword ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+                                                <span>{isChangingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

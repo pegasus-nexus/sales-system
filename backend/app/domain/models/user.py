@@ -28,6 +28,7 @@ class User(Document, SoftDeleteMixin):
     email: Optional[EmailStr] = None
     hashed_password: str
     full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     role: UserRole = UserRole.CAJERO
     tenant_id: Optional[str] = None    # Links to Tenant (Empresa)
     sucursal_id: Optional[str] = None  # Links to Sucursal, None = Matriz level
