@@ -2,12 +2,12 @@
 uvicorn
 beanie
 motor
-pymongo<4.9.0
+pymongo>=4.9.0
 pydantic-settings
 python-multipart
 passlib[bcrypt]
-bcrypt==3.2.2
-python-jose[cryptography]
+bcrypt>=4.0.1
+PyJWT>=2.8.0
 email-validator
 numpy
 pandas

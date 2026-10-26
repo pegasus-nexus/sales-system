@@ -6,7 +6,8 @@ from app.domain.models.cotizacion import Cotizacion, CotizacionItem, CotizacionC
 from app.domain.models.product import Product
 from app.domain.models.user import User
 from app.domain.models.base import DecimalMoney
-from app.domain.models.sale import SaleCreate, SaleItemCreate, PagoItemCreate
+from app.domain.schemas.sale import SaleCreate, SaleItemIn, PagoIn, ClienteIn
+from app.domain.models.sale import DescuentoInfo
 
 class CotizacionService:
 
@@ -130,7 +131,7 @@ class CotizacionService:
         # Construir el payload de venta
         sale_items = []
         for it in cot.items:
-            sale_items.append(SaleItemCreate(
+            sale_items.append(SaleItemIn(
                 producto_id=it.producto_id,
                 cantidad=it.cantidad,
                 precio_unitario=Decimal(str(it.precio_unitario)),
@@ -139,9 +140,9 @@ class CotizacionService:
             ))
 
         total_venta = Decimal(str(cot.total))
-        pagos = [PagoItemCreate(metodo=metodo_pago, monto=total_venta)]
+        pagos = [PagoIn(metodo=metodo_pago, monto=total_venta)]
 
-        cliente_info = ClienteInfo(
+        cliente_info = ClienteIn(
             razon_social=cot.cliente.nombre_razon_social,
             nit=cot.cliente.nit_ci,
             telefono=cot.cliente.telefono,
