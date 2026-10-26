@@ -16,6 +16,8 @@ import { getMe, pingUser, changePassword, getSucursales, updateMyProfile, upload
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
+import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
+import { Sparkles } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -67,6 +69,16 @@ export default function Layout({ children }: LayoutProps) {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
+    const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+    const [seenRelease, setSeenRelease] = useLocalStorage<string>('pegasus_seen_release', '');
+
+    // Si es la primera vez que inicia sesión con esta versión, o si hace clic en el botón
+    const hasUnreadNews = seenRelease !== CURRENT_RELEASE_VERSION;
+
+    const handleOpenWhatsNew = () => {
+        setWhatsNewOpen(true);
+        setSeenRelease(CURRENT_RELEASE_VERSION);
+    };
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -480,6 +492,30 @@ export default function Layout({ children }: LayoutProps) {
 
                     {/* User Profile / Logout */}
                     <div className="mt-auto pt-3 border-t border-gray-800 flex flex-col gap-1.5">
+                        {/* Botón de Novedades del Sistema */}
+                        <button
+                            onClick={handleOpenWhatsNew}
+                            title={isCollapsed ? "Ver Novedades del Sistema" : undefined}
+                            className={cn(
+                                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all duration-200 text-xs font-semibold group border border-indigo-500/30 hover:border-indigo-400/60 bg-gradient-to-r from-indigo-950/60 to-purple-950/40 hover:from-indigo-900/80 hover:to-purple-900/60 text-indigo-200 shadow-xs",
+                                isCollapsed ? "justify-center px-0 py-2" : ""
+                            )}
+                        >
+                            <div className="relative shrink-0">
+                                <Sparkles size={15} className="text-indigo-400 group-hover:text-indigo-200 group-hover:scale-110 transition-transform" />
+                                {hasUnreadNews && (
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-ping" />
+                                )}
+                            </div>
+                            <div className={cn("overflow-hidden transition-all duration-300 flex items-center justify-between flex-1", isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100")}>
+                                <span className="whitespace-nowrap font-bold text-[11px] text-indigo-200 group-hover:text-white">Novedades</span>
+                                {hasUnreadNews && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider bg-amber-400 text-gray-950 px-1.5 py-0.2 rounded-full shadow-2xs">
+                                        Nuevo
+                                    </span>
+                                )}
+                            </div>
+                        </button>
                         <button 
                             onClick={() => openProfileModal('profile')}
                             title={isCollapsed ? (user?.full_name || user?.username || 'Mi Perfil') : 'Personalizar mi perfil y contraseña'}
@@ -617,6 +653,7 @@ export default function Layout({ children }: LayoutProps) {
 
                     {/* View Search Modal */}
                     <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
+                    <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
 
 
                     {/* Scrollable Content */}
