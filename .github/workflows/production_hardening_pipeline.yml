@@ -54,9 +54,9 @@ jobs:
 
       - name: Run Master Hardening & CI/CD Gate Suite
         env:
-          MONGODB_URL: "mongodb://127.0.0.1:27017"
-          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          MONGODB_URL: "mongodb://127.0.0.1:27017/sales_system_test"
+          MONGODB_DB_NAME: "sales_system_test"
+          JWT_SECRET_KEY: "ci-test-jwt-secret-key-at-least-32-chars-long"
           BUSINESS_TIMEZONE: "America/La_Paz"
         run: |
           cd backend
