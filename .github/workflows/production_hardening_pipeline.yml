@@ -33,6 +33,11 @@ jobs:
   backend-hardening-gates:
     name: 🔒 Backend Hardening & BI Regression Gates (Ejes 1-6)
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v3
 
@@ -49,7 +54,7 @@ jobs:
 
       - name: Run Master Hardening & CI/CD Gate Suite
         env:
-          MONGODB_URL: ${{ secrets.MONGODB_URL }}
+          MONGODB_URL: ${{ secrets.MONGODB_URL || "mongodb://127.0.0.1:27017" }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           BUSINESS_TIMEZONE: "America/La_Paz"
