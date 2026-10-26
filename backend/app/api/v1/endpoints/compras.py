@@ -90,7 +90,7 @@ async def list_purchase_orders(
 async def get_purchase_order(
     sucursal_id: str,
     order_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.FACTURADOR])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
@@ -187,7 +187,7 @@ async def create_purchase_reception(
 @router.get("/receptions/{sucursal_id}", response_model=List[PurchaseReception])
 async def list_purchase_receptions(
     sucursal_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO])),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL, UserRole.CAJERO, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.FACTURADOR])),
     service: CompraService = Depends(get_compra_service)
 ):
     """
