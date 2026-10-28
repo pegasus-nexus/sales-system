@@ -1,7 +1,7 @@
 from typing import List, Optional
 import re
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import get_current_active_user, get_password_hash, require_roles
 from datetime import datetime
@@ -40,8 +40,7 @@ class SaasStaffResponse(BaseModel):
     is_active: bool = True
     created_at: Optional[datetime] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 def format_saas_staff(user: User) -> dict:
     return {

@@ -15,7 +15,7 @@ class WebReward(BaseModel):
     deleted: bool = False
 
 class WebConfig(Document):
-    tenant_id: str = Field(..., index=True)
+    tenant_id: str = Field(...)
     
     # Hero Texts
     hero_subtitle: str = "DESDE 1948 CREANDO MOMENTOS ESPECIALES"
