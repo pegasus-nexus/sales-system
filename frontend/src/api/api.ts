@@ -1746,6 +1746,44 @@ export const deleteListaPrecioItem = (lista_id: string, item_id: string) => clie
 
 // â”€â”€ GestiÃ³n de CrÃ©ditos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+export const getCreditosResumen = () => {
+    return client<{
+        total_cartera_por_cobrar: number;
+        total_cuentas: number;
+        total_cuentas_morosas: number;
+        total_cuentas_al_dia: number;
+        total_abonado_hoy: number;
+    }>('/creditos/resumen');
+};
+
+export const verificarClienteSimilar = (data: { nombre: string; nit_ci?: string; telefono?: string }) => {
+    return client<Array<{
+        cliente_id: string;
+        nombre: string;
+        nit_ci?: string;
+        telefono?: string;
+        score_similitud: number;
+        tiene_cuenta_credito: boolean;
+        saldo_pendiente: number;
+    }>>('/creditos/verificar-similar', { method: 'POST', body: data });
+};
+
+export const crearCuentaCredito = (data: {
+    cliente_id?: string;
+    nombre?: string;
+    nit_ci?: string;
+    telefono?: string;
+    limite_credito?: number;
+    confirmar_similar?: boolean;
+}) => {
+    return client<{
+        message: string;
+        cuenta_id: string;
+        cliente_id?: string;
+        saldo_total: number;
+    }>('/creditos/cuentas', { method: 'POST', body: data });
+};
+
 export const getCuentasCredito = (q?: string, estado?: string, page: number = 1, limit: number = 50) => {
 
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
