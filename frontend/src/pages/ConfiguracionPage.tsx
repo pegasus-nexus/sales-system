@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyTenant, updateMyTenantSettings, uploadImage, updateMyTenantConfiguracion } from '../api/api';
 import type { TenantSettings } from '../api/types';
+import { LoginCustomizationTab } from '../components/configuracion/LoginCustomizationTab';
 import { Globe, Loader2, Save, Image as ImageIcon, Store, AlertCircle, MessageCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ConfiguracionPage() {
     const qc = useQueryClient();
-    const [activeTab, setActiveTab] = useState<'branding' | 'pos'>('branding');
+    const [activeTab, setActiveTab] = useState<'branding' | 'login' | 'pos'>('branding');
+    const [slug, setSlug] = useState<string>('');
     const [showApiToken, setShowApiToken] = useState(false);
 
     const { data: tenant, isLoading } = useQuery({
@@ -43,6 +45,7 @@ export default function ConfiguracionPage() {
 
     useEffect(() => {
         if (tenant?.settings) {
+            setSlug(tenant.slug || (tenant.name ? tenant.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') : ''));
             setSettings({
                 ticket_footer: tenant.settings.ticket_footer || '',
                 report_watermark: tenant.settings.report_watermark || '',
@@ -51,6 +54,12 @@ export default function ConfiguracionPage() {
                 telefono: tenant.settings.telefono || '',
                 brand_color: tenant.settings.brand_color || '#4f46e5',
                 margen_distribuidor: tenant.settings.margen_distribuidor !== undefined ? tenant.settings.margen_distribuidor : 0.15,
+                login_bg_image: tenant.settings.login_bg_image,
+                login_primary_color: tenant.settings.login_primary_color || tenant.settings.brand_color || '#4f46e5',
+                login_secondary_color: tenant.settings.login_secondary_color || '#06b6d4',
+                login_headline: tenant.settings.login_headline || '',
+                login_description: tenant.settings.login_description || '',
+                login_badge_text: tenant.settings.login_badge_text || '',
                 whatsapp: {
                     enabled: tenant.settings.whatsapp?.enabled || false,
                     provider: tenant.settings.whatsapp?.provider || 'GREENAPI',
@@ -159,6 +168,17 @@ export default function ConfiguracionPage() {
                 </button>
                 <button
                     type="button"
+                    onClick={() => setActiveTab('login')}
+                    className={`py-3 px-6 font-bold text-sm border-b-2 transition-colors cursor-pointer ${
+                        activeTab === 'login'
+                            ? "border-black text-black font-extrabold"
+                            : "border-transparent text-gray-500 hover:text-gray-900"
+                    }`}
+                >
+                    Personalización Login & Marca
+                </button>
+                <button
+                    type="button"
                     onClick={() => setActiveTab('pos')}
                     className={`py-3 px-6 font-bold text-sm border-b-2 transition-colors cursor-pointer ${
                         activeTab === 'pos'
@@ -170,7 +190,17 @@ export default function ConfiguracionPage() {
                 </button>
             </div>
 
-            {activeTab === 'branding' ? (
+            {activeTab === 'login' ? (
+                <LoginCustomizationTab
+                    settings={settings}
+                    setSettings={setSettings}
+                    slug={slug}
+                    setSlug={setSlug}
+                    tenantName={tenant?.name || ''}
+                    onSave={() => mut.mutate({ ...settings, slug })}
+                    isSaving={mut.isPending}
+                />
+            ) : activeTab === 'branding' ? (
                 <form onSubmit={handleSubmit} className="space-y-6">
                     
                     {/* BRANDING */}

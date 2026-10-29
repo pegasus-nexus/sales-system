@@ -26,6 +26,7 @@ export interface WhatsAppSettings {
 }
 
 export interface TenantSettings {
+    slug?: string;
   currency_code?: string;
   currency_symbol?: string;
     ticket_footer?: string;
@@ -36,11 +37,18 @@ export interface TenantSettings {
     brand_color?: string;
     margen_distribuidor?: number;
     whatsapp?: WhatsAppSettings;
+    login_bg_image?: string;
+    login_primary_color?: string;
+    login_secondary_color?: string;
+    login_headline?: string;
+    login_description?: string;
+    login_badge_text?: string;
 }
 
 export interface Tenant {
     _id: string;
     name: string;
+    slug?: string;
     plan: string;
     is_active: boolean;
     plan_expires_at?: string;
@@ -882,3 +890,16 @@ export interface PredictiveCenterResponse {
     model_meta: ModelConfidenceMeta;
 }
 
+
+export interface LoginBrandingResponse {
+    custom_branding: boolean;
+    tenant_name: string;
+    tenant_slug?: string;
+    logo_url?: string;
+    login_bg_image?: string;
+    primary_color: string;
+    secondary_color: string;
+    headline: string;
+    description: string;
+    badge_text: string;
+}

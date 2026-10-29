@@ -5,7 +5,7 @@ from app.main import app
 
 @pytest.mark.skip(reason="Requires a test database and fixtures setup (e.g. authenticated_client)")
 @pytest.mark.asyncio
-async def test_ajuste_inventario_concurrencia():
+async def test_ajuste_inventario_concurrencia(authenticated_client=None, create_tenant=None, create_product=None):
     # Asume que tienes fixtures `authenticated_client`, `create_tenant` y `create_product`.
     # Si no tienes estas fixtures en tu entorno de test actual, este test es una muestra de cómo 
     # se estructura una prueba de concurrencia.

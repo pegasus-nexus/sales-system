@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/authStore';
 
 import type {
 
-    Tenant, TenantCreate, TenantUpdate, TenantSettings,
+    Tenant, TenantCreate, TenantUpdate, TenantSettings, LoginBrandingResponse,
 
     Product, ProductCreate,
 
@@ -2236,3 +2236,8 @@ export const convertirCotizacionAVenta = (id: string, metodoPago: string = 'EFEC
         method: 'POST',
         body: { metodo_pago: metodoPago }
     });
+
+export const getLoginBranding = async (slug?: string): Promise<LoginBrandingResponse> => {
+    const query = slug ? `?slug=${encodeURIComponent(slug)}` : '';
+    return client<LoginBrandingResponse>(`/auth/login-branding${query}`);
+};

@@ -245,3 +245,72 @@ async def update_my_profile(
             "tenant_id": current_user.tenant_id
         }
     }
+
+
+class LoginBrandingResponse(BaseModel):
+    custom_branding: bool = False
+    tenant_name: str = "PEGASUS NEXUS"
+    tenant_slug: Optional[str] = None
+    logo_url: Optional[str] = None
+    login_bg_image: Optional[str] = None
+    primary_color: str = "#6366f1"
+    secondary_color: str = "#06b6d4"
+    headline: str = "Potencia tus operaciones retail con velocidad y precisión."
+    description: str = "Control total en tiempo real: Punto de venta ágil, trazabilidad exacta de inventarios, reportes inteligentes y cotizaciones B2B unificadas."
+    badge_text: str = "Plataforma Segura Multi-Sucursal"
+
+
+@router.get("/auth/login-branding", response_model=LoginBrandingResponse)
+async def get_login_branding(slug: Optional[str] = None, tenant: Optional[str] = None):
+    """
+    Endpoint público que retorna el branding personalizado de login para un tenant
+    según su slug o nombre en URL/subdominio. Si no existe, retorna el branding default.
+    """
+    target = slug or tenant
+    if not target or not target.strip():
+        return LoginBrandingResponse()
+
+    target_str = target.strip()
+    clean_target = target_str.lower()
+
+    from app.domain.models.tenant import Tenant
+    import unicodedata
+
+    # 1. Búsqueda por slug exacto
+    tenant_doc = await Tenant.find_one({"slug": clean_target})
+
+    # 2. Búsqueda por nombre insensible a mayúsculas/minúsculas
+    if not tenant_doc:
+        tenant_doc = await Tenant.find_one({"name": re.compile(f"^{re.escape(target_str)}$", re.IGNORECASE)})
+
+    # 3. Fallback: Búsqueda flexible por nombre slugificado
+    if not tenant_doc:
+        all_tenants = await Tenant.find().to_list()
+        for t in all_tenants:
+            norm_name = unicodedata.normalize('NFKD', t.name).encode('ASCII', 'ignore').decode('utf-8').lower()
+            slugified = re.sub(r'[^a-z0-9]+', '-', norm_name).strip('-')
+            if slugified == clean_target or clean_target in slugified:
+                tenant_doc = t
+                break
+
+    if not tenant_doc:
+        return LoginBrandingResponse()
+
+    effective_slug = tenant_doc.slug
+    if not effective_slug and tenant_doc.name:
+        norm_name = unicodedata.normalize('NFKD', tenant_doc.name).encode('ASCII', 'ignore').decode('utf-8').lower()
+        effective_slug = re.sub(r'[^a-z0-9]+', '-', norm_name).strip('-')
+
+    s = tenant_doc.settings
+    return LoginBrandingResponse(
+        custom_branding=True,
+        tenant_name=tenant_doc.name,
+        tenant_slug=effective_slug,
+        logo_url=s.logo_base64,
+        login_bg_image=s.login_bg_image,
+        primary_color=s.login_primary_color or s.brand_color or "#6366f1",
+        secondary_color=s.login_secondary_color or "#06b6d4",
+        headline=s.login_headline or f"Potencia las operaciones de {tenant_doc.name}",
+        description=s.login_description or "Control total en tiempo real: Punto de venta ágil, trazabilidad exacta de inventarios y reportes.",
+        badge_text=s.login_badge_text or "Portal Corporativo Multi-Sucursal"
+    )

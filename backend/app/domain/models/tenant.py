@@ -23,6 +23,12 @@ class TenantSettings(BaseModel):
     telefono: Optional[str] = None
     brand_color: Optional[str] = "#4f46e5"
     margen_distribuidor: float = 0.15  # Default 15% margen
+    login_bg_image: Optional[str] = None
+    login_primary_color: Optional[str] = "#4f46e5"
+    login_secondary_color: Optional[str] = "#06b6d4"
+    login_headline: Optional[str] = None
+    login_description: Optional[str] = None
+    login_badge_text: Optional[str] = None
 from .base import SoftDeleteMixin
 
 
@@ -70,6 +76,7 @@ MODULOS_DEFAULT_POR_RUBRO: dict[str, list[str]] = {
 
 class Tenant(Document, SoftDeleteMixin):
     name: str
+    slug: Optional[str] = None
     plan_id: Optional[str] = None          # Ref to plans collection
     plan: PlanType = PlanType.BASICO
     plan_expires_at: Optional[datetime] = None
@@ -83,5 +90,6 @@ class Tenant(Document, SoftDeleteMixin):
         name = "tenants"
         indexes = [
             "name",
+            "slug",
             "plan_id"
         ]

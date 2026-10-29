@@ -427,6 +427,7 @@ class WhatsAppSettingsUpdate(BaseModel):
     default_message: Optional[str] = None
 
 class TenantSettingsUpdate(BaseModel):
+    slug: Optional[str] = None
     ticket_footer: Optional[str] = None
     report_watermark: Optional[str] = None
     logo_base64: Optional[str] = None
@@ -435,6 +436,12 @@ class TenantSettingsUpdate(BaseModel):
     brand_color: Optional[str] = None
     margen_distribuidor: Optional[float] = None
     whatsapp: Optional[WhatsAppSettingsUpdate] = None
+    login_bg_image: Optional[str] = None
+    login_primary_color: Optional[str] = None
+    login_secondary_color: Optional[str] = None
+    login_headline: Optional[str] = None
+    login_description: Optional[str] = None
+    login_badge_text: Optional[str] = None
 
 @router.get("/tenants/me", response_model=Tenant)
 async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
@@ -476,6 +483,30 @@ async def update_my_tenant_settings(
         tenant.settings.brand_color = settings_in.brand_color
     if settings_in.margen_distribuidor is not None:
         tenant.settings.margen_distribuidor = settings_in.margen_distribuidor
+    if settings_in.slug is not None and settings_in.slug.strip():
+        clean_slug = re.sub(r'[^a-z0-9-]', '', settings_in.slug.strip().lower())
+        existing = await Tenant.find_one({"slug": clean_slug})
+        if existing and str(existing.id) != str(tenant.id):
+            raise HTTPException(status_code=400, detail=f"El slug '{clean_slug}' ya está en uso por otra empresa.")
+        tenant.slug = clean_slug
+    elif not tenant.slug and tenant.name:
+        import unicodedata
+        base_slug = unicodedata.normalize('NFKD', tenant.name).encode('ASCII', 'ignore').decode('utf-8').lower()
+        tenant.slug = re.sub(r'[^a-z0-9]+', '-', base_slug).strip('-')
+
+    if settings_in.login_bg_image is not None:
+        tenant.settings.login_bg_image = settings_in.login_bg_image
+    if settings_in.login_primary_color is not None:
+        tenant.settings.login_primary_color = settings_in.login_primary_color
+    if settings_in.login_secondary_color is not None:
+        tenant.settings.login_secondary_color = settings_in.login_secondary_color
+    if settings_in.login_headline is not None:
+        tenant.settings.login_headline = settings_in.login_headline
+    if settings_in.login_description is not None:
+        tenant.settings.login_description = settings_in.login_description
+    if settings_in.login_badge_text is not None:
+        tenant.settings.login_badge_text = settings_in.login_badge_text
+
     if settings_in.whatsapp is not None:
         if settings_in.whatsapp.enabled is not None:
             tenant.settings.whatsapp.enabled = settings_in.whatsapp.enabled

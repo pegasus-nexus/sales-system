@@ -1,5 +1,4 @@
 import os
-import pytest
 import pytest_asyncio
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import init_db
@@ -11,12 +10,12 @@ settings.MONGODB_URL = test_db_url
 settings.MONGODB_DB_NAME = "sales_system_test_suite"
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def initialize_test_database():
     """
-    Se ejecuta automáticamente en cada test.
+    Se ejecuta una sola vez al inicio de la sesión de pruebas.
     Inicializa los modelos de Beanie si MongoDB está disponible.
-    En entornos locales sin Mongo corriendo, permite ejecutar pruebas puras de modelos y lógica.
+    En entornos locales sin Mongo corriendo, permite ejecutar pruebas puras de modelos y lógica rápidamente.
     """
     try:
         await init_db()
