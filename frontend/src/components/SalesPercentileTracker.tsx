@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSalesPercentiles } from "../api/api";
+import { getBISucursales } from "../api/biApi";
 import { Loader2, AlertTriangle, Store, BarChart2, ChevronLeft, ChevronRight, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { clsx } from "clsx"; 
 import { twMerge } from "tailwind-merge";
@@ -42,12 +43,7 @@ const ZONES = {
   },
 } as const;
 
-const SUCS = [
-  {value:"",label:"Tiendas Minoristas (Consolidado)"},
-  {value:"Heroinas",label:"Heroínas"},
-  {value:"Recoleta",label:"Recoleta"},
-  {value:"Calacoto",label:"Calacoto"},
-];
+// Sucursales dinámicas por tenant
 
 const DAYS = ["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
 const MES  = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -144,6 +140,22 @@ function Tooltip({ entry, p25, p50, p75 }: { entry: any, p25: number, p50: numbe
 
 export default function SalesPercentileTracker(){
   const [sucursal,setSucursal]=useState("");
+  const [sucsList, setSucsList] = useState<{ value: string; label: string }[]>([
+    { value: "", label: "Tiendas Minoristas (Consolidado)" }
+  ]);
+
+  useEffect(() => {
+    let mounted = true;
+    getBISucursales().then((list) => {
+      if (mounted && list && list.length > 0) {
+        setSucsList([
+          { value: "", label: "Tiendas Minoristas (Consolidado)" },
+          ...list.map(s => ({ value: s.nombre || s.sucursal_id, label: s.nombre }))
+        ]);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
   const [data,setData]=useState<any>(null);
   const [isLoading,setIsLoading]=useState(true);
   const [isError,setIsError]=useState(false);
@@ -267,7 +279,7 @@ export default function SalesPercentileTracker(){
               onChange={e=>setSucursal(e.target.value)} 
               className="pl-8 pr-6 py-2 bg-slate-50 border border-slate-200 hover:border-indigo-300 rounded-xl font-bold text-xs text-slate-800 outline-none appearance-none cursor-pointer shadow-2xs"
             >
-              {SUCS.map(s=>(
+              {sucsList.map(s=>(
                 <option key={s.value} value={s.value} className="bg-white text-slate-800">
                   {s.label}
                 </option>
