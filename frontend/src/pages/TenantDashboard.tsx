@@ -111,7 +111,7 @@ export default function TenantDashboard() {
 
     return (
 
-        <div className="max-w-7xl mx-auto space-y-8 pb-20">
+        <div className="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8 space-y-8 pb-24">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -163,7 +163,7 @@ export default function TenantDashboard() {
                 <>
                     {/* Top Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
+                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
                             <div className="absolute -right-6 -top-6 bg-white/10 w-32 h-32 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
                             <div className="flex justify-between items-start mb-4 relative">
                                 <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm"><DollarSign size={24} /></div>
@@ -187,7 +187,7 @@ export default function TenantDashboard() {
                             <p className="text-indigo-100 font-medium text-sm">Ventas Hoy</p>
                         </div>
 
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-6 border border-gray-200/70 shadow-xs hover:shadow-md transition-all">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-blue-50 rounded-2xl"><ShoppingBag size={24} className="text-blue-500" /></div>
                             </div>
@@ -195,7 +195,7 @@ export default function TenantDashboard() {
                             <p className="text-gray-500 font-medium text-sm">Transacciones de Venta Hoy</p>
                         </div>
 
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-6 border border-gray-200/70 shadow-xs hover:shadow-md transition-all">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-green-50 rounded-2xl"><Package size={24} className="text-green-500" /></div>
                             </div>
@@ -203,7 +203,7 @@ export default function TenantDashboard() {
                             <p className="text-gray-500 font-medium text-sm">Transacciones de Compra Hoy</p>
                         </div>
 
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="bg-white rounded-2xl p-6 border border-gray-200/70 shadow-xs hover:shadow-md transition-all">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-red-50 rounded-2xl"><XCircle size={24} className="text-red-500" /></div>
                             </div>
@@ -215,7 +215,7 @@ export default function TenantDashboard() {
                     {/* Charts */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Monthly Bar Chart */}
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200/70 shadow-xs">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold text-gray-900">Evolución Anual (Mes a Mes)</h2>
                                 <select 
@@ -247,7 +247,7 @@ export default function TenantDashboard() {
                         </div>
 
                         {/* Daily Line Chart */}
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200/70 shadow-xs">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold text-gray-900">Ventas Diarias (Mes Actual)</h2>
                                 <select 
@@ -280,7 +280,7 @@ export default function TenantDashboard() {
                     {/* Bottom Lists */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {/* Top Products */}
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200/70 shadow-xs">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Productos Ms Vendidos Hoy</h2>
                             {metricsHoy.productos_mas_vendidos.length === 0 ? (
                                 <p className="text-gray-500 text-center py-8">No hay ventas registradas hoy.</p>
@@ -307,7 +307,7 @@ export default function TenantDashboard() {
                         </div>
 
                         {/* Active Personnel */}
-                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200/70 shadow-xs">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Activo Hoy (Vendiendo)</h2>
                             {metricsHoy.personal_activo.length === 0 ? (
                                 <p className="text-gray-500 text-center py-8">No hay personal activo o con ventas hoy.</p>

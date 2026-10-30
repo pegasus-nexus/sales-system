@@ -389,13 +389,14 @@ export default function Layout({ children }: LayoutProps) {
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
             {/* ── Desktop Sidebar ── */}
-                <aside className={cn("hidden md:flex flex-col p-4 gap-4 transition-all duration-300 relative select-none", isCollapsed ? "w-20" : "w-56")}>
+                <aside className={cn("hidden md:flex flex-col bg-[#07090e] border-r border-white/10 transition-all duration-300 relative select-none shrink-0 z-20", isCollapsed ? "w-20 p-3 gap-3" : "w-64 p-4 gap-4")}>
 
                     {/* Header (Menu Toggle + Brand) */}
                     <div className="flex items-center gap-3 px-1 h-8">
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                            title={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
                         >
                             <Menu size={20} />
                         </button>
@@ -592,12 +593,12 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
             )}
 
-            {/* ── Main Content Shell ── */}
-            <main className={cn("flex-1 flex flex-col min-w-0 bg-[#0a0a0a] md:pr-4 md:py-4", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
+            {/* ── Main Content Partition (Full Screen Split) ── */}
+            <main className={cn("flex-1 flex flex-col min-w-0 h-full bg-[#f4f6f8] relative overflow-hidden", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
                 <TrialWarningBanner />
                 {/* Desktop Exit Impersonation Banner */}
                 {useAuthStore(state => state.originalToken) && (
-                    <div className="hidden md:flex mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
+                    <div className="hidden md:flex mx-4 mt-3 mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
                         <span className="text-sm font-medium">Estás navegando la cuenta como <strong>{user?.username}</strong></span>
                         <button 
                             onClick={async () => {
@@ -625,8 +626,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                 )}
                 
-                <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
-                    {/* Top Bar móvil (limpio en desktop para maximizar espacio de trabajo) */}
+                {/* Top Bar móvil (limpio en desktop para maximizar espacio de trabajo) */}
                     <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
                         <div className="flex items-center gap-2">
                             <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
@@ -665,7 +665,6 @@ export default function Layout({ children }: LayoutProps) {
                         <div className="md:h-0 h-0" />
                         {children}
                     </div>
-                </div>
             </main>
 
             {/* ── Mobile Bottom Nav Bar ── */}
