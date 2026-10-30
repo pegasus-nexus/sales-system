@@ -391,7 +391,7 @@ export const LoginCustomizationTab: React.FC<LoginCustomizationTabProps> = ({
                         {/* Mock Footer */}
                         <div className="relative z-10 text-[9px] text-gray-500 border-t border-white/5 pt-2 flex items-center justify-between">
                             <span>© 2026 {tenantName || 'SalesSystem'}</span>
-                            <span>Versión 2.0 Cloud</span>
+                            <span>Versión 2.4.1 Cloud</span>
                         </div>
                     </div>
                 </div>
