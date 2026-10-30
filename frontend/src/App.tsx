@@ -171,7 +171,7 @@ const ProtectedRoute = ({
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
-    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/inteligencia" replace />;
+    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/dashboard" replace />;
     if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
     if (['SUPERVISOR', 'VENDEDOR'].includes(role)) return <Navigate to="/inventario" replace />;
     if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
@@ -194,7 +194,7 @@ const ProtectedRoute = ({
 const DashboardDispatch = () => {
   const { role } = useAuthStore();
   if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
-  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/inteligencia" replace />;
+  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/dashboard" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
   if (['SUPERVISOR', 'VENDEDOR'].includes(role ?? '')) return <Navigate to="/inventario" replace />;
   if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
