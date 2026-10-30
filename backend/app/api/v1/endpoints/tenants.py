@@ -7,6 +7,8 @@ from app.domain.models.tenant import Tenant, PlanType
 from app.domain.models.plan import Plan
 from app.domain.models.plan_feature import PlanFeature
 from app.domain.models.user import User, UserRole
+from app.domain.models.sucursal import Sucursal, TipoSucursal
+from app.domain.models.almacen import Almacen, TipoAlmacen
 from app.domain.models.product import Product
 from app.domain.models.sale import Sale
 from app.infrastructure.auth import get_current_active_user, get_password_hash, require_roles
@@ -185,14 +187,34 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
     )
     await tenant.create()
 
-    # Create Admin User for Tenant
+    # Auto-aprovisionamiento estilo Odoo: Casa Matriz y Almacén Principal inicial
+    matriz_sucursal = Sucursal(
+        tenant_id=str(tenant.id),
+        nombre="Casa Matriz",
+        ciudad="Cochabamba",
+        direccion="Sede Principal",
+        tipo=TipoSucursal.FISICA,
+    )
+    await matriz_sucursal.create()
+
+    almacen_principal = Almacen(
+        tenant_id=str(tenant.id),
+        sucursal_id=str(matriz_sucursal.id),
+        nombre="Almacén Principal",
+        tipo=TipoAlmacen.GENERAL,
+        is_default=True
+    )
+    await almacen_principal.create()
+
+    # Create Admin User for Tenant con sucursal por defecto asignada
     hashed_password = get_password_hash(tenant_in.admin_password)
     admin_user = User(
         username=admin_username_lower,
         email=admin_username_lower,
         hashed_password=hashed_password,
-        role=UserRole.ADMIN,
+        role=UserRole.ADMIN_MATRIZ,
         tenant_id=str(tenant.id),
+        sucursal_id=str(matriz_sucursal.id),
         full_name=f"Admin {tenant.name}"
     )
     await admin_user.create()

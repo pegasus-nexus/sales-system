@@ -17,6 +17,9 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
+import AppLauncherModal from './AppLauncherModal';
+import BranchSwitcherDropdown from './BranchSwitcherDropdown';
+import { LayoutGrid, Search } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
@@ -70,6 +73,7 @@ export default function Layout({ children }: LayoutProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+    const [appLauncherOpen, setAppLauncherOpen] = useState(false);
     const [seenRelease, setSeenRelease] = useLocalStorage<string>('pegasus_seen_release', '');
 
     // Si es la primera vez que inicia sesión con esta versión, o si hace clic en el botón
@@ -626,34 +630,84 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                 )}
                 
-                {/* Top Bar móvil (limpio en desktop para maximizar espacio de trabajo) */}
-                    <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
-                        <div className="flex items-center gap-2">
-                            <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
-                            <span className="font-bold text-xs text-gray-900">Pegasus Nexus</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                {/* ── Top Bar Desktop (Estilo Odoo: App Launcher + Branch Switcher + Búsqueda) ── */}
+                {location.pathname !== '/pos' && (
+                    <div className="hidden md:flex items-center justify-between px-6 py-2.5 bg-white border-b border-gray-200/80 shrink-0 shadow-2xs z-10">
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={() => openProfileModal('profile')}
-                                className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg border border-gray-200 flex items-center gap-1.5"
+                                type="button"
+                                onClick={() => setAppLauncherOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-200 text-gray-700 hover:text-indigo-600 font-bold text-xs transition-all shadow-2xs cursor-pointer group"
+                                title="Lanzador de Aplicaciones (Apps tipo Odoo)"
                             >
-                                <UserIcon size={14} className="text-indigo-600" />
-                                <span>Perfil</span>
+                                <LayoutGrid size={16} className="text-gray-500 group-hover:text-indigo-600 transition-colors" />
+                                <span>Apps</span>
                             </button>
-                            {role !== 'CAJERO' && (
-                                <button
-                                    onClick={() => setMobileMenuOpen(true)}
-                                    className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
-                                >
-                                    <Menu size={18} />
-                                </button>
-                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => setSearchModalOpen(true)}
+                                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/80 text-gray-400 hover:text-gray-600 text-xs transition-colors cursor-pointer"
+                                title="Buscar vista o atajo rápido (Ctrl + K)"
+                            >
+                                <Search size={14} className="text-gray-400" />
+                                <span className="hidden lg:inline text-gray-500">Buscar en el sistema...</span>
+                                <kbd className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-400 font-mono">⌘K</kbd>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {/* Selector Contextual de Sucursal Activa */}
+                            <BranchSwitcherDropdown />
+
+                            {/* Botón de Novedades */}
+                            <button
+                                type="button"
+                                onClick={handleOpenWhatsNew}
+                                className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
+                                title="Novedades de la versión"
+                            >
+                                <Sparkles size={14} className="text-amber-500" />
+                                <span className="hidden lg:inline">Novedades</span>
+                                {hasUnreadNews && (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
+                                )}
+                            </button>
                         </div>
                     </div>
+                )}
+
+                {/* ── Top Bar móvil (Con App Launcher y Branch Switcher) ── */}
+                <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2 flex items-center justify-between gap-2 shrink-0 shadow-xs">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAppLauncherOpen(true)}
+                            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-indigo-50 border border-gray-200 flex items-center justify-center text-gray-700 hover:text-indigo-600"
+                            title="Apps"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
+                        <span className="font-bold text-xs text-gray-900 hidden sm:inline">Pegasus Nexus</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <BranchSwitcherDropdown />
+                        {role !== 'CAJERO' && (
+                            <button
+                                onClick={() => setMobileMenuOpen(true)}
+                                className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
+                            >
+                                <Menu size={18} />
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                     {/* View Search Modal */}
                     <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
                     <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+                    <AppLauncherModal isOpen={appLauncherOpen} onClose={() => setAppLauncherOpen(false)} />
 
 
                     {/* Scrollable Content */}
