@@ -37,8 +37,12 @@ class FinancialService:
 
         start_utc, end_utc = SalesReadService.calculate_bolivia_date_range(start_date_str, end_date_str)
 
+        from bson import ObjectId
+        t_conds = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_conds.append(ObjectId(tenant_id))
         match_filter: Dict[str, Any] = {
-            "tenant_id": tenant_id,
+            "tenant_id": {"$in": t_conds},
             "anulada": {"$ne": True}
         }
 

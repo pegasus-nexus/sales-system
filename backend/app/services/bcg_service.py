@@ -14,8 +14,8 @@ async def get_bcg_matrix(
     Calcula la Matriz BCG completa agrupando ventas del mes actual y mes anterior.
     Aísla las ventas estrictamente por sucursal cuando se especifica sucursal_id.
     """
-    if not tenant_id or tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    if not tenant_id or tenant_id in ["default", "None", ""]:
+        return []
     db = await get_raw_db()
     
     # 1. Definir fechas (Mes Actual y Mes Anterior) en hora local de Bolivia

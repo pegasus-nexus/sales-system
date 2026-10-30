@@ -73,6 +73,17 @@ class AlertaOperativaBI(BaseModel):
     mensaje: str
 
 
+class TopProductoItemBI(BaseModel):
+    producto_id: str
+    nombre: str
+    categoria_id: str
+    categoria_nombre: str
+    unidades_vendidas: float = 0.0
+    ingresos_bs: float = 0.0
+    precio_promedio_efectivo: float = 0.0
+    participacion_pct: float = 0.0
+
+
 class BIPanelGeneralResponse(BaseModel):
     fecha_inicio_bolivia: str
     fecha_fin_bolivia: str
@@ -97,6 +108,7 @@ class BIPanelGeneralResponse(BaseModel):
     ventas_por_hora: List[HourlyDistributionItemBI] = []
     horario_inteligente: Optional[VentasHorarioInteligenteBI] = None
     ventas_recientes: List[VentaRecienteBI] = []
+    top_productos: List[TopProductoItemBI] = []
     resumen_operativo: ResumenOperativoBI = Field(default_factory=ResumenOperativoBI)
     alertas_operativas: List[AlertaOperativaBI] = []
 
@@ -191,15 +203,7 @@ class KPIProductosBI(BaseModel):
     unidades_promedio_por_ticket: float = 0.0
 
 
-class TopProductoItemBI(BaseModel):
-    producto_id: str
-    nombre: str
-    categoria_id: str
-    categoria_nombre: str
-    unidades_vendidas: float = 0.0
-    ingresos_bs: float = 0.0
-    precio_promedio_efectivo: float = 0.0
-    participacion_pct: float = 0.0
+
 
 
 class CategoriaProductosItemBI(BaseModel):

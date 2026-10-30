@@ -49,10 +49,9 @@ class EjecutivoBIService:
         s_date = start_date or today_bolivia_str
         e_date = end_date or today_bolivia_str
 
-        if not user.tenant_id or str(user.tenant_id) in ["default", "None", ""]:
-            user.tenant_id = "69cd7f0a8f3f6866d4cfbb62"
-
-        tenant_id = str(user.tenant_id)
+        tenant_id = str(user.tenant_id) if user.tenant_id else ""
+        if not tenant_id or tenant_id.lower() in ["none", "default"]:
+            tenant_id = "" 
 
         # 1. Extracción de Ventas, Mapa de Costos, Inventario, Promociones y Sucursales
         raw_sales = await self.repository.get_raw_sales(
@@ -85,7 +84,7 @@ class EjecutivoBIService:
                 elif d_tipo == "PORCENTAJE":
                     monto_total_descuentos_hist += (subt * (d_val / 100.0))
 
-        suc_map = await self.repository.get_sucursales_map()
+        suc_map = await self.repository.get_sucursales_map(tenant_id=tenant_id)
 
         if not raw_sales:
             return BIEjecutivoResumenResponse(

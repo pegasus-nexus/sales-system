@@ -74,14 +74,13 @@ class MongoEjecutivoRepository:
         return await cursor.to_list(length=None)
 
     async def get_products_cost_map(self, tenant_id: str) -> Dict[str, float]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return {}
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {}
-
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {"tenant_id": {"$in": t_cond}}
 
         cursor = db.products.find(filter_query, {"_id": 1, "costo_producto": 1, "costo": 1, "precio_costo": 1})
         docs = await cursor.to_list(length=None)
@@ -97,14 +96,13 @@ class MongoEjecutivoRepository:
         return cost_map
 
     async def get_inventory_summary(self, tenant_id: str) -> Dict[str, float]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return {"total_unidades_stock": 0.0, "valorizacion_costo_stock": 0.0}
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {}
-
-        if tenant_id and str(tenant_id) not in ["all", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {"tenant_id": {"$in": t_cond}}
 
         cursor = db.products.find(filter_query, {"_id": 1, "stock": 1, "stock_actual": 1, "costo_producto": 1, "costo": 1})
         docs = await cursor.to_list(length=None)
@@ -125,21 +123,25 @@ class MongoEjecutivoRepository:
         }
 
     async def get_descuentos_summary(self, tenant_id: str) -> Dict[str, Any]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return {"promociones_configuradas": 0}
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {}
-
-        if tenant_id and str(tenant_id) not in ["all", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {"tenant_id": {"$in": t_cond}}
 
         count_promos = await db.descuentos.count_documents(filter_query)
         return {"promociones_configuradas": count_promos}
 
-    async def get_sucursales_map(self) -> Dict[str, str]:
+    async def get_sucursales_map(self, tenant_id: Optional[str] = None) -> Dict[str, str]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return {}
         db = await get_raw_db()
-        cursor = db.sucursales.find({})
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        cursor = db.sucursales.find({"tenant_id": {"$in": t_cond}})
         docs = await cursor.to_list(length=None)
         s_map = {}
         for d in docs:

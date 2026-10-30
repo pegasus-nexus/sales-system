@@ -33,14 +33,13 @@ class MongoDescuentosRepository:
     """
 
     async def get_raw_descuentos_catalog(self, tenant_id: str) -> List[Dict[str, Any]]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {}
-
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {"tenant_id": {"$in": t_cond}}
 
         cursor = db.descuentos.find(filter_query)
         docs = await cursor.to_list(length=None)
@@ -56,7 +55,11 @@ class MongoDescuentosRepository:
                 "uso_maximo": int(d.get("uso_maximo") or 0)
             })
 
-        # También incluir promociones y premios de Comunidad Taboada (comunidad_users)
+        # Premios de Comunidad Taboada: EXCLUSIVO para tenant Taboada
+        is_taboada = str(tenant_id) in ["69cd7f0a8f3f6866d4cfbb62", "taboada"]
+        if not is_taboada:
+            return res
+
         try:
             comunidad_cursor = db.comunidad_users.find({"ha_reclamado": True})
             comunidad_users = await comunidad_cursor.to_list(length=None)
