@@ -1,7 +1,7 @@
 {
   "name": "sales-system-root",
   "private": true,
-  "version": "2.4.1",
+  "version": "2.4.2",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "install": "npm install --prefix frontend"

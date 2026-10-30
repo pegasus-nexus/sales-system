@@ -269,7 +269,7 @@ export default function LoginPage() {
                 {/* Footer del panel izquierdo */}
                 <div className="relative z-10 flex items-center justify-between text-xs text-gray-500 border-t border-white/5 pt-6">
                     <span>© 2026 {branding?.tenant_name || 'Pegasus SalesSystem'}</span>
-                    <span>Versión 2.4.1 • Cloud High Performance</span>
+                    <span>Versión 2.4.2 • Cloud High Performance</span>
                 </div>
             </div>
 
@@ -429,7 +429,7 @@ export default function LoginPage() {
                         </p>
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-mono text-gray-500">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Pegasus SalesSystem v2.4.1</span>
+                            <span>Pegasus SalesSystem v2.4.2</span>
                             <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[10px] text-gray-400">develop</span>
                         </div>
                     </div>
