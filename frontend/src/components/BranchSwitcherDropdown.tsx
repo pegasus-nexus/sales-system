@@ -7,7 +7,7 @@ import { Store, ChevronDown, Check, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BranchSwitcherDropdown() {
-    const { role } = useAuthStore();
+    const { role, user } = useAuthStore();
     const { activeSucursalId, activeSucursalName, setActiveBranch } = useBranchStore();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -18,6 +18,7 @@ export default function BranchSwitcherDropdown() {
         queryKey: ['sucursales-list-switcher'],
         queryFn: () => getSucursales(true),
         staleTime: 1000 * 60 * 5, // 5 min
+        enabled: !!isMatrixUser,
     });
 
     // Close on outside click
@@ -33,10 +34,11 @@ export default function BranchSwitcherDropdown() {
 
     // For single-branch user (Cajero / Admin de sucursal), show simple badge
     if (!isMatrixUser) {
+        const branchDisplay = user?.sucursal_nombre || activeSucursalName || 'Mi Sucursal';
         return (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-gray-800 text-xs font-semibold shadow-2xs">
                 <Store size={14} className="text-indigo-600 shrink-0" />
-                <span className="truncate max-w-[140px]">{activeSucursalName || 'Mi Sucursal'}</span>
+                <span className="truncate max-w-[140px]">{branchDisplay}</span>
             </div>
         );
     }

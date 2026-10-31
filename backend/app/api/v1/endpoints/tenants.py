@@ -214,7 +214,7 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
         hashed_password=hashed_password,
         role=UserRole.ADMIN_MATRIZ,
         tenant_id=str(tenant.id),
-        sucursal_id=str(matriz_sucursal.id),
+        sucursal_id=None,  # Matriz level (multi-sucursal global access)
         full_name=f"Admin {tenant.name}"
     )
     await admin_user.create()

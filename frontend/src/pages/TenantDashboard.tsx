@@ -35,11 +35,12 @@ export default function TenantDashboard() {
     const { data: sucursales = [] } = useQuery<Sucursal[]>({ queryKey: ['sucursales'], queryFn: () => getSucursales(true) });
     const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: getCategories });
     const { data: exchangeRates } = useQuery({ queryKey: ['exchange-rates'], queryFn: async () => { return await client<any>('/dashboard-matriz/exchange-rates'); }, refetchInterval: 1800000 });
-    const { data: metricsHoy, isLoading: loadingHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
-    const { data: metricsMensual, isLoading: loadingMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
-    const { data: metricsDiario, isLoading: loadingDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
+    const { data: metricsHoy, isLoading: loadingHoy, isError: errorHoy, refetch: refetchHoy } = useQuery({ queryKey: ['dashboard-matriz', filterHoy], queryFn: () => getDashboardMatriz(filterHoy), refetchInterval: 300000 });
+    const { data: metricsMensual, isLoading: loadingMensual, isError: errorMensual } = useQuery({ queryKey: ['dashboard-matriz', filterMensual], queryFn: () => getDashboardMatriz(filterMensual), refetchInterval: 300000 });
+    const { data: metricsDiario, isLoading: loadingDiario, isError: errorDiario } = useQuery({ queryKey: ['dashboard-matriz', filterDiario], queryFn: () => getDashboardMatriz(filterDiario), refetchInterval: 300000 });
     
     const loadingMetrics = loadingHoy || loadingMensual || loadingDiario;
+    const hasErrorMetrics = errorHoy || errorMensual || errorDiario;
     const refetchAll = () => { refetchHoy(); };
 
 
@@ -158,6 +159,17 @@ export default function TenantDashboard() {
             {loadingMetrics ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="animate-spin text-indigo-500" size={48} />
+                </div>
+            ) : hasErrorMetrics ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl border border-gray-200/70 p-8 shadow-xs">
+                    <p className="text-gray-800 font-bold mb-2">No se pudieron cargar las métricas del dashboard</p>
+                    <p className="text-gray-500 text-xs mb-4">Verifica tu conexión al servidor o intenta recargar nuevamente.</p>
+                    <button
+                        onClick={refetchAll}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                        Reintentar
+                    </button>
                 </div>
             ) : metricsHoy && metricsMensual && metricsDiario ? (
                 <>
