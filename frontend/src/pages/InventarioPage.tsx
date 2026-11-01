@@ -192,24 +192,79 @@ export default function InventarioPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 p-4">
-            {/* Header Superior: Título + Selectores de Sucursal/Almacén + Acciones Globales */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                        <Warehouse className="text-indigo-600" size={24} />
-                        Gestión de Inventarios
-                    </h1>
-                    <p className="text-xs text-gray-500 mt-0.5">Control de existencias físicas, kárdex y movimientos por sucursal.</p>
+            {/* Header Superior Estilo Odoo: Título + Segmentos de Operación + Selectores y Acciones */}
+            <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <Warehouse className="text-indigo-600" size={22} />
+                        <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+                            Gestión de Inventarios
+                        </h1>
+                    </div>
+
+                    {/* Segmentos de Operación compactos estilo Odoo */}
+                    <div className="flex items-center gap-1 bg-gray-100/80 p-0.5 rounded-xl border border-gray-200/60 shadow-2xs inline-flex mt-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setTab('stock')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                tab === 'stock' 
+                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
+                                    : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                        >
+                            <Warehouse size={13} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
+                            <span>Stock Actual</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTab('kardex')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                tab === 'kardex' 
+                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
+                                    : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                        >
+                            <History size={13} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
+                            <span>Kárdex</span>
+                        </button>
+                        {esAdminSucursal && (
+                            <button
+                                type="button"
+                                onClick={() => setTab('masivo')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    tab === 'masivo' 
+                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
+                                        : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                            >
+                                <Scale size={13} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
+                                <span>Ajuste Rápido</span>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setTab('lotes')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                tab === 'lotes' 
+                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
+                                    : 'text-gray-500 hover:text-gray-900'
+                            }`}
+                        >
+                            <Clock size={13} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
+                            <span>Lotes & Caducidades</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                     {/* Selector de Sucursal (para Matriz / Admin) */}
                     {esMatriz && (
-                        <div className="min-w-[190px]">
+                        <div className="min-w-[180px]">
                             <select
                                 value={selectedSucursal}
                                 onChange={e => setSelectedSucursal(e.target.value)}
-                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 outline-none text-xs font-semibold text-gray-900 shadow-xs cursor-pointer"
+                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-1.5 outline-none text-xs font-semibold text-gray-900 shadow-xs cursor-pointer"
                             >
                                 <option value="CENTRAL">🏢 Almacén Central (Matriz)</option>
                                 {sucursales.map(s => <option key={s._id} value={s._id}>🏬 {s.nombre}</option>)}
@@ -219,162 +274,110 @@ export default function InventarioPage() {
 
                     {/* Selector de Almacén */}
                     {almacenes.length > 0 && (
-                        <div className="min-w-[170px]">
+                        <div className="min-w-[160px]">
                             <select
                                 value={selectedAlmacen}
                                 onChange={e => setSelectedAlmacen(e.target.value)}
-                                className="w-full bg-indigo-50/60 border border-indigo-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-2 outline-none text-xs font-bold text-indigo-900 shadow-xs cursor-pointer"
+                                className="w-full bg-indigo-50/60 border border-indigo-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-1.5 outline-none text-xs font-bold text-indigo-900 shadow-xs cursor-pointer"
                             >
                                 {almacenes.map(a => <option key={a.id} value={a.id}>📦 {a.nombre}</option>)}
                             </select>
                         </div>
                     )}
 
-                    {/* Botones de Acción Globales */}
-                    <div className="flex items-center gap-1.5 ml-auto">
-                        {esAdminSucursal && (
+                    {/* Acciones de Kárdex si estamos en esa vista */}
+                    {tab === 'kardex' && (
+                        <>
                             <button 
-                                onClick={() => setIsImportModalOpen(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                                title="Importar inventario desde archivo Excel"
+                                onClick={() => exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
+                                title="Exportar Kárdex a Excel"
                             >
-                                <Upload size={14} />
-                                <span>Importar Excel</span>
+                                <FileSpreadsheet size={13} />
+                                <span>Kárdex Excel</span>
                             </button>
-                        )}
-
-                        <button 
-                            onClick={async () => {
-                                setIsExportingExcel(true);
-                                try {
-                                    await exportInventarioExcel();
-                                    toast.success('Inventario exportado exitosamente');
-                                } catch (e) {
-                                    toast.error('Error al exportar inventario');
-                                } finally {
-                                    setIsExportingExcel(false);
-                                }
-                            }}
-                            disabled={isExportingExcel}
-                            className={`flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-xs ${isExportingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title="Exportar Stock Completo a Excel"
-                        >
-                            {isExportingExcel ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
-                            <span>{isExportingExcel ? 'Generando...' : 'Exportar Excel'}</span>
-                        </button>
-
-                        {esAdminSucursal && (
-                            <button
-                                onClick={async () => {
-                                    const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
-                                    if (!window.confirm("⚠️ ¿Deseas cuadrar el inventario de " + sucName + "?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.")) {
-                                        return;
-                                    }
-                                    setIsRecalculating(true);
-                                    try {
-                                        const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
-                                        toast.success("Inventario cuadrado: " + res.data.corregidos + " productos procesados, " + res.data.inventarios_modificados + " stock(s) alineado(s).");
-                                        queryClient.invalidateQueries({ queryKey: ['inventario'] });
-                                        queryClient.invalidateQueries({ queryKey: ['movimientos'] });
-                                    } catch (err: any) {
-                                        toast.error(err?.message || 'Error al cuadrar el inventario con el Kárdex');
-                                    } finally {
-                                        setIsRecalculating(false);
-                                    }
-                                }}
-                                disabled={isRecalculating}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50"
-                                title="Alinear stock físico recalculando movimientos del Kárdex"
+                            <button 
+                                onClick={() => window.print()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-xs"
+                                title="Imprimir PDF del Kárdex"
                             >
-                                <RefreshCw size={14} className={isRecalculating ? "animate-spin text-amber-700" : "text-amber-700"} />
-                                <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
+                                <Printer size={13} />
+                                <span>Imprimir</span>
                             </button>
-                        )}
-                    </div>
-                </div>
-            </div>
+                        </>
+                    )}
 
-            {/* Selector de Vistas / Pestañas (Odoo Tab Bar) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                <div className="bg-gray-100/80 p-1 rounded-xl border border-gray-200/60 inline-flex shadow-inner">
-                    <button
-                        onClick={() => setTab('stock')}
-                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                            tab === 'stock' 
-                                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' 
-                                : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                        <Warehouse size={15} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
-                        <span>Stock Actual</span>
-                    </button>
-                    <button
-                        onClick={() => setTab('kardex')}
-                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                            tab === 'kardex' 
-                                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' 
-                                : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                        <History size={15} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
-                        <span>Kárdex de Movimientos</span>
-                    </button>
+                    {/* Botones de Acción Globales */}
                     {esAdminSucursal && (
-                        <button
-                            onClick={() => setTab('masivo')}
-                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                                tab === 'masivo' 
-                                    ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' 
-                                    : 'text-gray-600 hover:text-gray-900'
-                            }`}
+                        <button 
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
+                            title="Importar inventario desde archivo Excel"
                         >
-                            <Scale size={15} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
-                            <span>Ajuste Rápido</span>
+                            <Upload size={13} />
+                            <span>Importar Excel</span>
                         </button>
                     )}
-                    <button
-                        onClick={() => setTab('lotes')}
-                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                            tab === 'lotes' 
-                                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' 
-                                : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                        <Clock size={15} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
-                        <span>Lotes & Caducidades</span>
-                    </button>
-                </div>
 
-                {/* En Kárdex: Acciones secundarias como Exportar Excel y PDF */}
-                {tab === 'kardex' && (
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <button 
-                            onClick={() => exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                            title="Exportar Kárdex a Excel"
+                    <button 
+                        onClick={async () => {
+                            setIsExportingExcel(true);
+                            try {
+                                await exportInventarioExcel();
+                                toast.success('Inventario exportado exitosamente');
+                            } catch (e) {
+                                toast.error('Error al exportar inventario');
+                            } finally {
+                                setIsExportingExcel(false);
+                            }
+                        }}
+                        disabled={isExportingExcel}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-xs ${isExportingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title="Exportar Stock Completo a Excel"
+                    >
+                        {isExportingExcel ? <Loader2 size={13} className="animate-spin" /> : <FileSpreadsheet size={13} />}
+                        <span>{isExportingExcel ? 'Generando...' : 'Exportar Excel'}</span>
+                    </button>
+
+                    {esAdminSucursal && (
+                        <button
+                            onClick={async () => {
+                                const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
+                                if (!window.confirm("⚠️ ¿Deseas cuadrar el inventario de " + sucName + "?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.")) {
+                                    return;
+                                }
+                                setIsRecalculating(true);
+                                try {
+                                    const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
+                                    toast.success("Inventario cuadrado: " + res.data.corregidos + " productos procesados, " + res.data.inventarios_modificados + " stock(s) alineado(s).");
+                                    queryClient.invalidateQueries({ queryKey: ['inventario'] });
+                                    queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+                                } catch (err: any) {
+                                    toast.error(err?.message || 'Error al cuadrar el inventario con el Kárdex');
+                                } finally {
+                                    setIsRecalculating(false);
+                                }
+                            }}
+                            disabled={isRecalculating}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+                            title="Alinear stock físico recalculando movimientos del Kárdex"
                         >
-                            <FileSpreadsheet size={14} />
-                            <span>Kárdex Excel</span>
+                            <RefreshCw size={13} className={isRecalculating ? "animate-spin text-amber-700" : "text-amber-700"} />
+                            <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
                         </button>
-                        <button 
-                            onClick={() => window.print()}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                            title="Imprimir PDF del Kárdex"
-                        >
-                            <Printer size={14} />
-                            <span>Imprimir</span>
-                        </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Barra de Búsqueda y Filtros Unificada Estilo Odoo */}
             {(tab === 'stock' || tab === 'kardex') && (
-                <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+                <div className="w-full">
                     <OdooSearchBar
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                         tab={tab}
+                        setTab={setTab}
+                        esAdminSucursal={esAdminSucursal}
                         categories={categories}
                         selectedCategory={selectedCategory}
                         setSelectedCategory={setSelectedCategory}
@@ -401,41 +404,9 @@ export default function InventarioPage() {
                         viewMode={viewMode}
                         setViewMode={setViewMode}
                     />
-
-                    {/* Carrusel Rápido de Categorías con botón 'Todas' y etiquetas */}
-                    {tab === 'stock' && categories.length > 0 && (
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 hide-scrollbar">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 shrink-0">Categoría:</span>
-                            <button
-                                onClick={() => setSelectedCategory('ALL')}
-                                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                                    selectedCategory === 'ALL' 
-                                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' 
-                                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/80'
-                                }`}
-                            >
-                                Todas
-                            </button>
-                            {categories.map((cat: any) => {
-                                const isSelected = selectedCategory === cat._id;
-                                return (
-                                    <button
-                                        key={cat._id}
-                                        onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat._id!)}
-                                        className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                                            isSelected 
-                                                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' 
-                                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/80'
-                                        }`}
-                                    >
-                                        {cat.name}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
                 </div>
             )}
+
 
             {tab === 'stock' && (
                 <div className="space-y-4">

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
     Search, X, Filter, Tag, AlertTriangle, Package, History, 
     Calendar, ChevronDown, RotateCcw, Layers, ArrowUpDown, 
-    Check, LayoutGrid, List, Sparkles 
+    Check, LayoutGrid, List, Sparkles, Clock, Scale 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -39,6 +39,9 @@ interface OdooSearchBarProps {
     // Odoo View Switcher
     viewMode?: 'lista' | 'kanban';
     setViewMode?: (mode: 'lista' | 'kanban') => void;
+    // Odoo Tab / Operations Switcher
+    setTab?: (tab: 'stock' | 'kardex' | 'masivo' | 'lotes') => void;
+    esAdminSucursal?: boolean;
 }
 
 const MOV_LABELS: Record<string, string> = {
@@ -77,6 +80,8 @@ export const OdooSearchBar: React.FC<OdooSearchBarProps> = ({
     setSortBy,
     viewMode = 'lista',
     setViewMode,
+    setTab,
+    esAdminSucursal = false,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -121,6 +126,82 @@ export const OdooSearchBar: React.FC<OdooSearchBarProps> = ({
 
                 {/* Filter Tags (Facet Chips with 'X' inside the input) */}
                 <AnimatePresence>
+                    {/* Tag: Tab / Operación activa si no es stock */}
+                    {tab === 'kardex' && (
+                        <motion.span
+                            key="tag-tab-kardex"
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.85, opacity: 0 }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold rounded-lg shrink-0 shadow-2xs"
+                        >
+                            <History size={12} className="text-indigo-600" />
+                            <span>Kárdex de Movimientos</span>
+                            {setTab && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTab('stock');
+                                    }}
+                                    className="p-0.5 ml-0.5 hover:bg-indigo-200/60 text-indigo-800 rounded transition-colors"
+                                    title="Volver a Stock Actual"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </motion.span>
+                    )}
+                    {tab === 'masivo' && (
+                        <motion.span
+                            key="tag-tab-masivo"
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.85, opacity: 0 }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-900 text-xs font-bold rounded-lg shrink-0 shadow-2xs"
+                        >
+                            <Scale size={12} className="text-purple-600" />
+                            <span>Ajuste Rápido</span>
+                            {setTab && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTab('stock');
+                                    }}
+                                    className="p-0.5 ml-0.5 hover:bg-purple-200/60 text-purple-800 rounded transition-colors"
+                                    title="Volver a Stock Actual"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </motion.span>
+                    )}
+                    {tab === 'lotes' && (
+                        <motion.span
+                            key="tag-tab-lotes"
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.85, opacity: 0 }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 border border-teal-200 text-teal-900 text-xs font-bold rounded-lg shrink-0 shadow-2xs"
+                        >
+                            <Clock size={12} className="text-teal-600" />
+                            <span>Lotes & Caducidades</span>
+                            {setTab && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTab('stock');
+                                    }}
+                                    className="p-0.5 ml-0.5 hover:bg-teal-200/60 text-teal-800 rounded transition-colors"
+                                    title="Volver a Stock Actual"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </motion.span>
+                    )}
                     {/* Tag: Solo Stock Bajo */}
                     {tab === 'stock' && stockBajoOnly && (
                         <motion.span
@@ -591,6 +672,78 @@ export const OdooSearchBar: React.FC<OdooSearchBarProps> = ({
                                     <Sparkles size={15} />
                                     <span>Vistas y Acciones</span>
                                 </div>
+
+                                {setTab && (
+                                    <div className="space-y-1.5">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                            Operación del Módulo
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-1.5 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTab('stock');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                    tab === 'stock'
+                                                        ? 'bg-white text-indigo-700 shadow-sm'
+                                                        : 'text-gray-600 hover:text-gray-900'
+                                                }`}
+                                            >
+                                                <Package size={13} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
+                                                <span>Stock Físico</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTab('kardex');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                    tab === 'kardex'
+                                                        ? 'bg-white text-indigo-700 shadow-sm'
+                                                        : 'text-gray-600 hover:text-gray-900'
+                                                }`}
+                                            >
+                                                <History size={13} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
+                                                <span>Kárdex</span>
+                                            </button>
+                                            {esAdminSucursal && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setTab('masivo');
+                                                        setIsMenuOpen(false);
+                                                    }}
+                                                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                        tab === 'masivo'
+                                                            ? 'bg-white text-indigo-700 shadow-sm'
+                                                            : 'text-gray-600 hover:text-gray-900'
+                                                    }`}
+                                                >
+                                                    <Scale size={13} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
+                                                    <span>Ajuste Rápido</span>
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTab('lotes');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                    tab === 'lotes'
+                                                        ? 'bg-white text-indigo-700 shadow-sm'
+                                                        : 'text-gray-600 hover:text-gray-900'
+                                                }`}
+                                            >
+                                                <Clock size={13} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
+                                                <span>Lotes</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {setViewMode && (
                                     <div className="space-y-1.5">

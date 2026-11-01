@@ -19,7 +19,7 @@ import ViewSearchModal from './ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
 import AppLauncherModal from './AppLauncherModal';
 import BranchSwitcherDropdown from './BranchSwitcherDropdown';
-import { LayoutGrid, Search } from 'lucide-react';
+import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
@@ -66,6 +66,45 @@ function TrialWarningBanner() {
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role, hasFeature } = useAuthStore();
+    const impersonationChain = useAuthStore(state => state.impersonationChain) || [];
+    const originalToken = useAuthStore(state => state.originalToken);
+    const isImpersonating = impersonationChain.length > 0 || Boolean(originalToken);
+
+    const handleRevertImpersonation = async (targetIndex?: number) => {
+        const store = useAuthStore.getState();
+        if (targetIndex !== undefined && store.revertToImpersonationIndex) {
+            const target = store.revertToImpersonationIndex(targetIndex);
+            if (target?.token) {
+                try {
+                    useAuthStore.setState({ token: target.token });
+                    const restoredUser = await getMe();
+                    store.login(target.token, restoredUser);
+                    store.setFeatures([]);
+                    window.location.href = '/';
+                    return;
+                } catch (e) {
+                    store.logout();
+                    window.location.href = '/login';
+                    return;
+                }
+            }
+        }
+        
+        if (store.originalToken) {
+            try {
+                useAuthStore.setState({ token: store.originalToken });
+                const originalUser = await getMe();
+                store.login(store.originalToken, originalUser);
+                store.clearImpersonation?.();
+                store.setOriginalToken(null);
+                store.setFeatures([]);
+                window.location.href = '/';
+            } catch (e) {
+                store.logout();
+                window.location.href = '/login';
+            }
+        }
+    };
 
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useLocalStorage('choco-sidebar-collapsed', false);
@@ -567,66 +606,70 @@ export default function Layout({ children }: LayoutProps) {
                 </aside>
 
 
-            {/* ── Exit Impersonation Banner ── */}
-            {useAuthStore(state => state.originalToken) && (
-                <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
-                    <span className="text-xs font-medium truncate pr-2">Viendo como <strong>{user?.username}</strong></span>
+            {/* ── Exit Impersonation Banner Mobile ── */}
+            {isImpersonating && (
+                <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-slate-900/95 text-white px-3 py-1.5 flex items-center justify-between shadow-md border-b border-slate-700/80 text-xs">
+                    <span className="truncate pr-2 font-medium text-slate-300">
+                        Viendo: <strong className="text-white">{user?.email || user?.username}</strong>
+                    </span>
                     <button 
-                            onClick={async () => {
-                                const store = useAuthStore.getState();
-                                if (store.originalToken) {
-                                    try {
-                                        // Temporarily override the API token
-                                        useAuthStore.setState({ token: store.originalToken });
-                                        // Fetch the real original user
-                                        const originalUser = await getMe();
-                                        store.login(store.originalToken, originalUser);
-                                        store.setOriginalToken(null);
-                                        store.setFeatures([]);
-                                        window.location.href = '/';
-                                    } catch (e) {
-                                        store.logout();
-                                        window.location.href = '/login';
-                                    }
-                                }
-                            }}
-                        className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition-colors whitespace-nowrap"
+                        type="button"
+                        onClick={() => handleRevertImpersonation(impersonationChain.length > 0 ? impersonationChain.length - 1 : 0)}
+                        className="bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 shadow-xs"
                     >
-                        Volver
+                        <ArrowLeft size={12} />
+                        <span>Volver</span>
                     </button>
                 </div>
             )}
 
             {/* ── Main Content Partition (Full Screen Split) ── */}
-            <main className={cn("flex-1 flex flex-col min-w-0 h-full bg-[#f4f6f8] relative overflow-hidden", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
+            <main className={cn("flex-1 flex flex-col min-w-0 h-full bg-[#f4f6f8] relative overflow-hidden", isImpersonating ? "mt-10 md:mt-0" : "")}>
                 <TrialWarningBanner />
-                {/* Desktop Exit Impersonation Banner */}
-                {useAuthStore(state => state.originalToken) && (
-                    <div className="hidden md:flex mx-4 mt-3 mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
-                        <span className="text-sm font-medium">Estás navegando la cuenta como <strong>{user?.username}</strong></span>
-                        <button 
-                            onClick={async () => {
-                                const store = useAuthStore.getState();
-                                if (store.originalToken) {
-                                    try {
-                                        // Temporarily override the API token
-                                        useAuthStore.setState({ token: store.originalToken });
-                                        // Fetch the real original user
-                                        const originalUser = await getMe();
-                                        store.login(store.originalToken, originalUser);
-                                        store.setOriginalToken(null);
-                                        store.setFeatures([]);
-                                        window.location.href = '/';
-                                    } catch (e) {
-                                        store.logout();
-                                        window.location.href = '/login';
-                                    }
-                                }
-                            }}
-                            className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"
-                        >
-                            Volver a mi cuenta original
-                        </button>
+                {/* Desktop Exit Impersonation Banner with Multi-level Breadcrumbs */}
+                {isImpersonating && (
+                    <div className="hidden md:flex mx-4 mt-2.5 mb-1.5 px-3 py-1.5 bg-slate-900/95 text-white rounded-xl items-center justify-between shadow-xs border border-slate-700/80 backdrop-blur-xs text-xs">
+                        <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
+                            <span className="text-slate-400 font-medium shrink-0">Navegando:</span>
+                            {impersonationChain.map((item, idx) => (
+                                <React.Fragment key={idx}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRevertImpersonation(idx)}
+                                        className="text-indigo-300 hover:text-white underline-offset-2 hover:underline transition-colors shrink-0 max-w-[200px] truncate font-medium"
+                                        title={`Volver a ${item.email || item.username}`}
+                                    >
+                                        {item.email || item.username}
+                                    </button>
+                                    <span className="text-slate-500 font-bold shrink-0">/</span>
+                                </React.Fragment>
+                            ))}
+                            <span className="text-white font-bold shrink-0 bg-white/10 px-2 py-0.5 rounded-md border border-white/15 max-w-[220px] truncate" title={user?.email || user?.username}>
+                                {user?.email || user?.username}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <button 
+                                type="button"
+                                onClick={() => handleRevertImpersonation(impersonationChain.length > 0 ? impersonationChain.length - 1 : 0)}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs"
+                                title="Volver a la cuenta anterior"
+                            >
+                                <ArrowLeft size={12} />
+                                <span>Volver</span>
+                            </button>
+                            {impersonationChain.length > 1 && (
+                                <button 
+                                    type="button"
+                                    onClick={() => handleRevertImpersonation(0)}
+                                    className="bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                                    title="Volver a la cuenta raíz original"
+                                >
+                                    Raíz
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
                 

@@ -26,6 +26,13 @@ export const FEATURES = {
     PROPINAS:             'PROPINAS',
 } as const;
 
+export interface ImpersonationItem {
+    token: string;
+    username: string;
+    email?: string;
+    role?: string;
+}
+
 interface AuthState {
     token: string | null;
     user: User | null;
@@ -42,6 +49,10 @@ interface AuthState {
     logout: () => void;
     originalToken: string | null;
     setOriginalToken: (token: string | null) => void;
+    impersonationChain: ImpersonationItem[];
+    pushImpersonation: (item: ImpersonationItem) => void;
+    revertToImpersonationIndex: (index: number) => ImpersonationItem | undefined;
+    clearImpersonation: () => void;
     setFeatures: (features: string[], planName?: string, rubro?: string | null, modulos_activos?: string[]) => void;
     setPlanExpiresAt: (date: string | null) => void;
     tenantSettings: TenantSettings | null;
@@ -77,9 +88,29 @@ export const useAuthStore = create<AuthState>()(
                 user,
                 sucursal_id: user.sucursal_id ?? null,
             }),
-            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null, originalToken: null, rubro: null, modulos_activos: [] }),
+            logout: () => set({ token: null, user: null, role: null, sucursal_id: null, features: [], planName: '', planExpiresAt: null, tenantSettings: null, originalToken: null, impersonationChain: [], rubro: null, modulos_activos: [] }),
             originalToken: null,
             setOriginalToken: (token) => set({ originalToken: token }),
+            impersonationChain: [],
+            pushImpersonation: (item) => set((state) => {
+                const chain = [...(state.impersonationChain || []), item];
+                return {
+                    impersonationChain: chain,
+                    originalToken: chain[0]?.token || null,
+                };
+            }),
+            revertToImpersonationIndex: (index) => {
+                const { impersonationChain } = get();
+                if (!impersonationChain || index < 0 || index >= impersonationChain.length) return undefined;
+                const target = impersonationChain[index];
+                const newChain = impersonationChain.slice(0, index);
+                set({
+                    impersonationChain: newChain,
+                    originalToken: newChain[0]?.token || null,
+                });
+                return target;
+            },
+            clearImpersonation: () => set({ impersonationChain: [], originalToken: null }),
             setFeatures: (features, planName = '', rubro = null, modulos_activos = []) => set({ features, planName, rubro, modulos_activos }),
             setPlanExpiresAt: (date) => set({ planExpiresAt: date }),
             setTenantSettings: (settings) => set({ tenantSettings: settings }),
