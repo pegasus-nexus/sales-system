@@ -50,7 +50,7 @@ const SYSTEM_APPS: SystemApp[] = [
         id: 'bi',
         title: 'Inteligencia & BI',
         description: 'Métricas C-Level, analítica multi-sucursal y proyecciones',
-        path: '/inteligencia',
+        path: '/reportes?tab=bi',
         icon: BarChart3,
         color: 'text-purple-500',
         bgColor: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20',

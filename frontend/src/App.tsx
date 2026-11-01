@@ -31,7 +31,6 @@ const CotizacionesPage = lazy(() => import('./pages/CotizacionesPage'));
 const ControlQRPage = lazy(() => import('./pages/ControlQRPage'));
 const PriceRequestsPage = lazy(() => import('./pages/PriceRequestsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
-const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
 const ClientesPage = lazy(() => import('./pages/ClientesPage'));
 const ProveedoresPage = lazy(() => import('./pages/ProveedoresPage'));
 const CreditosPage = lazy(() => import('./pages/CreditosPage'));
@@ -273,11 +272,7 @@ function App() {
                         </ProtectedRoute>
                       } />
 
-                      <Route path="/inteligencia" element={
-                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                          <ExecutiveDashboard />
-                        </ProtectedRoute>
-                      } />
+                      <Route path="/inteligencia" element={<Navigate to="/reportes?tab=bi" replace />} />
 
                       <Route path="/sucursales" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="MULTI_SUCURSAL">

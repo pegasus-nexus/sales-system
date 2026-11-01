@@ -40,7 +40,7 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
         { id: 'descuentos', title: 'Promociones & Descuentos', category: 'Inventario & Logística', path: '/descuentos', icon: Percent, keywords: ['descuentos', 'promociones', 'ofertas'] },
 
         // Reportes & BI
-        { id: 'inteligencia', title: 'Plataforma Analítica (BI)', category: 'Reportes & Inteligencia', path: '/inteligencia', icon: BarChart3, keywords: ['bi', 'analitica', 'inteligencia', 'dashboards', 'kpi', 'bcg'] },
+        { id: 'bi', title: 'Panel General BI', category: 'Reportes & Inteligencia', path: '/reportes?tab=bi', icon: BarChart3, keywords: ['bi', 'analitica', 'inteligencia', 'panel general', 'kpi', 'metricas'] },
         { id: 'reportes_fin', title: 'Reportes Financieros', category: 'Reportes & Inteligencia', path: '/reportes?tab=financiero', icon: TrendingUp, keywords: ['reportes', 'finanzas', 'ganancias', 'margen', 'utilidad'] },
         { id: 'reportes_diario', title: 'Reporte Diario', category: 'Reportes & Inteligencia', path: '/reportes?tab=diario', icon: TrendingUp, keywords: ['reporte diario', 'cierre del dia', 'resumen hoy'] },
 
