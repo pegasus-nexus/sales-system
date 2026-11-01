@@ -1,7 +1,7 @@
-﻿import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
-import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
+import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes, getClienteByNit } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { usePosStore, type MetodoPago } from '../store/usePosStore';
 import { useDescuentos } from '../hooks/useDescuentos';
@@ -253,11 +253,50 @@ export default function POSPage() {
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
     const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
 
+    const [isSearchingNit, setIsSearchingNit] = useState(false);
+    const [nitClientMatch, setNitClientMatch] = useState<string | null>(null);
+    const nitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleNitChange = (val: string) => {
+        const cleanNit = val.replace(/\D/g, '');
+        setCliente({ nit: cleanNit, cliente_id: undefined });
+        setNitClientMatch(null);
+
+        if (nitTimerRef.current) {
+            clearTimeout(nitTimerRef.current);
+        }
+
+        if (cleanNit.length >= 4) {
+            nitTimerRef.current = setTimeout(async () => {
+                setIsSearchingNit(true);
+                try {
+                    const found: any = await getClienteByNit(cleanNit);
+                    if (found && found._id) {
+                        setCliente({
+                            cliente_id: found._id,
+                            nit: found.nit_ci || cleanNit,
+                            razon_social: found.nombre || '',
+                            email: found.email || '',
+                            telefono: found.telefono || '',
+                        });
+                        setNitClientMatch(found.nombre);
+                    }
+                } catch {
+                    // ignore
+                } finally {
+                    setIsSearchingNit(false);
+                }
+            }, 350);
+        }
+    };
+
     const resetSaleState = () => {
         idempotencyKeyRef.current = crypto.randomUUID();
         isSubmittingRef.current = false;
         setPendingConfirmDuplicate(false);
         setShowDuplicateWarning(false);
+        setIsSearchingNit(false);
+        setNitClientMatch(null);
         reset();
     };
 
@@ -782,7 +821,7 @@ export default function POSPage() {
                                                 inputMode="numeric"
                                                 pattern="[0-9]*"
                                                 value={cliente.nit} 
-                                                onChange={e => setCliente({ nit: e.target.value.replace(/\D/g, '') })}
+                                                onChange={e => handleNitChange(e.target.value)}
                                                 onKeyDown={e => {
                                                     if (['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
                                                     if (!/^[0-9]$/.test(e.key)) e.preventDefault();
@@ -793,7 +832,10 @@ export default function POSPage() {
                                             <input value={cliente.email} onChange={e => setCliente({ email: e.target.value })}
                                                 className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
                                                 placeholder="Email" />
-                                            <input value={cliente.razon_social} onChange={e => setCliente({ razon_social: e.target.value })}
+                                            <input value={cliente.razon_social} onChange={e => {
+                                                setCliente({ razon_social: e.target.value });
+                                                if (nitClientMatch) setNitClientMatch(null);
+                                            }}
                                                 className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
                                                 placeholder="Razón Social" />
                                             <input 
@@ -809,6 +851,16 @@ export default function POSPage() {
                                                 className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
                                                 placeholder="Celular" 
                                             />
+                                            {isSearchingNit && (
+                                                <div className="col-span-2 text-[10px] text-indigo-500 font-medium animate-pulse flex items-center gap-1">
+                                                    Buscando NIT en base de datos...
+                                                </div>
+                                            )}
+                                            {nitClientMatch && (
+                                                <div className="col-span-2 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5 font-medium flex items-center justify-between">
+                                                    <span>✓ Cliente registrado: <strong>{nitClientMatch}</strong></span>
+                                                </div>
+                                            )}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>

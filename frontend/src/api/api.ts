@@ -1716,6 +1716,26 @@ export const deleteCliente = (id: string) =>
 
 
 
+export const getClienteByNit = async (nit: string): Promise<any | null> => {
+
+    const cleanNit = nit.trim();
+
+    if (!cleanNit) return null;
+
+    try {
+
+        return await client<any | null>(`/clientes/by-nit/${encodeURIComponent(cleanNit)}`);
+
+    } catch {
+
+        return null;
+
+    }
+
+};
+
+
+
 // â”€â”€ Listas de Precios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const getSesionesCaja = () => client<unknown[]>(`/caja/sesiones`);

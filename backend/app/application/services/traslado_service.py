@@ -108,6 +108,7 @@ class TrasladoService:
                         await InventoryLog(
                             tenant_id=tenant_id,
                             sucursal_id=sucursal_origen_id,
+                            almacen_id=almacen_origen,
                             producto_id=item_in.producto_id,
                             descripcion=product.descripcion,
                             tipo_movimiento=TipoMovimiento.TRASLADO,
@@ -211,7 +212,11 @@ class TrasladoService:
                             }
                             if almacen_destino == "default":
                                 # Upsert en almacén default
-                                inv_query_dest["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                                inv_query_dest["$or"] = [
+                                    {"almacen_id": "default"},
+                                    {"almacen_id": {"$exists": False}},
+                                    {"almacen_id": None},
+                                ]
                             else:
                                 inv_query_dest["almacen_id"] = almacen_destino
 
@@ -234,6 +239,7 @@ class TrasladoService:
                             await InventoryLog(
                                 tenant_id=tenant_id,
                                 sucursal_id=traslado.sucursal_destino_id,
+                                almacen_id=almacen_destino,
                                 producto_id=t_item.producto_id,
                                 descripcion=t_item.descripcion,
                                 tipo_movimiento=TipoMovimiento.TRASLADO,
@@ -284,7 +290,11 @@ class TrasladoService:
                             "producto_id": t_item.producto_id
                         }
                         if almacen_origen_item == "default":
-                            inv_query_cancel["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                            inv_query_cancel["$or"] = [
+                                {"almacen_id": "default"},
+                                {"almacen_id": {"$exists": False}},
+                                {"almacen_id": None},
+                            ]
                         else:
                             inv_query_cancel["almacen_id"] = almacen_origen_item
 
@@ -298,6 +308,7 @@ class TrasladoService:
                         await InventoryLog(
                             tenant_id=tenant_id,
                             sucursal_id=traslado.sucursal_origen_id,
+                            almacen_id=almacen_origen_item,
                             producto_id=t_item.producto_id,
                             descripcion=t_item.descripcion,
                             tipo_movimiento=TipoMovimiento.TRASLADO,
