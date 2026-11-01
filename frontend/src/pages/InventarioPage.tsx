@@ -90,7 +90,7 @@ export default function InventarioPage() {
 
     const [currentPageStock, setCurrentPageStock] = useState(1);
     const [currentPageKardex, setCurrentPageKardex] = useState(1);
-    const ITEMS_PER_PAGE = 40;
+    const ITEMS_PER_PAGE = 60;
 
     const { data: invData, isLoading: loadingInv } = useQuery({
         queryKey: ['inventario', selectedSucursal, selectedAlmacen, currentPageStock, ITEMS_PER_PAGE, debouncedSearch, selectedCategory, stockBajoOnly],
@@ -201,6 +201,109 @@ export default function InventarioPage() {
         (tab === 'stock' && (selectedCategory !== 'ALL' || stockBajoOnly || stockFilter !== 'ALL' || groupByCategory || sortBy !== 'default')) ||
         (tab === 'kardex' && (Boolean(kardexProductoNombre) || Boolean(tipoMovimiento) || Boolean(startDate) || Boolean(endDate))) ||
         Boolean(searchTerm.trim());
+
+    const renderProductCard = (item: (typeof processedInventario)[0]) => {
+        const isOutOfStock = item.cantidad <= 0;
+        const isLowStock = item.cantidad > 0 && item.cantidad <= 10;
+        
+        return (
+            <div
+                key={item.producto_id}
+                onClick={() => esAdminSucursal && setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
+                className="bg-white border border-gray-200/90 hover:border-indigo-400 rounded-lg p-2.5 sm:p-3 hover:shadow-md transition-all flex justify-between items-start gap-2.5 group relative cursor-pointer min-h-[92px]"
+            >
+                <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                    <div>
+                        <h4
+                            className="text-[12px] font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
+                            title={item.producto_nombre}
+                        >
+                            {item.producto_nombre}
+                        </h4>
+                        <div className="mt-1 flex items-baseline gap-2 font-mono text-[11px]">
+                            <span className="font-bold text-gray-900">
+                                {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)} Bs.
+                            </span>
+                            {item.codigo_barras ? (
+                                <span className="text-[11px] text-gray-400 font-normal">{item.codigo_barras}</span>
+                            ) : (
+                                <span className="text-[10px] text-gray-300 font-normal">#{item.producto_id.slice(-4)}</span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="mt-2 text-[11px] flex items-baseline gap-1 font-mono">
+                        <span className={`font-bold ${
+                            isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-gray-800'
+                        }`}>
+                            {item.cantidad} Unidades
+                        </span>
+                        <span className="text-gray-400 font-sans text-[11px]">En stock</span>
+                    </div>
+                </div>
+
+                <div className="w-16 h-16 rounded-md bg-white border border-gray-150 p-0.5 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:border-indigo-200 transition-colors">
+                    {item.image_url ? (
+                        <img
+                            src={item.image_url}
+                            alt={item.producto_nombre}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <Package size={22} className="text-gray-300" />
+                    )}
+                </div>
+
+                {esAdminSucursal && (
+                    <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/95 px-1 py-0.5 rounded shadow-xs border border-gray-200">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setAdjItem({ id: item.producto_id, name: item.producto_nombre });
+                            }}
+                            className="p-1 hover:bg-indigo-50 text-indigo-600 rounded transition-colors"
+                            title="Ajustar Stock"
+                        >
+                            <Scale size={12} />
+                        </button>
+                        {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPriceReqItem({
+                                        id: item.producto_id,
+                                        name: item.producto_nombre,
+                                        currentPrice: item.precio_sucursal ?? item.precio
+                                    });
+                                }}
+                                className="p-1 hover:bg-amber-50 text-amber-600 rounded transition-colors"
+                                title="Solicitar Cambio de Precio"
+                            >
+                                <Tag size={12} />
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setKardexProductoId(item.producto_id);
+                                setKardexProductoNombre(item.producto_nombre);
+                                setTab('kardex');
+                                setStartDate('');
+                                setEndDate('');
+                            }}
+                            className="p-1 hover:bg-gray-100 text-gray-700 rounded transition-colors"
+                            title="Ver Kárdex"
+                        >
+                            <History size={12} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="w-full space-y-3.5 px-3 py-3 md:px-6 md:py-4">
@@ -451,7 +554,7 @@ export default function InventarioPage() {
                             )}
                         </div>
                     ) : viewMode === 'kanban' ? (
-                        /* Vista Kanban / Tarjetas estilo Odoo */
+                        /* Vista Kanban / Tarjetas estilo Odoo con grid auto-fill (4 cols en 100%, 5 cols en 80%, etc.) */
                         <div className="space-y-6">
                             {groupByCategory && groupedInventario ? (
                                 Object.entries(groupedInventario).map(([categoryName, items]) => (
@@ -465,196 +568,20 @@ export default function InventarioPage() {
                                                 {items.length}
                                             </span>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 min-[2200px]:grid-cols-8 gap-3">
-                                            {items.map((item) => (
-                                                <div
-                                                    key={item.producto_id}
-                                                    className="bg-white border border-gray-200/90 hover:border-indigo-300 rounded-xl p-3.5 hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
-                                                >
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 
-                                                                className="text-xs font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
-                                                                title={item.producto_nombre}
-                                                            >
-                                                                {item.producto_nombre}
-                                                            </h4>
-                                                            <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
-                                                                <span className={`font-mono font-bold text-xs ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
-                                                                    Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
-                                                                </span>
-                                                                {item.precio_sucursal && (
-                                                                    <span className="text-[10px] text-gray-400 line-through font-mono">
-                                                                        Bs. {item.precio.toFixed(2)}
-                                                                    </span>
-                                                                )}
-                                                                {item.codigo_barras && (
-                                                                    <span className="text-[10px] text-gray-400 font-mono">
-                                                                        {item.codigo_barras}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="mt-2.5">
-                                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-tight ${
-                                                                    item.cantidad > 10
-                                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                                                                        : item.cantidad > 0
-                                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                                                                            : 'bg-rose-50 text-rose-700 border border-rose-200/80'
-                                                                }`}>
-                                                                    <span className={`w-1.5 h-1.5 rounded-full ${
-                                                                        item.cantidad > 10 ? 'bg-emerald-500' : item.cantidad > 0 ? 'bg-amber-500' : 'bg-rose-500'
-                                                                    }`} />
-                                                                    {item.cantidad} Unidades en stock
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-                                                            {item.image_url ? (
-                                                                <img 
-                                                                    src={item.image_url} 
-                                                                    alt={item.producto_nombre} 
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-                                                                />
-                                                            ) : (
-                                                                <Package size={24} className="text-gray-300" />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    {esAdminSucursal && (
-                                                        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-1.5">
-                                                            <button
-                                                                onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
-                                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-indigo-100"
-                                                                title="Ajustar Stock"
-                                                            >
-                                                                <Scale size={12} />
-                                                                <span>Ajustar</span>
-                                                            </button>
-                                                            {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
-                                                                <button
-                                                                    onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
-                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-amber-100"
-                                                                    title="Solicitar Cambio de Precio"
-                                                                >
-                                                                    <Tag size={12} />
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setKardexProductoId(item.producto_id);
-                                                                    setKardexProductoNombre(item.producto_nombre);
-                                                                    setTab('kardex');
-                                                                    setStartDate('');
-                                                                    setEndDate('');
-                                                                }}
-                                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-gray-200"
-                                                                title="Ver Historial (Kárdex)"
-                                                            >
-                                                                <History size={12} />
-                                                                <span>Kárdex</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                        <div 
+                                            className="grid gap-2.5" 
+                                            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
+                                        >
+                                            {items.map(renderProductCard)}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 min-[2200px]:grid-cols-8 gap-3">
-                                    {processedInventario.map((item) => (
-                                        <div
-                                            key={item.producto_id}
-                                            className="bg-white border border-gray-200/90 hover:border-indigo-300 rounded-xl p-3.5 hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 
-                                                        className="text-xs font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
-                                                        title={item.producto_nombre}
-                                                    >
-                                                        {item.producto_nombre}
-                                                    </h4>
-                                                    <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
-                                                        <span className={`font-mono font-bold text-xs ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
-                                                            Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
-                                                        </span>
-                                                        {item.precio_sucursal && (
-                                                            <span className="text-[10px] text-gray-400 line-through font-mono">
-                                                                Bs. {item.precio.toFixed(2)}
-                                                            </span>
-                                                        )}
-                                                        {item.codigo_barras && (
-                                                            <span className="text-[10px] text-gray-400 font-mono">
-                                                                {item.codigo_barras}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="mt-2.5">
-                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-tight ${
-                                                            item.cantidad > 10
-                                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                                                                : item.cantidad > 0
-                                                                    ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                                                                    : 'bg-rose-50 text-rose-700 border border-rose-200/80'
-                                                        }`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full ${
-                                                                item.cantidad > 10 ? 'bg-emerald-500' : item.cantidad > 0 ? 'bg-amber-500' : 'bg-rose-500'
-                                                            }`} />
-                                                            {item.cantidad} Unidades en stock
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-                                                    {item.image_url ? (
-                                                        <img 
-                                                            src={item.image_url} 
-                                                            alt={item.producto_nombre} 
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
-                                                        />
-                                                    ) : (
-                                                        <Package size={24} className="text-gray-300" />
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {esAdminSucursal && (
-                                                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-1.5">
-                                                    <button
-                                                        onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-indigo-100"
-                                                        title="Ajustar Stock"
-                                                    >
-                                                        <Scale size={12} />
-                                                        <span>Ajustar</span>
-                                                    </button>
-                                                    {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
-                                                        <button
-                                                            onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-amber-100"
-                                                            title="Solicitar Cambio de Precio"
-                                                        >
-                                                            <Tag size={12} />
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => {
-                                                            setKardexProductoId(item.producto_id);
-                                                            setKardexProductoNombre(item.producto_nombre);
-                                                            setTab('kardex');
-                                                            setStartDate('');
-                                                            setEndDate('');
-                                                        }}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-gray-200"
-                                                        title="Ver Historial (Kárdex)"
-                                                    >
-                                                        <History size={12} />
-                                                        <span>Kárdex</span>
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                <div 
+                                    className="grid gap-2.5" 
+                                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
+                                >
+                                    {processedInventario.map(renderProductCard)}
                                 </div>
                             )}
                         </div>
