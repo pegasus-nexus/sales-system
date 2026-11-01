@@ -171,6 +171,9 @@ export interface InventarioItem {
     image_url?: string;
     sucursal_id: string;
     cantidad: number;
+    codigo_barras?: string;
+    categoria_id?: string;
+    categoria_nombre?: string;
 }
 
 export interface AjusteInventario {

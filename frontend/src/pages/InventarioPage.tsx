@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock, RefreshCw } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock, RefreshCw, LayoutGrid, List, Layers } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -26,9 +26,13 @@ export default function InventarioPage() {
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? 'CENTRAL' : (user?.sucursal_id || 'CENTRAL'));
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>('default');
     const [tab, setTab] = useLocalStorage<'stock' | 'kardex' | 'masivo' | 'lotes'>('inventario-tab', 'stock');
+    const [viewMode, setViewMode] = useLocalStorage<'lista' | 'kanban'>('inventario-view-mode', 'kanban');
     const [searchTerm, setSearchTerm] = useLocalStorage('inventario-search', '');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
     const [stockBajoOnly, setStockBajoOnly] = useState<boolean>(false);
+    const [stockFilter, setStockFilter] = useState<'ALL' | 'DISPONIBLE' | 'AGOTADO'>('ALL');
+    const [groupByCategory, setGroupByCategory] = useState(false);
+    const [sortBy, setSortBy] = useState<'default' | 'nombre' | 'stock_desc' | 'stock_asc' | 'precio_desc'>('default');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [tipoMovimiento, setTipoMovimiento] = useState('');
@@ -86,6 +90,39 @@ export default function InventarioPage() {
     const totalPagesStock = invData?.pages || 1;
     const totalItemsStock = invData?.total || 0;
 
+    const processedInventario = useMemo(() => {
+        let list = [...inventario];
+
+        if (stockFilter === 'DISPONIBLE') {
+            list = list.filter(item => item.cantidad > 0);
+        } else if (stockFilter === 'AGOTADO') {
+            list = list.filter(item => item.cantidad <= 0);
+        }
+
+        if (sortBy === 'stock_desc') {
+            list.sort((a, b) => b.cantidad - a.cantidad);
+        } else if (sortBy === 'stock_asc') {
+            list.sort((a, b) => a.cantidad - b.cantidad);
+        } else if (sortBy === 'precio_desc') {
+            list.sort((a, b) => ((b.precio_sucursal ?? b.precio) || 0) - ((a.precio_sucursal ?? a.precio) || 0));
+        } else if (sortBy === 'nombre') {
+            list.sort((a, b) => (a.producto_nombre || '').localeCompare(b.producto_nombre || ''));
+        }
+
+        return list;
+    }, [inventario, stockFilter, sortBy]);
+
+    const groupedInventario = useMemo(() => {
+        if (!groupByCategory) return null;
+        const groups: Record<string, typeof processedInventario> = {};
+        for (const item of processedInventario) {
+            const catName = item.categoria_nombre || 'Sin Categoría';
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(item);
+        }
+        return groups;
+    }, [processedInventario, groupByCategory]);
+
     const { data: movData, isLoading: loadingMovs } = useQuery({
         queryKey: ['movimientos', selectedSucursal, selectedAlmacen, startDate, endDate, debouncedSearch, kardexProductoId, tipoMovimiento, currentPageKardex, ITEMS_PER_PAGE],
         queryFn: () => getMovimientosInventario(
@@ -114,7 +151,7 @@ export default function InventarioPage() {
     useEffect(() => {
         setCurrentPageStock(1);
         setCurrentPageKardex(1);
-    }, [searchTerm, selectedSucursal, selectedAlmacen, tab, selectedCategory, stockBajoOnly]);
+    }, [searchTerm, selectedSucursal, selectedAlmacen, tab, selectedCategory, stockBajoOnly, stockFilter, sortBy]);
 
     useEffect(() => {
         setCurrentPageKardex(1);
@@ -138,12 +175,20 @@ export default function InventarioPage() {
         setSearchTerm('');
         setSelectedCategory('ALL');
         setStockBajoOnly(false);
+        setStockFilter('ALL');
+        setGroupByCategory(false);
+        setSortBy('default');
         setStartDate('');
         setEndDate('');
         setTipoMovimiento('');
         setKardexProductoId(undefined);
         setKardexProductoNombre(null);
     };
+
+    const hasActiveFilters =
+        (tab === 'stock' && (selectedCategory !== 'ALL' || stockBajoOnly || stockFilter !== 'ALL' || groupByCategory || sortBy !== 'default')) ||
+        (tab === 'kardex' && (Boolean(kardexProductoNombre) || Boolean(tipoMovimiento) || Boolean(startDate) || Boolean(endDate))) ||
+        Boolean(searchTerm.trim());
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 p-4">
@@ -335,6 +380,8 @@ export default function InventarioPage() {
                         setSelectedCategory={setSelectedCategory}
                         stockBajoOnly={stockBajoOnly}
                         setStockBajoOnly={setStockBajoOnly}
+                        stockFilter={stockFilter}
+                        setStockFilter={setStockFilter}
                         kardexProductoNombre={kardexProductoNombre}
                         onClearKardexProducto={() => {
                             setKardexProductoId(undefined);
@@ -347,6 +394,12 @@ export default function InventarioPage() {
                         endDate={endDate}
                         setEndDate={setEndDate}
                         onResetAllFilters={handleResetAllFilters}
+                        groupByCategory={groupByCategory}
+                        setGroupByCategory={setGroupByCategory}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
                     />
 
                     {/* Carrusel Rápido de Categorías con botón 'Todas' y etiquetas */}
@@ -386,42 +439,298 @@ export default function InventarioPage() {
 
             {tab === 'stock' && (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                                <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
-                                    <tr>
-                                        <th className="px-3 py-2">Producto</th>
-                                        <th className="px-3 py-2 text-center">Stock Físico</th>
-                                        <th className="px-3 py-2 text-right">Precio Actual</th>
-                                        {esAdminSucursal && <th className="px-3 py-2 text-right">Acciones</th>}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {loadingInv ? (
+                    {/* Barra de cabecera de vista con selector de vista (Kanban / Lista) */}
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-semibold text-gray-500">
+                            {processedInventario.length} {processedInventario.length === 1 ? 'producto listado' : 'productos listados'}
+                            {totalItemsStock > processedInventario.length && ` (de ${totalItemsStock})`}
+                        </span>
+                        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200/60 shadow-inner">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('kanban')}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                    viewMode === 'kanban'
+                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                        : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                                title="Vista Tarjetas (Kanban Odoo)"
+                            >
+                                <LayoutGrid size={13} />
+                                <span>Tarjetas</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('lista')}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                    viewMode === 'lista'
+                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                        : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                                title="Vista Tabla (Lista)"
+                            >
+                                <List size={13} />
+                                <span>Tabla</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {loadingInv ? (
+                        <div className="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-100 shadow-xs">
+                            <Loader2 size={36} className="mx-auto animate-spin mb-3 text-indigo-500" />
+                            <p className="text-sm font-semibold text-gray-600">Cargando inventario...</p>
+                        </div>
+                    ) : processedInventario.length === 0 ? (
+                        <div className="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-100 shadow-xs">
+                            <Package size={52} className="mx-auto mb-4 text-gray-300 opacity-60" />
+                            <p className="text-base font-bold text-gray-700">No se encontraron productos</p>
+                            <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                                Intenta cambiar los filtros, buscar por otro término o realizar un ajuste inicial de inventario.
+                            </p>
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={handleResetAllFilters}
+                                    className="mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-colors border border-indigo-200"
+                                >
+                                    Restablecer todos los filtros
+                                </button>
+                            )}
+                        </div>
+                    ) : viewMode === 'kanban' ? (
+                        /* Vista Kanban / Tarjetas estilo Odoo */
+                        <div className="space-y-6">
+                            {groupByCategory && groupedInventario ? (
+                                Object.entries(groupedInventario).map(([categoryName, items]) => (
+                                    <div key={categoryName} className="space-y-3">
+                                        <div className="flex items-center gap-2 pb-1.5 border-b border-gray-200">
+                                            <Layers size={15} className="text-indigo-600" />
+                                            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                                                {categoryName}
+                                            </h3>
+                                            <span className="text-[11px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100">
+                                                {items.length}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                                            {items.map((item) => (
+                                                <div
+                                                    key={item.producto_id}
+                                                    className="bg-white border border-gray-200/90 hover:border-indigo-300 rounded-xl p-3.5 hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 
+                                                                className="text-xs font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
+                                                                title={item.producto_nombre}
+                                                            >
+                                                                {item.producto_nombre}
+                                                            </h4>
+                                                            <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                                                                <span className={`font-mono font-bold text-xs ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
+                                                                    Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
+                                                                </span>
+                                                                {item.precio_sucursal && (
+                                                                    <span className="text-[10px] text-gray-400 line-through font-mono">
+                                                                        Bs. {item.precio.toFixed(2)}
+                                                                    </span>
+                                                                )}
+                                                                {item.codigo_barras && (
+                                                                    <span className="text-[10px] text-gray-400 font-mono">
+                                                                        {item.codigo_barras}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="mt-2.5">
+                                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-tight ${
+                                                                    item.cantidad > 10
+                                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                                                                        : item.cantidad > 0
+                                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                                                                            : 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                                                                }`}>
+                                                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                                                        item.cantidad > 10 ? 'bg-emerald-500' : item.cantidad > 0 ? 'bg-amber-500' : 'bg-rose-500'
+                                                                    }`} />
+                                                                    {item.cantidad} Unidades en stock
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                                                            {item.image_url ? (
+                                                                <img 
+                                                                    src={item.image_url} 
+                                                                    alt={item.producto_nombre} 
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                                                />
+                                                            ) : (
+                                                                <Package size={24} className="text-gray-300" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {esAdminSucursal && (
+                                                        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-1.5">
+                                                            <button
+                                                                onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-indigo-100"
+                                                                title="Ajustar Stock"
+                                                            >
+                                                                <Scale size={12} />
+                                                                <span>Ajustar</span>
+                                                            </button>
+                                                            {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
+                                                                <button
+                                                                    onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
+                                                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-amber-100"
+                                                                    title="Solicitar Cambio de Precio"
+                                                                >
+                                                                    <Tag size={12} />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => {
+                                                                    setKardexProductoId(item.producto_id);
+                                                                    setKardexProductoNombre(item.producto_nombre);
+                                                                    setTab('kardex');
+                                                                    setStartDate('');
+                                                                    setEndDate('');
+                                                                }}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-gray-200"
+                                                                title="Ver Historial (Kárdex)"
+                                                            >
+                                                                <History size={12} />
+                                                                <span>Kárdex</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                                    {processedInventario.map((item) => (
+                                        <div
+                                            key={item.producto_id}
+                                            className="bg-white border border-gray-200/90 hover:border-indigo-300 rounded-xl p-3.5 hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 
+                                                        className="text-xs font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
+                                                        title={item.producto_nombre}
+                                                    >
+                                                        {item.producto_nombre}
+                                                    </h4>
+                                                    <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                                                        <span className={`font-mono font-bold text-xs ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
+                                                            Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
+                                                        </span>
+                                                        {item.precio_sucursal && (
+                                                            <span className="text-[10px] text-gray-400 line-through font-mono">
+                                                                Bs. {item.precio.toFixed(2)}
+                                                            </span>
+                                                        )}
+                                                        {item.codigo_barras && (
+                                                            <span className="text-[10px] text-gray-400 font-mono">
+                                                                {item.codigo_barras}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-2.5">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-tight ${
+                                                            item.cantidad > 10
+                                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                                                                : item.cantidad > 0
+                                                                    ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                                                                    : 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                                                        }`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                                                item.cantidad > 10 ? 'bg-emerald-500' : item.cantidad > 0 ? 'bg-amber-500' : 'bg-rose-500'
+                                                            }`} />
+                                                            {item.cantidad} Unidades en stock
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                                                    {item.image_url ? (
+                                                        <img 
+                                                            src={item.image_url} 
+                                                            alt={item.producto_nombre} 
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                                        />
+                                                    ) : (
+                                                        <Package size={24} className="text-gray-300" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {esAdminSucursal && (
+                                                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-indigo-100"
+                                                        title="Ajustar Stock"
+                                                    >
+                                                        <Scale size={12} />
+                                                        <span>Ajustar</span>
+                                                    </button>
+                                                    {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
+                                                        <button
+                                                            onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-amber-100"
+                                                            title="Solicitar Cambio de Precio"
+                                                        >
+                                                            <Tag size={12} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            setKardexProductoId(item.producto_id);
+                                                            setKardexProductoNombre(item.producto_nombre);
+                                                            setTab('kardex');
+                                                            setStartDate('');
+                                                            setEndDate('');
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors border border-gray-200"
+                                                        title="Ver Historial (Kárdex)"
+                                                    >
+                                                        <History size={12} />
+                                                        <span>Kárdex</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* Vista Tabla / Lista estándar */
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs">
+                                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
                                         <tr>
-                                            <td colSpan={esAdminSucursal ? 4 : 3} className="px-4 py-8 text-center text-gray-400">
-                                                <Loader2 size={32} className="mx-auto animate-spin mb-3 text-indigo-400" />
-                                                <p>Cargando inventario...</p>
-                                            </td>
+                                            <th className="px-3 py-2">Producto</th>
+                                            <th className="px-3 py-2 text-center">Stock Físico</th>
+                                            <th className="px-3 py-2 text-right">Precio Actual</th>
+                                            {esAdminSucursal && <th className="px-3 py-2 text-right">Acciones</th>}
                                         </tr>
-                                    ) : inventario.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={esAdminSucursal ? 4 : 3} className="px-4 py-8 text-center text-gray-400">
-                                                <Package size={48} className="mx-auto mb-4 opacity-20" />
-                                                <p className="text-base font-medium text-gray-600">No hay stock registrado</p>
-                                                <p className="text-sm mt-1">Realiza un ajuste de inventario para inicializar el stock.</p>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        inventario.map((item) => (
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {processedInventario.map((item) => (
                                             <tr key={item.producto_id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-3 py-2">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-8 h-8 rounded-md bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                                                             {item.image_url ? <img src={item.image_url} alt="" className="w-full h-full object-cover" /> : <Package size={16} className="text-gray-300" />}
                                                         </div>
-                                                        <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
+                                                        <div>
+                                                            <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
+                                                            {item.codigo_barras && (
+                                                                <div className="text-[10px] text-gray-400 font-mono">{item.codigo_barras}</div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-2 text-center">
@@ -480,12 +789,16 @@ export default function InventarioPage() {
                                                     </td>
                                                 )}
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        {totalItemsStock > ITEMS_PER_PAGE && (
+                    )}
+
+                    {/* Paginación Compartida */}
+                    {totalItemsStock > ITEMS_PER_PAGE && (
+                        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-2">
                             <Pagination 
                                 currentPage={currentPageStock}
                                 totalPages={totalPagesStock}
@@ -493,8 +806,8 @@ export default function InventarioPage() {
                                 totalItems={totalItemsStock}
                                 itemsPerPage={ITEMS_PER_PAGE}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             )}
 
