@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
 import type { AjusteInventario } from '../api/types';
-import Pagination from '../components/Pagination';
+
 import BulkAjusteView from '../components/BulkAjusteView';
 import LotesTab from '../components/inventario/LotesTab';
 import { OdooSearchBar } from '../components/inventario/OdooSearchBar';
@@ -101,6 +101,8 @@ export default function InventarioPage() {
     const inventario = invData?.items || [];
     const totalPagesStock = invData?.pages || 1;
     const totalItemsStock = invData?.total || 0;
+    const startItemStock = totalItemsStock === 0 ? 0 : (currentPageStock - 1) * ITEMS_PER_PAGE + 1;
+    const endItemStock = Math.min(currentPageStock * ITEMS_PER_PAGE, totalItemsStock);
 
     const processedInventario = useMemo(() => {
         let list = [...inventario];
@@ -154,6 +156,8 @@ export default function InventarioPage() {
     const movimientos = movData?.items || [];
     const totalPagesKardex = movData?.pages || 1;
     const totalItemsKardex = movData?.total || 0;
+    const startItemKardex = totalItemsKardex === 0 ? 0 : (currentPageKardex - 1) * ITEMS_PER_PAGE + 1;
+    const endItemKardex = Math.min(currentPageKardex * ITEMS_PER_PAGE, totalItemsKardex);
 
     // Modals State
     const [adjItem, setAdjItem] = useState<{ id: string, name: string } | null>(null);
@@ -496,39 +500,71 @@ export default function InventarioPage() {
 
             {tab === 'stock' && (
                 <div className="space-y-4">
-                    {/* Barra de cabecera de vista con selector de vista (Kanban / Lista) */}
+                    {/* Barra de cabecera de vista con Paginador Odoo y Selector de vista */}
                     <div className="flex items-center justify-between px-1">
                         <span className="text-xs font-semibold text-gray-500">
                             {processedInventario.length} {processedInventario.length === 1 ? 'producto listado' : 'productos listados'}
-                            {totalItemsStock > processedInventario.length && ` (de ${totalItemsStock})`}
                         </span>
-                        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200/60 shadow-inner">
-                            <button
-                                type="button"
-                                onClick={() => setViewMode('kanban')}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                    viewMode === 'kanban'
-                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
-                                        : 'text-gray-500 hover:text-gray-900'
-                                }`}
-                                title="Vista Tarjetas (Kanban Odoo)"
-                            >
-                                <LayoutGrid size={13} />
-                                <span>Tarjetas</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setViewMode('lista')}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                    viewMode === 'lista'
-                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
-                                        : 'text-gray-500 hover:text-gray-900'
-                                }`}
-                                title="Vista Tabla (Lista)"
-                            >
-                                <List size={13} />
-                                <span>Tabla</span>
-                            </button>
+                        
+                        <div className="flex items-center gap-2.5">
+                            {/* Paginador superior estilo Odoo (1-60 / 353 < >) */}
+                            {totalItemsStock > 0 && (
+                                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200/80 shadow-2xs text-xs">
+                                    <span className="font-mono font-bold text-gray-700 tracking-tight">
+                                        {startItemStock}-{endItemStock} / {totalItemsStock}
+                                    </span>
+                                    <div className="flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPageStock(p => Math.max(1, p - 1))}
+                                            disabled={currentPageStock <= 1}
+                                            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                            title="Página anterior"
+                                        >
+                                            <ChevronLeft size={15} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPageStock(p => Math.min(totalPagesStock, p + 1))}
+                                            disabled={currentPageStock >= totalPagesStock}
+                                            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                            title="Página siguiente"
+                                        >
+                                            <ChevronRight size={15} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Selector de vista Tarjetas / Tabla */}
+                            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200/60 shadow-inner">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('kanban')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                        viewMode === 'kanban'
+                                            ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                            : 'text-gray-500 hover:text-gray-900'
+                                    }`}
+                                    title="Vista Tarjetas (Kanban Odoo)"
+                                >
+                                    <LayoutGrid size={13} />
+                                    <span>Tarjetas</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('lista')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                        viewMode === 'lista'
+                                            ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                            : 'text-gray-500 hover:text-gray-900'
+                                    }`}
+                                    title="Vista Tabla (Lista)"
+                                >
+                                    <List size={13} />
+                                    <span>Tabla</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -677,18 +713,7 @@ export default function InventarioPage() {
                         </div>
                     )}
 
-                    {/* Paginación Compartida */}
-                    {totalItemsStock > ITEMS_PER_PAGE && (
-                        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-2">
-                            <Pagination 
-                                currentPage={currentPageStock}
-                                totalPages={totalPagesStock}
-                                onPageChange={setCurrentPageStock}
-                                totalItems={totalItemsStock}
-                                itemsPerPage={ITEMS_PER_PAGE}
-                            />
-                        </div>
-                    )}
+
                 </div>
             )}
 
@@ -705,7 +730,41 @@ export default function InventarioPage() {
             )}
 
             {tab === 'kardex' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-semibold text-gray-500">
+                            {movimientos.length} {movimientos.length === 1 ? 'movimiento listado' : 'movimientos listados'}
+                        </span>
+                        {totalItemsKardex > 0 && (
+                            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200/80 shadow-2xs text-xs">
+                                <span className="font-mono font-bold text-gray-700 tracking-tight">
+                                    {startItemKardex}-{endItemKardex} / {totalItemsKardex}
+                                </span>
+                                <div className="flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPageKardex(p => Math.max(1, p - 1))}
+                                        disabled={currentPageKardex <= 1}
+                                        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                        title="Página anterior"
+                                    >
+                                        <ChevronLeft size={15} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPageKardex(p => Math.min(totalPagesKardex, p + 1))}
+                                        disabled={currentPageKardex >= totalPagesKardex}
+                                        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                        title="Página siguiente"
+                                    >
+                                        <ChevronRight size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                             <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
@@ -783,15 +842,7 @@ export default function InventarioPage() {
                             </tbody>
                         </table>
                     </div>
-                    {totalItemsKardex > ITEMS_PER_PAGE && (
-                        <Pagination 
-                            currentPage={currentPageKardex}
-                            totalPages={totalPagesKardex}
-                            onPageChange={setCurrentPageKardex}
-                            totalItems={totalItemsKardex}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                        />
-                    )}
+                </div>
                 </div>
             )}
 
