@@ -90,7 +90,7 @@ export default function InventarioPage() {
 
     const [currentPageStock, setCurrentPageStock] = useState(1);
     const [currentPageKardex, setCurrentPageKardex] = useState(1);
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 40;
 
     const { data: invData, isLoading: loadingInv } = useQuery({
         queryKey: ['inventario', selectedSucursal, selectedAlmacen, currentPageStock, ITEMS_PER_PAGE, debouncedSearch, selectedCategory, stockBajoOnly],
@@ -203,7 +203,7 @@ export default function InventarioPage() {
         Boolean(searchTerm.trim());
 
     return (
-        <div className="max-w-7xl mx-auto space-y-4 p-4">
+        <div className="w-full space-y-3.5 px-3 py-3 md:px-6 md:py-4">
             {/* Header Superior Estilo Odoo: Título + Menú ⋮ de Acciones + Selectores */}
             <div className="bg-white px-4 py-2.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 relative" ref={actionsMenuRef}>
@@ -465,7 +465,7 @@ export default function InventarioPage() {
                                                 {items.length}
                                             </span>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 min-[2200px]:grid-cols-8 gap-3">
                                             {items.map((item) => (
                                                 <div
                                                     key={item.producto_id}
@@ -562,7 +562,7 @@ export default function InventarioPage() {
                                     </div>
                                 ))
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 min-[2200px]:grid-cols-8 gap-3">
                                     {processedInventario.map((item) => (
                                         <div
                                             key={item.producto_id}
