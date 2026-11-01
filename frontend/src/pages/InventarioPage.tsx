@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock, RefreshCw, LayoutGrid, List, Layers } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -40,6 +40,18 @@ export default function InventarioPage() {
     const [kardexProductoNombre, setKardexProductoNombre] = useState<string | null>(null);
     const [isExportingExcel, setIsExportingExcel] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
+    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const actionsMenuRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target as Node)) {
+                setIsActionsMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
 
     const { data: sucursales = [] } = useQuery({
@@ -192,69 +204,122 @@ export default function InventarioPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 p-4">
-            {/* Header Superior Estilo Odoo: Título + Segmentos de Operación + Selectores y Acciones */}
-            <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Warehouse className="text-indigo-600" size={22} />
-                        <h1 className="text-lg font-bold text-gray-900 tracking-tight">
-                            Gestión de Inventarios
-                        </h1>
-                    </div>
+            {/* Header Superior Estilo Odoo: Título + Menú ⋮ de Acciones + Selectores */}
+            <div className="bg-white px-4 py-2.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 relative" ref={actionsMenuRef}>
+                    <Warehouse className="text-indigo-600 shrink-0" size={22} />
+                    <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Gestión de Inventarios
+                    </h1>
+                    
+                    {/* Botón de tres puntitos ⋮ al lado de Gestión de Inventarios */}
+                    <button
+                        type="button"
+                        onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                        className={`p-1.5 rounded-lg text-gray-500 hover:text-gray-900 transition-colors border ${
+                            isActionsMenuOpen ? 'bg-gray-100 border-gray-300 text-gray-900' : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                        }`}
+                        title="Opciones y Acciones de Inventario"
+                    >
+                        <MoreVertical size={17} />
+                    </button>
 
-                    {/* Segmentos de Operación compactos estilo Odoo */}
-                    <div className="flex items-center gap-1 bg-gray-100/80 p-0.5 rounded-xl border border-gray-200/60 shadow-2xs inline-flex mt-0.5">
-                        <button
-                            type="button"
-                            onClick={() => setTab('stock')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                tab === 'stock' 
-                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
-                                    : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                        >
-                            <Warehouse size={13} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
-                            <span>Stock Actual</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTab('kardex')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                tab === 'kardex' 
-                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
-                                    : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                        >
-                            <History size={13} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
-                            <span>Kárdex</span>
-                        </button>
-                        {esAdminSucursal && (
+                    {/* Menú Desplegable de Tres Puntitos */}
+                    {isActionsMenuOpen && (
+                        <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                            {esAdminSucursal && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsActionsMenuOpen(false);
+                                        setIsImportModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left"
+                                >
+                                    <Upload size={14} className="text-emerald-600" />
+                                    <span>Importar inventario Excel</span>
+                                </button>
+                            )}
+
                             <button
                                 type="button"
-                                onClick={() => setTab('masivo')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    tab === 'masivo' 
-                                        ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
-                                        : 'text-gray-500 hover:text-gray-900'
-                                }`}
+                                onClick={async () => {
+                                    setIsActionsMenuOpen(false);
+                                    setIsExportingExcel(true);
+                                    try {
+                                        await exportInventarioExcel();
+                                        toast.success('Inventario exportado exitosamente');
+                                    } catch (e) {
+                                        toast.error('Error al exportar inventario');
+                                    } finally {
+                                        setIsExportingExcel(false);
+                                    }
+                                }}
+                                disabled={isExportingExcel}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left disabled:opacity-50"
                             >
-                                <Scale size={13} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
-                                <span>Ajuste Rápido</span>
+                                {isExportingExcel ? <Loader2 size={14} className="animate-spin text-indigo-600" /> : <FileSpreadsheet size={14} className="text-indigo-600" />}
+                                <span>{isExportingExcel ? 'Exportando...' : 'Exportar Stock a Excel'}</span>
                             </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setTab('lotes')}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                tab === 'lotes' 
-                                    ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5' 
-                                    : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                        >
-                            <Clock size={13} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
-                            <span>Lotes & Caducidades</span>
-                        </button>
-                    </div>
+
+                            {esAdminSucursal && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        setIsActionsMenuOpen(false);
+                                        const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
+                                        if (!window.confirm(`⚠️ ¿Deseas cuadrar el inventario de ${sucName}?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.`)) {
+                                            return;
+                                        }
+                                        setIsRecalculating(true);
+                                        try {
+                                            const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
+                                            toast.success(`Inventario cuadrado: ${res.data.corregidos} productos procesados, ${res.data.inventarios_modificados} stock(s) alineado(s).`);
+                                            queryClient.invalidateQueries({ queryKey: ['inventario'] });
+                                            queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+                                        } catch (err: any) {
+                                            toast.error(err?.message || 'Error al cuadrar el inventario con el Kárdex');
+                                        } finally {
+                                            setIsRecalculating(false);
+                                        }
+                                    }}
+                                    disabled={isRecalculating}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50/70 transition-colors text-left disabled:opacity-50 border-t border-gray-100"
+                                >
+                                    <RefreshCw size={14} className={isRecalculating ? "animate-spin text-amber-600" : "text-amber-600"} />
+                                    <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
+                                </button>
+                            )}
+
+                            {tab === 'kardex' && (
+                                <>
+                                    <div className="border-t border-gray-100 my-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsActionsMenuOpen(false);
+                                            exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-emerald-600 transition-colors text-left"
+                                    >
+                                        <FileSpreadsheet size={14} className="text-emerald-600" />
+                                        <span>Exportar Kárdex Excel</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsActionsMenuOpen(false);
+                                            window.print();
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left"
+                                    >
+                                        <Printer size={14} className="text-indigo-600" />
+                                        <span>Imprimir Kárdex PDF</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -283,88 +348,6 @@ export default function InventarioPage() {
                                 {almacenes.map(a => <option key={a.id} value={a.id}>📦 {a.nombre}</option>)}
                             </select>
                         </div>
-                    )}
-
-                    {/* Acciones de Kárdex si estamos en esa vista */}
-                    {tab === 'kardex' && (
-                        <>
-                            <button 
-                                onClick={() => exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                                title="Exportar Kárdex a Excel"
-                            >
-                                <FileSpreadsheet size={13} />
-                                <span>Kárdex Excel</span>
-                            </button>
-                            <button 
-                                onClick={() => window.print()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                                title="Imprimir PDF del Kárdex"
-                            >
-                                <Printer size={13} />
-                                <span>Imprimir</span>
-                            </button>
-                        </>
-                    )}
-
-                    {/* Botones de Acción Globales */}
-                    {esAdminSucursal && (
-                        <button 
-                            onClick={() => setIsImportModalOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
-                            title="Importar inventario desde archivo Excel"
-                        >
-                            <Upload size={13} />
-                            <span>Importar Excel</span>
-                        </button>
-                    )}
-
-                    <button 
-                        onClick={async () => {
-                            setIsExportingExcel(true);
-                            try {
-                                await exportInventarioExcel();
-                                toast.success('Inventario exportado exitosamente');
-                            } catch (e) {
-                                toast.error('Error al exportar inventario');
-                            } finally {
-                                setIsExportingExcel(false);
-                            }
-                        }}
-                        disabled={isExportingExcel}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-xs ${isExportingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        title="Exportar Stock Completo a Excel"
-                    >
-                        {isExportingExcel ? <Loader2 size={13} className="animate-spin" /> : <FileSpreadsheet size={13} />}
-                        <span>{isExportingExcel ? 'Generando...' : 'Exportar Excel'}</span>
-                    </button>
-
-                    {esAdminSucursal && (
-                        <button
-                            onClick={async () => {
-                                const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
-                                if (!window.confirm("⚠️ ¿Deseas cuadrar el inventario de " + sucName + "?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.")) {
-                                    return;
-                                }
-                                setIsRecalculating(true);
-                                try {
-                                    const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
-                                    toast.success("Inventario cuadrado: " + res.data.corregidos + " productos procesados, " + res.data.inventarios_modificados + " stock(s) alineado(s).");
-                                    queryClient.invalidateQueries({ queryKey: ['inventario'] });
-                                    queryClient.invalidateQueries({ queryKey: ['movimientos'] });
-                                } catch (err: any) {
-                                    toast.error(err?.message || 'Error al cuadrar el inventario con el Kárdex');
-                                } finally {
-                                    setIsRecalculating(false);
-                                }
-                            }}
-                            disabled={isRecalculating}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50"
-                            title="Alinear stock físico recalculando movimientos del Kárdex"
-                        >
-                            <RefreshCw size={13} className={isRecalculating ? "animate-spin text-amber-700" : "text-amber-700"} />
-                            <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
-                        </button>
                     )}
                 </div>
             </div>
