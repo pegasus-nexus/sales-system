@@ -151,7 +151,7 @@ class BIPandasService:
             )
 
         df_sales = pd.DataFrame(raw_sales)
-        df_sales.rename(columns={"_id": "ticket_id", "total": "total_neto"}, inplace=True)
+        df_sales = df_sales.rename(columns={"_id": "ticket_id", "total": "total_neto"})
         df_sales["total_neto"] = pd.to_numeric(df_sales["total_neto"].apply(safe_float), errors="coerce").fillna(0.0)
 
         df_sales = _normalize_df_datetimes(df_sales)
