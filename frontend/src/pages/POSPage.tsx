@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { usePosStore } from '../store/usePosStore';
@@ -139,24 +139,7 @@ export default function POSPage() {
 
     const stockMap = useStockMap(sucursalId, almacen_id);
 
-    const almacenesStockQueries = useQueries({
-        queries: almacenes.map((a) => ({
-            queryKey: ['inventario', sucursalId, a.id],
-            queryFn: () => getInventario(sucursalId, a.id!, 1, 1000),
-            staleTime: 30_000,
-            enabled: !!almacenSelectorProduct,
-        })),
-    });
 
-    const allAlmacenesStockMap = useMemo(() => {
-        const result: Record<string, Record<string, number>> = {};
-        almacenes.forEach((a, idx) => {
-            const itms = almacenesStockQueries[idx]?.data?.items || [];
-            result[a.id!] = {};
-            for (const inv of itms) result[a.id!][inv.producto_id] = inv.cantidad;
-        });
-        return result;
-    }, [almacenes, almacenesStockQueries]);
 
     // Hotkeys & Barcode Scanner
     useEffect(() => {
@@ -190,6 +173,24 @@ export default function POSPage() {
 
             if (isPaymentModalOpen || lastSale) return;
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+            if (activeItem) {
+                if (e.key === '+' || e.key === '=') {
+                    e.preventDefault();
+                    updateQty(activeItem.product._id, activeItem.almacen_id, 1);
+                    return;
+                }
+                if (e.key === '-') {
+                    e.preventDefault();
+                    updateQty(activeItem.product._id, activeItem.almacen_id, -1);
+                    return;
+                }
+                if (e.key === 'Delete') {
+                    e.preventDefault();
+                    removeItem(activeItem.product._id, activeItem.almacen_id);
+                    return;
+                }
+            }
 
             const now = Date.now();
             if (now - lastTimestamp > 50) currentString = '';
@@ -460,7 +461,7 @@ export default function POSPage() {
             <POSAlmacenModal
                 product={almacenSelectorProduct}
                 almacenes={almacenes}
-                allAlmacenesStockMap={allAlmacenesStockMap}
+                sucursalId={sucursalId}
                 onSelectAlmacen={(almId, almNombre) => {
                     if (almacenSelectorProduct) {
                         addItem(almacenSelectorProduct, almId, almNombre);

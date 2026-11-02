@@ -1,4 +1,6 @@
-import { CreditCard, MoreHorizontal, User as UserIcon, Plus } from 'lucide-react';
+import { CreditCard, MoreHorizontal, User as UserIcon, Plus, Keyboard, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLocalStorage } from 'usehooks-ts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { POSTicketItemList } from './POSTicketItemList';
 import { POSNumpad } from './POSNumpad';
 import type { CartItem, ParkedTicket, ClienteData } from '../../store/usePosStore';
@@ -48,6 +50,8 @@ export function POSTicketSidebar({
     activeItem,
     onOpenPaymentModal,
 }: POSTicketSidebarProps) {
+    const [showNumpad, setShowNumpad] = useLocalStorage<boolean>('pos-show-numpad', false);
+
     return (
         <div
             className={`md:w-[420px] lg:w-[440px] w-full md:flex flex-col overflow-hidden bg-white border-r border-gray-200 shadow-xl shrink-0 ${
@@ -97,7 +101,7 @@ export function POSTicketSidebar({
                 </div>
             </div>
 
-            {/* Ticket Items (Scrollable) */}
+            {/* Ticket Items (Scrollable - expands when Numpad is hidden) */}
             <div className="flex-1 overflow-y-auto min-h-[140px] p-2 bg-gray-50/30">
                 <POSTicketItemList
                     items={items}
@@ -112,11 +116,11 @@ export function POSTicketSidebar({
             {/* Ticket Summary & Action Triggers */}
             <div className="shrink-0 border-t border-gray-100 p-3 bg-white space-y-2">
                 {/* Secondary Actions Bar */}
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                     <button
                         type="button"
                         onClick={onOpenActionsModal}
-                        className="py-1.5 px-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 text-gray-700 hover:text-indigo-700 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                        className="col-span-2 py-1.5 px-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 text-gray-700 hover:text-indigo-700 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                     >
                         <span className="flex items-center gap-1.5 truncate">
                             <UserIcon size={13} className="text-indigo-600 shrink-0" />
@@ -129,19 +133,31 @@ export function POSTicketSidebar({
                     <button
                         type="button"
                         onClick={onOpenActionsModal}
-                        className="py-1.5 px-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 text-gray-700 hover:text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="py-1.5 px-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 text-gray-700 hover:text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                     >
                         <MoreHorizontal size={14} className="text-gray-500" />
                         <span>Acciones</span>
                     </button>
                 </div>
 
-                {/* Total Bar */}
+                {/* Total Bar with Numpad Toggle */}
                 <div className="flex items-baseline justify-between pt-1 border-t border-gray-100">
                     <div>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
-                            Total General
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                                Total General
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setShowNumpad(!showNumpad)}
+                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-1.5 py-0.2 rounded cursor-pointer transition-colors"
+                                title={showNumpad ? 'Ocultar teclado táctil para dar más espacio al ticket' : 'Mostrar teclado táctil'}
+                            >
+                                <Keyboard size={10} />
+                                <span>{showNumpad ? 'Ocultar' : 'Teclado'}</span>
+                                {showNumpad ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
+                            </button>
+                        </div>
                         {descAmount > 0 && (
                             <span className="text-[10px] font-bold text-red-500">
                                 Descuento: -Bs. {fmt(descAmount)}
@@ -155,14 +171,23 @@ export function POSTicketSidebar({
                     </div>
                 </div>
 
-                {/* Tactile Numpad */}
-                <div className="pt-1">
-                    <POSNumpad
-                        selectedItem={activeItem}
-                        onUpdateQty={onSetQty}
-                        onRemoveItem={onRemoveItem}
-                    />
-                </div>
+                {/* Tactile Numpad (Collapsible for Desktop users with physical keyboards) */}
+                <AnimatePresence initial={false}>
+                    {showNumpad && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden pt-1"
+                        >
+                            <POSNumpad
+                                selectedItem={activeItem}
+                                onUpdateQty={onSetQty}
+                                onRemoveItem={onRemoveItem}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Big Pay Button */}
                 <button

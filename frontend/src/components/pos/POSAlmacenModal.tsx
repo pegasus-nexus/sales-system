@@ -1,11 +1,14 @@
+import { useMemo } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Package } from 'lucide-react';
+import { getInventario } from '../../api/api';
 import type { Product, Almacen } from '../../api/types';
 
 interface POSAlmacenModalProps {
     product: Product | null;
     almacenes: Almacen[];
-    allAlmacenesStockMap: Record<string, Record<string, number>>;
+    sucursalId: string;
     onSelectAlmacen: (almacenId: string, almacenNombre: string) => void;
     onClose: () => void;
 }
@@ -13,10 +16,30 @@ interface POSAlmacenModalProps {
 export function POSAlmacenModal({
     product,
     almacenes,
-    allAlmacenesStockMap,
+    sucursalId,
     onSelectAlmacen,
     onClose,
 }: POSAlmacenModalProps) {
+    const almacenesStockQueries = useQueries({
+        queries: almacenes.map((a) => ({
+            queryKey: ['inventario', sucursalId, a.id],
+            queryFn: () => getInventario(sucursalId, a.id!, 1, 1000),
+            staleTime: 30_000,
+            enabled: !!product,
+        })),
+    });
+
+    const stockPorAlmacen = useMemo(() => {
+        const result: Record<string, number> = {};
+        if (!product) return result;
+        almacenes.forEach((a, idx) => {
+            const itms = almacenesStockQueries[idx]?.data?.items || [];
+            const match = itms.find((inv) => inv.producto_id === product._id);
+            result[a.id!] = match ? match.cantidad : 0;
+        });
+        return result;
+    }, [almacenes, almacenesStockQueries, product]);
+
     if (!product) return null;
 
     return (
@@ -48,7 +71,7 @@ export function POSAlmacenModal({
                     {/* Lista de Almacenes */}
                     <div className="p-3.5 space-y-2">
                         {almacenes.map((a) => {
-                            const stockEnAlmacen = allAlmacenesStockMap[a.id!]?.[product._id] ?? 0;
+                            const stockEnAlmacen = stockPorAlmacen[a.id!] ?? 0;
                             const sinStock = stockEnAlmacen <= 0;
 
                             return (
