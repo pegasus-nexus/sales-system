@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
     ShieldAlert, CheckCircle2, AlertTriangle, AlertCircle, 
-    RefreshCcw, Send, Download, Copy, Check, Server, Globe, Database, MessageSquare
+    RefreshCcw, Send, Download, Copy, Check, Server, Globe, Database, MessageSquare, HelpCircle, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { 
@@ -26,6 +26,7 @@ export default function SystemHealthPage() {
     const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
     const [inviteEmail, setInviteEmail] = useState('rodrigorayomartinez@gmail.com');
     const [latestInviteUrl, setLatestInviteUrl] = useState<string | null>(null);
+    const [isTelegramHelpOpen, setIsTelegramHelpOpen] = useState(false);
 
     // Queries
     const { data: statusSummary } = useQuery({
@@ -224,17 +225,28 @@ export default function SystemHealthPage() {
 
                         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-150 flex flex-col justify-between">
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alertas Telegram</p>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alertas Telegram</p>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsTelegramHelpOpen(true)}
+                                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 cursor-pointer"
+                                        title="Guía de configuración"
+                                    >
+                                        <HelpCircle size={12} />
+                                        <span>Guía</span>
+                                    </button>
+                                </div>
                                 <span className={`inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
                                     statusSummary?.telegram_configured 
                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                                        : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                        : 'bg-amber-50 text-amber-700 border border-amber-200'
                                 }`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${statusSummary?.telegram_configured ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                                    <span className={`w-1.5 h-1.5 rounded-full ${statusSummary?.telegram_configured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                     {statusSummary?.telegram_configured ? 'Activo y Conectado' : 'Pendiente en .env'}
                                 </span>
                             </div>
-                            {statusSummary?.telegram_configured && (
+                            {statusSummary?.telegram_configured ? (
                                 <button
                                     onClick={() => testTelegramMut.mutate()}
                                     disabled={testTelegramMut.isPending}
@@ -242,6 +254,14 @@ export default function SystemHealthPage() {
                                 >
                                     <Send size={11} />
                                     <span>{testTelegramMut.isPending ? 'Enviando...' : 'Probar Notificación'}</span>
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTelegramHelpOpen(true)}
+                                    className="mt-2 text-[11px] font-bold text-amber-700 hover:text-amber-900 underline flex items-center gap-1 cursor-pointer"
+                                >
+                                    <span>¿Dónde configurar mis credenciales?</span>
                                 </button>
                             )}
                         </div>
@@ -410,6 +430,64 @@ export default function SystemHealthPage() {
                             </p>
                         </div>
                     )}
+                </div>
+            )}
+            {/* Modal de Guía de Configuración de Telegram */}
+            {isTelegramHelpOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-gray-150 p-6 space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <div className="flex items-center gap-2">
+                                <Send className="text-indigo-600" size={20} />
+                                <h3 className="text-base font-black text-gray-900">¿Cómo configurar alertas a Telegram?</h3>
+                            </div>
+                            <button 
+                                onClick={() => setIsTelegramHelpOpen(false)}
+                                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 transition-colors"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                            Por seguridad, Telegram no usa números telefónicos para enviar alertas de servidores. Usa un <strong>Bot de Telegram</strong> y tu <strong>Chat ID</strong>. Configurarlo toma 2 minutos:
+                        </p>
+
+                        <div className="space-y-2.5 text-xs">
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <p className="font-bold text-gray-900">1. Crear tu Bot en Telegram:</p>
+                                <p className="text-gray-600 mt-0.5">
+                                    En Telegram busca a <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 text-indigo-700 font-bold">@BotFather</code> y escribe <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 text-indigo-700 font-bold">/newbot</code>. Te entregará tu <strong>BOT_TOKEN</strong> (ej. 7123456789:AAHk...).
+                                </p>
+                            </div>
+
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <p className="font-bold text-gray-900">2. Obtener tu Chat ID:</p>
+                                <p className="text-gray-600 mt-0.5">
+                                    Abre tu nuevo bot en Telegram y dale <strong>Iniciar</strong> (<code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 text-indigo-700 font-bold">/start</code>). Luego busca a <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 text-indigo-700 font-bold">@userinfobot</code> para ver tu Id numérico (ej. 987654321).
+                                </p>
+                            </div>
+
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <p className="font-bold text-gray-900">3. Colocar en tu archivo <code className="text-indigo-600">.env</code> del backend:</p>
+                                <pre className="mt-1.5 p-2.5 bg-gray-900 text-emerald-400 rounded-lg font-mono text-[11px] select-all overflow-x-auto">
+{`TELEGRAM_BOT_TOKEN=tu_token_aqui
+TELEGRAM_CHAT_ID=tu_chat_id_aqui
+FRONTEND_URL=https://tu-frontend.vercel.app`}
+                                </pre>
+                            </div>
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setIsTelegramHelpOpen(false)}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
