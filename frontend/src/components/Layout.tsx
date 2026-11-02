@@ -18,7 +18,6 @@ import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
 import AppLauncherModal from './AppLauncherModal';
-import SaasWorkspaceLayout from './saas/SaasWorkspaceLayout';
 import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 
@@ -69,12 +68,6 @@ export default function Layout({ children }: LayoutProps) {
     const impersonationChain = useAuthStore(state => state.impersonationChain) || [];
     const originalToken = useAuthStore(state => state.originalToken);
     const isImpersonating = impersonationChain.length > 0 || Boolean(originalToken);
-
-    const isSaasAdminMode = (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') && !isImpersonating && (location.pathname.startsWith('/admin') || location.pathname === '/auditoria');
-
-    if (isSaasAdminMode) {
-        return <SaasWorkspaceLayout>{children}</SaasWorkspaceLayout>;
-    }
 
     const handleRevertImpersonation = async (targetIndex?: number) => {
         const store = useAuthStore.getState();

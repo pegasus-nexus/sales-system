@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
 import Layout from './components/Layout';
+import SaasWorkspaceLayout from './components/saas/SaasWorkspaceLayout';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage'));
@@ -229,48 +230,28 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/crear-password" element={<SetupPasswordPage />} />
 
-                {/* 2. Todas las demás rutas dentro del Layout */}
+                {/* 2. Rutas del SuperAdmin SaaS dentro de SaasWorkspaceLayout */}
+                <Route path="/admin/*" element={
+                  <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
+                    <SaasWorkspaceLayout>
+                      <Routes>
+                        <Route path="/" element={<SaasAppsLauncher />} />
+                        <Route path="/dashboard" element={<AdminDashboardPage />} />
+                        <Route path="/empresas" element={<TenantsAdminPage />} />
+                        <Route path="/planes" element={<PlanesAdminPage />} />
+                        <Route path="/health" element={<SystemHealthPage />} />
+                        <Route path="/monitor" element={<SystemHealthPage />} />
+                        <Route path="/colaboradores" element={<SaasCollaboratorsPage />} />
+                      </Routes>
+                    </SaasWorkspaceLayout>
+                  </ProtectedRoute>
+                } />
+
+                {/* 3. Todas las demás rutas dentro del Layout */}
                 <Route path="/*" element={
                   <Layout>
                     <Routes>
                       <Route path="/" element={<ProtectedRoute><DashboardDispatch /></ProtectedRoute>} />
-
-                      {/* SuperAdmin */}
-                      <Route path="/admin/dashboard" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <AdminDashboardPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin/empresas" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <TenantsAdminPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin/planes" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <PlanesAdminPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin/health" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <SystemHealthPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin/monitor" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <SystemHealthPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin/colaboradores" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                          <SaasCollaboratorsPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/admin" element={
-                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
-                          <SaasAppsLauncher />
-                        </ProtectedRoute>
-                      } />
 
                       <Route path="/dashboard" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
