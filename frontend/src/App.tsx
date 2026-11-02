@@ -11,6 +11,7 @@ const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
 const SaasCollaboratorsPage = lazy(() => import('./pages/SaasCollaboratorsPage'));
+const SaasAppsLauncher = lazy(() => import('./components/saas/SaasAppsLauncher'));
 const TenantDashboard = lazy(() => import('./pages/TenantDashboard'));
 const SucursalesPage = lazy(() => import('./pages/SucursalesPage'));
 const CatalogoPage = lazy(() => import('./pages/CatalogoPage'));
@@ -265,7 +266,11 @@ function App() {
                           <SaasCollaboratorsPage />
                         </ProtectedRoute>
                       } />
-                      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route path="/admin" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
+                          <SaasAppsLauncher />
+                        </ProtectedRoute>
+                      } />
 
                       <Route path="/dashboard" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>

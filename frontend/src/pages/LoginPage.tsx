@@ -429,8 +429,8 @@ export default function LoginPage() {
                         </p>
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-mono text-gray-500">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Pegasus SalesSystem v2.4.2</span>
-                            <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[10px] text-gray-400">develop</span>
+                            <span>Pegasus SalesSystem v2.5</span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 font-semibold tracking-wide">Producción</span>
                         </div>
                     </div>
                 </motion.div>
