@@ -2,7 +2,7 @@
 
  * Centralized API service layer.
 
- * All backend route strings are defined here â€” never scattered in components.
+ * All backend route strings are defined here - never scattered in components.
 
  */
 
@@ -55,7 +55,7 @@ import type {
 
 
 
-// â”€â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Auth ─────────────────────────────────────────────────────────────────
 
 export const getMe = () => client<User>('/users/me');
 
@@ -65,7 +65,7 @@ export const impersonateUser = (user_id: string) => client<{access_token: string
 
 
 
-// â”€â”€â”€ Tenants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tenants ──────────────────────────────────────────────────────────────
 
 export const getTenants = () => client<Tenant[]>('/tenants');
 
@@ -154,7 +154,7 @@ export const getTenantStats = () =>
 
 
 
-// â”€â”€â”€ Analytics / Reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Analytics / Reports ──────────────────────────────────────────────────
 
 export const getGeneralReports = (days: number = 30) => 
 
@@ -276,7 +276,7 @@ export const getAnalyticsDashboard = (start_date: string, end_date: string, sucu
 
     params.append('clear_cache', 'true');
 
-    params.append('_t', new Date().getTime().toString()); // Evitar cachÃ© del navegador
+    params.append('_t', new Date().getTime().toString()); // Evitar caché del navegador
 
     return client<unknown>(`/analytics/dashboard?${params.toString()}`);
 
@@ -700,7 +700,7 @@ export const getSalesMatrix = (start_date: string, end_date: string, sucursal_id
 
 
 
-// â”€â”€â”€ Sucursales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sucursales ───────────────────────────────────────────────────────────
 
 export const getSucursales = (allBranches?: boolean | unknown) => {
 
@@ -716,7 +716,7 @@ export const updateSucursal = (id: string, data: Partial<SucursalCreate>) => cli
 
 
 
-// â”€â”€â”€ Almacenes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Almacenes ────────────────────────────────────────────────────────────
 
 export const getAlmacenes = (sucursal_id: string) => client<Almacen[]>(`/almacenes/${sucursal_id}`);
 
@@ -732,7 +732,7 @@ export const deleteSucursal = (id: string) =>
 
 
 
-// â”€â”€â”€ Products (Catalog) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Products (Catalog) ───────────────────────────────────────────────────
 
 export const getProducts = (page: number = 1, limit: number = 50, search?: string, categoria_id?: string) => {
 
@@ -860,7 +860,7 @@ export const importProductsExcel = async (file: File) => {
 
     if (!response.ok) {
 
-        let errMsg = 'Error en la importaciÃ³n';
+        let errMsg = 'Error en la importación';
 
         try {
 
@@ -914,7 +914,7 @@ export const importGlobalExcel = async (file: File) => {
 
     if (!response.ok) {
 
-        let errMsg = 'Error en la importaciÃ³n global';
+        let errMsg = 'Error en la importación global';
 
         try {
 
@@ -1012,7 +1012,7 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
 
     if (!response.ok) {
 
-        let errMsg = 'Error en la importaciÃ³n de precios';
+        let errMsg = 'Error en la importación de precios';
 
         try {
 
@@ -1036,7 +1036,7 @@ export const importProductPrices = async (sucursal_id: string, file: File) => {
 
 
 
-// â”€â”€â”€ Inventario â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Inventario ───────────────────────────────────────────────────────────
 
 export const getInventario = (sucursal_id = 'CENTRAL', almacen_id = 'default', page: number = 1, limit: number = 50, search?: string, categoria_id?: string, stock_bajo: boolean = false) => {
 
@@ -1257,7 +1257,7 @@ export const importInventoryExcel = async (sucursal_id: string, file: File) => {
 
     if (!response.ok) {
 
-        let errMsg = 'Error en la importaciÃ³n';
+        let errMsg = 'Error en la importación';
 
         try {
 
@@ -1311,7 +1311,7 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
 
     if (!response.ok) {
 
-        let errMsg = 'Error en la sincronizaciÃ³n';
+        let errMsg = 'Error en la sincronización';
 
         try {
 
@@ -1333,7 +1333,7 @@ export const importInventoryBranchExcel = async (sucursal_id: string, file: File
 
 
 
-// â”€â”€â”€ Pedidos Internos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Pedidos Internos ─────────────────────────────────────────────────────
 
 export const getEtiquetas = () => client<Etiqueta[]>('/etiquetas');
 
@@ -1425,7 +1425,7 @@ export const downloadPedidoPDF = async (pedido_id: string) => {
 
 
 
-// â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Categories ───────────────────────────────────────────────────────────
 
 export const getCategories = () => client<Category[]>('/categories');
 
@@ -1435,7 +1435,7 @@ export const createCategory = (data: CategoryCreate) =>
 
 
 
-// â”€â”€â”€ Users / Employees â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Users / Employees ────────────────────────────────────────────────────
 
 export const getUsers = () => client<User[]>('/users');
 
@@ -1455,7 +1455,7 @@ export const toggleEmployeeStatus = (id: string, is_active: boolean) =>
 
 
 
-// â”€â”€â”€ Sales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sales ────────────────────────────────────────────────────────────────
 
 export const createSale = (data: SaleCreate) => client('/sales', { method: 'POST', body: data });
 
@@ -1543,7 +1543,7 @@ export const registrarAbono = (sale_id: string, abono: { metodo: 'EFECTIVO' | 'T
 
 
 
-// â”€â”€â”€ Caja â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Caja ─────────────────────────────────────────────────────────────────
 
 
 
@@ -1627,7 +1627,7 @@ export const deleteCategoriaGasto = (id: string) =>
 
 
 
-// â”€â”€ Descuentos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Descuentos ─────────────────────────────────────────────────────────────
 
 export const getDescuentos = () =>
 
@@ -1647,7 +1647,7 @@ export const deleteDescuento = (id: string) =>
 
 
 
-// â”€â”€ Precios / Solicitudes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Precios / Solicitudes ──────────────────────────────────────────────────
 
 export const crearSolicitudPrecio = (data: PriceRequestCreate) =>
 
@@ -1683,7 +1683,7 @@ export const overrideBranchPrice = (sucursal_id: string, producto_id: string, nu
 
 
 
-// â”€â”€ Clientes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Clientes ──────────────────────────────────────────────────────────────
 
 export const getClientes = (searchTerm?: string) => {
 
@@ -1737,7 +1737,7 @@ export const getClienteByNit = async (nit: string): Promise<any | null> => {
 
 
 
-// â”€â”€ Listas de Precios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Listas de Precios ─────────────────────────────────────────────────────
 
 export const getSesionesCaja = () => client<unknown[]>(`/caja/sesiones`);
 
@@ -1765,7 +1765,7 @@ export const deleteListaPrecioItem = (lista_id: string, item_id: string) => clie
 
 
 
-// â”€â”€ GestiÃ³n de CrÃ©ditos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Gestión de Créditos ───────────────────────────────────────────────────
 
 export const getCreditosResumen = () => {
     return client<{
@@ -1861,7 +1861,7 @@ export const anularAbono = (cuenta_id: string, transaccion_id: string, motivo: s
 
 
 
-// â”€â”€ LogÃ­stica B2B y Mermas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Logística B2B y Mermas ────────────────────────────────────────────────
 
 export const crearMermaReclamo = (sucursal_id: string, supermercado_id: string, data: { items: unknown[], notas?: string }) => {
 
@@ -1895,7 +1895,7 @@ export const compensarMermaReclamo = (merma_id: string) => {
 
 
 
-// â”€â”€ EstadÃ­sticas de Productos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Estadísticas de Productos ────────────────────────────────────────────
 
 export interface ProductStatsRequest {
 
@@ -1979,7 +1979,7 @@ export const getPurchasesByClient = (startDate: string, endDate: string, sucursa
 
 
 
-// â”€â”€â”€ Dark Kitchen & Meal Plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Dark Kitchen & Meal Plans ─────────────────────────────────────────────
 
 
 
@@ -2079,7 +2079,7 @@ export const markScheduleAsDelivered = (id: string) =>
 
 
 
-// â”€â”€â”€ Proveedores â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Proveedores ──────────────────────────────────────────────────────────
 
 import type { Proveedor } from './types';
 
@@ -2123,7 +2123,7 @@ export const deleteProveedor = (id: string) =>
 
 
 
-// â”€â”€â”€ SAAS STAFF (SuperAdmin Collaborators) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SAAS STAFF (SuperAdmin Collaborators) ──────────────────────────────────
 
 export const getSaasStaff = () => client<any[]>('/saas-staff/');
 
@@ -2139,7 +2139,7 @@ export const updateMyProfile = (data: { full_name?: string; avatar_url?: string 
 
 
 
-// â”€â”€â”€ COMPRAS (Purchase Orders & Receptions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── COMPRAS (Purchase Orders & Receptions) ─────────────────────────────────
 
 export const createPurchaseOrder = (data: any) => client<any>('/compras/orders', { method: 'POST', body: data });
 

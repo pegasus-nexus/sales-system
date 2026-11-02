@@ -129,7 +129,7 @@ export default function POSPage() {
 
     const stockMap = useStockMap(sucursalId, almacen_id);
 
-    // Stock de TODOS los almacenes en paralelo (solo cuando el modal selector de almacÃ©n estÃ© abierto)
+    // Stock de TODOS los almacenes en paralelo (solo cuando el modal selector de almacén esté abierto)
     const almacenesStockQueries = useQueries({
         queries: almacenes.map(a => ({
             queryKey: ['inventario', sucursalId, a.id],
@@ -150,7 +150,7 @@ export default function POSPage() {
     }, [almacenes, almacenesStockQueries]);
 
     // BARCODE SCANNER DETECTOR
-    // Los escÃ¡neres funcionan como un teclado muy rÃ¡pido que termina con "Enter".
+    // Los escáneres funcionan como un teclado muy rápido que termina con "Enter".
     useEffect(() => {
         let currentString = '';
         let lastTimestamp = 0;
@@ -186,18 +186,18 @@ export default function POSPage() {
                 return;
             }
 
-            // Ignorar escÃ¡ner si hay un modal abierto o la venta ya finalizÃ³
+            // Ignorar escáner si hay un modal abierto o la venta ya finalizó
             if (confirmSale || lastSale) {
                 return;
             }
 
-            // Ignorar escÃ¡ner si el usuario estÃ¡ tipeando en un input o textarea (ej. buscador)
+            // Ignorar escáner si el usuario está tipeando en un input o textarea (ej. buscador)
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;
             }
 
             const now = Date.now();
-            // Si pasan mÃ¡s de 50ms entre teclas, asumimos que es el humano escribiendo lento, reiniciamos.
+            // Si pasan más de 50ms entre teclas, asumimos que es el humano escribiendo lento, reiniciamos.
             if (now - lastTimestamp > 50) {
                 currentString = '';
             }
@@ -213,7 +213,7 @@ export default function POSPage() {
                         if (stock > 0) {
                             addItem(match, almacen_id, almacenes.find(a => a.id === almacen_id)?.nombre);
                         } else {
-                            // Opcionalmente se podrÃ­a lanzar una alerta de sin stock.
+                            // Opcionalmente se podría lanzar una alerta de sin stock.
                             console.warn('Producto sin stock escaneado:', match.descripcion);
                         }
                     }
@@ -309,7 +309,7 @@ export default function POSPage() {
                     producto_id: i.product._id,
                     cantidad: i.quantity,
                     precio_unitario: i.precio,
-                    almacen_id: i.almacen_id,   // â† Enviar almacÃ©n por Ã­tem
+                    almacen_id: i.almacen_id,   // ← Enviar almacén por ítem
                 })),
                 pagos: pagos.map(p => ({ metodo: p.metodo, monto: p.monto })),
                 descuento: descuento.valor ? { nombre: descuento.nombre, tipo: descuento.tipo, valor: parseFloat(descuento.valor) } : undefined,
@@ -409,14 +409,14 @@ export default function POSPage() {
                     <div>
                         <h2 className="text-xl font-black text-gray-900 mb-1">Caja cerrada</h2>
                         <p className="text-sm text-gray-500">
-                            Debes abrir la caja antes de realizar ventas. DirÃ­gete a la secciÃ³n de <strong>Caja</strong> para iniciar una sesiÃ³n.
+                            Debes abrir la caja antes de realizar ventas. Dirígete a la sección de <strong>Caja</strong> para iniciar una sesión.
                         </p>
                     </div>
                     <button
                         onClick={() => navigate('/caja')}
                         className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all active:scale-95 shadow-md shadow-indigo-200"
                     >
-                        Ir a Caja â†’
+                        Ir a Caja ←’
                     </button>
                 </motion.div>
             </div>
@@ -426,7 +426,7 @@ export default function POSPage() {
     return (
         <div className="flex flex-col md:flex-row h-full bg-gray-100 overflow-hidden">
             
-            {/* Modal Selector AlmacÃ©n */}
+            {/* Modal Selector Almacén */}
             <AnimatePresence>
                 {almacenSelectorProduct && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
@@ -434,7 +434,7 @@ export default function POSPage() {
                             {/* Header */}
                             <div className="flex justify-between items-start px-5 py-4 border-b border-gray-100">
                                 <div>
-                                    <h3 className="font-black text-base text-gray-900">Â¿De quÃ© almacÃ©n?</h3>
+                                    <h3 className="font-black text-base text-gray-900">¿De qué almacén?</h3>
                                     <p className="text-[11px] text-gray-500 mt-0.5 font-medium truncate max-w-[220px]">{almacenSelectorProduct.descripcion}</p>
                                 </div>
                                 <button onClick={() => setAlmacenSelectorProduct(null)} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -486,7 +486,7 @@ export default function POSPage() {
                         mobileTab === 'catalog' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'
                     }`}
                 >
-                    <Search size={16} /> CatÃ¡logo
+                    <Search size={16} /> Catálogo
                 </button>
                 <button
                     onClick={() => setMobileTab('cart')}
@@ -504,7 +504,7 @@ export default function POSPage() {
             </div>
 
 
-            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LEFT â€” Product Catalog â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LEFT - Product Catalog â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             <div className={`flex-1 flex-col overflow-hidden min-w-0 ${
                 mobileTab === 'catalog' ? 'flex' : 'hidden md:flex'
             }`}>
@@ -516,7 +516,7 @@ export default function POSPage() {
                         <input
                             id="pos-search-input"
                             type="text" value={search} onChange={e => setSearch(e.target.value)}
-                            placeholder="Buscar nombre (F1)â€¦"
+                            placeholder="Buscar nombre (F1)..."
                             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none"
                             autoFocus
                             onKeyDown={(e) => {
@@ -558,7 +558,7 @@ export default function POSPage() {
                     ))}
                 </div>
 
-                {/* Product grid â€” only this scrolls on the left */}
+                {/* Product grid - only this scrolls on the left */}
                 <div className="flex-1 overflow-y-auto p-4">
                     {loadingP ? (
                         <div className="flex justify-center items-center h-full"><Loader2 size={28} className="animate-spin text-indigo-400" /></div>
@@ -613,7 +613,7 @@ export default function POSPage() {
                                             className={`group relative bg-white rounded-2xl border p-3 text-left shadow-sm flex flex-col transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                                                 ${noStock ? 'opacity-40 cursor-not-allowed border-gray-100' : 'hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-300 border-gray-200 cursor-pointer active:scale-[0.97]'}`}>
                                         <div className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full self-start mb-1.5 truncate max-w-full">
-                                            {p.categoria_nombre ?? 'â€“'}
+                                            {p.categoria_nombre ?? '-'}
                                         </div>
                                         <div className="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden">
                                             {p.image_url
@@ -654,12 +654,12 @@ export default function POSPage() {
                 </div>
             </div>
 
-            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RIGHT â€” Ticket Panel â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RIGHT - Ticket Panel â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
             {/*
               LAYOUT KEY:
-              â€¢ The outer div is flex-col + h-full + overflow-hidden
-              â€¢ Only the ITEMS section has flex-1 + overflow-y-auto â†’ it scrolls
-              â€¢ Every other section (factura, pagos, totals, button) uses shrink-0 â†’ never scrolls away
+              • The outer div is flex-col + h-full + overflow-hidden
+              • Only the ITEMS section has flex-1 + overflow-y-auto ←’ it scrolls
+              • Every other section (factura, pagos, totals, button) uses shrink-0 ←’ never scrolls away
             */}
             <div className={`md:w-[380px] w-full md:flex flex-col overflow-hidden shadow-xl bg-white border-l border-gray-200 ${
                 mobileTab === 'cart' ? 'flex' : 'hidden md:flex'
@@ -703,12 +703,12 @@ export default function POSPage() {
                     </div>
                 )}
 
-                {/* â”€â”€ Items list â”€â”€ (flex-1 + overflow-y-auto â†’ ONLY THIS SCROLLS) */}
+                {/* â”€â”€ Items list â”€â”€ (flex-1 + overflow-y-auto ←’ ONLY THIS SCROLLS) */}
                 <div className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
                     {items.length === 0 ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full py-4 text-gray-300">
                             <ShoppingCart size={32} className="mb-2 opacity-20" />
-                            <p className="text-xs text-gray-400 text-center">Ticket vacÃ­o â€” tocÃ¡ un producto</p>
+                            <p className="text-xs text-gray-400 text-center">Ticket vacío - tocá un producto</p>
                         </motion.div>
                     ) : (
                         <div className="space-y-1.5 scroll-smooth">
@@ -725,14 +725,14 @@ export default function POSPage() {
                                     >
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-semibold text-gray-900">{item.product.descripcion}</p>
-                                            {/* Etiqueta de almacÃ©n de origen */}
+                                            {/* Etiqueta de almacén de origen */}
                                             {item.almacen_nombre && almacenes.length > 1 && (
                                                 <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-1.5 py-0.5 mb-0.5">
                                                     <Package size={8} /> {item.almacen_nombre}
                                                 </span>
                                             )}
                                             <p className="text-[11px] text-gray-400">
-                                                ${fmt(item.precio)} Ã— {item.quantity} =&nbsp;
+                                                ${fmt(item.precio)} × {item.quantity} =&nbsp;
                                                 <span className="font-bold text-gray-700">${fmt(item.precio * item.quantity)}</span>
                                             </p>
                                         </div>
@@ -787,15 +787,15 @@ export default function POSPage() {
                                 />
                                 {canEditDate && (
                                     <div className="pt-2 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha de Venta (HistÃ³rica)</span>
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha de Venta (Histórica)</span>
                                         <input 
                                             type="datetime-local"
                                             value={fechaVenta}
                                             onChange={(e) => setFechaVenta(e.target.value)}
                                             className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
-                                            title="Si dejas este campo en blanco, se usarÃ¡ la fecha actual."
+                                            title="Si dejas este campo en blanco, se usará la fecha actual."
                                         />
-                                        <span className="text-[9px] text-gray-400">Si dejas la hora en 00:00, se guardarÃ¡ asÃ­ en sistema.</span>
+                                        <span className="text-[9px] text-gray-400">Si dejas la hora en 00:00, se guardará así en sistema.</span>
                                     </div>
                                 )}
                                 
@@ -935,7 +935,7 @@ export default function POSPage() {
                                             disabled={ticketCovered}
                                             className="w-full pl-8 pr-8 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 appearance-none cursor-pointer disabled:opacity-50 disabled:bg-gray-50 hover:border-gray-300 transition-colors"
                                         >
-                                            <option value="">NingÃºn descuento activo</option>
+                                            <option value="">Ningún descuento activo</option>
                                             {descuentosDisponibles.filter(d => d.is_active).map(d => (
                                                 <option key={d._id} value={`${d.tipo}|${d.valor}|${d.nombre}`}>
                                                     {d.nombre} ({d.tipo === 'PORCENTAJE' ? `${d.valor}%` : `Bs.${d.valor}`})
@@ -950,7 +950,7 @@ export default function POSPage() {
                     )}
                 </AnimatePresence>
 
-                {/* â”€â”€ MÃ©todos de pago â”€â”€ (colapsable) */}
+                {/* â”€â”€ Métodos de pago â”€â”€ (colapsable) */}
                 <AnimatePresence initial={false}>
                     {panelOpen && (
                         <motion.div
@@ -997,7 +997,7 @@ export default function POSPage() {
                                 {pendingPago.metodo === 'CREDITO' && (!cliente.razon_social || !cliente.telefono) && (
                                     <p className="text-[10px] text-amber-600 font-bold mb-1.5 bg-amber-50 rounded px-2 py-1 flex items-start gap-1">
                                         <span className="shrink-0 mt-0.5">âš ï¸</span> 
-                                        <span>El pago a <b>CrÃ©dito</b> requiere que registres el <b>Nombre (RazÃ³n Social)</b> y el <b>Celular</b> del deudor en la secciÃ³n de Factura / Cliente para su seguimiento.</span>
+                                        <span>El pago a <b>Crédito</b> requiere que registres el <b>Nombre (Razón Social)</b> y el <b>Celular</b> del deudor en la sección de Factura / Cliente para su seguimiento.</span>
                                     </p>
                                 )}
 
@@ -1042,7 +1042,7 @@ export default function POSPage() {
                                             exit={{ opacity: 0, height: 0 }}
                                             className="text-[11px] text-center text-green-700 bg-green-50 border border-green-200 rounded-lg py-1 mt-1.5"
                                         >
-                                            âœ“ Ticket cubierto â€” no se aceptan mÃ¡s pagos
+                                            ✓ Ticket cubierto - no se aceptan más pagos
                                         </motion.p>
                                     )}
                                 </AnimatePresence>
@@ -1055,7 +1055,7 @@ export default function POSPage() {
                 <div className="shrink-0 bg-white shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] z-10">
                     <div className="px-3 pb-2 pt-3 space-y-1.5 border-t border-gray-100">
 
-                        {/* Full totals breakdown â€” shown only when panel is open */}
+                        {/* Full totals breakdown - shown only when panel is open */}
                         {panelOpen && (
                             <>
                                 {parseFloat(descuento.valor) > 0 && (
@@ -1118,7 +1118,7 @@ export default function POSPage() {
                         {/* Hint */}
                         {panelOpen && items.length > 0 && pagos.length === 0 && (
                             <p className="text-[11px] text-center text-amber-600 bg-amber-50 border border-amber-100 rounded-lg py-1">
-                                IngresÃ¡ el monto y presionÃ¡ <strong>Agregar</strong>
+                                Ingresá el monto y presioná <strong>Agregar</strong>
                             </p>
                         )}
 
@@ -1126,7 +1126,7 @@ export default function POSPage() {
                         {success && (
                             <div className="flex items-center gap-2 justify-center text-green-700 bg-green-100 border border-green-200 rounded-lg py-1.5">
                                 <CheckCircle2 size={15} />
-                                <span className="font-bold text-sm">Â¡Venta registrada!</span>
+                                <span className="font-bold text-sm">¡Venta registrada!</span>
                             </div>
                         )}
 
@@ -1142,7 +1142,7 @@ export default function POSPage() {
                 </div>
             </div>
 
-            {/* Modal de ConfirmaciÃ³n de Venta */}
+            {/* Modal de Confirmación de Venta */}
             <AnimatePresence>
                 {confirmSale && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
@@ -1207,20 +1207,20 @@ export default function POSPage() {
                 )}
             </AnimatePresence>
 
-            {/* Modal de Advertencia de Venta IdÃ©ntica Consecutiva */}
+            {/* Modal de Advertencia de Venta Idéntica Consecutiva */}
             <AnimatePresence>
                 {showDuplicateWarning && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-200">
                             <div className="flex items-center gap-3 text-amber-600 mb-4">
                                 <AlertTriangle size={28} />
-                                <h3 className="text-lg font-bold text-gray-900">Â¿Registrar segunda venta idÃ©ntica?</h3>
+                                <h3 className="text-lg font-bold text-gray-900">¿Registrar segunda venta idéntica?</h3>
                             </div>
                             <p className="text-sm text-gray-600 mb-4">
                                 Acabas de cobrar un ticket con los <strong>mismos productos y cantidades</strong> hace unos instantes.
                             </p>
                             <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 mb-6 text-xs text-amber-800">
-                                Esta alerta evita cobros duplicados por error o escaneos repetidos. Si el cliente realmente lleva los mismos productos, confirma a continuaciÃ³n.
+                                Esta alerta evita cobros duplicados por error o escaneos repetidos. Si el cliente realmente lleva los mismos productos, confirma a continuación.
                             </div>
                             <div className="flex gap-3">
                                 <button onClick={() => setShowDuplicateWarning(false)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -1231,7 +1231,7 @@ export default function POSPage() {
                                     setShowDuplicateWarning(false);
                                     executeSale(true);
                                 }} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-sm">
-                                    SÃ­, es otra venta
+                                    Sí, es otra venta
                                 </button>
                             </div>
                         </motion.div>
@@ -1239,7 +1239,7 @@ export default function POSPage() {
                 )}
             </AnimatePresence>
 
-            {/* Modal de ImpresiÃ³n / Venta Exitosa */}
+            {/* Modal de Impresión / Venta Exitosa */}
             <AnimatePresence>
                 {lastSale && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4 print:hidden">
@@ -1247,7 +1247,7 @@ export default function POSPage() {
                             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                                 <CheckCircle2 size={32} />
                             </div>
-                            <h3 className="text-xl font-black text-gray-900 mb-1">Â¡Venta Exitosa!</h3>
+                            <h3 className="text-xl font-black text-gray-900 mb-1">¡Venta Exitosa!</h3>
                             <p className="text-sm text-gray-500 mb-6">El pago ha sido registrado en caja correctamente.</p>
 
                             {/* Resumen de Pago */}
