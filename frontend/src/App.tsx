@@ -5,6 +5,7 @@ import { Lock } from 'lucide-react';
 import Layout from './components/Layout';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage'));
 const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
@@ -225,6 +226,7 @@ function App() {
               <Routes>
                 {/* 1. Ruta de Login fuera del Layout */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/crear-password" element={<SetupPasswordPage />} />
 
                 {/* 2. Todas las demás rutas dentro del Layout */}
                 <Route path="/*" element={
@@ -249,6 +251,11 @@ function App() {
                         </ProtectedRoute>
                       } />
                       <Route path="/admin/health" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
+                          <SystemHealthPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/monitor" element={
                         <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                           <SystemHealthPage />
                         </ProtectedRoute>
