@@ -226,7 +226,7 @@ export default function SystemHealthPage() {
                         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-150 flex flex-col justify-between">
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alertas Telegram</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Canal de Alertas</p>
                                     <button 
                                         type="button" 
                                         onClick={() => setIsTelegramHelpOpen(true)}
@@ -238,15 +238,15 @@ export default function SystemHealthPage() {
                                     </button>
                                 </div>
                                 <span className={`inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                                    statusSummary?.telegram_configured 
+                                    (statusSummary?.discord_configured || statusSummary?.telegram_configured)
                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                                 }`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${statusSummary?.telegram_configured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                    {statusSummary?.telegram_configured ? 'Activo y Conectado' : 'Pendiente en .env'}
+                                    <span className={`w-1.5 h-1.5 rounded-full ${(statusSummary?.discord_configured || statusSummary?.telegram_configured) ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                    {statusSummary?.discord_configured ? 'Discord Webhook Activo' : statusSummary?.telegram_configured ? 'Telegram Bot Activo' : 'Pendiente en .env'}
                                 </span>
                             </div>
-                            {statusSummary?.telegram_configured ? (
+                            {(statusSummary?.discord_configured || statusSummary?.telegram_configured) ? (
                                 <button
                                     onClick={() => testTelegramMut.mutate()}
                                     disabled={testTelegramMut.isPending}

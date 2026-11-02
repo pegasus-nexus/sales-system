@@ -1,21 +1,25 @@
-import time
-import secrets
 import hashlib
 import logging
+import secrets
+import time
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import httpx
-from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Optional
 
 from app.domain.models.service_monitor import (
+    AdminPasswordSetupToken,
     ServiceHealthCheck,
     ServiceIncidentAlert,
-    AdminPasswordSetupToken,
 )
 from app.domain.models.user import User, UserRole
-from app.infrastructure.core.config import settings
-from app.infrastructure.monitoring.telegram_notifier import TelegramNotifierAdapter
 from app.infrastructure.auth import get_password_hash
+from app.infrastructure.core.config import settings
 from app.infrastructure.db import get_client
+from app.infrastructure.monitoring.composite_notifier import CompositeAlertNotifier
+from app.infrastructure.monitoring.telegram_notifier import (
+    IAlertNotifier,
+)
 
 logger = logging.getLogger("system.monitor.service")
 
@@ -26,10 +30,10 @@ class SystemMonitorService:
     Implementa patrones Adapter (Telegram) y Observer para caídas de servicio.
     """
 
-    def __init__(self, notifier: Optional[TelegramNotifierAdapter] = None):
-        self.notifier = notifier or TelegramNotifierAdapter()
+    def __init__(self, notifier: IAlertNotifier | None = None):
+        self.notifier = notifier or CompositeAlertNotifier()
 
-    async def probe_mongodb(self) -> Dict[str, Any]:
+    async def probe_mongodb(self) -> dict[str, Any]:
         """Sondeo de conectividad real y latencia a la base de datos MongoDB."""
         t0 = time.time()
         try:
@@ -73,7 +77,7 @@ class SystemMonitorService:
         url: str,
         expected_status: int = 200,
         timeout: float = 6.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Sondea un endpoint HTTP externo o interno."""
         t0 = time.time()
         try:
@@ -105,12 +109,12 @@ class SystemMonitorService:
                 "details": {"url": url},
             }
 
-    async def probe_all_services(self) -> List[Dict[str, Any]]:
+    async def probe_all_services(self) -> list[dict[str, Any]]:
         """
         Ejecuta la ronda completa de chequeos a todos los servicios de la plataforma.
         Almacena el historial y dispara notificaciones a Telegram si ocurre una caída.
         """
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
 
         # 1. MongoDB Check
         mongo_res = await self.probe_mongodb()
@@ -158,7 +162,7 @@ class SystemMonitorService:
         })
 
         # Guardar en base de datos cada chequeo
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for res in results:
             check_doc = ServiceHealthCheck(
                 service_key=res["service_key"],
@@ -178,7 +182,7 @@ class SystemMonitorService:
 
         return results
 
-    async def _handle_service_incident(self, res: Dict[str, Any]) -> None:
+    async def _handle_service_incident(self, res: dict[str, Any]) -> None:
         """
         Evalúa si el resultado del sondeo amerita abrir un incidente o notificar a Telegram.
         Incluye protección anti-spam con ventana de enfriamiento (cooldown).
@@ -187,7 +191,7 @@ class SystemMonitorService:
         service_name = res["service_name"]
         status = res["status"]
         error_msg = res.get("error_message") or "Sin respuesta del servicio"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         open_incident = await ServiceIncidentAlert.find_one(
             ServiceIncidentAlert.service_key == service_key,
@@ -251,9 +255,9 @@ class SystemMonitorService:
                 },
             )
 
-    async def get_system_status_summary(self) -> Dict[str, Any]:
+    async def get_system_status_summary(self) -> dict[str, Any]:
         """Calcula el estado consolidado de la plataforma, métricas de uptime y resumen."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         since_24h = now - timedelta(hours=24)
 
         # Chequeos de las últimas 24h
@@ -262,11 +266,11 @@ class SystemMonitorService:
         ).to_list()
 
         # Agrupar por service_key
-        grouped: Dict[str, List[ServiceHealthCheck]] = {}
+        grouped: dict[str, list[ServiceHealthCheck]] = {}
         for c in recent_checks:
             grouped.setdefault(c.service_key, []).append(c)
 
-        services_summary: List[Dict[str, Any]] = []
+        services_summary: list[dict[str, Any]] = []
         overall_status = "HEALTHY"
 
         default_services = [
@@ -276,7 +280,7 @@ class SystemMonitorService:
             ("messaging_gateway", "Pasarela de Notificaciones WhatsApp", "EXTERNAL_PROVIDER"),
         ]
 
-        total_latencies: List[float] = []
+        total_latencies: list[float] = []
 
         for key, name, target_type in default_services:
             checks = grouped.get(key, [])
@@ -318,16 +322,21 @@ class SystemMonitorService:
         avg_latency = round(sum(total_latencies) / len(total_latencies), 1) if total_latencies else 5.0
         open_incidents = await ServiceIncidentAlert.find(ServiceIncidentAlert.status == "OPEN").to_list()
 
+        discord_ok = bool(settings.DISCORD_WEBHOOK_URL and settings.DISCORD_WEBHOOK_URL.startswith("https://discord.com/api/webhooks/"))
+        telegram_ok = bool(settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_CHAT_ID)
+
         return {
             "overall_status": overall_status,
             "checked_at": now.isoformat(),
             "avg_latency_ms": avg_latency,
             "services": services_summary,
             "open_incidents_count": len(open_incidents),
-            "telegram_configured": self.notifier.is_configured,
+            "telegram_configured": telegram_ok,
+            "discord_configured": discord_ok,
+            "alerts_active": discord_ok or telegram_ok,
         }
 
-    async def get_health_history(self, limit: int = 50, service_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_health_history(self, limit: int = 50, service_key: str | None = None) -> list[dict[str, Any]]:
         """Historial de sondeos para gráficos y auditoría."""
         query = {}
         if service_key:
@@ -348,7 +357,7 @@ class SystemMonitorService:
             for c in checks
         ]
 
-    async def export_system_snapshot(self) -> Dict[str, Any]:
+    async def export_system_snapshot(self) -> dict[str, Any]:
         """Exporta un volcado completo de diagnóstico del sistema para respaldo."""
         status = await self.get_system_status_summary()
         history = await self.get_health_history(limit=100)
@@ -356,7 +365,7 @@ class SystemMonitorService:
 
         return {
             "snapshot_version": "1.0",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "environment": settings.ENVIRONMENT,
             "status_summary": status,
             "recent_health_checks": history,
@@ -376,10 +385,10 @@ class SystemMonitorService:
     # =========================================================================
     # GESTIÓN SEGURA DE CONTRASEÑA SUPERADMIN (PILOTO ONBOARDING)
     # =========================================================================
-    async def generate_admin_setup_token(self, email: str, client_ip: Optional[str] = None) -> Dict[str, Any]:
+    async def generate_admin_setup_token(self, email: str, client_ip: str | None = None) -> dict[str, Any]:
         """Genera un enlace de un solo uso criptográficamente seguro para asignar contraseña."""
         clean_email = email.strip().lower()
-        
+
         # Validar o crear el usuario Superadmin si no existe
         admin_user = await User.find_one(User.email == clean_email)
         if not admin_user:
@@ -395,7 +404,7 @@ class SystemMonitorService:
 
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=2)
+        expires_at = datetime.now(UTC) + timedelta(hours=2)
 
         # Invalidar tokens anteriores pendientes
         old_tokens = await AdminPasswordSetupToken.find(
@@ -403,7 +412,7 @@ class SystemMonitorService:
             AdminPasswordSetupToken.used_at == None,
         ).to_list()
         for ot in old_tokens:
-            ot.used_at = datetime.now(timezone.utc)
+            ot.used_at = datetime.now(UTC)
             await ot.save()
 
         setup_doc = AdminPasswordSetupToken(
@@ -423,13 +432,13 @@ class SystemMonitorService:
             "message": f"Enlace seguro generado exitosamente para {clean_email}.",
         }
 
-    async def complete_admin_setup_password(self, raw_token: str, new_password: str) -> Dict[str, Any]:
+    async def complete_admin_setup_password(self, raw_token: str, new_password: str) -> dict[str, Any]:
         """Valida el token recibido y establece la nueva contraseña con bcrypt."""
         if len(new_password) < 8:
             raise ValueError("La contraseña debe tener al menos 8 caracteres.")
 
         token_hash = hashlib.sha256(raw_token.strip().encode("utf-8")).hexdigest()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         token_doc = await AdminPasswordSetupToken.find_one(
             AdminPasswordSetupToken.token_hash == token_hash,
