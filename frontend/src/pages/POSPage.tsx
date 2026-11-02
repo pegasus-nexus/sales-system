@@ -1,34 +1,26 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
-import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes, getClienteByNit } from '../api/api';
+import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
 import { useAuthStore } from '../store/authStore';
-import { usePosStore, type MetodoPago } from '../store/usePosStore';
+import { usePosStore } from '../store/usePosStore';
 import { useDescuentos } from '../hooks/useDescuentos';
 import { useSesionActiva } from '../hooks/useCaja';
 import { client } from '../api/client';
-import {
-    ShoppingCart, Search, Plus, Minus, Trash2,
-    CreditCard, DollarSign, QrCode, X, CheckCircle2,
-    Loader2, Tag, Package, ChevronUp, ChevronDown,
-    Lock, User as UserIcon, AlertTriangle,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useLocalStorage } from 'usehooks-ts';
 import { toast } from 'sonner';
-import Pagination from '../components/Pagination';
-import { TicketPrinter } from '../components/TicketPrinter';
-import { ClientCombobox } from '../components/ClientCombobox';
-import type { Sale } from '../api/types';
+import type { Sale, Product } from '../api/types';
+
+import { POSTicketSidebar } from '../components/pos/POSTicketSidebar';
+import { POSActionsModal } from '../components/pos/POSActionsModal';
+import { POSPaymentModal } from '../components/pos/POSPaymentModal';
+import { POSAlmacenModal } from '../components/pos/POSAlmacenModal';
+import { POSCatalogGrid } from '../components/pos/POSCatalogGrid';
+import { POSModals } from '../components/pos/POSModals';
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
-
-const METODO_META: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-    EFECTIVO: { icon: <DollarSign size={14} />, color: 'text-green-700', bg: 'bg-green-100 border-green-300' },
-    QR: { icon: <QrCode size={14} />, color: 'text-blue-700', bg: 'bg-blue-100 border-blue-300' },
-    TARJETA: { icon: <CreditCard size={14} />, color: 'text-purple-700', bg: 'bg-purple-100 border-purple-300' },
-    CREDITO: { icon: <Lock size={14} />, color: 'text-amber-700', bg: 'bg-amber-100 border-amber-300' },
-};
 
 function useStockMap(sucursalId: string, almacenId: string) {
     const { data: invData } = useQuery({
@@ -36,12 +28,11 @@ function useStockMap(sucursalId: string, almacenId: string) {
         queryFn: () => getInventario(sucursalId, almacenId, 1, 1000),
         staleTime: 30_000,
     });
-    const inv = invData?.items || [];
     return useMemo(() => {
         const m: Record<string, number> = {};
-        for (const i of inv) m[i.producto_id] = i.cantidad;
+        for (const i of invData?.items || []) m[i.producto_id] = i.cantidad;
         return m;
-    }, [inv]);
+    }, [invData]);
 }
 
 export default function POSPage() {
@@ -50,12 +41,12 @@ export default function POSPage() {
     const navigate = useNavigate();
     const sucursalId = user?.sucursal_id || 'CENTRAL';
 
-    // â”€â”€ Caja session guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Caja guard
     const { data: sesionActiva, isLoading: loadingSesion } = useSesionActiva();
 
     const {
         almacen_id, setAlmacenId,
-        items, addItem, removeItem, updateQty,
+        items, addItem, removeItem, updateQty, setQty,
         cliente, setCliente,
         vendedor, setVendedor,
         pagos, pendingPago, setPendingPago, addPago, removePago,
@@ -66,62 +57,81 @@ export default function POSPage() {
         sendWhatsApp, setSendWhatsApp
     } = usePosStore();
 
+    // Selected item for Numpad
+    const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (items.length > 0 && !selectedItemKey) {
+            setSelectedItemKey(`${items[0].product._id}-${items[0].almacen_id}`);
+        } else if (items.length === 0) {
+            setSelectedItemKey(null);
+        }
+    }, [items, selectedItemKey]);
+
+    const activeItem = useMemo(() => {
+        if (!selectedItemKey) return items[0] || null;
+        return items.find((i) => `${i.product._id}-${i.almacen_id}` === selectedItemKey) || items[0] || null;
+    }, [items, selectedItemKey]);
+
     const [search, setSearch] = useLocalStorage('pos-search', '');
     const [selectedCat, setSelectedCat] = useLocalStorage('pos-selected-cat', 'all');
-    
-    const [success, setSuccess] = useState(false);
+    const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [almacenSelectorProduct, setAlmacenSelectorProduct] = useState<Product | null>(null);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
-    const [confirmSale, setConfirmSale] = useState(false);
-    const [panelOpen, setPanelOpen] = useLocalStorage('pos-panel-open', true); // factura+pagos+totals visible
+    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
-    const [almacenSelectorProduct, setAlmacenSelectorProduct] = useState<any | null>(null);
+    const [fechaVenta, setFechaVenta] = useState<string>('');
+    const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') ||
+        ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
 
-    const { data: productsData, isLoading: loadingP } = useQuery({ 
-        queryKey: ['products'], 
+    // Data queries
+    const { data: productsData, isLoading: loadingP } = useQuery({
+        queryKey: ['products'],
         queryFn: () => getProducts(1, 1000),
         staleTime: 5 * 60 * 1000,
     });
     const products = productsData?.items || [];
-    const { data: categories = [] } = useQuery({ 
-        queryKey: ['categories'], 
+
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
         queryFn: getCategories,
         staleTime: 10 * 60 * 1000,
     });
 
     const { data: descuentosDisponibles = [], isLoading: loadingD } = useDescuentos();
-    const { data: usersData = [] } = useQuery({ 
-        queryKey: ['users'], 
+
+    const { data: usersData = [] } = useQuery({
+        queryKey: ['users'],
         queryFn: getUsers,
         staleTime: 10 * 60 * 1000,
     });
-    const { data: sucursales = [] } = useQuery({ 
-        queryKey: ['sucursales'], 
+
+    const { data: sucursales = [] } = useQuery({
+        queryKey: ['sucursales'],
         queryFn: getSucursales,
         staleTime: 10 * 60 * 1000,
     });
-    
-    const [fechaVenta, setFechaVenta] = useState<string>('');
-    const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') || ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
 
-    const { data: almacenes = [] } = useQuery({ 
-        queryKey: ['almacenes', sucursalId], 
+    const { data: almacenes = [] } = useQuery({
+        queryKey: ['almacenes', sucursalId],
         queryFn: () => getAlmacenes(sucursalId),
         staleTime: 10 * 60 * 1000,
     });
-    
-    // Set default almacen if not set
+
+    // Default almacen
     useEffect(() => {
-        if (almacenes.length > 0 && (almacen_id === 'default' || !almacenes.find(a => a.id === almacen_id))) {
-            const def = almacenes.find(a => a.is_default);
-            if (def) setAlmacenId(def.id!);
-            else setAlmacenId(almacenes[0].id!);
+        if (almacenes.length > 0 && (almacen_id === 'default' || !almacenes.find((a) => a.id === almacen_id))) {
+            const def = almacenes.find((a) => a.is_default);
+            if (def && def.id) setAlmacenId(def.id);
+            else if (almacenes[0]?.id) setAlmacenId(almacenes[0].id);
         }
     }, [almacenes, almacen_id, setAlmacenId]);
-    
-    // Filtrar usuarios que pueden ser vendedores (de la misma sucursal)
+
     const vendedores = useMemo(() => {
-        return usersData.filter(u => 
-            u.is_active !== false && 
+        return usersData.filter((u) =>
+            u.is_active !== false &&
             (u.sucursal_id === sucursalId || u.sucursal_id === 'CENTRAL' || !u.sucursal_id) &&
             ['VENDEDOR', 'ADMIN_SUCURSAL', 'CAJERO'].includes(u.role)
         );
@@ -129,34 +139,31 @@ export default function POSPage() {
 
     const stockMap = useStockMap(sucursalId, almacen_id);
 
-    // Stock de TODOS los almacenes en paralelo (solo cuando el modal selector de almacén esté abierto)
     const almacenesStockQueries = useQueries({
-        queries: almacenes.map(a => ({
+        queries: almacenes.map((a) => ({
             queryKey: ['inventario', sucursalId, a.id],
-            queryFn: () => getInventario(sucursalId, a.id, 1, 1000),
+            queryFn: () => getInventario(sucursalId, a.id!, 1, 1000),
             staleTime: 30_000,
             enabled: !!almacenSelectorProduct,
         })),
     });
-    // Mapa: { almacen_id -> { producto_id -> cantidad } }
+
     const allAlmacenesStockMap = useMemo(() => {
         const result: Record<string, Record<string, number>> = {};
         almacenes.forEach((a, idx) => {
-            const items = almacenesStockQueries[idx]?.data?.items || [];
+            const itms = almacenesStockQueries[idx]?.data?.items || [];
             result[a.id!] = {};
-            for (const inv of items) result[a.id!][inv.producto_id] = inv.cantidad;
+            for (const inv of itms) result[a.id!][inv.producto_id] = inv.cantidad;
         });
         return result;
     }, [almacenes, almacenesStockQueries]);
 
-    // BARCODE SCANNER DETECTOR
-    // Los escáneres funcionan como un teclado muy rápido que termina con "Enter".
+    // Hotkeys & Barcode Scanner
     useEffect(() => {
         let currentString = '';
         let lastTimestamp = 0;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Hotkeys Globales
             if (e.key === 'F1') {
                 e.preventDefault();
                 document.getElementById('pos-search-input')?.focus();
@@ -164,83 +171,64 @@ export default function POSPage() {
             }
             if (e.key === 'F2') {
                 e.preventDefault();
-                document.getElementById('pos-payment-input')?.focus();
+                setIsPaymentModalOpen(true);
                 return;
             }
             if (e.key === 'F4') {
                 e.preventDefault();
-                if (canFinalize()) {
-                    // Validaciones de Cliente
-                    if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
-                        toast.error('El formato del correo electrónico es inválido');
-                        return;
-                    }
-                    if (cliente.razon_social && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-'&()/#]+$/i.test(cliente.razon_social.trim())) {
-                        toast.error('El nombre/razón social contiene caracteres no válidos');
-                        return;
-                    }
-                    setConfirmSale(true);
-                } else {
-                    toast.error('No se puede finalizar. Verifica los pagos o agrega productos.');
+                if (items.length === 0) {
+                    toast.error('Agrega productos al ticket antes de cobrar');
+                    return;
+                }
+                if (!isPaymentModalOpen) {
+                    setIsPaymentModalOpen(true);
+                } else if (canFinalize()) {
+                    executeSale();
                 }
                 return;
             }
 
-            // Ignorar escáner si hay un modal abierto o la venta ya finalizó
-            if (confirmSale || lastSale) {
-                return;
-            }
-
-            // Ignorar escáner si el usuario está tipeando en un input o textarea (ej. buscador)
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-                return;
-            }
+            if (isPaymentModalOpen || lastSale) return;
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
             const now = Date.now();
-            // Si pasan más de 50ms entre teclas, asumimos que es el humano escribiendo lento, reiniciamos.
-            if (now - lastTimestamp > 50) {
-                currentString = '';
-            }
+            if (now - lastTimestamp > 50) currentString = '';
             lastTimestamp = now;
 
             if (e.key === 'Enter') {
                 if (currentString.length > 2) {
                     e.preventDefault();
-                    // Buscar coincidencia exacta (fuerte) por codigo de barras o codigo corto
-                    const match = products.find(p => p.codigo_largo === currentString || p.codigo_corto === currentString);
+                    const match = products.find((p) => p.codigo_largo === currentString || p.codigo_corto === currentString);
                     if (match && match.is_active !== false) {
                         const stock = stockMap[match._id] ?? 0;
                         if (stock > 0) {
-                            addItem(match, almacen_id, almacenes.find(a => a.id === almacen_id)?.nombre);
+                            addItem(match, almacen_id, almacenes.find((a) => a.id === almacen_id)?.nombre);
                         } else {
-                            // Opcionalmente se podría lanzar una alerta de sin stock.
-                            console.warn('Producto sin stock escaneado:', match.descripcion);
+                            toast.error(`Producto sin stock: ${match.descripcion}`);
                         }
                     }
                 }
                 currentString = '';
-            } else if (e.key.length === 1) { // Acumular solo letras/numeros
+            } else if (e.key.length === 1) {
                 currentString += e.key;
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [products, stockMap, addItem, almacen_id, almacenes]);
+    }, [products, stockMap, addItem, almacen_id, almacenes, isPaymentModalOpen, lastSale, items.length, canFinalize]);
 
-    const filtered = useMemo(() => products.filter(p => {
+    const filtered = useMemo(() => products.filter((p) => {
         const q = search.toLowerCase();
         const matchQ = !q || p.descripcion.toLowerCase().includes(q) || (p.codigo_corto ?? '').toLowerCase().includes(q) || (p.codigo_largo ?? '').toLowerCase().includes(q);
         return matchQ && (selectedCat === 'all' || p.categoria_id === selectedCat) && p.is_active !== false;
     }), [products, search, selectedCat]);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 24;
 
     useEffect(() => {
-        requestAnimationFrame(() => {
-            setCurrentPage(1);
-        });
+        requestAnimationFrame(() => setCurrentPage(1));
     }, [search, selectedCat]);
 
     const paginatedFiltered = useMemo(() => {
@@ -250,53 +238,14 @@ export default function POSPage() {
 
     const isSubmittingRef = useRef(false);
     const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
-    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
-    const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
-
-    const [isSearchingNit, setIsSearchingNit] = useState(false);
-    const [nitClientMatch, setNitClientMatch] = useState<string | null>(null);
-    const nitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const handleNitChange = (val: string) => {
-        const cleanNit = val.replace(/\D/g, '');
-        setCliente({ nit: cleanNit, cliente_id: undefined });
-        setNitClientMatch(null);
-
-        if (nitTimerRef.current) {
-            clearTimeout(nitTimerRef.current);
-        }
-
-        if (cleanNit.length >= 4) {
-            nitTimerRef.current = setTimeout(async () => {
-                setIsSearchingNit(true);
-                try {
-                    const found: any = await getClienteByNit(cleanNit);
-                    if (found && found._id) {
-                        setCliente({
-                            cliente_id: found._id,
-                            nit: found.nit_ci || cleanNit,
-                            razon_social: found.nombre || '',
-                            email: found.email || '',
-                            telefono: found.telefono || '',
-                        });
-                        setNitClientMatch(found.nombre);
-                    }
-                } catch {
-                    // ignore
-                } finally {
-                    setIsSearchingNit(false);
-                }
-            }, 350);
-        }
-    };
 
     const resetSaleState = () => {
         idempotencyKeyRef.current = crypto.randomUUID();
         isSubmittingRef.current = false;
         setPendingConfirmDuplicate(false);
         setShowDuplicateWarning(false);
-        setIsSearchingNit(false);
-        setNitClientMatch(null);
+        setIsPaymentModalOpen(false);
+        setIsActionsModalOpen(false);
         reset();
     };
 
@@ -305,13 +254,13 @@ export default function POSPage() {
             body: {
                 sucursal_id: sucursalId,
                 almacen_id: almacen_id,
-                items: items.map(i => ({
+                items: items.map((i) => ({
                     producto_id: i.product._id,
                     cantidad: i.quantity,
                     precio_unitario: i.precio,
-                    almacen_id: i.almacen_id,   // ← Enviar almacén por ítem
+                    almacen_id: i.almacen_id,
                 })),
-                pagos: pagos.map(p => ({ metodo: p.metodo, monto: p.monto })),
+                pagos: pagos.map((p) => ({ metodo: p.metodo, monto: p.monto })),
                 descuento: descuento.valor ? { nombre: descuento.nombre, tipo: descuento.tipo, valor: parseFloat(descuento.valor) } : undefined,
                 cliente_id: cliente.cliente_id || undefined,
                 cliente: cliente.es_factura || cliente.nit || cliente.razon_social ? {
@@ -325,7 +274,6 @@ export default function POSPage() {
                 vendedor_id: vendedor.vendedor_id || undefined,
                 vendedor_name: vendedor.vendedor_name || undefined,
                 fecha_venta: fechaVenta ? new Date(fechaVenta).toISOString() : undefined,
-                
                 send_whatsapp: sendWhatsApp && (!!cliente.telefono || !!cliente.cliente_id),
                 idempotency_key: idempotencyKeyRef.current,
                 confirm_duplicate: pendingConfirmDuplicate,
@@ -335,29 +283,36 @@ export default function POSPage() {
             isSubmittingRef.current = false;
         },
         onSuccess: (data) => {
-            // Invalidar todos los almacenes de la sucursal para actualizar stock
-            almacenes.forEach(a => {
-                qc.invalidateQueries({ queryKey: ['inventario', sucursalId, a.id] });
+            almacenes.forEach((a) => {
+                if (a.id) qc.invalidateQueries({ queryKey: ['inventario', sucursalId, a.id] });
             });
             qc.invalidateQueries({ queryKey: ['pos-stats'] });
             setLastSale(data);
-            setSuccess(true);
             setFechaVenta('');
             setPendingConfirmDuplicate(false);
+            setIsPaymentModalOpen(false);
+        },
+        onError: (err: unknown) => {
+            const msg = (err as { message?: string })?.message || 'Error al procesar la venta';
+            toast.error(msg);
         },
     });
 
     const executeSale = (confirmedDuplicate = false) => {
         if (isSubmittingRef.current) return;
 
+        if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
+            toast.error('El formato del correo electrónico es inválido');
+            return;
+        }
+
         if (lastSale && !confirmedDuplicate) {
             const lastTime = lastSale.created_at ? new Date(lastSale.created_at).getTime() : Date.now();
             const timeDiff = Date.now() - lastTime;
             if (timeDiff < 20000) {
-                const currentItemsSorted = items.map(i => `${i.product._id}:${i.quantity}`).sort().join(',');
-                const lastItemsSorted = lastSale.items.map(i => `${i.producto_id}:${i.cantidad}`).sort().join(',');
+                const currentItemsSorted = items.map((i) => `${i.product._id}:${i.quantity}`).sort().join(',');
+                const lastItemsSorted = lastSale.items.map((i) => `${i.producto_id}:${i.cantidad}`).sort().join(',');
                 if (currentItemsSorted === lastItemsSorted && currentItemsSorted.length > 0) {
-                    setConfirmSale(false);
                     setShowDuplicateWarning(true);
                     return;
                 }
@@ -365,58 +320,28 @@ export default function POSPage() {
         }
 
         isSubmittingRef.current = true;
-        setConfirmSale(false);
         setShowDuplicateWarning(false);
         saleMut.mutate();
     };
 
     const totalVal = total();
     const cubierto = totalCubierto();
-    const restanteVal = restante();
-    const cambioVal = cambio();
-    const ticketCovered = cubierto >= totalVal && totalVal > 0;  // no more payments allowed
+    const subtotalVal = items.reduce((acc, i) => acc + i.precio * i.quantity, 0);
+    const descAmount = subtotalVal - totalVal;
 
-    const handleTryFinalize = () => {
-        if (!canFinalize()) return;
-
-        // Validaciones de Cliente
-        if (cliente.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email)) {
-            toast.error('El formato del correo electrónico es inválido');
-            return;
-        }
-        
-        // Letras, números, espacios y caracteres estándar de razón social (ñ, puntos, comas, guiones, etc.)
-        if (cliente.razon_social && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-'&()/#]+$/i.test(cliente.razon_social.trim())) {
-            toast.error('El nombre/razón social contiene caracteres no válidos');
-            return;
-        }
-
-        setConfirmSale(true);
-    };
-
-    // â”€â”€ Render blocked state if no caja session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!loadingSesion && !sesionActiva) {
         return (
-            <div className="flex h-full items-center justify-center bg-gray-50">
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center gap-5 text-center max-w-sm px-6"
-                >
+            <div className="flex h-full items-center justify-center bg-gray-50 p-6">
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-5 text-center max-w-sm">
                     <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center shadow-inner">
                         <Lock size={36} className="text-amber-500" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-gray-900 mb-1">Caja cerrada</h2>
-                        <p className="text-sm text-gray-500">
-                            Debes abrir la caja antes de realizar ventas. Dirígete a la sección de <strong>Caja</strong> para iniciar una sesión.
-                        </p>
+                        <h2 className="text-xl font-black text-gray-900 mb-1">Caja Cerrada</h2>
+                        <p className="text-sm text-gray-500">Debes abrir turno de caja antes de realizar ventas.</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/caja')}
-                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all active:scale-95 shadow-md shadow-indigo-200"
-                    >
-                        Ir a Caja ←’
+                    <button onClick={() => navigate('/caja')} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer">
+                        Ir al Módulo de Caja →
                     </button>
                 </motion.div>
             </div>
@@ -424,903 +349,149 @@ export default function POSPage() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row h-full bg-gray-100 overflow-hidden">
-            
-            {/* Modal Selector Almacén */}
-            <AnimatePresence>
-                {almacenSelectorProduct && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-                            {/* Header */}
-                            <div className="flex justify-between items-start px-5 py-4 border-b border-gray-100">
-                                <div>
-                                    <h3 className="font-black text-base text-gray-900">¿De qué almacén?</h3>
-                                    <p className="text-[11px] text-gray-500 mt-0.5 font-medium truncate max-w-[220px]">{almacenSelectorProduct.descripcion}</p>
-                                </div>
-                                <button onClick={() => setAlmacenSelectorProduct(null)} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                                    <X size={18}/>
-                                </button>
-                            </div>
-                            {/* Almacenes */}
-                            <div className="p-3 space-y-2">
-                                {almacenes.map(a => {
-                                    const stockEnAlmacen = allAlmacenesStockMap[a.id!]?.[almacenSelectorProduct._id] ?? 0;
-                                    const sinStock = stockEnAlmacen <= 0;
-                                    return (
-                                        <button key={a.id} onClick={() => {
-                                            if (sinStock) return;
-                                            addItem(almacenSelectorProduct, a.id, a.nombre);
-                                            setAlmacenSelectorProduct(null);
-                                        }} disabled={sinStock} className={`w-full flex justify-between items-center p-3.5 border rounded-xl transition-all ${
-                                            sinStock
-                                                ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                                                : 'border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 active:scale-[0.98] cursor-pointer'
-                                        }`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${sinStock ? 'bg-gray-100' : 'bg-indigo-100'}`}>
-                                                    <Package size={16} className={sinStock ? 'text-gray-400' : 'text-indigo-600'} />
-                                                </div>
-                                                <span className="font-bold text-sm text-gray-900">{a.nombre}</span>
-                                            </div>
-                                            <span className={`text-xs font-black px-2.5 py-1 rounded-full ${
-                                                sinStock ? 'bg-red-100 text-red-600' :
-                                                stockEnAlmacen > 10 ? 'bg-green-100 text-green-700' :
-                                                'bg-amber-100 text-amber-700'
-                                            }`}>
-                                                {sinStock ? 'Agotado' : `${stockEnAlmacen} u.`}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* Mobile Tab Switcher (only on small screens) */}
+        <div className="flex flex-col md:flex-row h-full bg-gray-100 overflow-hidden select-none">
+            {/* Mobile Tab Switcher */}
             <div className="md:hidden shrink-0 flex border-b border-gray-200 bg-white">
-                <button
-                    onClick={() => setMobileTab('catalog')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors border-b-2 ${
-                        mobileTab === 'catalog' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'
-                    }`}
-                >
-                    <Search size={16} /> Catálogo
+                <button onClick={() => setMobileTab('catalog')} className={`flex-1 py-3 text-xs font-black transition-colors border-b-2 flex items-center justify-center gap-1.5 ${mobileTab === 'catalog' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}>
+                    <Search size={14} /> Catálogo
                 </button>
-                <button
-                    onClick={() => setMobileTab('cart')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-colors border-b-2 relative ${
-                        mobileTab === 'cart' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'
-                    }`}
-                >
-                    <ShoppingCart size={16} /> Carrito
-                    {items.length > 0 && (
-                        <span className="absolute top-2 right-6 w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-                            {items.length}
-                        </span>
-                    )}
+                <button onClick={() => setMobileTab('cart')} className={`flex-1 py-3 text-xs font-black transition-colors border-b-2 flex items-center justify-center gap-1.5 relative ${mobileTab === 'cart' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}>
+                    <span>Ticket ({items.length})</span>
+                    <span className="font-mono text-gray-900 font-bold ml-1">Bs. {fmt(totalVal)}</span>
                 </button>
             </div>
 
+            {/* ══════════════ LEFT COLUMN: Odoo-Style Ticket & Numpad ══════════════ */}
+            <POSTicketSidebar
+                isMobileTabActive={mobileTab === 'cart'}
+                parkedTickets={parkedTickets}
+                onRestoreTicket={restoreTicket}
+                onRemoveParkedTicket={removeParkedTicket}
+                onParkTicket={parkTicket}
+                items={items}
+                username={user?.username}
+                selectedItemKey={selectedItemKey}
+                onSelectItemKey={setSelectedItemKey}
+                onUpdateQty={updateQty}
+                onSetQty={setQty}
+                onRemoveItem={removeItem}
+                hasMultipleAlmacenes={almacenes.length > 1}
+                cliente={cliente}
+                onOpenActionsModal={() => setIsActionsModalOpen(true)}
+                descAmount={descAmount}
+                totalVal={totalVal}
+                activeItem={activeItem}
+                onOpenPaymentModal={() => setIsPaymentModalOpen(true)}
+            />
 
-            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LEFT - Product Catalog â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-            <div className={`flex-1 flex-col overflow-hidden min-w-0 ${
-                mobileTab === 'catalog' ? 'flex' : 'hidden md:flex'
-            }`}>
+            {/* ══════════════ RIGHT COLUMN: High-Density Catalog Grid ══════════════ */}
+            <POSCatalogGrid
+                search={search}
+                onSearchChange={setSearch}
+                categories={categories}
+                selectedCat={selectedCat}
+                onSelectCat={setSelectedCat}
+                almacenes={almacenes}
+                selectedAlmacenId={almacen_id}
+                onSelectAlmacenId={setAlmacenId}
+                products={paginatedFiltered}
+                stockMap={stockMap}
+                itemsInCart={items}
+                isLoading={loadingP}
+                currentPage={currentPage}
+                totalPages={Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+                totalItems={filtered.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+                onProductClick={(p) => {
+                    if (almacenes.length <= 1) {
+                        addItem(p, almacen_id, almacenes[0]?.nombre);
+                    } else {
+                        setAlmacenSelectorProduct(p);
+                    }
+                }}
+            />
 
-                {/* Search + stats */}
-                <div className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3 shrink-0">
-                    <div className="flex-1 relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            id="pos-search-input"
-                            type="text" value={search} onChange={e => setSearch(e.target.value)}
-                            placeholder="Buscar nombre (F1)..."
-                            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none"
-                            autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    const first = document.querySelector('[data-product-idx="0"]') as HTMLElement;
-                                    if (first) first.focus();
-                                }
-                            }}
-                        />
-                    </div>
-                    {almacenes.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-sm bg-indigo-50 border border-indigo-200 text-indigo-700 pl-3 pr-2 py-1.5 rounded-xl shrink-0">
-                            <Package size={14} />
-                            <select
-                                value={almacen_id}
-                                onChange={(e) => setAlmacenId(e.target.value)}
-                                className="bg-transparent border-none text-sm font-bold text-indigo-800 py-0 pl-0 pr-6 focus:ring-0 cursor-pointer"
-                            >
-                                {almacenes.map(a => (
-                                    <option key={a.id} value={a.id}>{a.nombre}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                </div>
+            {/* ══════════════ MODALS ══════════════ */}
+            <POSActionsModal
+                isOpen={isActionsModalOpen}
+                onClose={() => setIsActionsModalOpen(false)}
+                cliente={cliente}
+                setCliente={setCliente}
+                vendedor={vendedor}
+                setVendedor={setVendedor}
+                vendedores={vendedores}
+                fechaVenta={fechaVenta}
+                setFechaVenta={setFechaVenta}
+                canEditDate={canEditDate}
+                descuento={descuento}
+                setDescuento={setDescuento}
+                descuentosDisponibles={descuentosDisponibles}
+                loadingDescuentos={loadingD}
+                sendWhatsApp={sendWhatsApp}
+                setSendWhatsApp={setSendWhatsApp}
+                hasWhatsAppEnabled={tenantSettings?.whatsapp?.enabled}
+                onParkTicket={parkTicket}
+                onClearTicket={resetSaleState}
+                hasItems={items.length > 0}
+            />
 
-                {/* Category chips */}
-                <div className="bg-white border-b border-gray-100 px-5 py-2 flex gap-2 overflow-x-auto shrink-0">
-                    <button onClick={() => setSelectedCat('all')}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${selectedCat === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                        Todos
-                    </button>
-                    {categories.map(c => (
-                        <button key={c._id} onClick={() => setSelectedCat(c._id)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${selectedCat === c._id ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                            {c.name}
-                        </button>
-                    ))}
-                </div>
+            <POSPaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                total={totalVal}
+                subtotal={subtotalVal}
+                descuentoValor={descAmount}
+                descuentoLabel={descuento.nombre}
+                totalCubierto={cubierto}
+                restante={restante()}
+                cambio={cambio()}
+                pagos={pagos}
+                pendingPago={pendingPago}
+                setPendingPago={setPendingPago}
+                onAddPago={addPago}
+                onRemovePago={removePago}
+                cliente={cliente}
+                canFinalize={canFinalize()}
+                isSubmitting={saleMut.isPending}
+                onFinalize={() => executeSale(false)}
+            />
 
-                {/* Product grid - only this scrolls on the left */}
-                <div className="flex-1 overflow-y-auto p-4">
-                    {loadingP ? (
-                        <div className="flex justify-center items-center h-full"><Loader2 size={28} className="animate-spin text-indigo-400" /></div>
-                    ) : filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full">
-                            <Tag size={40} className="mb-2 text-gray-200" />
-                            <p className="text-sm text-gray-400">Sin resultados</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col h-full">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-4">
-                                {paginatedFiltered.map((p, idx) => {
-                                    const stock = stockMap[p._id] ?? 0;
-                                    const inCart = items.filter(i => i.product._id === p._id).reduce((s, i) => s + i.quantity, 0);
-                                    const noStock = stock <= 0;
-                                    
-                                    const handleProductClick = () => {
-                                        if (noStock) return;
-                                        if (almacenes.length <= 1) {
-                                            addItem(p, almacen_id, almacenes[0]?.nombre);
-                                        } else {
-                                            setAlmacenSelectorProduct(p);
-                                        }
-                                    };
+            <POSAlmacenModal
+                product={almacenSelectorProduct}
+                almacenes={almacenes}
+                allAlmacenesStockMap={allAlmacenesStockMap}
+                onSelectAlmacen={(almId, almNombre) => {
+                    if (almacenSelectorProduct) {
+                        addItem(almacenSelectorProduct, almId, almNombre);
+                        setAlmacenSelectorProduct(null);
+                    }
+                }}
+                onClose={() => setAlmacenSelectorProduct(null)}
+            />
 
-                                    return (
-                                        <button key={p._id} onClick={handleProductClick} disabled={noStock}
-                                            data-product-idx={idx}
-                                            onKeyDown={(e) => {
-                                                if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
-                                                    e.preventDefault();
-                                                    let nextIdx = idx;
-                                                    if (e.key === 'ArrowRight') nextIdx = idx + 1;
-                                                    else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
-                                                    else if (e.key === 'ArrowDown') nextIdx = idx + 2; // Assuming ~2-3 cols min
-                                                    else if (e.key === 'ArrowUp') nextIdx = idx - 2;
-                                                    
-                                                    if (nextIdx < 0) {
-                                                        document.getElementById('pos-search-input')?.focus();
-                                                    } else {
-                                                        const nextEl = document.querySelector(`[data-product-idx="${nextIdx}"]`) as HTMLElement;
-                                                        if (nextEl) {
-                                                            nextEl.focus();
-                                                        } else {
-                                                            const altNext = document.querySelector(`[data-product-idx="${idx + 1}"]`) as HTMLElement;
-                                                            if (altNext) altNext.focus();
-                                                            else (document.querySelector(`[data-product-idx="${idx - 1}"]`) as HTMLElement)?.focus();
-                                                        }
-                                                    }
-                                                }
-                                            }}
-                                            className={`group relative bg-white rounded-2xl border p-3 text-left shadow-sm flex flex-col transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                                                ${noStock ? 'opacity-40 cursor-not-allowed border-gray-100' : 'hover:shadow-md hover:-translate-y-0.5 hover:border-indigo-300 border-gray-200 cursor-pointer active:scale-[0.97]'}`}>
-                                        <div className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full self-start mb-1.5 truncate max-w-full">
-                                            {p.categoria_nombre ?? '-'}
-                                        </div>
-                                        <div className="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden">
-                                            {p.image_url
-                                                ? <img src={p.image_url} alt={p.descripcion} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                : <div className="w-full h-full flex items-center justify-center"><Package size={24} className="text-gray-200" /></div>}
-                                        </div>
-                                        <p className="text-xs text-gray-900 font-semibold leading-tight mb-0.5">{p.descripcion}</p>
-                                        {p.codigo_corto && <p className="text-[10px] text-gray-400 font-mono mb-1">{p.codigo_corto}</p>}
-                                        <div className="flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
-                                            <span className="text-sm font-black text-gray-900">${fmt(p.precio_venta)}</span>
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${stock > 10 ? 'bg-green-100 text-green-700' : stock > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-500'}`}>
-                                                {noStock ? 'Agotado' : `${stock}u`}
-                                            </span>
-                                        </div>
-                                        {inCart > 0 && (
-                                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow">
-                                                {inCart}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                            </div>
-                            
-                            <div className="mt-auto pt-4">
-                                {filtered.length > ITEMS_PER_PAGE && (
-                                    <Pagination 
-                                        currentPage={currentPage}
-                                        totalPages={Math.ceil(filtered.length / ITEMS_PER_PAGE)}
-                                        onPageChange={setCurrentPage}
-                                        totalItems={filtered.length}
-                                        itemsPerPage={ITEMS_PER_PAGE}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RIGHT - Ticket Panel â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-            {/*
-              LAYOUT KEY:
-              • The outer div is flex-col + h-full + overflow-hidden
-              • Only the ITEMS section has flex-1 + overflow-y-auto ←’ it scrolls
-              • Every other section (factura, pagos, totals, button) uses shrink-0 ←’ never scrolls away
-            */}
-            <div className={`md:w-[380px] w-full md:flex flex-col overflow-hidden shadow-xl bg-white border-l border-gray-200 ${
-                mobileTab === 'cart' ? 'flex' : 'hidden md:flex'
-            }`}>
-
-                {/* â”€â”€ Header â”€â”€ (shrink-0) */}
-                <div className="shrink-0 px-3 py-2 border-b border-gray-100 flex items-center gap-2">
-                    <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                        <ShoppingCart size={13} className="text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h2 className="font-bold text-gray-900 text-xs leading-none">Ticket de Venta</h2>
-                        <p className="text-[10px] text-gray-400 mt-0.5 truncate">Cajero: {user?.username}</p>
-                    </div>
-                    {items.length > 0 && (
-                        <>
-                            <button onClick={() => parkTicket()} className="shrink-0 text-gray-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors text-[10px] font-bold border border-gray-200 hover:border-indigo-200 bg-white" title="Parquear ticket en espera">
-                                Parquear
-                            </button>
-                            <button onClick={() => { resetSaleState(); }} className="shrink-0 text-gray-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-colors" title="Vaciar ticket">
-                                <X size={13} />
-                            </button>
-                        </>
-                    )}
-                </div>
-
-                {/* â”€â”€ Parked Tickets Row â”€â”€ */}
-                {parkedTickets.length > 0 && (
-                    <div className="shrink-0 px-2 py-1.5 bg-indigo-50/50 border-b border-indigo-100 flex gap-1 overflow-x-auto no-scrollbar">
-                        {parkedTickets.map((pt, idx) => (
-                            <div key={pt.id} className="shrink-0 bg-white border border-indigo-100 rounded shadow-sm px-2 py-1 flex items-center gap-2">
-                                <button onClick={() => restoreTicket(idx)} className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 text-left">
-                                    Ticket #{pt.id}
-                                    <span className="block text-[9px] font-normal text-gray-500">{pt.items.length} items</span>
-                                </button>
-                                <button onClick={() => removeParkedTicket(idx)} className="text-gray-300 hover:text-red-500 p-0.5 rounded hover:bg-red-50">
-                                    <X size={10} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* â”€â”€ Items list â”€â”€ (flex-1 + overflow-y-auto ←’ ONLY THIS SCROLLS) */}
-                <div className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
-                    {items.length === 0 ? (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full py-4 text-gray-300">
-                            <ShoppingCart size={32} className="mb-2 opacity-20" />
-                            <p className="text-xs text-gray-400 text-center">Ticket vacío - tocá un producto</p>
-                        </motion.div>
-                    ) : (
-                        <div className="space-y-1.5 scroll-smooth">
-                            <AnimatePresence initial={false}>
-                                {items.map(item => (
-                                    <motion.div
-                                        key={`${item.product._id}-${item.almacen_id}`}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95, height: 0, marginTop: 0, marginBottom: 0, overflow: 'hidden' }}
-                                        transition={{ duration: 0.2 }}
-                                        className="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5"
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-gray-900">{item.product.descripcion}</p>
-                                            {/* Etiqueta de almacén de origen */}
-                                            {item.almacen_nombre && almacenes.length > 1 && (
-                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-1.5 py-0.5 mb-0.5">
-                                                    <Package size={8} /> {item.almacen_nombre}
-                                                </span>
-                                            )}
-                                            <p className="text-[11px] text-gray-400">
-                                                ${fmt(item.precio)} × {item.quantity} =&nbsp;
-                                                <span className="font-bold text-gray-700">${fmt(item.precio * item.quantity)}</span>
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                            <button onClick={() => updateQty(item.product._id, item.almacen_id, -1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
-                                                <Minus size={11} />
-                                            </button>
-                                            <span className="w-5 text-center text-xs font-bold text-gray-900">{item.quantity}</span>
-                                            <button onClick={() => updateQty(item.product._id, item.almacen_id, 1)} className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
-                                                <Plus size={11} />
-                                            </button>
-                                            <button onClick={() => removeItem(item.product._id, item.almacen_id)} className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors ml-0.5">
-                                                <Trash2 size={11} />
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    )}
-                </div>
-
-                {/* â”€â”€ Options / Payment Toggle Header â”€â”€ */}
-                <div
-                    className="shrink-0 px-3 py-2 border-t border-gray-100 flex justify-between items-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => setPanelOpen(!panelOpen)}
-                >
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Opciones y Pagos</span>
-                    <button className="text-[10px] font-bold text-indigo-600 flex items-center gap-1 transition-colors">
-                        {panelOpen ? 'Ocultar' : 'Mostrar'} {panelOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                    </button>
-                </div>
-
-                {/* â”€â”€ Factura / Cliente â”€â”€ (colapsable) */}
-                <AnimatePresence initial={false}>
-                    {panelOpen && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="shrink-0 border-t border-gray-100 overflow-hidden"
-                        >
-                            {/* Cliente/Factura */}
-                            <div className="px-3 py-1.5 flex flex-col gap-1.5">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Asignar Cliente / Factura</span>
-                                
-                                <ClientCombobox 
-                                    selectedClient={cliente}
-                                    onSelect={(c) => setCliente(c)}
-                                    onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false })}
-                                    disabled={ticketCovered}
-                                />
-                                {canEditDate && (
-                                    <div className="pt-2 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Fecha de Venta (Histórica)</span>
-                                        <input 
-                                            type="datetime-local"
-                                            value={fechaVenta}
-                                            onChange={(e) => setFechaVenta(e.target.value)}
-                                            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer"
-                                            title="Si dejas este campo en blanco, se usará la fecha actual."
-                                        />
-                                        <span className="text-[9px] text-gray-400">Si dejas la hora en 00:00, se guardará así en sistema.</span>
-                                    </div>
-                                )}
-                                
-
-                                <div className="flex items-center justify-between mt-1">
-                                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                                        <input type="checkbox" checked={cliente.es_factura}
-                                            onChange={e => setCliente({ es_factura: e.target.checked })}
-                                            className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 shrink-0" />
-                                        <span className="text-[11px] text-gray-600 font-medium">Solicitar factura (NIT)</span>
-                                    </label>
-                                </div>
-                                <AnimatePresence>
-                                    {(cliente.es_factura || (!cliente.cliente_id && cliente.razon_social)) && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            className="grid grid-cols-2 gap-1 mt-1.5 overflow-hidden"
-                                        >
-                                            <input 
-                                                type="text"
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
-                                                value={cliente.nit} 
-                                                onChange={e => handleNitChange(e.target.value)}
-                                                onKeyDown={e => {
-                                                    if (['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
-                                                    if (!/^[0-9]$/.test(e.key)) e.preventDefault();
-                                                }}
-                                                className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
-                                                placeholder="NIT" 
-                                            />
-                                            <input value={cliente.email} onChange={e => setCliente({ email: e.target.value })}
-                                                className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
-                                                placeholder="Email" />
-                                            <input value={cliente.razon_social} onChange={e => {
-                                                setCliente({ razon_social: e.target.value });
-                                                if (nitClientMatch) setNitClientMatch(null);
-                                            }}
-                                                className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
-                                                placeholder="Razón Social" />
-                                            <input 
-                                                type="text"
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
-                                                value={cliente.telefono} 
-                                                onChange={e => setCliente({ telefono: e.target.value.replace(/\D/g, '') })}
-                                                onKeyDown={e => {
-                                                    if (['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
-                                                    if (!/^[0-9]$/.test(e.key)) e.preventDefault();
-                                                }}
-                                                className="col-span-1 border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-900 focus:ring-1 focus:ring-indigo-400 outline-none bg-gray-50 flex-1"
-                                                placeholder="Celular" 
-                                            />
-                                            {isSearchingNit && (
-                                                <div className="col-span-2 text-[10px] text-indigo-500 font-medium animate-pulse flex items-center gap-1">
-                                                    Buscando NIT en base de datos...
-                                                </div>
-                                            )}
-                                            {nitClientMatch && (
-                                                <div className="col-span-2 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5 font-medium flex items-center justify-between">
-                                                    <span>✓ Cliente registrado: <strong>{nitClientMatch}</strong></span>
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Toggle WhatsApp */}
-                                {tenantSettings?.whatsapp?.enabled && (
-                                    <div className="flex items-center justify-between mt-1">
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={sendWhatsApp}
-                                                onChange={e => setSendWhatsApp(e.target.checked)}
-                                                className="w-3.5 h-3.5 rounded border-gray-300 text-green-600 shrink-0" />
-                                            <span className="text-[11px] text-gray-600 font-medium">Enviar comprobante por WhatsApp</span>
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Fecha Venta (Solo Supermercados) */}
-                            
-
-                            {/* Vendedor */}
-                            <div className="px-3 pb-2 pt-1 border-t border-gray-100 mt-1 flex flex-col gap-1.5">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Vendedor Asignado (Opcional)</span>
-                                <div className="relative">
-                                    <UserIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    <select 
-                                        value={vendedor.vendedor_id || ""}
-                                        onChange={(e) => {
-                                            const id = e.target.value;
-                                            if (!id) {
-                                                setVendedor({ vendedor_id: undefined, vendedor_name: undefined });
-                                            } else {
-                                                const v = vendedores.find(v => v._id === id);
-                                                if (v) setVendedor({ vendedor_id: v._id, vendedor_name: v.full_name || v.username });
-                                            }
-                                        }}
-                                        disabled={ticketCovered}
-                                        className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 bg-gray-50 outline-none focus:ring-1 focus:ring-indigo-400 appearance-none cursor-pointer"
-                                    >
-                                        <option value="">Seleccione un vendedor...</option>
-                                        {vendedores.map(v => (
-                                            <option key={v._id} value={v._id}>{v.full_name || v.username}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            {/* Descuentos Predefinidos */}
-                            <div className="px-3 pb-2 pt-1 border-t border-gray-100 mt-1">
-                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Descuentos Activos</span>
-                                {loadingD ? (
-                                    <div className="h-6 flex items-center"><Loader2 size={14} className="animate-spin text-gray-400" /></div>
-                                ) : descuentosDisponibles.filter(d => d.is_active).length === 0 ? (
-                                    <p className="text-[10px] text-gray-400 italic">No hay descuentos predefinidos habilitados.</p>
-                                ) : (
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                            <Tag size={12} className={!descuento.valor ? 'text-gray-400' : 'text-indigo-500'} />
-                                        </div>
-                                        <select
-                                            value={descuento.valor ? `${descuento.tipo}|${descuento.valor}|${descuento.nombre}` : ""}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (!val) {
-                                                    setDescuento('MONTO', '', '');
-                                                } else {
-                                                    const [tipo, valor, nombre] = val.split('|');
-                                                    setDescuento(tipo as 'PORCENTAJE' | 'MONTO', valor, nombre);
-                                                }
-                                            }}
-                                            disabled={ticketCovered}
-                                            className="w-full pl-8 pr-8 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 appearance-none cursor-pointer disabled:opacity-50 disabled:bg-gray-50 hover:border-gray-300 transition-colors"
-                                        >
-                                            <option value="">Ningún descuento activo</option>
-                                            {descuentosDisponibles.filter(d => d.is_active).map(d => (
-                                                <option key={d._id} value={`${d.tipo}|${d.valor}|${d.nombre}`}>
-                                                    {d.nombre} ({d.tipo === 'PORCENTAJE' ? `${d.valor}%` : `Bs.${d.valor}`})
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* â”€â”€ Métodos de pago â”€â”€ (colapsable) */}
-                <AnimatePresence initial={false}>
-                    {panelOpen && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="shrink-0 border-t border-gray-100 overflow-hidden"
-                        >
-                            <div className="px-3 py-2">
-                                {/* Method toggles */}
-                                <div className="flex gap-1 mb-1.5 flex-wrap">
-                                    {(['EFECTIVO', 'QR', 'TARJETA', 'CREDITO'] as MetodoPago[]).map(m => {
-                                        const meta = METODO_META[m];
-                                        const active = pendingPago.metodo === m;
-                                        return (
-                                            <button key={m} onClick={() => setPendingPago({ metodo: m })} disabled={ticketCovered}
-                                                className={`flex-1 py-1 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 border-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed relative
-                                            ${active ? `${meta.bg} ${meta.color} border-current` : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'}`}>
-                                                {active && <motion.div layoutId="pos-pago-tab" className="absolute inset-0 border-2 border-current rounded-lg" />}
-                                                <span className="relative z-10 flex items-center gap-1">{meta.icon} {m}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Amount + Add */}
-                                <div className="flex gap-1.5 mb-1.5">
-                                    <div className="relative flex-1">
-                                        <DollarSign size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input id="pos-payment-input" type="number" step="0.10" min="0.10"
-                                            value={pendingPago.monto}
-                                            onChange={e => setPendingPago({ monto: e.target.value })}
-                                            onKeyDown={e => e.key === 'Enter' && addPago()}
-                                            disabled={ticketCovered}
-                                            className="w-full pl-7 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-900 font-mono focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none disabled:opacity-40 disabled:bg-gray-50 transition-colors"
-                                            placeholder="0.00 (F2)" />
-                                    </div>
-                                    <button onClick={addPago}
-                                        disabled={!pendingPago.monto || parseFloat(pendingPago.monto) <= 0 || ticketCovered || !items.length || (pendingPago.metodo === 'CREDITO' && (!cliente.razon_social || !cliente.telefono))}
-                                        className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors shrink-0">
-                                        <Plus size={12} /> Agregar
-                                    </button>
-                                </div>
-                                {pendingPago.metodo === 'CREDITO' && (!cliente.razon_social || !cliente.telefono) && (
-                                    <p className="text-[10px] text-amber-600 font-bold mb-1.5 bg-amber-50 rounded px-2 py-1 flex items-start gap-1">
-                                        <span className="shrink-0 mt-0.5">âš ï¸</span> 
-                                        <span>El pago a <b>Crédito</b> requiere que registres el <b>Nombre (Razón Social)</b> y el <b>Celular</b> del deudor en la sección de Factura / Cliente para su seguimiento.</span>
-                                    </p>
-                                )}
-
-                                {/* Registered payments */}
-                                {pagos.length > 0 && (
-                                    <div className="space-y-1">
-                                        <AnimatePresence>
-                                            {pagos.map((p, i) => {
-                                                const meta = METODO_META[p.metodo as MetodoPago];
-                                                return (
-                                                    <motion.div
-                                                        layout
-                                                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.95, height: 0, margin: 0, overflow: 'hidden' }}
-                                                        key={i}
-                                                        className={`flex items-center justify-between rounded-lg border px-2 py-1 ${meta.bg}`}
-                                                    >
-                                                        <div className={`flex items-center gap-1 text-[11px] font-bold ${meta.color}`}>
-                                                            {meta.icon} {p.metodo}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`font-mono text-xs font-bold ${meta.color}`}>Bs. {fmt(p.monto)}</span>
-                                                            <button onClick={() => removePago(i)} title="Quitar pago"
-                                                                className="w-4 h-4 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all">
-                                                                <X size={10} />
-                                                            </button>
-                                                        </div>
-                                                    </motion.div>
-                                                );
-                                            })}
-                                        </AnimatePresence>
-                                    </div>
-                                )}
-
-                                {/* Blocked message */}
-                                <AnimatePresence>
-                                    {ticketCovered && items.length > 0 && (
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            className="text-[11px] text-center text-green-700 bg-green-50 border border-green-200 rounded-lg py-1 mt-1.5"
-                                        >
-                                            ✓ Ticket cubierto - no se aceptan más pagos
-                                        </motion.p>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* â”€â”€ Totals + Finalize â”€â”€ (siempre visible) */}
-                <div className="shrink-0 bg-white shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.1)] z-10">
-                    <div className="px-3 pb-2 pt-3 space-y-1.5 border-t border-gray-100">
-
-                        {/* Full totals breakdown - shown only when panel is open */}
-                        {panelOpen && (
-                            <>
-                                {parseFloat(descuento.valor) > 0 && (
-                                    <>
-                                        <div className="flex justify-between items-center text-[11px] opacity-60">
-                                            <span className="font-semibold">Subtotal</span>
-                                            <span className="font-mono">Bs. {fmt(items.reduce((acc, i) => acc + i.precio * i.quantity, 0))}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[11px] text-red-500 font-medium pb-1 border-b border-gray-100">
-                                            <span>Descuento {descuento.tipo === 'PORCENTAJE' ? `(${descuento.valor}%)` : ''}</span>
-                                            <span className="font-mono">- Bs. {fmt(items.reduce((acc, i) => acc + i.precio * i.quantity, 0) - totalVal)}</span>
-                                        </div>
-                                    </>
-                                )}
-                                <div className="flex justify-between items-center relative">
-                                    <span className="text-xs font-semibold text-gray-500">Total a Pagar</span>
-                                    <span className="text-base font-black text-gray-900 font-mono">Bs. {fmt(totalVal)}</span>
-                                </div>
-                                {cubierto > 0 && (
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-gray-400">Cubierto</span>
-                                        <span className="font-bold text-green-600 font-mono">Bs. {fmt(cubierto)}</span>
-                                    </div>
-                                )}
-                                {cubierto > 0 && restanteVal > 0 && (
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-red-500 font-semibold">Falta pagar</span>
-                                        <span className="font-bold text-red-600 font-mono">Bs. {fmt(restanteVal)}</span>
-                                    </div>
-                                )}
-                                {cambioVal > 0 && (
-                                    <div className="flex justify-between items-center bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
-                                        <span className="text-amber-700 font-bold text-xs">ðŸ’° Cambio</span>
-                                        <span className="font-black text-amber-700 font-mono text-sm">Bs. {fmt(cambioVal)}</span>
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Collapsed mini-summary */}
-                        {!panelOpen && (
-                            <div className="flex justify-between items-center h-[34px]">
-                                <span className="text-xs font-semibold text-gray-500">Total</span>
-                                <div className="flex items-center gap-3">
-                                    {cambioVal > 0 && <span className="text-xs font-bold text-amber-600">ðŸ’° Bs. {fmt(cambioVal)}</span>}
-                                    {restanteVal > 0 && cubierto > 0 && <span className="text-xs font-bold text-red-500">Falta Bs. {fmt(restanteVal)}</span>}
-                                    <span className="text-[10px] font-semibold text-gray-400 hidden">TOTAL</span>
-                                    <span className="text-base font-black text-gray-900 font-mono leading-none">Bs. {fmt(totalVal)}</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Error */}
-                        {saleMut.isError && (
-                            <p className="text-[11px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-2 py-1 text-center">
-                                {(saleMut.error as any)?.message ?? 'Error al registrar la venta'}
-                            </p>
-                        )}
-
-                        {/* Hint */}
-                        {panelOpen && items.length > 0 && pagos.length === 0 && (
-                            <p className="text-[11px] text-center text-amber-600 bg-amber-50 border border-amber-100 rounded-lg py-1">
-                                Ingresá el monto y presioná <strong>Agregar</strong>
-                            </p>
-                        )}
-
-                        {/* Success */}
-                        {success && (
-                            <div className="flex items-center gap-2 justify-center text-green-700 bg-green-100 border border-green-200 rounded-lg py-1.5">
-                                <CheckCircle2 size={15} />
-                                <span className="font-bold text-sm">¡Venta registrada!</span>
-                            </div>
-                        )}
-
-                        {/* Finalize */}
-                        <button onClick={handleTryFinalize}
-                            disabled={!canFinalize() || saleMut.isPending || !!lastSale}
-                            className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all group ${canFinalize() && !lastSale ? 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200 active:scale-95 cursor-pointer' : 'bg-gray-300 shadow-none cursor-not-allowed'}`}>
-                            {saleMut.isPending
-                                ? <Loader2 size={18} className="animate-spin" />
-                                : canFinalize() ? <><CheckCircle2 className="group-hover:scale-110 transition-transform" /> Cobrar e Imprimir (F4)</> : <><Lock size={18} /> Faltan pagos</>}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Modal de Confirmación de Venta */}
-            <AnimatePresence>
-                {confirmSale && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-5">
-                            <h3 className="text-lg font-black text-gray-900 mb-2">Confirmar Venta</h3>
-                            <p className="text-sm text-gray-500 mb-4">Revisa los montos antes de finalizar.</p>
-
-                            <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5 border border-gray-100">
-                                {parseFloat(descuento.valor) > 0 && (
-                                    <>
-                                        <div className="flex justify-between items-center text-gray-500 opacity-80">
-                                            <span className="font-medium text-sm">Subtotal:</span>
-                                            <span className="text-base font-bold font-mono">Bs. {fmt(items.reduce((acc, i) => acc + i.precio * i.quantity, 0))}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-red-500 font-medium pb-2 border-b border-gray-200">
-                                            <span className="text-sm">Descuento {descuento.tipo === 'PORCENTAJE' ? `(${descuento.valor}%)` : ''}:</span>
-                                            <span className="text-base font-bold font-mono">- Bs. {fmt(items.reduce((acc, i) => acc + i.precio * i.quantity, 0) - totalVal)}</span>
-                                        </div>
-                                    </>
-                                )}
-                                <div className="border-t border-gray-100 mt-2 pt-2 flex flex-col gap-1.5">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block text-left">Formas de Pago</span>
-                                    {pagos.map((p, idx) => (
-                                        <div key={idx} className="flex justify-between items-center text-xs">
-                                            <div className="flex items-center gap-2 text-gray-600">
-                                                {METODO_META[p.metodo]?.icon}
-                                                <span className="capitalize">{p.metodo.toLowerCase()}</span>
-                                            </div>
-                                            <span className="font-bold text-gray-900 font-mono">Bs. {fmt(p.monto)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                {vendedor.vendedor_name && (
-                                    <div className="flex justify-between items-center border-t border-gray-100 pt-2">
-                                        <span className="text-gray-500 font-medium text-xs">Vendedor:</span>
-                                        <span className="text-xs font-bold text-gray-900">{vendedor.vendedor_name}</span>
-                                    </div>
-                                )}
-
-                                <div className="flex justify-between items-center border-t border-gray-100 pt-2">
-                                    <span className="text-gray-500 font-medium text-sm">Total pagado:</span>
-                                    <span className="text-lg font-black font-mono text-green-600">Bs. {fmt(cubierto)}</span>
-                                </div>
-
-                                {cambioVal > 0 && (
-                                    <div className="flex justify-between items-center bg-amber-50 px-3 py-2 rounded-lg border border-amber-100 mt-1">
-                                        <span className="text-amber-700 font-bold text-xs uppercase">Cambio a dar:</span>
-                                        <span className="text-xl font-black font-mono text-amber-600">Bs. {fmt(cambioVal)}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2 w-full">
-                                <button onClick={() => setConfirmSale(false)} className="flex-1 py-2 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
-                                <button onClick={() => executeSale(false)} disabled={saleMut.isPending || isSubmittingRef.current} className="flex-1 py-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2">
-                                    {saleMut.isPending || isSubmittingRef.current ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Confirmar
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Modal de Advertencia de Venta Idéntica Consecutiva */}
-            <AnimatePresence>
-                {showDuplicateWarning && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-200">
-                            <div className="flex items-center gap-3 text-amber-600 mb-4">
-                                <AlertTriangle size={28} />
-                                <h3 className="text-lg font-bold text-gray-900">¿Registrar segunda venta idéntica?</h3>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-4">
-                                Acabas de cobrar un ticket con los <strong>mismos productos y cantidades</strong> hace unos instantes.
-                            </p>
-                            <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 mb-6 text-xs text-amber-800">
-                                Esta alerta evita cobros duplicados por error o escaneos repetidos. Si el cliente realmente lleva los mismos productos, confirma a continuación.
-                            </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => setShowDuplicateWarning(false)} className="flex-1 py-2.5 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
-                                    Cancelar
-                                </button>
-                                <button onClick={() => {
-                                    setPendingConfirmDuplicate(true);
-                                    setShowDuplicateWarning(false);
-                                    executeSale(true);
-                                }} className="flex-1 py-2.5 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-sm">
-                                    Sí, es otra venta
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Modal de Impresión / Venta Exitosa */}
-            <AnimatePresence>
-                {lastSale && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4 print:hidden">
-                        <motion.div initial={{ scale: 0.95, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 items-center text-center">
-                            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                                <CheckCircle2 size={32} />
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900 mb-1">¡Venta Exitosa!</h3>
-                            <p className="text-sm text-gray-500 mb-6">El pago ha sido registrado en caja correctamente.</p>
-
-                            {/* Resumen de Pago */}
-                            <div className="w-full bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 flex flex-col gap-2.5">
-                                {lastSale.pagos.map((p, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-sm">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            {METODO_META[p.metodo as MetodoPago]?.icon}
-                                            <span className="capitalize">{p.metodo.toLowerCase()}</span>
-                                        </div>
-                                        <span className="font-bold text-gray-900">Bs. {fmt(p.monto)}</span>
-                                    </div>
-                                ))}
-                                <div className="border-t border-gray-200 my-1 pt-2 flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Pagado</span>
-                                    <span className="text-base font-black text-indigo-600">Bs. {fmt(lastSale.pagos.reduce((acc, p) => acc + p.monto, 0))}</span>
-                                </div>
-                                {(() => {
-                                    const totalPagado = lastSale.pagos.reduce((acc, p) => acc + p.monto, 0);
-                                    const cambioEntregado = totalPagado - lastSale.total;
-                                    if (cambioEntregado > 0.01) {
-                                        return (
-                                            <div className="flex justify-between items-center text-amber-600 font-bold bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
-                                                <span className="text-xs uppercase">Cambio:</span>
-                                                <span className="text-lg font-black font-mono">Bs. {fmt(cambioEntregado)}</span>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-                            </div>
-
-                            <div className="flex flex-col gap-3 w-full">
-                                <button 
-                                    onClick={() => window.print()} 
-                                    // Make sure it doesn't trigger form submit
-                                    type="button"
-                                    className="w-full py-3 rounded-xl font-bold text-white bg-gray-900 hover:bg-black transition-colors flex items-center justify-center gap-2"
-                                >
-                                    Imprimir {lastSale.cliente?.es_factura ? 'Factura/NIT' : 'Recibo'}
-                                </button>
-                                <button 
-                                    onClick={() => { 
-                                        saleMut.reset();
-                                        setLastSale(null); 
-                                        setSuccess(false); 
-                                        resetSaleState(); 
-                                    }} 
-                                    type="button"
-                                    className="w-full py-3 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                                >
-                                    Siguiente Venta
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Hidden wrapper for thermal printing */}
-            <div className="print-only">
-                {lastSale && (
-                    <TicketPrinter 
-                        sale={lastSale} 
-                        tenantName={user?.tenant_id || "Mi Tienda"} 
-                        sucursalName={sucursales.find(s => s._id === sucursalId)?.nombre}
-                        ticketFooter={tenantSettings?.ticket_footer}
-                        logoBase64={tenantSettings?.logo_base64}
-                        direccion={tenantSettings?.direccion}
-                        telefono={tenantSettings?.telefono}
-                    />
-                )}
-            </div>
+            <POSModals
+                showDuplicateWarning={showDuplicateWarning}
+                onCancelDuplicate={() => setShowDuplicateWarning(false)}
+                onConfirmDuplicate={() => {
+                    setPendingConfirmDuplicate(true);
+                    setShowDuplicateWarning(false);
+                    executeSale(true);
+                }}
+                lastSale={lastSale}
+                onPrint={() => window.print()}
+                onNextSale={() => {
+                    saleMut.reset();
+                    setLastSale(null);
+                    resetSaleState();
+                }}
+                tenantName={user?.tenant_id || 'Mi Tienda'}
+                sucursalName={sucursales.find((s) => s._id === sucursalId)?.nombre}
+                ticketFooter={tenantSettings?.ticket_footer}
+                logoBase64={tenantSettings?.logo_base64}
+                direccion={tenantSettings?.direccion}
+                telefono={tenantSettings?.telefono}
+            />
         </div>
     );
 }
