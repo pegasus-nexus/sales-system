@@ -119,12 +119,19 @@ class SystemMonitorService:
         # 2. Frontend Web Check
         frontend_url = settings.FRONTEND_URL
         if frontend_url:
+            if ("localhost" in frontend_url or "127.0.0.1" in frontend_url) and settings.ENVIRONMENT == "production":
+                prod_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip() and "localhost" not in o and "127.0.0.1" not in o]
+                if prod_origins:
+                    frontend_url = prod_origins[0]
+
             fe_res = await self.probe_http_target(
                 service_key="frontend_web",
                 service_name="Sitio Web Frontend (React)",
                 url=frontend_url,
                 timeout=5.0,
             )
+            if fe_res["status"] == "DOWN" and "connection" in (fe_res.get("error_message") or "").lower():
+                fe_res["error_message"] = f"No responde en {frontend_url} (Configura FRONTEND_URL en .env con la URL de tu frontend)"
             results.append(fe_res)
 
         # 3. Cloudinary CDN Check
