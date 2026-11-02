@@ -36,3 +36,11 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = [
+    "ignore::DeprecationWarning:lazy_model.*",
+    "ignore::FutureWarning:pandas.*"
+]

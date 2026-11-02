@@ -10,7 +10,7 @@ from app.domain.models.product import Product
 from app.domain.models.user import User, UserRole
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 async def test_product_price_mapping_for_sucursal_cajero():
     """
     Test de Integración para la resolución de precios por sucursal.
@@ -73,3 +73,10 @@ async def test_product_price_mapping_for_sucursal_cajero():
 
     # Validar que el precio de venta resuelto para el cajero es 63.0 y NO 0.0
     assert fetched_product.precio_venta == 63.0
+
+    # Limpieza de entidades de prueba
+    await cajero.delete()
+    await inv.delete()
+    await product.delete()
+    await cat.delete()
+
