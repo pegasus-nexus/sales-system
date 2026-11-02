@@ -18,7 +18,6 @@ import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
 import AppLauncherModal from './AppLauncherModal';
-import BranchSwitcherDropdown from './BranchSwitcherDropdown';
 import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 
@@ -698,11 +697,6 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* Selector Contextual de Sucursal Activa (Oculto para Admin SaaS) */}
-                            {role !== 'SUPERADMIN' && role !== 'SUPERADMIN_STAFF' && !location.pathname.startsWith('/admin') && (
-                                <BranchSwitcherDropdown />
-                            )}
-
                             {/* Botón de Novedades */}
                             <button
                                 type="button"
@@ -720,7 +714,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                 )}
 
-                {/* ── Top Bar móvil (Con App Launcher y Branch Switcher) ── */}
+                {/* ── Top Bar móvil (Con App Launcher) ── */}
                 <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2 flex items-center justify-between gap-2 shrink-0 shadow-xs">
                     <div className="flex items-center gap-2">
                         <button
@@ -735,9 +729,6 @@ export default function Layout({ children }: LayoutProps) {
                         <span className="font-bold text-xs text-gray-900 hidden sm:inline">Pegasus Nexus</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        {role !== 'SUPERADMIN' && role !== 'SUPERADMIN_STAFF' && !location.pathname.startsWith('/admin') && (
-                            <BranchSwitcherDropdown />
-                        )}
                         {role !== 'CAJERO' && (
                             <button
                                 onClick={() => setMobileMenuOpen(true)}
