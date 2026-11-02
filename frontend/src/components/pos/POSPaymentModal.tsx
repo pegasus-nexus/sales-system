@@ -63,7 +63,6 @@ export function POSPaymentModal({
     // Auto-focus amount input when modal opens or method changes
     useEffect(() => {
         if (isOpen) {
-            // Default pending amount to restante if empty
             if (!pendingPago.monto && restante > 0) {
                 setPendingPago({ monto: restante.toString() });
             }
@@ -87,6 +86,7 @@ export function POSPaymentModal({
     const handleExactPreset = () => {
         if (restante > 0) {
             setPendingPago({ monto: restante.toFixed(2) });
+            setTimeout(() => inputRef.current?.focus(), 50);
         }
     };
 
@@ -126,8 +126,8 @@ export function POSPaymentModal({
 
                     {/* Main 2-column layout */}
                     <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-                        {/* Columna Izquierda: Métodos de Pago y Presets (7 cols) */}
-                        <div className="md:col-span-7 p-6 space-y-5">
+                        {/* Columna Izquierda: Métodos de Pago y Monto Recibido (7 cols) */}
+                        <div className="md:col-span-7 p-6 space-y-4">
                             {/* Método de pago tabs */}
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
@@ -157,43 +157,26 @@ export function POSPaymentModal({
                                 </div>
                             </div>
 
-                            {/* Billetes bolivianos rápidos (solo para efectivo) */}
-                            {pendingPago.metodo === 'EFECTIVO' && !ticketCovered && (
-                                <div>
-                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                                        Billetes Bolivianos (Bs.)
+                            {/* Input de monto recibido (FRONT AND CENTER) */}
+                            <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-200">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-black text-gray-800 uppercase tracking-wider">
+                                        Monto Entregado por el Cliente (Bs.)
                                     </label>
-                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                                        {BOLIVIAN_BILLS.map((bill) => (
-                                            <button
-                                                key={bill}
-                                                type="button"
-                                                onClick={() => handleBillPreset(bill)}
-                                                className="py-2 rounded-xl bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 border border-gray-200 font-black text-xs text-gray-800 transition-all active:scale-95 cursor-pointer shadow-2xs"
-                                            >
-                                                {bill} Bs
-                                            </button>
-                                        ))}
+                                    {!ticketCovered && restante > 0 && (
                                         <button
                                             type="button"
                                             onClick={handleExactPreset}
-                                            className="py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-black text-xs transition-all active:scale-95 cursor-pointer shadow-2xs"
-                                            title="Pagar monto exacto"
+                                            className="px-2.5 py-0.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-[11px] transition-colors cursor-pointer"
+                                            title="Cobrar el saldo cabal"
                                         >
-                                            Exacto
+                                            Cobro Exacto: Bs. {fmt(restante)}
                                         </button>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-
-                            {/* Input de monto */}
-                            <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
-                                    Monto a Recibir (Bs.)
-                                </label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-sm">Bs.</span>
+                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-black text-gray-400 text-base">Bs.</span>
                                         <input
                                             ref={inputRef}
                                             id="pos-modal-payment-input"
@@ -204,20 +187,44 @@ export function POSPaymentModal({
                                             onChange={(e) => setPendingPago({ monto: e.target.value })}
                                             onKeyDown={(e) => e.key === 'Enter' && onAddPago()}
                                             disabled={ticketCovered}
-                                            placeholder="0.00"
-                                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-2xl text-base font-black text-gray-900 bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:opacity-40 disabled:bg-gray-50 transition-all shadow-inner"
+                                            placeholder="Ej. 35.00"
+                                            className="w-full pl-11 pr-3 py-3 border border-gray-300 rounded-xl text-lg font-black text-gray-900 bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:opacity-40 disabled:bg-gray-50 transition-all shadow-inner"
                                         />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={onAddPago}
                                         disabled={!pendingPago.monto || parseFloat(pendingPago.monto) <= 0 || ticketCovered || isCreditoWithoutClient}
-                                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                                        className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
                                     >
-                                        <Plus size={15} /> Agregar Pago
+                                        <Plus size={15} /> Agregar (Enter)
                                     </button>
                                 </div>
+                                <p className="text-[11px] text-gray-500 mt-1.5">
+                                    Escribe el dinero recibido (ej. 35, 50, 100) y presiona Enter para ver el cambio instantáneo.
+                                </p>
                             </div>
+
+                            {/* Billetes bolivianos rápidos (opcional táctil) */}
+                            {pendingPago.metodo === 'EFECTIVO' && !ticketCovered && (
+                                <div>
+                                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+                                        Atajos de Billetes Frecuentes
+                                    </label>
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {BOLIVIAN_BILLS.map((bill) => (
+                                            <button
+                                                key={bill}
+                                                type="button"
+                                                onClick={() => handleBillPreset(bill)}
+                                                className="py-2 rounded-xl bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 border border-gray-200 font-black text-xs text-gray-800 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                                            >
+                                                {bill} Bs
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Advertencia de Crédito */}
                             {isCreditoWithoutClient && (
@@ -312,7 +319,7 @@ export function POSPaymentModal({
                                     )}
                                 </div>
 
-                                {/* VUELTO GIGANTE (iZi POS / Odoo style) */}
+                                {/* VUELTO GIGANTE */}
                                 {cambio > 0 ? (
                                     <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 text-center shadow-sm">
                                         <span className="text-xs font-black text-amber-800 uppercase tracking-widest block mb-1">

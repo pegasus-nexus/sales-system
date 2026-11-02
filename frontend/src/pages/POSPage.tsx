@@ -1,11 +1,10 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProducts, getInventario, getCategories, getUsers, getSucursales, getAlmacenes } from '../api/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { usePosStore } from '../store/usePosStore';
-import { useDescuentos } from '../hooks/useDescuentos';
 import { useSesionActiva } from '../hooks/useCaja';
+import { usePOSData } from '../hooks/usePOSData';
 import { client } from '../api/client';
 import { Search, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -19,21 +18,9 @@ import { POSPaymentModal } from '../components/pos/POSPaymentModal';
 import { POSAlmacenModal } from '../components/pos/POSAlmacenModal';
 import { POSCatalogGrid } from '../components/pos/POSCatalogGrid';
 import { POSModals } from '../components/pos/POSModals';
+import { POSCustomizeModal, type POSQuickWidget } from '../components/pos/POSCustomizeModal';
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
-
-function useStockMap(sucursalId: string, almacenId: string) {
-    const { data: invData } = useQuery({
-        queryKey: ['inventario', sucursalId, almacenId],
-        queryFn: () => getInventario(sucursalId, almacenId, 1, 1000),
-        staleTime: 30_000,
-    });
-    return useMemo(() => {
-        const m: Record<string, number> = {};
-        for (const i of invData?.items || []) m[i.producto_id] = i.cantidad;
-        return m;
-    }, [invData]);
-}
 
 export default function POSPage() {
     const { user, tenantSettings } = useAuthStore();
@@ -41,7 +28,6 @@ export default function POSPage() {
     const navigate = useNavigate();
     const sucursalId = user?.sucursal_id || 'CENTRAL';
 
-    // Caja guard
     const { data: sesionActiva, isLoading: loadingSesion } = useSesionActiva();
 
     const {
@@ -57,7 +43,6 @@ export default function POSPage() {
         sendWhatsApp, setSendWhatsApp
     } = usePosStore();
 
-    // Selected item for Numpad
     const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
 
     useEffect(() => {
@@ -77,50 +62,25 @@ export default function POSPage() {
     const [selectedCat, setSelectedCat] = useLocalStorage('pos-selected-cat', 'all');
     const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+    const [pinnedWidgets, setPinnedWidgets] = useLocalStorage<POSQuickWidget[]>('pos-pinned-widgets', ['descuento']);
+
     const [almacenSelectorProduct, setAlmacenSelectorProduct] = useState<Product | null>(null);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
     const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
     const [fechaVenta, setFechaVenta] = useState<string>('');
+
     const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') ||
         ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
 
-    // Data queries
-    const { data: productsData, isLoading: loadingP } = useQuery({
-        queryKey: ['products'],
-        queryFn: () => getProducts(1, 1000),
-        staleTime: 5 * 60 * 1000,
-    });
-    const products = productsData?.items || [];
+    // Consolidated POS Data Query Hook
+    const {
+        products, loadingP, categories, descuentosDisponibles,
+        loadingD, vendedores, sucursales, almacenes, stockMap
+    } = usePOSData(sucursalId, almacen_id);
 
-    const { data: categories = [] } = useQuery({
-        queryKey: ['categories'],
-        queryFn: getCategories,
-        staleTime: 10 * 60 * 1000,
-    });
-
-    const { data: descuentosDisponibles = [], isLoading: loadingD } = useDescuentos();
-
-    const { data: usersData = [] } = useQuery({
-        queryKey: ['users'],
-        queryFn: getUsers,
-        staleTime: 10 * 60 * 1000,
-    });
-
-    const { data: sucursales = [] } = useQuery({
-        queryKey: ['sucursales'],
-        queryFn: getSucursales,
-        staleTime: 10 * 60 * 1000,
-    });
-
-    const { data: almacenes = [] } = useQuery({
-        queryKey: ['almacenes', sucursalId],
-        queryFn: () => getAlmacenes(sucursalId),
-        staleTime: 10 * 60 * 1000,
-    });
-
-    // Default almacen
     useEffect(() => {
         if (almacenes.length > 0 && (almacen_id === 'default' || !almacenes.find((a) => a.id === almacen_id))) {
             const def = almacenes.find((a) => a.is_default);
@@ -128,18 +88,6 @@ export default function POSPage() {
             else if (almacenes[0]?.id) setAlmacenId(almacenes[0].id);
         }
     }, [almacenes, almacen_id, setAlmacenId]);
-
-    const vendedores = useMemo(() => {
-        return usersData.filter((u) =>
-            u.is_active !== false &&
-            (u.sucursal_id === sucursalId || u.sucursal_id === 'CENTRAL' || !u.sucursal_id) &&
-            ['VENDEDOR', 'ADMIN_SUCURSAL', 'CAJERO'].includes(u.role)
-        );
-    }, [usersData, sucursalId]);
-
-    const stockMap = useStockMap(sucursalId, almacen_id);
-
-
 
     // Hotkeys & Barcode Scanner
     useEffect(() => {
@@ -217,7 +165,7 @@ export default function POSPage() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [products, stockMap, addItem, almacen_id, almacenes, isPaymentModalOpen, lastSale, items.length, canFinalize]);
+    }, [products, stockMap, addItem, almacen_id, almacenes, isPaymentModalOpen, lastSale, items.length, canFinalize, activeItem, updateQty, removeItem]);
 
     const filtered = useMemo(() => products.filter((p) => {
         const q = search.toLowerCase();
@@ -378,11 +326,27 @@ export default function POSPage() {
                 onRemoveItem={removeItem}
                 hasMultipleAlmacenes={almacenes.length > 1}
                 cliente={cliente}
+                setCliente={setCliente}
                 onOpenActionsModal={() => setIsActionsModalOpen(true)}
+                onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
                 descAmount={descAmount}
                 totalVal={totalVal}
                 activeItem={activeItem}
                 onOpenPaymentModal={() => setIsPaymentModalOpen(true)}
+                pinnedWidgets={pinnedWidgets}
+                vendedor={vendedor}
+                setVendedor={setVendedor}
+                vendedores={vendedores}
+                descuento={descuento}
+                setDescuento={setDescuento}
+                descuentosDisponibles={descuentosDisponibles}
+                loadingDescuentos={loadingD}
+                sendWhatsApp={sendWhatsApp}
+                setSendWhatsApp={setSendWhatsApp}
+                hasWhatsAppEnabled={tenantSettings?.whatsapp?.enabled}
+                fechaVenta={fechaVenta}
+                setFechaVenta={setFechaVenta}
+                canEditDate={canEditDate}
             />
 
             {/* ══════════════ RIGHT COLUMN: High-Density Catalog Grid ══════════════ */}
@@ -414,6 +378,18 @@ export default function POSPage() {
             />
 
             {/* ══════════════ MODALS ══════════════ */}
+            <POSCustomizeModal
+                isOpen={isCustomizeModalOpen}
+                onClose={() => setIsCustomizeModalOpen(false)}
+                pinnedWidgets={pinnedWidgets}
+                onToggleWidget={(w) => {
+                    if (pinnedWidgets.includes(w)) setPinnedWidgets(pinnedWidgets.filter((x) => x !== w));
+                    else setPinnedWidgets([...pinnedWidgets, w]);
+                }}
+                canEditDate={canEditDate}
+                hasWhatsApp={!!tenantSettings?.whatsapp?.enabled}
+            />
+
             <POSActionsModal
                 isOpen={isActionsModalOpen}
                 onClose={() => setIsActionsModalOpen(false)}
