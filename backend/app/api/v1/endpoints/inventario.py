@@ -1008,9 +1008,30 @@ async def corregir_kardex(
         if not logs:
             continue
 
-        # --- Recalcular stock_resultante secuencialmente ---
-        stock_running = 0.0
-        for log in logs:
+        # --- Recalcular stock_resultante secuencialmente con detección inteligente de línea base ---
+        baseline_idx = -1
+        for i, log in enumerate(logs):
+            mov = getattr(log, "tipo_movimiento", None)
+            notas = getattr(log, "notas", "") or ""
+            if (
+                mov == TipoMovimiento.AJUSTE_FISICO
+                or "Sincronización por Excel" in notas
+                or "[Ajuste Físico" in notas
+                or "[Entrada Masiva" in notas
+                or "Ajuste de Inventario" in notas
+                or "Conteo Físico" in notas
+            ):
+                baseline_idx = i
+
+        if baseline_idx >= 0:
+            stock_running = float(str(logs[baseline_idx].stock_resultante))
+            logs_to_recalc = logs[baseline_idx + 1:]
+        else:
+            first_log = logs[0]
+            stock_running = float(str(first_log.stock_resultante if first_log.stock_resultante is not None else first_log.cantidad_movida))
+            logs_to_recalc = logs[1:]
+
+        for log in logs_to_recalc:
             stock_running += float(str(log.cantidad_movida))
             expected = round(stock_running, 4)
             actual = round(float(str(log.stock_resultante)), 4)
@@ -1037,6 +1058,11 @@ async def corregir_kardex(
         inventario = await Inventario.find_one(inv_query)
         stock_anterior = float(str(inventario.cantidad)) if inventario else 0.0
         stock_final = round(stock_running, 4)
+
+        # Si el inventario actual ya coincide con el último log registrado, preservar consistencia
+        last_log_res = round(float(str(logs[-1].stock_resultante)), 4) if logs else stock_final
+        if abs(stock_anterior - last_log_res) <= TOLERANCE:
+            stock_final = stock_anterior
 
         if inventario:
             if abs(stock_anterior - stock_final) > TOLERANCE:

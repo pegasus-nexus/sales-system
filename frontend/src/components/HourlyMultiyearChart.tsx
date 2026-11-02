@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, type RefObject } from 'react';
 import { getHourlyMultiyear } from '../api/api';
+import { getBISucursales } from '../api/biApi';
 import {
     ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis,
     CartesianGrid, Tooltip, ReferenceLine
@@ -374,12 +375,22 @@ export function HourlyMultiyearChart({
         "20:00", "21:00", "22:00", "23:00"
     ];
 
-    const SUCURSALES = [
-        { value: '', label: 'Todas las Sucursales' },
-        { value: 'Heroinas', label: 'Heroínas' },
-        { value: 'Recoleta', label: 'Recoleta' },
-        { value: 'Calacoto', label: 'Calacoto' },
-    ];
+    const [sucursalesList, setSucursalesList] = useState<{ value: string; label: string }[]>([
+        { value: '', label: 'Todas las Sucursales' }
+    ]);
+
+    useEffect(() => {
+        let mounted = true;
+        getBISucursales().then((list) => {
+            if (mounted && list && list.length > 0) {
+                setSucursalesList([
+                    { value: '', label: 'Todas las Sucursales' },
+                    ...list.map((s) => ({ value: s.nombre || s.sucursal_id, label: s.nombre }))
+                ]);
+            }
+        }).catch(() => {});
+        return () => { mounted = false; };
+    }, []);
 
     const HORAS_OPERACION_REF = HORAS_OPERACION;
 
@@ -510,7 +521,7 @@ export function HourlyMultiyearChart({
                                 onChange={(e) => setSucursal(e.target.value)}
                                 className="px-3 py-1.5 bg-white border border-gray-200 hover:border-indigo-300 focus:border-indigo-500 rounded-xl font-bold text-xs text-gray-800 outline-none transition-all cursor-pointer appearance-none"
                             >
-                                {SUCURSALES.map(s => (
+                                {sucursalesList.map(s => (
                                     <option key={s.value} value={s.value}>{s.label}</option>
                                 ))}
                             </select>

@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
     
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # System Monitor & Telegram Alerts (Zero hardcoding)
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+    FRONTEND_URL: str = "http://localhost:5173"
+    GOOGLE_DRIVE_FOLDER_ID: str = ""
+    STATUS_PAGE_PROBE_INTERVAL_SECONDS: int = 60
+    
+    model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 
 settings = Settings()

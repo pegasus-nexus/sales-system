@@ -5,6 +5,7 @@ import { Lock } from 'lucide-react';
 import Layout from './components/Layout';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage'));
 const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
@@ -31,7 +32,6 @@ const CotizacionesPage = lazy(() => import('./pages/CotizacionesPage'));
 const ControlQRPage = lazy(() => import('./pages/ControlQRPage'));
 const PriceRequestsPage = lazy(() => import('./pages/PriceRequestsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
-const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
 const ClientesPage = lazy(() => import('./pages/ClientesPage'));
 const ProveedoresPage = lazy(() => import('./pages/ProveedoresPage'));
 const CreditosPage = lazy(() => import('./pages/CreditosPage'));
@@ -171,7 +171,7 @@ const ProtectedRoute = ({
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
-    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/inteligencia" replace />;
+    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role)) return <Navigate to="/dashboard" replace />;
     if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
     if (['SUPERVISOR', 'VENDEDOR'].includes(role)) return <Navigate to="/inventario" replace />;
     if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
@@ -194,7 +194,7 @@ const ProtectedRoute = ({
 const DashboardDispatch = () => {
   const { role } = useAuthStore();
   if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
-  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/inteligencia" replace />;
+  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/dashboard" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
   if (['SUPERVISOR', 'VENDEDOR'].includes(role ?? '')) return <Navigate to="/inventario" replace />;
   if (role === 'FACTURADOR') return <Navigate to="/ventas" replace />;
@@ -226,6 +226,7 @@ function App() {
               <Routes>
                 {/* 1. Ruta de Login fuera del Layout */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/crear-password" element={<SetupPasswordPage />} />
 
                 {/* 2. Todas las demás rutas dentro del Layout */}
                 <Route path="/*" element={
@@ -254,6 +255,11 @@ function App() {
                           <SystemHealthPage />
                         </ProtectedRoute>
                       } />
+                      <Route path="/admin/monitor" element={
+                        <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
+                          <SystemHealthPage />
+                        </ProtectedRoute>
+                      } />
                       <Route path="/admin/colaboradores" element={
                         <ProtectedRoute allowedRoles={['SUPERADMIN']}>
                           <SaasCollaboratorsPage />
@@ -273,11 +279,7 @@ function App() {
                         </ProtectedRoute>
                       } />
 
-                      <Route path="/inteligencia" element={
-                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
-                          <ExecutiveDashboard />
-                        </ProtectedRoute>
-                      } />
+                      <Route path="/inteligencia" element={<Navigate to="/reportes?tab=bi" replace />} />
 
                       <Route path="/sucursales" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="MULTI_SUCURSAL">

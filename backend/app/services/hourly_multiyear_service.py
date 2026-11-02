@@ -5,7 +5,7 @@ from app.infrastructure.repositories.mongo_analytics_repository import MongoAnal
 from app.utils.date_utils import get_day_range_bolivia
 from app.db import get_raw_db
 
-DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
+# Aislamiento estricto de tenant (sin tenant por defecto)
 
 def clean_nans(obj):
     if isinstance(obj, dict):
@@ -22,19 +22,24 @@ def _same_day_prev_year(ref: date, years_back: int) -> date:
     return ref - timedelta(days=364 * years_back)
 
 async def _fetch_hourly_for_date(tenant_id: str, d: date, sucursal: str = None) -> Dict[int, float]:
-    real_tenant_id = tenant_id if tenant_id and str(tenant_id).lower() not in ["none", "null", "undefined", ""] else DEFAULT_TENANT_ID
+    if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+        return {}
+    real_tenant_id = str(tenant_id)
     d_str = d.strftime("%Y-%m-%d")
 
-    # 1. Si el año es 2026 o superior, consultar ventas en vivo de POS (db.sales)
-    if d.year >= 2026:
-        repo = MongoAnalyticsRepository()
-        start_dt, end_dt = get_day_range_bolivia(d_str)
-        dist = await repo.get_hourly_sales_distribution(real_tenant_id, start_dt, end_dt, sucursal)
-        res_live = {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
-        if res_live and sum(res_live.values()) > 0:
-            return res_live
+    # 1. Consultar ventas en vivo de POS (db.sales) para el tenant específico
+    repo = MongoAnalyticsRepository()
+    start_dt, end_dt = get_day_range_bolivia(d_str)
+    dist = await repo.get_hourly_sales_distribution(real_tenant_id, start_dt, end_dt, sucursal)
+    res_live = {h["_id"]: float(h.get("total_ventas", 0)) for h in dist if h["_id"] is not None}
+    if res_live and sum(res_live.values()) > 0:
+        return res_live
 
-    # 2. Para años históricos (<= 2025), consultar HistoricalFactsService limpio con hora exacta de Bolivia
+    # 2. Hechos históricos antiguos: SOLO para el tenant original de Taboada
+    is_taboada = real_tenant_id in ["69cd7f0a8f3f6866d4cfbb62", "taboada"]
+    if not is_taboada:
+        return {}
+
     try:
         from app.application.services.historical_facts_service import HistoricalFactsService
         sales = HistoricalFactsService.get_sales_for_date_range(d_str, d_str, sucursal)

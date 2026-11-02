@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getHourlyMultiyear } from '../api/api';
+import { getBISucursales } from '../api/biApi';
 import HourlyMultiyearChart from './HourlyMultiyearChart';
 import { 
     Activity, Calendar, Loader2, TrendingUp, TrendingDown, Store, 
@@ -167,12 +168,26 @@ export default function SpecialDatesChart() {
     const selectedHoliday = activeFestividades.find(f => f.id === selectedHolidayId) || activeFestividades[0] || festividades[0];
     const currentTheme = useMemo(() => getDynamicPastelTheme(selectedHoliday?.nombre || '', selectedHoliday?.colorPastel), [selectedHoliday]);
 
-    const SUCURSALES = [
-        { value: '', label: 'Todas las Sucursales' },
-        { value: 'Heroinas', label: 'Heroínas' },
-        { value: 'Recoleta', label: 'Recoleta' },
-        { value: 'Calacoto', label: 'Calacoto' },
-    ];
+    const [sucursalesList, setSucursalesList] = useState<{ value: string; label: string }[]>([
+        { value: '', label: 'Todas las Sucursales' }
+    ]);
+    const [tenantBranches, setTenantBranches] = useState<string[]>([]);
+
+    useEffect(() => {
+        let mounted = true;
+        getBISucursales().then((list) => {
+            if (mounted && list && list.length > 0) {
+                setSucursalesList([
+                    { value: '', label: 'Todas las Sucursales' },
+                    ...list.map(s => ({ value: s.nombre || s.sucursal_id, label: s.nombre }))
+                ]);
+                setTenantBranches(list.map(s => s.nombre || s.sucursal_id));
+            } else if (mounted) {
+                setTenantBranches([]);
+            }
+        }).catch(() => {});
+        return () => { mounted = false; };
+    }, []);
 
     const fetchData = useCallback(async (holiday: Festividad, suc: string) => {
         setIsLoading(true);
@@ -306,86 +321,53 @@ export default function SpecialDatesChart() {
         };
     }, [hasData, totalReal, totalAnio1, meta, diffAbsoluta, pctYoY]);
 
-    // Mapeo Estricto de Datos Históricos por Sucursal (Sin invención de valores para Recoleta y Calacoto)
+    // Mapeo dinámico exclusivo para las sucursales reales del tenant
     const branchesData = useMemo(() => {
-        const isHero = !sucursal || sucursal === 'Heroinas';
-        const isReco = sucursal === 'Recoleta';
-        const isCala = sucursal === 'Calacoto';
-
-        const heroActualSales = isHero ? totalReal : 0;
-        const recoActualSales = isReco ? totalReal : 0;
-        const calaActualSales = isCala ? totalReal : 0;
-
-        const heroPast1Sales = isHero ? totalAnio1 : 0;
-        const heroPast2Sales = isHero ? totalAnio2 : 0;
-
-        const totalActualVentas = heroActualSales + recoActualSales + calaActualSales;
+        if (tenantBranches.length === 0) return [];
 
         const docsA1 = meta?.docs_a1 ?? 0;
-        const transA1 = docsA1 > 0 ? docsA1 : (heroPast1Sales > 0 ? Math.round(heroPast1Sales / 48.20) : 0);
-        const ticketA1 = transA1 > 0 ? heroPast1Sales / transA1 : 0;
+        const transA1 = docsA1 > 0 ? docsA1 : (totalAnio1 > 0 ? Math.round(totalAnio1 / 48.20) : 0);
+        const ticketA1 = transA1 > 0 ? totalAnio1 / transA1 : 0;
 
         const docsA2 = meta?.docs_a2 ?? 0;
-        const transA2 = docsA2 > 0 ? docsA2 : (heroPast2Sales > 0 ? Math.round(heroPast2Sales / 42.10) : 0);
-        const ticketA2 = transA2 > 0 ? heroPast2Sales / transA2 : 0;
+        const transA2 = docsA2 > 0 ? docsA2 : (totalAnio2 > 0 ? Math.round(totalAnio2 / 42.10) : 0);
+        const ticketA2 = transA2 > 0 ? totalAnio2 / transA2 : 0;
 
-        return [
-            { 
-                nombre: "Heroínas", 
-                sharePct: totalActualVentas > 0 ? Math.round((heroActualSales / totalActualVentas) * 100) : (totalAnio1 > 0 ? 100 : 0),
-                actual: { 
-                    ventas: heroActualSales, 
-                    ticket: heroActualSales > 0 ? 53.36 : 0, 
-                    margen: heroActualSales * 0.15, 
-                    trans: heroActualSales > 0 ? Math.round(heroActualSales / 53.36) : 0, 
-                    clientes: heroActualSales > 0 ? Math.round((heroActualSales / 53.36) * 0.85) : 0 
+        return tenantBranches.map(bName => {
+            const isMatch = !sucursal || sucursal.toLowerCase() === bName.toLowerCase();
+            const bSales = isMatch ? totalReal : 0;
+            const bPast1 = isMatch ? totalAnio1 : 0;
+            const bPast2 = isMatch ? totalAnio2 : 0;
+            const pct = bPast1 > 0 ? ((bSales - bPast1) / bPast1) * 100 : 0;
+
+            return {
+                nombre: bName,
+                sharePct: totalReal > 0 ? Math.round((bSales / totalReal) * 100) : (totalAnio1 > 0 ? 100 : 0),
+                actual: {
+                    ventas: bSales,
+                    ticket: bSales > 0 ? 53.36 : 0,
+                    margen: bSales * 0.15,
+                    trans: bSales > 0 ? Math.round(bSales / 53.36) : 0,
+                    clientes: bSales > 0 ? Math.round((bSales / 53.36) * 0.85) : 0
                 },
-                past1: heroPast1Sales > 0 ? { 
-                    ventas: heroPast1Sales, 
-                    ticket: ticketA1, 
-                    margen: heroPast1Sales * 0.15, 
-                    trans: transA1, 
-                    clientes: Math.round(transA1 * 0.85) 
+                past1: bPast1 > 0 ? {
+                    ventas: bPast1,
+                    ticket: ticketA1,
+                    margen: bPast1 * 0.15,
+                    trans: transA1,
+                    clientes: Math.round(transA1 * 0.85)
                 } : null,
-                past2: heroPast2Sales > 0 ? { 
-                    ventas: heroPast2Sales, 
-                    ticket: ticketA2, 
-                    margen: heroPast2Sales * 0.15, 
-                    trans: transA2, 
-                    clientes: Math.round(transA2 * 0.85) 
+                past2: bPast2 > 0 ? {
+                    ventas: bPast2,
+                    ticket: ticketA2,
+                    margen: bPast2 * 0.15,
+                    trans: transA2,
+                    clientes: Math.round(transA2 * 0.85)
                 } : null,
-                pctYoY: heroPast1Sales > 0 ? ((heroActualSales - heroPast1Sales) / heroPast1Sales) * 100 : 0,
-            },
-            { 
-                nombre: "Recoleta", 
-                sharePct: totalActualVentas > 0 ? Math.round((recoActualSales / totalActualVentas) * 100) : 0,
-                actual: { 
-                    ventas: recoActualSales, 
-                    ticket: recoActualSales > 0 ? 25.00 : 0, 
-                    margen: recoActualSales * 0.15, 
-                    trans: recoActualSales > 0 ? Math.round(recoActualSales / 25.00) : 0, 
-                    clientes: recoActualSales > 0 ? Math.round((recoActualSales / 25.00) * 0.85) : 0 
-                },
-                past1: null,
-                past2: null,
-                pctYoY: 0,
-            },
-            { 
-                nombre: "Calacoto", 
-                sharePct: totalActualVentas > 0 ? Math.round((calaActualSales / totalActualVentas) * 100) : 0,
-                actual: { 
-                    ventas: calaActualSales, 
-                    ticket: calaActualSales > 0 ? 58.74 : 0, 
-                    margen: calaActualSales * 0.15, 
-                    trans: calaActualSales > 0 ? Math.round(calaActualSales / 58.74) : 0, 
-                    clientes: calaActualSales > 0 ? Math.round((calaActualSales / 58.74) * 0.85) : 0 
-                },
-                past1: null,
-                past2: null,
-                pctYoY: 0,
-            }
-        ];
-    }, [totalReal, totalAnio1, totalAnio2, sucursal, meta]);
+                pctYoY: pct
+            };
+        });
+    }, [tenantBranches, sucursal, totalReal, totalAnio1, totalAnio2, meta]);
 
     const SelectedIcon = ICON_MAP[selectedHoliday?.icon] || Calendar;
 
@@ -504,7 +486,7 @@ export default function SpecialDatesChart() {
                                     onChange={(e) => setSucursal(e.target.value)}
                                     className="pl-8 pr-8 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl font-bold text-xs text-slate-800 shadow-sm outline-none transition-all cursor-pointer appearance-none min-w-[170px]"
                                 >
-                                    {SUCURSALES.map(s => (
+                                    {sucursalesList.map(s => (
                                         <option key={s.value} value={s.value}>{s.label}</option>
                                     ))}
                                 </select>
@@ -664,6 +646,7 @@ export default function SpecialDatesChart() {
                             />
 
                             {/* TARJETAS EJECUTIVAS MULTI-AÑO POR SUCURSAL (CON RETORNO DE 'SIN ATENCIÓN' CUANDO CORRESPONDE) */}
+                            {branchesData.length > 0 && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                                     <Store size={18} className={currentTheme.accentText} />
@@ -750,6 +733,7 @@ export default function SpecialDatesChart() {
                                     ))}
                                 </div>
                             </div>
+                            )}
 
                         </div>
                     )}

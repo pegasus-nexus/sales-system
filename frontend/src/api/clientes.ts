@@ -35,3 +35,13 @@ export const deleteCliente = async (id: string) => {
     return await client<{ message: string }>(`/clientes/${id}`, { method: 'DELETE' });
 };
 
+export const getClienteByNit = async (nit: string): Promise<Cliente | null> => {
+    const cleanNit = nit.trim();
+    if (!cleanNit) return null;
+    try {
+        return await client<Cliente | null>(`/clientes/by-nit/${encodeURIComponent(cleanNit)}`);
+    } catch {
+        return null;
+    }
+};
+

@@ -1,7 +1,7 @@
 from typing import List, Optional
 import re
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from app.domain.models.user import User, UserRole
 from app.domain.models.sucursal import Sucursal, TipoSucursal
 from app.infrastructure.auth import get_current_active_user, get_password_hash, require_roles
@@ -79,8 +79,7 @@ class UserResponse(BaseModel):
     last_active_text: str = "Desconectado"
     created_at: Optional[datetime] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 def format_user_response(user: User) -> dict:

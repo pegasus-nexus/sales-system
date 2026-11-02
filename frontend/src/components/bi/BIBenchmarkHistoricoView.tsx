@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     RefreshCw, Download, Settings, Database, Calendar, Building2, BarChart3, HelpCircle, Lightbulb, Star, Info, Clock
 } from 'lucide-react';
+import { getBISucursales } from '../../api/biApi';
 
 import type {
     StoreKey, MetricKey, DayDetailData, StoreBenchmarkConfig
@@ -19,6 +20,22 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedStore, setSelectedStore] = useState<StoreKey>('consolidado');
     const [selectedMetric, setSelectedMetric] = useState<MetricKey>('ventas');
+    const [sucursalesOptions, setSucursalesOptions] = useState<{ id: string; name: string }[]>([
+        { id: 'consolidado', name: 'Todas las Sucursales (Consolidado)' }
+    ]);
+
+    useEffect(() => {
+        let mounted = true;
+        getBISucursales().then((list) => {
+            if (mounted && list && list.length > 0) {
+                setSucursalesOptions([
+                    { id: 'consolidado', name: 'Todas las Sucursales (Consolidado)' },
+                    ...list.map(s => ({ id: s.sucursal_id, name: s.nombre }))
+                ]);
+            }
+        }).catch(() => {});
+        return () => { mounted = false; };
+    }, []);
     const [activeModalDay, setActiveModalDay] = useState<DayDetailData | null>(null);
     const [isExplanationModalOpen, setIsExplanationModalOpen] = useState<boolean>(false);
 
@@ -285,10 +302,9 @@ export const BIBenchmarkHistoricoView: React.FC = () => {
                                             onChange={(e) => setSelectedStore(e.target.value as StoreKey)}
                                             className="bg-transparent text-indigo-950 font-black focus:outline-none cursor-pointer text-xs"
                                         >
-                                            <option value="consolidado">Todas las Sucursales (Consolidado)</option>
-                                            <option value="heroinas">Heroínas (Cochabamba)</option>
-                                            <option value="recoleta">Recoleta (Cochabamba)</option>
-                                            <option value="calacoto">Calacoto (La Paz)</option>
+                                            {sucursalesOptions.map(s => (
+                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                            ))}
                                         </select>
                                     </div>
 

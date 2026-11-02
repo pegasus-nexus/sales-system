@@ -123,7 +123,11 @@ class SalesService:
                                 "producto_id": item.producto_id,
                             }
                             if item_almacen_id == "default":
-                                inv_query["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                                inv_query["$or"] = [
+                                    {"almacen_id": "default"},
+                                    {"almacen_id": {"$exists": False}},
+                                    {"almacen_id": None},
+                                ]
                             else:
                                 inv_query["almacen_id"] = item_almacen_id
 
@@ -346,34 +350,47 @@ class SalesService:
                                 )
 
                         # Guardamos si hay cualquier tipo de intención o datos de contacto provistos
-                        if es_credito or es_factura or tiene_nit or tiene_razon_social or tiene_telefono or tiene_email:
-                            nombre = (sale.cliente.razon_social or "CONSUMIDOR FINAL").strip().upper()
+                        if es_credito or es_factura or tiene_nit or tiene_razon_social or tiene_telefono or tiene_email or sale.cliente_id:
+                            raw_nombre = (sale.cliente.razon_social or "").strip()
+                            nombre = raw_nombre if raw_nombre else ("CONSUMIDOR FINAL" if not tiene_nit else f"Cliente NIT {sale.cliente.nit.strip()}")
                             telf = (sale.cliente.telefono or "").strip() or None
                             nit_val = (sale.cliente.nit or "").strip() or None
                             
                             cliente_existente = None
-                            # 1. Buscar por NIT/CI primero si está provisto
-                            if nit_val:
+
+                            # 0. Priorizar si el cliente_id ya fue provisto desde el frontend
+                            if sale.cliente_id:
+                                try:
+                                    c_by_id = await Cliente.get(sale.cliente_id, session=session)
+                                    if c_by_id and c_by_id.tenant_id == sale.tenant_id and c_by_id.is_active:
+                                        cliente_existente = c_by_id
+                                except Exception:
+                                    cliente_existente = None
+
+                            # 1. Buscar por NIT/CI si está provisto
+                            if not cliente_existente and nit_val:
                                 cliente_existente = await Cliente.find_one({
                                     "tenant_id": sale.tenant_id,
                                     "nit_ci": nit_val,
                                     "is_active": True
                                 }, session=session)
                                 
-                            # 2. Si no se encontró por NIT/CI, buscar por nombre y teléfono
-                            if not cliente_existente and nombre and telf:
+                            # 2. Si no se encontró por NIT/CI, buscar por nombre y teléfono (case-insensitive)
+                            if not cliente_existente and raw_nombre and telf:
+                                import re
                                 cliente_existente = await Cliente.find_one({
                                     "tenant_id": sale.tenant_id,
-                                    "nombre": nombre,
+                                    "nombre": {"$regex": f"^{re.escape(raw_nombre)}$", "$options": "i"},
                                     "telefono": telf,
                                     "is_active": True
                                 }, session=session)
                                 
-                            # 3. Si no se encontró y no tiene teléfono, buscar por nombre único (si no es CONSUMIDOR FINAL)
-                            if not cliente_existente and nombre and nombre != "CONSUMIDOR FINAL" and not telf:
+                            # 3. Si no se encontró y no tiene teléfono, buscar por nombre único (si no es genérico)
+                            if not cliente_existente and raw_nombre and raw_nombre.upper() not in ["CONSUMIDOR FINAL", "SIN NOMBRE"] and not telf:
+                                import re
                                 cliente_existente = await Cliente.find_one({
                                     "tenant_id": sale.tenant_id,
-                                    "nombre": nombre,
+                                    "nombre": {"$regex": f"^{re.escape(raw_nombre)}$", "$options": "i"},
                                     "is_active": True
                                 }, session=session)
                                 
@@ -402,6 +419,12 @@ class SalesService:
                             else:
                                 # Actualizar datos si han cambiado y son válidos
                                 updated = False
+                                # Si el cliente existente tenía nombre genérico y ahora viene un nombre real, actualizarlo
+                                if raw_nombre and raw_nombre.upper() not in ["CONSUMIDOR FINAL", "SIN NOMBRE"]:
+                                    if cliente_existente.nombre.upper() in ["CONSUMIDOR FINAL", "SIN NOMBRE"] or cliente_existente.nombre.startswith("Cliente NIT"):
+                                        cliente_existente.nombre = raw_nombre
+                                        updated = True
+                                        
                                 if sale.cliente.is_miembro_comunidad and not cliente_existente.is_miembro_comunidad:
                                     cliente_existente.is_miembro_comunidad = True
                                     random_code = ''.join(random.choices(string.digits, k=6))

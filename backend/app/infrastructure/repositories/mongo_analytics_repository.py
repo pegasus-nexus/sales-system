@@ -1,26 +1,30 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+import re
 from bson import ObjectId
 
 from app.domain.repositories.analytics_repository import AnalyticsRepository
 from app.db import get_raw_db
 from app.utils.date_utils import get_range_bolivia
 
-DEFAULT_TENANT_ID = "69cd7f0a8f3f6866d4cfbb62"
 
 class MongoAnalyticsRepository(AnalyticsRepository):
     """
     Implementación de AnalyticsRepository usando PyMongo directamente (raw_db).
+    Aislamiento estricto de Tenant: nunca comparte datos entre empresas distintas.
     Garantiza cobertura 100% de la zona horaria de Bolivia (-04:00) para no recortar ventas nocturnas.
     """
 
     async def _get_db(self):
         return await get_raw_db()
 
-    def _resolve_tenant_id(self, tenant_id: Optional[str]) -> str:
-        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", ""]:
-            return DEFAULT_TENANT_ID
-        return tenant_id
+    def _resolve_tenant_conditions(self, tenant_id: Optional[str]) -> Optional[List[Any]]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return None
+        conds = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            conds.append(ObjectId(tenant_id))
+        return conds
 
     def _sanitize_dates(self, start_date: datetime, end_date: datetime) -> tuple[datetime, datetime]:
         """
@@ -42,22 +46,9 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         if ObjectId.is_valid(sucursal_id):
             or_conditions.append({"sucursal_id": ObjectId(sucursal_id)})
             or_conditions.append({"sucursal_id": str(sucursal_id)})
-
-        s_lower = sucursal_id.lower()
-        if "hero" in s_lower:
-            or_conditions.append({"sucursal_nombre": {"$regex": "Hero", "$options": "i"}})
-            or_conditions.append({"sucursal_id": "69cd80098f3f6866d4cfbb64"})
-            or_conditions.append({"sucursal_id": ObjectId("69cd80098f3f6866d4cfbb64")})
-        elif "recoleta" in s_lower:
-            or_conditions.append({"sucursal_nombre": {"$regex": "Recoleta", "$options": "i"}})
-            or_conditions.append({"sucursal_id": "69cd84c58f3f6866d4cfbc8b"})
-            or_conditions.append({"sucursal_id": ObjectId("69cd84c58f3f6866d4cfbc8b")})
-        elif "calacoto" in s_lower:
-            or_conditions.append({"sucursal_nombre": {"$regex": "Calacoto", "$options": "i"}})
-            or_conditions.append({"sucursal_id": "69ce6b7e8a00124dac6ecc99"})
-            or_conditions.append({"sucursal_id": ObjectId("69ce6b7e8a00124dac6ecc99")})
         else:
-            or_conditions.append({"sucursal_id": sucursal_id})
+            or_conditions.append({"sucursal_id": str(sucursal_id)})
+            or_conditions.append({"sucursal_nombre": {"$regex": f"^{re.escape(sucursal_id)}$", "$options": "i"}})
 
         return {"$or": or_conditions}
 
@@ -68,12 +59,15 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         end_date: datetime,
         sucursal_id: Optional[str] = None
     ) -> Dict[str, Any]:
+        tenant_conds = self._resolve_tenant_conditions(tenant_id)
+        if not tenant_conds:
+            return {"total_ventas": 0.0, "cantidad_ventas": 0}
+
         db = await self._get_db()
-        t_id = self._resolve_tenant_id(tenant_id)
         s_dt, e_dt = self._sanitize_dates(start_date, end_date)
 
         match_stage: Dict[str, Any] = {
-            "tenant_id": t_id,
+            "tenant_id": {"$in": tenant_conds},
             "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
@@ -106,12 +100,15 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         end_date: datetime,
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
+        tenant_conds = self._resolve_tenant_conditions(tenant_id)
+        if not tenant_conds:
+            return []
+
         db = await self._get_db()
-        t_id = self._resolve_tenant_id(tenant_id)
         s_dt, e_dt = self._sanitize_dates(start_date, end_date)
 
         match_stage: Dict[str, Any] = {
-            "tenant_id": t_id,
+            "tenant_id": {"$in": tenant_conds},
             "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
@@ -142,12 +139,15 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         end_date: datetime,
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
+        tenant_conds = self._resolve_tenant_conditions(tenant_id)
+        if not tenant_conds:
+            return []
+
         db = await self._get_db()
-        t_id = self._resolve_tenant_id(tenant_id)
         s_dt, e_dt = self._sanitize_dates(start_date, end_date)
 
         match_stage: Dict[str, Any] = {
-            "tenant_id": t_id,
+            "tenant_id": {"$in": tenant_conds},
             "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }
@@ -175,12 +175,15 @@ class MongoAnalyticsRepository(AnalyticsRepository):
         end_date: datetime,
         sucursal_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
+        tenant_conds = self._resolve_tenant_conditions(tenant_id)
+        if not tenant_conds:
+            return []
+
         db = await self._get_db()
-        t_id = self._resolve_tenant_id(tenant_id)
         s_dt, e_dt = self._sanitize_dates(start_date, end_date)
 
         match_stage: Dict[str, Any] = {
-            "tenant_id": t_id,
+            "tenant_id": {"$in": tenant_conds},
             "created_at": {"$gte": s_dt, "$lte": e_dt},
             "anulada": {"$ne": True}
         }

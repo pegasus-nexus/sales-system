@@ -38,14 +38,18 @@ class MongoBIRepository(BIRepository):
         )
 
     async def get_sucursales(self, tenant_id: str) -> List[Dict[str, Any]]:
-        db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_deleted": {"$ne": True}}
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
 
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            tenant_conditions = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                tenant_conditions.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": tenant_conditions}
+        db = await get_raw_db()
+        tenant_conditions = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            tenant_conditions.append(ObjectId(tenant_id))
+
+        filter_query: Dict[str, Any] = {
+            "is_deleted": {"$ne": True},
+            "tenant_id": {"$in": tenant_conditions}
+        }
 
         cursor = db.sucursales.find(filter_query)
         docs = await cursor.to_list(length=None)
@@ -64,9 +68,9 @@ class MongoBIRepository(BIRepository):
                 "direccion": d.get("direccion", "")
             })
 
-        # Incluir sucursales presentes en las ventas para soporte integral de datos históricos y en vivo
+        # Incluir sucursales presentes en las ventas EXCLUSIVAMENTE del mismo tenant
         try:
-            distinct_sucs = await db.sales.distinct("sucursal_id")
+            distinct_sucs = await db.sales.distinct("sucursal_id", {"tenant_id": {"$in": tenant_conditions}})
             for ds in distinct_sucs:
                 if ds and str(ds).lower() not in seen_keys and str(ds).upper() not in ["NONE", "NULL"]:
                     s_str = str(ds)
@@ -83,14 +87,18 @@ class MongoBIRepository(BIRepository):
         return result
 
     async def get_products_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
-        db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
 
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            tenant_conditions = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                tenant_conditions.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": tenant_conditions}
+        db = await get_raw_db()
+        tenant_conditions = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            tenant_conditions.append(ObjectId(tenant_id))
+
+        filter_query: Dict[str, Any] = {
+            "is_active": {"$ne": False},
+            "tenant_id": {"$in": tenant_conditions}
+        }
 
         cursor = db.products.find(filter_query)
         docs = await cursor.to_list(length=None)
@@ -105,14 +113,18 @@ class MongoBIRepository(BIRepository):
         return res
 
     async def get_categories_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
-        db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
 
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            tenant_conditions = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                tenant_conditions.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": tenant_conditions}
+        db = await get_raw_db()
+        tenant_conditions = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            tenant_conditions.append(ObjectId(tenant_id))
+
+        filter_query: Dict[str, Any] = {
+            "is_active": {"$ne": False},
+            "tenant_id": {"$in": tenant_conditions}
+        }
 
         cursor = db.categories.find(filter_query)
         docs = await cursor.to_list(length=None)

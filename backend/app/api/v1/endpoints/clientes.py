@@ -130,6 +130,31 @@ async def crear_cliente(
     return cliente
 
 
+@router.get("/clientes/by-nit/{nit}", response_model=Optional[ClienteResponse])
+async def obtener_cliente_por_nit(
+    nit: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    tenant_id = current_user.tenant_id or "default"
+    nit_clean = nit.strip()
+    if not nit_clean:
+        return None
+
+    import re
+    nit_digits = re.sub(r"\D", "", nit_clean)
+    conditions = [{"nit_ci": nit_clean}]
+    if nit_digits and nit_digits != nit_clean:
+        conditions.append({"nit_ci": nit_digits})
+
+    query = {
+        "tenant_id": tenant_id,
+        "is_active": True,
+        "$or": conditions
+    }
+    cliente = await Cliente.find(query).sort("-created_at").first_or_none()
+    return cliente
+
+
 @router.get("/clientes/{cliente_id}", response_model=ClienteResponse)
 async def obtener_cliente(
     cliente_id: str,

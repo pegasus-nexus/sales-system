@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 
 from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, SubtipoMovimiento
@@ -34,7 +34,7 @@ async def test_apertura_caja_model(mock_user):
             cajero_name=mock_user.username,
             monto_inicial=DecimalMoney("150.50"),
             estado=EstadoSesion.ABIERTA,
-            abierta_at=datetime.utcnow()
+            abierta_at=datetime.now(timezone.utc)
         )
         
         assert sesion.estado == EstadoSesion.ABIERTA

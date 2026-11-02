@@ -101,7 +101,11 @@ class SalesAnulacionService:
                                 "producto_id": item.producto_id,
                             }
                             if item_almacen_id_anul == "default":
-                                inv_query_anul["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                                inv_query_anul["$or"] = [
+                                    {"almacen_id": "default"},
+                                    {"almacen_id": {"$exists": False}},
+                                    {"almacen_id": None},
+                                ]
                             else:
                                 inv_query_anul["almacen_id"] = item_almacen_id_anul
 
@@ -267,7 +271,11 @@ class SalesAnulacionService:
                                     "producto_id": item.producto_id,
                                 }
                                 if sale.almacen_id == "default":
-                                    inv_query_corr["$or"] = [{"almacen_id": "default"}, {"almacen_id": {"$exists": False}}]
+                                    inv_query_corr["$or"] = [
+                                        {"almacen_id": "default"},
+                                        {"almacen_id": {"$exists": False}},
+                                        {"almacen_id": None},
+                                    ]
                                 else:
                                     inv_query_corr["almacen_id"] = sale.almacen_id
 

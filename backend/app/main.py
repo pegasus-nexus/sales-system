@@ -28,7 +28,26 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("Database initialized successfully.", flush=True)
     
+    # Iniciar worker en segundo plano para monitorizar servicios cada minuto
+    import asyncio
+    from app.application.services.system_monitor_service import SystemMonitorService
+
+    async def periodic_monitor_worker():
+        monitor = SystemMonitorService()
+        while True:
+            try:
+                await asyncio.sleep(settings.STATUS_PAGE_PROBE_INTERVAL_SECONDS)
+                await monitor.probe_all_services()
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                print(f"[SystemMonitorWorker] Advertencia en ciclo de sondeo: {exc}")
+
+    worker_task = asyncio.create_task(periodic_monitor_worker())
+    
     yield
+    
+    worker_task.cancel()
 
 app = FastAPI(
     lifespan=lifespan,

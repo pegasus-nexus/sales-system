@@ -73,14 +73,16 @@ class MongoProductosRepository:
         return await cursor.to_list(length=None)
 
     async def get_products_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
-
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {
+            "is_active": {"$ne": False},
+            "tenant_id": {"$in": t_cond}
+        }
 
         cursor = db.products.find(filter_query)
         docs = await cursor.to_list(length=None)
@@ -95,14 +97,16 @@ class MongoProductosRepository:
         return res
 
     async def get_categories_dim(self, tenant_id: str) -> List[Dict[str, Any]]:
+        if not tenant_id or str(tenant_id).lower() in ["none", "null", "undefined", "", "default"]:
+            return []
         db = await get_raw_db()
-        filter_query: Dict[str, Any] = {"is_active": {"$ne": False}}
-
-        if tenant_id and tenant_id not in ["all", "test-taboada", "None", "default", ""]:
-            t_cond = [str(tenant_id)]
-            if ObjectId.is_valid(tenant_id):
-                t_cond.append(ObjectId(tenant_id))
-            filter_query["tenant_id"] = {"$in": t_cond}
+        t_cond = [str(tenant_id)]
+        if ObjectId.is_valid(tenant_id):
+            t_cond.append(ObjectId(tenant_id))
+        filter_query: Dict[str, Any] = {
+            "is_active": {"$ne": False},
+            "tenant_id": {"$in": t_cond}
+        }
 
         cursor = db.categories.find(filter_query)
         docs = await cursor.to_list(length=None)

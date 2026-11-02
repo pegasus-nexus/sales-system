@@ -1,11 +1,13 @@
-from pydantic import BaseModel, root_validator
-from typing import List, Optional, Literal
+from typing import List, Literal, Optional
+from pydantic import BaseModel
+
 
 class PagoCreditoItemIn(BaseModel):
     metodo: Literal["EFECTIVO", "QR", "TARJETA", "TRANSFERENCIA"]
     monto: float
     banco: Optional[str] = None
     referencia: Optional[str] = None
+
 
 class AbonoRequestIn(BaseModel):
     """
@@ -14,6 +16,7 @@ class AbonoRequestIn(BaseModel):
     pagos: List[PagoCreditoItemIn]
     deuda_id: Optional[str] = None
     notas: Optional[str] = None
+
 
 class DeudaResponse(BaseModel):
     id: str
@@ -24,8 +27,8 @@ class DeudaResponse(BaseModel):
     saldo_pendiente: float
     fecha_emision: str
     estado: str
-    # Info de cliente / Venta puede agregarse vía agregación o en frontend
-    
+
+
 class TransaccionCreditoResponse(BaseModel):
     id: str
     tipo: str
@@ -36,18 +39,54 @@ class TransaccionCreditoResponse(BaseModel):
     created_at: str
     notas: Optional[str] = None
 
+
 class CuentaCreditoResponse(BaseModel):
     id: str
     cliente_id: str
     saldo_total: float
+    limite_credito: Optional[float] = None
     estado_cuenta: str
     created_at: str
     cliente_nombre: Optional[str] = None
     cliente_nit: Optional[str] = None
     cliente_telefono: Optional[str] = None
 
+
 class CuentasCreditoPaginated(BaseModel):
     items: List[CuentaCreditoResponse]
     total: int
     page: int
     pages: int
+
+
+class CreditoResumenKPIs(BaseModel):
+    total_cartera_por_cobrar: float
+    total_cuentas: int
+    total_cuentas_morosas: int
+    total_cuentas_al_dia: int
+    total_abonado_hoy: float
+
+
+class ClienteSimilarMatch(BaseModel):
+    cliente_id: str
+    nombre: str
+    nit_ci: Optional[str] = None
+    telefono: Optional[str] = None
+    score_similitud: float  # Porcentaje entre 0.0 y 1.0 (ej. 0.85 = 85%)
+    tiene_cuenta_credito: bool = False
+    saldo_pendiente: float = 0.0
+
+
+class VerificarSimilarIn(BaseModel):
+    nombre: str
+    nit_ci: Optional[str] = None
+    telefono: Optional[str] = None
+
+
+class CrearCuentaCreditoIn(BaseModel):
+    cliente_id: Optional[str] = None  # Si ya existe en Cliente
+    nombre: Optional[str] = None      # Si se creará un cliente nuevo
+    nit_ci: Optional[str] = None
+    telefono: Optional[str] = None
+    limite_credito: Optional[float] = None
+    confirmar_similar: bool = False   # Permite forzar creación si había advertencia

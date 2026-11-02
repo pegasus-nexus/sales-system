@@ -7,6 +7,8 @@ from app.domain.models.tenant import Tenant, PlanType
 from app.domain.models.plan import Plan
 from app.domain.models.plan_feature import PlanFeature
 from app.domain.models.user import User, UserRole
+from app.domain.models.sucursal import Sucursal, TipoSucursal
+from app.domain.models.almacen import Almacen, TipoAlmacen
 from app.domain.models.product import Product
 from app.domain.models.sale import Sale
 from app.infrastructure.auth import get_current_active_user, get_password_hash, require_roles
@@ -185,14 +187,34 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
     )
     await tenant.create()
 
-    # Create Admin User for Tenant
+    # Auto-aprovisionamiento estilo Odoo: Casa Matriz y Almacén Principal inicial
+    matriz_sucursal = Sucursal(
+        tenant_id=str(tenant.id),
+        nombre="Casa Matriz",
+        ciudad="Cochabamba",
+        direccion="Sede Principal",
+        tipo=TipoSucursal.FISICA,
+    )
+    await matriz_sucursal.create()
+
+    almacen_principal = Almacen(
+        tenant_id=str(tenant.id),
+        sucursal_id=str(matriz_sucursal.id),
+        nombre="Almacén Principal",
+        tipo=TipoAlmacen.GENERAL,
+        is_default=True
+    )
+    await almacen_principal.create()
+
+    # Create Admin User for Tenant con sucursal por defecto asignada
     hashed_password = get_password_hash(tenant_in.admin_password)
     admin_user = User(
         username=admin_username_lower,
         email=admin_username_lower,
         hashed_password=hashed_password,
-        role=UserRole.ADMIN,
+        role=UserRole.ADMIN_MATRIZ,
         tenant_id=str(tenant.id),
+        sucursal_id=None,  # Matriz level (multi-sucursal global access)
         full_name=f"Admin {tenant.name}"
     )
     await admin_user.create()
@@ -427,6 +449,7 @@ class WhatsAppSettingsUpdate(BaseModel):
     default_message: Optional[str] = None
 
 class TenantSettingsUpdate(BaseModel):
+    slug: Optional[str] = None
     ticket_footer: Optional[str] = None
     report_watermark: Optional[str] = None
     logo_base64: Optional[str] = None
@@ -435,6 +458,12 @@ class TenantSettingsUpdate(BaseModel):
     brand_color: Optional[str] = None
     margen_distribuidor: Optional[float] = None
     whatsapp: Optional[WhatsAppSettingsUpdate] = None
+    login_bg_image: Optional[str] = None
+    login_primary_color: Optional[str] = None
+    login_secondary_color: Optional[str] = None
+    login_headline: Optional[str] = None
+    login_description: Optional[str] = None
+    login_badge_text: Optional[str] = None
 
 @router.get("/tenants/me", response_model=Tenant)
 async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
@@ -476,6 +505,30 @@ async def update_my_tenant_settings(
         tenant.settings.brand_color = settings_in.brand_color
     if settings_in.margen_distribuidor is not None:
         tenant.settings.margen_distribuidor = settings_in.margen_distribuidor
+    if settings_in.slug is not None and settings_in.slug.strip():
+        clean_slug = re.sub(r'[^a-z0-9-]', '', settings_in.slug.strip().lower())
+        existing = await Tenant.find_one({"slug": clean_slug})
+        if existing and str(existing.id) != str(tenant.id):
+            raise HTTPException(status_code=400, detail=f"El slug '{clean_slug}' ya está en uso por otra empresa.")
+        tenant.slug = clean_slug
+    elif not tenant.slug and tenant.name:
+        import unicodedata
+        base_slug = unicodedata.normalize('NFKD', tenant.name).encode('ASCII', 'ignore').decode('utf-8').lower()
+        tenant.slug = re.sub(r'[^a-z0-9]+', '-', base_slug).strip('-')
+
+    if settings_in.login_bg_image is not None:
+        tenant.settings.login_bg_image = settings_in.login_bg_image
+    if settings_in.login_primary_color is not None:
+        tenant.settings.login_primary_color = settings_in.login_primary_color
+    if settings_in.login_secondary_color is not None:
+        tenant.settings.login_secondary_color = settings_in.login_secondary_color
+    if settings_in.login_headline is not None:
+        tenant.settings.login_headline = settings_in.login_headline
+    if settings_in.login_description is not None:
+        tenant.settings.login_description = settings_in.login_description
+    if settings_in.login_badge_text is not None:
+        tenant.settings.login_badge_text = settings_in.login_badge_text
+
     if settings_in.whatsapp is not None:
         if settings_in.whatsapp.enabled is not None:
             tenant.settings.whatsapp.enabled = settings_in.whatsapp.enabled

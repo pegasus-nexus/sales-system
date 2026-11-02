@@ -209,9 +209,11 @@ class SalesReadService:
 
             cleaned_sales.append(doc)
 
-        # Si la consulta corresponde a períodos históricos (2024 o 2025) y la base de datos
-        # está vacía o contiene datos sintéticos de prueba, cargar los hechos limpios certificados.
-        if start_date_str.lower() not in ["all", "historial", "todo", ""]:
+        # Hechos históricos certificados (2024 o 2025): EXCLUSIVOS para el tenant original Taboada.
+        # NUNCA inyectar ventas de Taboada a otras empresas del sistema.
+        user_tenant = str(user.tenant_id) if getattr(user, "tenant_id", None) else ""
+        is_taboada = user_tenant in ["69cd7f0a8f3f6866d4cfbb62", "taboada"]
+        if is_taboada and start_date_str.lower() not in ["all", "historial", "todo", ""]:
             try:
                 s_year = int(start_date_str[:4])
                 if s_year <= 2025 and (len(cleaned_sales) == 0 or any(d.get("total") == 625.0 for d in cleaned_sales)):

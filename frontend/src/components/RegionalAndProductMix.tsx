@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAnalyticsDashboard } from '../api/api';
+import { getBISucursales } from '../api/biApi';
 import {
     ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip,
 } from 'recharts';
@@ -15,8 +16,6 @@ const formatBs = (value: number) => {
         maximumFractionDigits: 2
     })}`;
 };
-
-const OFFICIAL_BRANCHES = ['Heroínas', 'Recoleta', 'Calacoto'];
 
 const MESES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -37,27 +36,74 @@ const BRANCH_PALETTES: Record<string, {
         name: 'Heroínas',
         badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         badgeText: 'text-emerald-800',
-        color: '#059669', // Verde Pastel
-        colorLight: '#94a3b8', // Gris Claro para período anterior
+        color: '#059669',
+        colorLight: '#94a3b8',
         dotBg: 'bg-emerald-500'
     },
     'Recoleta': {
         name: 'Recoleta',
         badgeBg: 'bg-sky-50 text-sky-800 border-sky-200',
         badgeText: 'text-sky-800',
-        color: '#0284c7', // Azul Pastel
-        colorLight: '#94a3b8', // Gris Claro para período anterior
+        color: '#0284c7',
+        colorLight: '#94a3b8',
         dotBg: 'bg-sky-500'
     },
     'Calacoto': {
         name: 'Calacoto',
         badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
         badgeText: 'text-amber-800',
-        color: '#d97706', // Naranja Pastel
-        colorLight: '#94a3b8', // Gris Claro para período anterior
+        color: '#d97706',
+        colorLight: '#94a3b8',
         dotBg: 'bg-amber-500'
     }
 };
+
+const DEFAULT_PALETTES = [
+    {
+        badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+        badgeText: 'text-emerald-800',
+        color: '#059669',
+        colorLight: '#94a3b8',
+        dotBg: 'bg-emerald-500'
+    },
+    {
+        badgeBg: 'bg-sky-50 text-sky-800 border-sky-200',
+        badgeText: 'text-sky-800',
+        color: '#0284c7',
+        colorLight: '#94a3b8',
+        dotBg: 'bg-sky-500'
+    },
+    {
+        badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
+        badgeText: 'text-amber-800',
+        color: '#d97706',
+        colorLight: '#94a3b8',
+        dotBg: 'bg-amber-500'
+    },
+    {
+        badgeBg: 'bg-purple-50 text-purple-800 border-purple-200',
+        badgeText: 'text-purple-800',
+        color: '#7c3aed',
+        colorLight: '#94a3b8',
+        dotBg: 'bg-purple-500'
+    },
+    {
+        badgeBg: 'bg-rose-50 text-rose-800 border-rose-200',
+        badgeText: 'text-rose-800',
+        color: '#e11d48',
+        colorLight: '#94a3b8',
+        dotBg: 'bg-rose-500'
+    }
+];
+
+function getBranchPalette(name: string, index: number) {
+    if (BRANCH_PALETTES[name]) return BRANCH_PALETTES[name];
+    const base = DEFAULT_PALETTES[index % DEFAULT_PALETTES.length];
+    return {
+        ...base,
+        name
+    };
+}
 
 function getMonday(d: Date) {
     const c = new Date(d);
@@ -82,6 +128,30 @@ export default function RegionalAndProductMix() {
 
     const [resConsultaA, setResConsultaA] = useState<any>(null);
     const [resConsultaB, setResConsultaB] = useState<any>(null);
+    const [tenantBranches, setTenantBranches] = useState<string[]>([]);
+
+    useEffect(() => {
+        let mounted = true;
+        getBISucursales().then((list) => {
+            if (mounted && list && list.length > 0) {
+                setTenantBranches(list.map(s => s.nombre || s.sucursal_id));
+            } else if (mounted) {
+                setTenantBranches([]);
+            }
+        }).catch(() => {
+            if (mounted) setTenantBranches([]);
+        });
+        return () => { mounted = false; };
+    }, []);
+
+    const effectiveBranches = useMemo(() => {
+        if (tenantBranches.length > 0) return tenantBranches;
+        if (resConsultaA?.desgloseSucursales) {
+            const keys = Object.keys(resConsultaA.desgloseSucursales).filter(k => k && k.trim() !== "");
+            if (keys.length > 0) return keys;
+        }
+        return [];
+    }, [tenantBranches, resConsultaA]);
 
     // Calcular las fechas exactas ISO de inicio y fin para Consulta A (Actual) y Consulta B (Comparación)
     const datesBoundaries = useMemo(() => {
@@ -223,13 +293,6 @@ export default function RegionalAndProductMix() {
             console.log("PERIODO CONSULTADO B (Comparación):", datesBoundaries.startB, "a", datesBoundaries.endB);
             console.log("MONGO DASHBOARD RESPONSE A:", resA);
             console.log("MONGO DASHBOARD RESPONSE B:", resB);
-            OFFICIAL_BRANCHES.forEach(bName => {
-                const mA = extractMetrics(resA, bName);
-                const mB = extractMetrics(resB, bName);
-                console.log(`>>> SUCURSAL ${bName.toUpperCase()}:`);
-                console.log(`   [ACTUAL] Ventas: ${mA.ventas} | Trans: ${mA.transacciones} | Clientes: ${mA.clientes} | Ticket: ${mA.ticket} | Margen: ${mA.margen}`);
-                console.log(`   [COMPARADO] Ventas: ${mB.ventas} | Trans: ${mB.transacciones} | Clientes: ${mB.clientes} | Ticket: ${mB.ticket} | Margen: ${mB.margen}`);
-            });
             console.log("=================================================");
         } catch (e) {
             console.error("Error fetching branch performance using official SSOT pipeline:", e);
@@ -243,15 +306,17 @@ export default function RegionalAndProductMix() {
         fetchData();
     }, [fetchData]);
 
-    // Procesar datos comparativos para las 3 sucursales oficiales
+    // Procesar datos comparativos para las sucursales reales del tenant
     const branchesProcessed = useMemo(() => {
-        const dataA = OFFICIAL_BRANCHES.map(bName => extractMetrics(resConsultaA, bName));
-        const dataB = OFFICIAL_BRANCHES.map(bName => extractMetrics(resConsultaB, bName));
+        if (effectiveBranches.length === 0) return [];
+
+        const dataA = effectiveBranches.map(bName => extractMetrics(resConsultaA, bName));
+        const dataB = effectiveBranches.map(bName => extractMetrics(resConsultaB, bName));
 
         const totalSalesAll = dataA.reduce((sum, item) => sum + item.ventas, 0);
 
-        return OFFICIAL_BRANCHES.map((bName, idx) => {
-            const palette = BRANCH_PALETTES[bName] || BRANCH_PALETTES['Heroínas'];
+        return effectiveBranches.map((bName, idx) => {
+            const palette = getBranchPalette(bName, idx);
             const mA = dataA[idx];
             const mB = dataB[idx];
 
@@ -278,7 +343,7 @@ export default function RegionalAndProductMix() {
                 sharePct
             };
         });
-    }, [resConsultaA, resConsultaB, extractMetrics]);
+    }, [effectiveBranches, resConsultaA, resConsultaB, extractMetrics]);
 
     // Ordenar ranking por ventas descendente
     const rankingSorted = useMemo(() => {
@@ -287,13 +352,13 @@ export default function RegionalAndProductMix() {
 
     const hasData = branchesProcessed.some(b => b.hasSales);
 
-    // 3 KPIs Superiores
-    const topSalesBranch = rankingSorted[0] || branchesProcessed[0];
+    // 3 KPIs Superiores (protegidos ante tenant sin sucursales)
+    const topSalesBranch = rankingSorted[0] || { nombre: 'Sin datos', ventas: 0 };
     const topGrowthBranch = useMemo(() => {
-        return [...branchesProcessed].sort((a, b) => b.pctYoY - a.pctYoY)[0] || branchesProcessed[0];
+        return [...branchesProcessed].sort((a, b) => b.pctYoY - a.pctYoY)[0] || { nombre: 'Sin datos', pctYoY: 0 };
     }, [branchesProcessed]);
     const topMarginBranch = useMemo(() => {
-        return [...branchesProcessed].sort((a, b) => b.margen - a.margen)[0] || branchesProcessed[0];
+        return [...branchesProcessed].sort((a, b) => b.margen - a.margen)[0] || { nombre: 'Sin datos', margen: 0 };
     }, [branchesProcessed]);
 
     const maxSalesVal = Math.max(...branchesProcessed.flatMap(b => [b.ventas, b.ventasPrev]), 1);
@@ -398,6 +463,12 @@ export default function RegionalAndProductMix() {
             ) : isError ? (
                 <div className="flex items-center justify-center py-10 text-rose-500 text-xs font-bold bg-rose-50 rounded-2xl border border-rose-100 gap-2">
                     <AlertTriangle size={18} /> Error cargando comparativa por sucursal.
+                </div>
+            ) : branchesProcessed.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-200 rounded-3xl space-y-2">
+                    <Store className="mx-auto text-slate-300" size={36} />
+                    <p className="text-sm font-black text-slate-700">Sin sucursales registradas</p>
+                    <p className="text-slate-400 font-medium">Esta empresa aún no cuenta con sucursales configuradas en el sistema.</p>
                 </div>
             ) : (
                 <div className="space-y-6">

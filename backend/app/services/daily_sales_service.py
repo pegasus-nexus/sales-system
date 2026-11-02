@@ -25,8 +25,8 @@ async def get_official_daily_sales(
     excluyendo tickets anulados. Usa PyMongo raw para máxima tolerancia a esquemas históricos.
     """
     db = await get_raw_db()
-    if not tenant_id or tenant_id == "default":
-        tenant_id = "69cd7f0a8f3f6866d4cfbb62"
+    if not tenant_id or tenant_id in ["default", "None", ""]:
+        return {"total_ventas": 0.0, "cantidad_ordenes": 0, "ticket_medio": 0.0, "sucursales": []}
 
     # 1. Mapeo de sucursales del tenant
     sucursales = await db.sucursales.find({"tenant_id": tenant_id}).to_list(length=None)

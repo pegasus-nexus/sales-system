@@ -15,7 +15,7 @@ import { useAuthStore } from '../store/authStore';
 
 import type {
 
-    Tenant, TenantCreate, TenantUpdate, TenantSettings,
+    Tenant, TenantCreate, TenantUpdate, TenantSettings, LoginBrandingResponse,
 
     Product, ProductCreate,
 
@@ -1716,6 +1716,26 @@ export const deleteCliente = (id: string) =>
 
 
 
+export const getClienteByNit = async (nit: string): Promise<any | null> => {
+
+    const cleanNit = nit.trim();
+
+    if (!cleanNit) return null;
+
+    try {
+
+        return await client<any | null>(`/clientes/by-nit/${encodeURIComponent(cleanNit)}`);
+
+    } catch {
+
+        return null;
+
+    }
+
+};
+
+
+
 // â”€â”€ Listas de Precios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const getSesionesCaja = () => client<unknown[]>(`/caja/sesiones`);
@@ -1745,6 +1765,44 @@ export const deleteListaPrecioItem = (lista_id: string, item_id: string) => clie
 
 
 // â”€â”€ GestiÃ³n de CrÃ©ditos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export const getCreditosResumen = () => {
+    return client<{
+        total_cartera_por_cobrar: number;
+        total_cuentas: number;
+        total_cuentas_morosas: number;
+        total_cuentas_al_dia: number;
+        total_abonado_hoy: number;
+    }>('/creditos/resumen');
+};
+
+export const verificarClienteSimilar = (data: { nombre: string; nit_ci?: string; telefono?: string }) => {
+    return client<Array<{
+        cliente_id: string;
+        nombre: string;
+        nit_ci?: string;
+        telefono?: string;
+        score_similitud: number;
+        tiene_cuenta_credito: boolean;
+        saldo_pendiente: number;
+    }>>('/creditos/verificar-similar', { method: 'POST', body: data });
+};
+
+export const crearCuentaCredito = (data: {
+    cliente_id?: string;
+    nombre?: string;
+    nit_ci?: string;
+    telefono?: string;
+    limite_credito?: number;
+    confirmar_similar?: boolean;
+}) => {
+    return client<{
+        message: string;
+        cuenta_id: string;
+        cliente_id?: string;
+        saldo_total: number;
+    }>('/creditos/cuentas', { method: 'POST', body: data });
+};
 
 export const getCuentasCredito = (q?: string, estado?: string, page: number = 1, limit: number = 50) => {
 
@@ -2198,3 +2256,8 @@ export const convertirCotizacionAVenta = (id: string, metodoPago: string = 'EFEC
         method: 'POST',
         body: { metodo_pago: metodoPago }
     });
+
+export const getLoginBranding = async (slug?: string): Promise<LoginBrandingResponse> => {
+    const query = slug ? `?slug=${encodeURIComponent(slug)}` : '';
+    return client<LoginBrandingResponse>(`/auth/login-branding${query}`);
+};

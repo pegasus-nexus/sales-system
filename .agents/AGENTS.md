@@ -20,6 +20,34 @@ Este documento define las directrices y normas que todos los agentes de IA (incl
    - Para operaciones que afecten a múltiples colecciones (por ejemplo: registrar una venta y restar stock del inventario), se debe implementar el patrón **Unit of Work (UoW)** para garantizar consistencia ACID mediante transacciones de MongoDB.
    - Respetar los principios SOLID en todo momento (responsabilidad única por archivo/clase).
 
+4. **Matriz de Evaluación de Patrones de Diseño (Obligatorio en Nuevas Features o Refactorizaciones):**
+   Antes de programar una nueva funcionalidad o refactorizar un módulo, el agente DEBE evaluar si amerita aplicar uno de los siguientes patrones según el problema concreto:
+   
+   - **Patrones Creacionales:**
+     * `Factory Method`: Úsalo cuando necesites instanciar un proveedor intercambiable (ej. WhatsApp GreenAPI vs UltraMsg vs Mock) sin acoplar la capa de aplicación.
+     * `Abstract Factory`: Úsalo si manejas familias completas de objetos dependientes (ej. localización fiscal Bolivia SIAT vs Perú SUNAT: Validador + Firmador + Emisor).
+     * `Builder`: Úsalo al construir objetos o consultas con múltiples pasos opcionales, validaciones intermedias o cálculos progresivos (ej. armado complejo de venta multi-pago o queries dinámicas de BI).
+     * `Singleton`: Solo para conexiones a BD o clientes compartidos de infraestructura (ej. DB Client pool). Evitar para estado de negocio.
+     * `Prototype`: Clonación profunda de configuraciones complejas o plantillas (ej. clonar recetas o planes).
+
+   - **Patrones Estructurales:**
+     * `Adapter`: Cuando integres APIs de terceros o formatos legacy para adaptarlos a las interfaces internas del dominio sin modificar código existente.
+     * `Bridge`: Para desacoplar una abstracción de su implementación si ambas crecen por separado (ej. Reportes abstractos desacoplados de sus motores de renderizado PDF/Excel).
+     * `Composite`: Estructuras jerárquicas o en árbol (ej. combos/packs de productos con sub-recetas y categorías multinivel).
+     * `Decorator`: Envolver operaciones para agregar responsabilidades transversales (ej. logging, telemetría, caching con Redis, auditoría).
+     * `Facade`: Simplificar subsistemas muy complejos exponiendo una interfaz única de alto nivel a los endpoints.
+     * `Proxy`: Control de acceso, lazy-loading de datos costosos o rate limiting por tenant.
+
+   - **Patrones de Comportamiento:**
+     * `Strategy`: Cuando existan múltiples algoritmos para una misma tarea y deban intercambiarse en tiempo de ejecución (ej. estrategias de cálculo de comisiones, políticas de cálculo de costos FIFO vs Promedio Ponderado, reglas de descuento).
+     * `Observer / Event-Driven`: Para desacoplar efectos secundarios (ej. tras confirmar una venta: notificar WhatsApp, recalcular estadísticas de BI y disparar alerta de stock bajo sin bloquear el endpoint).
+     * `State`: Cuando una entidad cambia radicalmente de comportamiento según su estado interno (ej. ciclo de vida de un Pedido: Borrador -> Aprobado -> En Tránsito -> Entregado -> Facturado).
+     * `Chain of Responsibility`: Cadena secuencial de validaciones desacopladas (ej. pipeline de validación previa al cobro: saldo de crédito -> stock disponible -> caja abierta -> permisos de usuario).
+     * `Command`: Encapsular acciones como objetos para soportar transacciones reversibles, colas de trabajo o histórico de cambios (Undo/Redo en auditoría).
+     * `Template Method`: Esqueleto algorítmico común con pasos personalizables (ej. pipeline ETL de importación de Excel con pasos fijos de validación, transformación y guardado).
+
+   *Regla de Oro Antipatrón (YAGNI):* NO aplicar un patrón si no hay una necesidad real o al menos dos variantes concretas. Evitar sobreingeniería.
+
 ---
 
 ## 🐍 Reglas del Backend (Python / FastAPI)
@@ -58,12 +86,15 @@ Este documento define las directrices y normas que todos los agentes de IA (incl
 
 2. **Formateo y Linting:**
    - Ejecutar `ruff check .` en el backend antes de dar por completado un cambio.
-   - Ejecutar `npm run lint` en el frontend para validar que se cumplen las directrices de TypeScript y React Hooks.
+   - Ejecutar `npm run lint` o `npm run build` en el frontend para validar que se cumplen las directrices de TypeScript y React Hooks.
 
+---
 
 ## 🛑 PREVENCIÓN DE PÉRDIDA DE DATOS (REGLA DE ORO)
 1. **PROHIBIDO ELIMINAR DATOS MASIVOS:** Nunca crees, sugieras, ni ejecutes scripts que usen .delete_all(), .delete_many(), .drop() o similares en colecciones principales (ventas, inventario, productos).
 2. Los datos nunca se borran. Si un dato es inválido o se debe ocultar, se debe **inactivar** o **cambiar su estado** (soft delete), pero jamás borrar el registro de la base de datos.
+
+---
 
 ## 🎨 UX/UI y Frontend Estilos (Tailwind)
 1. **Contraste de Inputs Obligatorio:** NUNCA crear inputs (text, date, select, textarea) con colores dinámicos o ausentes que puedan resultar en texto blanco sobre fondo blanco (debido a configuraciones del navegador o dark mode extensions). 

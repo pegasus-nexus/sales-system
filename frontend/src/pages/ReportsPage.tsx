@@ -16,7 +16,6 @@ import ProductStatsView from '../components/ProductStatsView';
 import PurchasesByClientView from '../components/PurchasesByClientView';
 import MonthlyEvolutionView from '../components/MonthlyEvolutionView';
 import PortfolioAnalysisView from '../components/PortfolioAnalysisView';
-import DashboardMaestro from './DashboardMaestro';
 import RegionalAndProductMix from '../components/RegionalAndProductMix';
 import BIView from '../components/BIView';
 
@@ -53,12 +52,10 @@ export default function ReportsPage() {
 
     return (
         <div className={activeTab === 'bi' ? "w-full px-1 sm:px-2 md:px-3 py-3 space-y-6 pb-20 md:pb-8" : "max-w-7xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-8"}>
-            {activeTab === 'bi' && esMatriz ? (
+            {(activeTab === 'bi' || activeTab === 'general') && esMatriz ? (
                 <BIView />
             ) : activeTab === 'evolucion_mensual' ? (
                 <MonthlyEvolutionView />
-            ) : activeTab === 'general' ? (
-                <DashboardMaestro />
             ) : activeTab === 'sucursales' ? (
                 <RegionalAndProductMix />
             ) : activeTab === 'matriz_bcg' ? (

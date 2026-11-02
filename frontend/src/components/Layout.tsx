@@ -17,6 +17,9 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import ViewSearchModal from './ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
+import AppLauncherModal from './AppLauncherModal';
+import BranchSwitcherDropdown from './BranchSwitcherDropdown';
+import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 
 function cn(...inputs: ClassValue[]) {
@@ -63,6 +66,45 @@ function TrialWarningBanner() {
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role, hasFeature } = useAuthStore();
+    const impersonationChain = useAuthStore(state => state.impersonationChain) || [];
+    const originalToken = useAuthStore(state => state.originalToken);
+    const isImpersonating = impersonationChain.length > 0 || Boolean(originalToken);
+
+    const handleRevertImpersonation = async (targetIndex?: number) => {
+        const store = useAuthStore.getState();
+        if (targetIndex !== undefined && store.revertToImpersonationIndex) {
+            const target = store.revertToImpersonationIndex(targetIndex);
+            if (target?.token) {
+                try {
+                    useAuthStore.setState({ token: target.token });
+                    const restoredUser = await getMe();
+                    store.login(target.token, restoredUser);
+                    store.setFeatures([]);
+                    window.location.href = '/';
+                    return;
+                } catch (e) {
+                    store.logout();
+                    window.location.href = '/login';
+                    return;
+                }
+            }
+        }
+        
+        if (store.originalToken) {
+            try {
+                useAuthStore.setState({ token: store.originalToken });
+                const originalUser = await getMe();
+                store.login(store.originalToken, originalUser);
+                store.clearImpersonation?.();
+                store.setOriginalToken(null);
+                store.setFeatures([]);
+                window.location.href = '/';
+            } catch (e) {
+                store.logout();
+                window.location.href = '/login';
+            }
+        }
+    };
 
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useLocalStorage('choco-sidebar-collapsed', false);
@@ -70,6 +112,7 @@ export default function Layout({ children }: LayoutProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+    const [appLauncherOpen, setAppLauncherOpen] = useState(false);
     const [seenRelease, setSeenRelease] = useLocalStorage<string>('pegasus_seen_release', '');
 
     // Si es la primera vez que inicia sesión con esta versión, o si hace clic en el botón
@@ -263,9 +306,7 @@ export default function Layout({ children }: LayoutProps) {
                 icon: BarChart3,
                 items: [
                     { icon: BarChart3, label: 'Panel General BI', path: '/reportes?tab=bi', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
-                    { icon: BarChart3, label: 'Plataforma Analítica BI', path: '/inteligencia', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: TrendingUp, label: 'Evolución Mensual (MoM)', path: '/reportes?tab=evolucion_mensual', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
-                    { icon: TrendingUp, label: 'Visión General', path: '/reportes?tab=general', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: Store, label: 'Rendimiento Sucursales', path: '/reportes?tab=sucursales', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
                     { icon: FileText, label: 'Reporte de Jornada', path: '/reportes?tab=daily', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'SUPERADMIN'] },
                     { icon: DollarSign, label: 'Finanzas y Márgenes', path: '/reportes?tab=finanzas', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] },
@@ -389,13 +430,14 @@ export default function Layout({ children }: LayoutProps) {
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
             {/* ── Desktop Sidebar ── */}
-                <aside className={cn("hidden md:flex flex-col p-4 gap-4 transition-all duration-300 relative select-none", isCollapsed ? "w-20" : "w-56")}>
+                <aside className={cn("hidden md:flex flex-col bg-[#07090e] border-r border-white/10 transition-all duration-300 relative select-none shrink-0 z-20", isCollapsed ? "w-20 p-3 gap-3" : "w-64 p-4 gap-4")}>
 
                     {/* Header (Menu Toggle + Brand) */}
                     <div className="flex items-center gap-3 px-1 h-8">
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                            title={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
                         >
                             <Menu size={20} />
                         </button>
@@ -562,98 +604,151 @@ export default function Layout({ children }: LayoutProps) {
                 </aside>
 
 
-            {/* ── Exit Impersonation Banner ── */}
-            {useAuthStore(state => state.originalToken) && (
-                <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-indigo-600 text-white px-4 py-2 flex items-center justify-between shadow-md">
-                    <span className="text-xs font-medium truncate pr-2">Viendo como <strong>{user?.username}</strong></span>
+            {/* ── Exit Impersonation Banner Mobile ── */}
+            {isImpersonating && (
+                <div className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-slate-900/95 text-white px-3 py-1.5 flex items-center justify-between shadow-md border-b border-slate-700/80 text-xs">
+                    <span className="truncate pr-2 font-medium text-slate-300">
+                        Viendo: <strong className="text-white">{user?.email || user?.username}</strong>
+                    </span>
                     <button 
-                            onClick={async () => {
-                                const store = useAuthStore.getState();
-                                if (store.originalToken) {
-                                    try {
-                                        // Temporarily override the API token
-                                        useAuthStore.setState({ token: store.originalToken });
-                                        // Fetch the real original user
-                                        const originalUser = await getMe();
-                                        store.login(store.originalToken, originalUser);
-                                        store.setOriginalToken(null);
-                                        store.setFeatures([]);
-                                        window.location.href = '/';
-                                    } catch (e) {
-                                        store.logout();
-                                        window.location.href = '/login';
-                                    }
-                                }
-                            }}
-                        className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition-colors whitespace-nowrap"
+                        type="button"
+                        onClick={() => handleRevertImpersonation(impersonationChain.length > 0 ? impersonationChain.length - 1 : 0)}
+                        className="bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 shadow-xs"
                     >
-                        Volver
+                        <ArrowLeft size={12} />
+                        <span>Volver</span>
                     </button>
                 </div>
             )}
 
-            {/* ── Main Content Shell ── */}
-            <main className={cn("flex-1 flex flex-col min-w-0 bg-[#0a0a0a] md:pr-4 md:py-4", useAuthStore(state => state.originalToken) ? "mt-10 md:mt-0" : "")}>
+            {/* ── Main Content Partition (Full Screen Split) ── */}
+            <main className={cn("flex-1 flex flex-col min-w-0 h-full bg-[#f4f6f8] relative overflow-hidden", isImpersonating ? "mt-10 md:mt-0" : "")}>
                 <TrialWarningBanner />
-                {/* Desktop Exit Impersonation Banner */}
-                {useAuthStore(state => state.originalToken) && (
-                    <div className="hidden md:flex mb-2 bg-indigo-600 text-white px-4 py-2 rounded-xl items-center justify-between shadow-md">
-                        <span className="text-sm font-medium">Estás navegando la cuenta como <strong>{user?.username}</strong></span>
-                        <button 
-                            onClick={async () => {
-                                const store = useAuthStore.getState();
-                                if (store.originalToken) {
-                                    try {
-                                        // Temporarily override the API token
-                                        useAuthStore.setState({ token: store.originalToken });
-                                        // Fetch the real original user
-                                        const originalUser = await getMe();
-                                        store.login(store.originalToken, originalUser);
-                                        store.setOriginalToken(null);
-                                        store.setFeatures([]);
-                                        window.location.href = '/';
-                                    } catch (e) {
-                                        store.logout();
-                                        window.location.href = '/login';
-                                    }
-                                }
-                            }}
-                            className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors"
-                        >
-                            Volver a mi cuenta original
-                        </button>
-                    </div>
-                )}
-                
-                <div className="h-full bg-[#f2f4f7] md:rounded-2xl flex flex-col overflow-hidden relative shadow-2xl shadow-black/50 border border-white/5">
-                    {/* Top Bar móvil (limpio en desktop para maximizar espacio de trabajo) */}
-                    <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
-                        <div className="flex items-center gap-2">
-                            <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
-                            <span className="font-bold text-xs text-gray-900">Pegasus Nexus</span>
+                {/* Desktop Exit Impersonation Banner with Multi-level Breadcrumbs */}
+                {isImpersonating && (
+                    <div className="hidden md:flex mx-4 mt-2.5 mb-1.5 px-3 py-1.5 bg-slate-900/95 text-white rounded-xl items-center justify-between shadow-xs border border-slate-700/80 backdrop-blur-xs text-xs">
+                        <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-xs">
+                            <span className="text-slate-400 font-medium shrink-0">Navegando:</span>
+                            {impersonationChain.map((item, idx) => (
+                                <React.Fragment key={idx}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRevertImpersonation(idx)}
+                                        className="text-indigo-300 hover:text-white underline-offset-2 hover:underline transition-colors shrink-0 max-w-[200px] truncate font-medium"
+                                        title={`Volver a ${item.email || item.username}`}
+                                    >
+                                        {item.email || item.username}
+                                    </button>
+                                    <span className="text-slate-500 font-bold shrink-0">/</span>
+                                </React.Fragment>
+                            ))}
+                            <span className="text-white font-bold shrink-0 bg-white/10 px-2 py-0.5 rounded-md border border-white/15 max-w-[220px] truncate" title={user?.email || user?.username}>
+                                {user?.email || user?.username}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => openProfileModal('profile')}
-                                className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg border border-gray-200 flex items-center gap-1.5"
+
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <button 
+                                type="button"
+                                onClick={() => handleRevertImpersonation(impersonationChain.length > 0 ? impersonationChain.length - 1 : 0)}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs"
+                                title="Volver a la cuenta anterior"
                             >
-                                <UserIcon size={14} className="text-indigo-600" />
-                                <span>Perfil</span>
+                                <ArrowLeft size={12} />
+                                <span>Volver</span>
                             </button>
-                            {role !== 'CAJERO' && (
-                                <button
-                                    onClick={() => setMobileMenuOpen(true)}
-                                    className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
+                            {impersonationChain.length > 1 && (
+                                <button 
+                                    type="button"
+                                    onClick={() => handleRevertImpersonation(0)}
+                                    className="bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                                    title="Volver a la cuenta raíz original"
                                 >
-                                    <Menu size={18} />
+                                    Raíz
                                 </button>
                             )}
                         </div>
                     </div>
+                )}
+                
+                {/* ── Top Bar Desktop (Estilo Odoo: App Launcher + Branch Switcher + Búsqueda) ── */}
+                {location.pathname !== '/pos' && (
+                    <div className="hidden md:flex items-center justify-between px-6 py-2.5 bg-white border-b border-gray-200/80 shrink-0 shadow-2xs z-10">
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setAppLauncherOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-200 text-gray-700 hover:text-indigo-600 font-bold text-xs transition-all shadow-2xs cursor-pointer group"
+                                title="Lanzador de Aplicaciones (Apps tipo Odoo)"
+                            >
+                                <LayoutGrid size={16} className="text-gray-500 group-hover:text-indigo-600 transition-colors" />
+                                <span>Apps</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setSearchModalOpen(true)}
+                                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200/80 text-gray-400 hover:text-gray-600 text-xs transition-colors cursor-pointer"
+                                title="Buscar vista o atajo rápido (Ctrl + K)"
+                            >
+                                <Search size={14} className="text-gray-400" />
+                                <span className="hidden lg:inline text-gray-500">Buscar en el sistema...</span>
+                                <kbd className="text-[10px] bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-400 font-mono">⌘K</kbd>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {/* Selector Contextual de Sucursal Activa */}
+                            <BranchSwitcherDropdown />
+
+                            {/* Botón de Novedades */}
+                            <button
+                                type="button"
+                                onClick={handleOpenWhatsNew}
+                                className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
+                                title="Novedades de la versión"
+                            >
+                                <Sparkles size={14} className="text-amber-500" />
+                                <span className="hidden lg:inline">Novedades</span>
+                                {hasUnreadNews && (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Top Bar móvil (Con App Launcher y Branch Switcher) ── */}
+                <div className="md:hidden bg-white border-b border-gray-200/80 px-4 py-2 flex items-center justify-between gap-2 shrink-0 shadow-xs">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAppLauncherOpen(true)}
+                            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-indigo-50 border border-gray-200 flex items-center justify-center text-gray-700 hover:text-indigo-600"
+                            title="Apps"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <img src="/vite.svg" alt="Sales System" className="h-6 w-auto object-contain" />
+                        <span className="font-bold text-xs text-gray-900 hidden sm:inline">Pegasus Nexus</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <BranchSwitcherDropdown />
+                        {role !== 'CAJERO' && (
+                            <button
+                                onClick={() => setMobileMenuOpen(true)}
+                                className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600"
+                            >
+                                <Menu size={18} />
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                     {/* View Search Modal */}
                     <ViewSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
                     <WhatsNewModal isOpen={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+                    <AppLauncherModal isOpen={appLauncherOpen} onClose={() => setAppLauncherOpen(false)} />
 
 
                     {/* Scrollable Content */}
@@ -665,7 +760,6 @@ export default function Layout({ children }: LayoutProps) {
                         <div className="md:h-0 h-0" />
                         {children}
                     </div>
-                </div>
             </main>
 
             {/* ── Mobile Bottom Nav Bar ── */}

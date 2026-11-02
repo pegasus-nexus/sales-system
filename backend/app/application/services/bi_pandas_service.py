@@ -409,6 +409,47 @@ class BIPandasService:
             ultima_venta_hora=ultima_hora
         )
 
+        # Top 5 Productos por unidades vendidas en el período
+        top_productos_list: List[TopProductoItemBI] = []
+        product_units_map: Dict[str, Dict[str, Any]] = {}
+        for sale in raw_sales:
+            for item in sale.get("items", []):
+                p_name = str(item.get("nombre") or item.get("name") or item.get("descripcion") or item.get("product_name") or "Producto").strip()
+                qty = safe_float(item.get("cantidad") or item.get("quantity"))
+                subt = safe_float(item.get("subtotal") or (qty * safe_float(item.get("precio_unitario") or item.get("price"))))
+                p_id = str(item.get("producto_id") or item.get("product_id") or p_name)
+                cat_id = str(item.get("categoria_id") or "")
+                cat_name = str(item.get("categoria_nombre") or "")
+
+                if p_name not in product_units_map:
+                    product_units_map[p_name] = {
+                        "producto_id": p_id,
+                        "nombre": p_name,
+                        "categoria_id": cat_id,
+                        "categoria_nombre": cat_name,
+                        "unidades_vendidas": 0.0,
+                        "ingresos_bs": 0.0,
+                    }
+                product_units_map[p_name]["unidades_vendidas"] += qty
+                product_units_map[p_name]["ingresos_bs"] += subt
+
+        sorted_prods = sorted(product_units_map.values(), key=lambda x: x["unidades_vendidas"], reverse=True)[:5]
+        max_units = sorted_prods[0]["unidades_vendidas"] if sorted_prods else 1.0
+        for p in sorted_prods:
+            part_pct = round((p["unidades_vendidas"] / max_units * 100), 1) if max_units > 0 else 0.0
+            top_productos_list.append(
+                TopProductoItemBI(
+                    producto_id=p["producto_id"],
+                    nombre=p["nombre"],
+                    categoria_id=p["categoria_id"],
+                    categoria_nombre=p["categoria_nombre"],
+                    unidades_vendidas=p["unidades_vendidas"],
+                    ingresos_bs=round(p["ingresos_bs"], 2),
+                    precio_promedio_efectivo=round(p["ingresos_bs"] / p["unidades_vendidas"], 2) if p["unidades_vendidas"] > 0 else 0.0,
+                    participacion_pct=part_pct
+                )
+            )
+
         alertas: List[AlertaOperativaBI] = []
         if cantidad_ordenes > 0:
             alertas.append(
@@ -436,6 +477,7 @@ class BIPandasService:
             ventas_por_hora=hourly_list,
             horario_inteligente=horario_inteligente_obj,
             ventas_recientes=ventas_recientes_list,
+            top_productos=top_productos_list,
             resumen_operativo=resumen_operativo,
             alertas_operativas=alertas
         )

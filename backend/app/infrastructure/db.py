@@ -39,6 +39,7 @@ from app.domain.models.branch_operating_hours import BranchOperatingHours
 from app.domain.models.contabilidad import CuentaContable, AsientoContable
 from app.domain.models.lote import LoteInventario
 from app.domain.models.cotizacion import Cotizacion
+from app.domain.models.service_monitor import ServiceHealthCheck, ServiceIncidentAlert, AdminPasswordSetupToken
 
 from app.infrastructure.core.config import settings
 
@@ -132,6 +133,9 @@ async def init_db():
             AsientoContable,
             LoteInventario,
             Cotizacion,
+            ServiceHealthCheck,
+            ServiceIncidentAlert,
+            AdminPasswordSetupToken,
             Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True

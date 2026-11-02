@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, Search, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, Clock, RefreshCw } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
 import type { AjusteInventario } from '../api/types';
-import Pagination from '../components/Pagination';
+
 import BulkAjusteView from '../components/BulkAjusteView';
 import LotesTab from '../components/inventario/LotesTab';
+import { OdooSearchBar } from '../components/inventario/OdooSearchBar';
 
 import { formatFullDate as formatDate } from '../utils/dateUtils';
 
@@ -25,10 +26,13 @@ export default function InventarioPage() {
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? 'CENTRAL' : (user?.sucursal_id || 'CENTRAL'));
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>('default');
     const [tab, setTab] = useLocalStorage<'stock' | 'kardex' | 'masivo' | 'lotes'>('inventario-tab', 'stock');
+    const [viewMode, setViewMode] = useLocalStorage<'lista' | 'kanban'>('inventario-view-mode', 'kanban');
     const [searchTerm, setSearchTerm] = useLocalStorage('inventario-search', '');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-    const [categorySearch, setCategorySearch] = useState('');
     const [stockBajoOnly, setStockBajoOnly] = useState<boolean>(false);
+    const [stockFilter, setStockFilter] = useState<'ALL' | 'DISPONIBLE' | 'AGOTADO'>('ALL');
+    const [groupByCategory, setGroupByCategory] = useState(false);
+    const [sortBy, setSortBy] = useState<'default' | 'nombre' | 'stock_desc' | 'stock_asc' | 'precio_desc'>('default');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [tipoMovimiento, setTipoMovimiento] = useState('');
@@ -36,6 +40,18 @@ export default function InventarioPage() {
     const [kardexProductoNombre, setKardexProductoNombre] = useState<string | null>(null);
     const [isExportingExcel, setIsExportingExcel] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
+    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const actionsMenuRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target as Node)) {
+                setIsActionsMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
 
     const { data: sucursales = [] } = useQuery({
@@ -63,11 +79,6 @@ export default function InventarioPage() {
         queryFn: getCategories 
     });
 
-    const filteredCategories = useMemo(() => {
-        if (!categorySearch) return categories;
-        return categories.filter((c: any) => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
-    }, [categories, categorySearch]);
-
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
 
     useEffect(() => {
@@ -79,7 +90,7 @@ export default function InventarioPage() {
 
     const [currentPageStock, setCurrentPageStock] = useState(1);
     const [currentPageKardex, setCurrentPageKardex] = useState(1);
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 60;
 
     const { data: invData, isLoading: loadingInv } = useQuery({
         queryKey: ['inventario', selectedSucursal, selectedAlmacen, currentPageStock, ITEMS_PER_PAGE, debouncedSearch, selectedCategory, stockBajoOnly],
@@ -90,6 +101,41 @@ export default function InventarioPage() {
     const inventario = invData?.items || [];
     const totalPagesStock = invData?.pages || 1;
     const totalItemsStock = invData?.total || 0;
+    const startItemStock = totalItemsStock === 0 ? 0 : (currentPageStock - 1) * ITEMS_PER_PAGE + 1;
+    const endItemStock = Math.min(currentPageStock * ITEMS_PER_PAGE, totalItemsStock);
+
+    const processedInventario = useMemo(() => {
+        let list = [...inventario];
+
+        if (stockFilter === 'DISPONIBLE') {
+            list = list.filter(item => item.cantidad > 0);
+        } else if (stockFilter === 'AGOTADO') {
+            list = list.filter(item => item.cantidad <= 0);
+        }
+
+        if (sortBy === 'stock_desc') {
+            list.sort((a, b) => b.cantidad - a.cantidad);
+        } else if (sortBy === 'stock_asc') {
+            list.sort((a, b) => a.cantidad - b.cantidad);
+        } else if (sortBy === 'precio_desc') {
+            list.sort((a, b) => ((b.precio_sucursal ?? b.precio) || 0) - ((a.precio_sucursal ?? a.precio) || 0));
+        } else if (sortBy === 'nombre') {
+            list.sort((a, b) => (a.producto_nombre || '').localeCompare(b.producto_nombre || ''));
+        }
+
+        return list;
+    }, [inventario, stockFilter, sortBy]);
+
+    const groupedInventario = useMemo(() => {
+        if (!groupByCategory) return null;
+        const groups: Record<string, typeof processedInventario> = {};
+        for (const item of processedInventario) {
+            const catName = item.categoria_nombre || 'Sin Categoría';
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(item);
+        }
+        return groups;
+    }, [processedInventario, groupByCategory]);
 
     const { data: movData, isLoading: loadingMovs } = useQuery({
         queryKey: ['movimientos', selectedSucursal, selectedAlmacen, startDate, endDate, debouncedSearch, kardexProductoId, tipoMovimiento, currentPageKardex, ITEMS_PER_PAGE],
@@ -110,6 +156,8 @@ export default function InventarioPage() {
     const movimientos = movData?.items || [];
     const totalPagesKardex = movData?.pages || 1;
     const totalItemsKardex = movData?.total || 0;
+    const startItemKardex = totalItemsKardex === 0 ? 0 : (currentPageKardex - 1) * ITEMS_PER_PAGE + 1;
+    const endItemKardex = Math.min(currentPageKardex * ITEMS_PER_PAGE, totalItemsKardex);
 
     // Modals State
     const [adjItem, setAdjItem] = useState<{ id: string, name: string } | null>(null);
@@ -119,7 +167,7 @@ export default function InventarioPage() {
     useEffect(() => {
         setCurrentPageStock(1);
         setCurrentPageKardex(1);
-    }, [searchTerm, selectedSucursal, selectedAlmacen, tab, selectedCategory, stockBajoOnly]);
+    }, [searchTerm, selectedSucursal, selectedAlmacen, tab, selectedCategory, stockBajoOnly, stockFilter, sortBy]);
 
     useEffect(() => {
         setCurrentPageKardex(1);
@@ -139,209 +187,201 @@ export default function InventarioPage() {
         setAdjItem(null);
     };
 
-    return (
-        <div className="max-w-7xl mx-auto space-y-4 p-4">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-                <div>
-                    <h1 className="text-lg font-bold text-gray-900 tracking-tight">Gestión de Inventarios</h1>
-                    <p className="text-xs text-gray-500 mt-0.5">Control de stock físico y kárdex de movimientos por sucursal.</p>
+    const handleResetAllFilters = () => {
+        setSearchTerm('');
+        setSelectedCategory('ALL');
+        setStockBajoOnly(false);
+        setStockFilter('ALL');
+        setGroupByCategory(false);
+        setSortBy('default');
+        setStartDate('');
+        setEndDate('');
+        setTipoMovimiento('');
+        setKardexProductoId(undefined);
+        setKardexProductoNombre(null);
+    };
+
+    const hasActiveFilters =
+        (tab === 'stock' && (selectedCategory !== 'ALL' || stockBajoOnly || stockFilter !== 'ALL' || groupByCategory || sortBy !== 'default')) ||
+        (tab === 'kardex' && (Boolean(kardexProductoNombre) || Boolean(tipoMovimiento) || Boolean(startDate) || Boolean(endDate))) ||
+        Boolean(searchTerm.trim());
+
+    const renderProductCard = (item: (typeof processedInventario)[0]) => {
+        const isOutOfStock = item.cantidad <= 0;
+        const isLowStock = item.cantidad > 0 && item.cantidad <= 10;
+        
+        return (
+            <div
+                key={item.producto_id}
+                onClick={() => esAdminSucursal && setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
+                className="bg-white border border-gray-200/90 hover:border-indigo-400 rounded-lg p-2.5 sm:p-3 hover:shadow-md transition-all flex justify-between items-start gap-2.5 group relative cursor-pointer min-h-[92px]"
+            >
+                <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                    <div>
+                        <h4
+                            className="text-[12px] font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
+                            title={item.producto_nombre}
+                        >
+                            {item.producto_nombre}
+                        </h4>
+                        <div className="mt-1 flex items-baseline gap-2 font-mono text-[11px]">
+                            <span className="font-bold text-gray-900">
+                                {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)} Bs.
+                            </span>
+                            {item.codigo_barras ? (
+                                <span className="text-[11px] text-gray-400 font-normal">{item.codigo_barras}</span>
+                            ) : (
+                                <span className="text-[10px] text-gray-300 font-normal">#{item.producto_id.slice(-4)}</span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="mt-2 text-[11px] flex items-baseline gap-1 font-mono">
+                        <span className={`font-bold ${
+                            isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-gray-800'
+                        }`}>
+                            {item.cantidad} Unidades
+                        </span>
+                        <span className="text-gray-400 font-sans text-[11px]">En stock</span>
+                    </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button 
-                        onClick={async () => {
-                            setIsExportingExcel(true);
-                            try {
-                                await exportInventarioExcel();
-                                toast.success('Inventario exportado');
-                            } catch (e) {
-                                toast.error('Error al exportar');
-                            } finally {
-                                setIsExportingExcel(false);
-                            }
-                        }}
-                        disabled={isExportingExcel}
-                        className={`flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors ${isExportingExcel ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        title="Exportar Stock Completo (Excel)"
+                <div className="w-16 h-16 rounded-md bg-white border border-gray-150 p-0.5 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs group-hover:border-indigo-200 transition-colors">
+                    {item.image_url ? (
+                        <img
+                            src={item.image_url}
+                            alt={item.producto_nombre}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <Package size={22} className="text-gray-300" />
+                    )}
+                </div>
+
+                {esAdminSucursal && (
+                    <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/95 px-1 py-0.5 rounded shadow-xs border border-gray-200">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setAdjItem({ id: item.producto_id, name: item.producto_nombre });
+                            }}
+                            className="p-1 hover:bg-indigo-50 text-indigo-600 rounded transition-colors"
+                            title="Ajustar Stock"
+                        >
+                            <Scale size={12} />
+                        </button>
+                        {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPriceReqItem({
+                                        id: item.producto_id,
+                                        name: item.producto_nombre,
+                                        currentPrice: item.precio_sucursal ?? item.precio
+                                    });
+                                }}
+                                className="p-1 hover:bg-amber-50 text-amber-600 rounded transition-colors"
+                                title="Solicitar Cambio de Precio"
+                            >
+                                <Tag size={12} />
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setKardexProductoId(item.producto_id);
+                                setKardexProductoNombre(item.producto_nombre);
+                                setTab('kardex');
+                                setStartDate('');
+                                setEndDate('');
+                            }}
+                            className="p-1 hover:bg-gray-100 text-gray-700 rounded transition-colors"
+                            title="Ver Kárdex"
+                        >
+                            <History size={12} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="w-full space-y-3.5 px-3 py-3 md:px-6 md:py-4">
+            {/* Header Superior Estilo Odoo: Título + Menú ⋮ de Acciones + Selectores */}
+            <div className="bg-white px-4 py-2.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 relative" ref={actionsMenuRef}>
+                    <Warehouse className="text-indigo-600 shrink-0" size={22} />
+                    <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Gestión de Inventarios
+                    </h1>
+                    
+                    {/* Botón de tres puntitos ⋮ al lado de Gestión de Inventarios */}
+                    <button
+                        type="button"
+                        onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                        className={`p-1.5 rounded-lg text-gray-500 hover:text-gray-900 transition-colors border ${
+                            isActionsMenuOpen ? 'bg-gray-100 border-gray-300 text-gray-900' : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                        }`}
+                        title="Opciones y Acciones de Inventario"
                     >
-                        {isExportingExcel ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-                        {isExportingExcel ? 'Generando...' : 'Exportar Excel'}
+                        <MoreVertical size={17} />
                     </button>
 
-                    {esMatriz && (
-                        <div className="w-full md:w-56">
-                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Viendo Sucursal</label>
-                            <select
-                                value={selectedSucursal}
-                                onChange={e => setSelectedSucursal(e.target.value)}
-                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg px-2.5 py-1.5 outline-none transition-all text-xs font-semibold text-gray-900 shadow-sm"
-                            >
-                                <option value="CENTRAL">Almacén Central (Matriz)</option>
-                                {sucursales.map(s => <option key={s._id} value={s._id}>{s.nombre}</option>)}
-                            </select>
-                        </div>
-                    )}
-                    {almacenes.length > 0 && (
-                        <div className="w-full md:w-56">
-                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Almacén</label>
-                            <select
-                                value={selectedAlmacen}
-                                onChange={e => setSelectedAlmacen(e.target.value)}
-                                className="w-full bg-indigo-50 border border-indigo-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg px-2.5 py-1.5 outline-none transition-all text-xs font-bold text-indigo-900 shadow-sm"
-                            >
-                                {almacenes.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                            </select>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Toolbar (Buscador + Tabs + Category Pills) */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    {/* Buscador Moderno & Stock Bajo */}
-                    <div className="flex flex-1 w-full gap-3">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Buscar productos en inventario..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-11 pr-10 py-2.5 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-50 rounded-xl outline-none transition-all text-sm font-medium shadow-inner text-gray-900"
-                            />
-                            {searchTerm && (
-                                <button 
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                                >
-                                    <X size={16} />
-                                </button>
-                            )}
-                        </div>
-
-                        {tab === 'stock' && (
-                            <button
-                                onClick={() => setStockBajoOnly(!stockBajoOnly)}
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${
-                                    stockBajoOnly 
-                                    ? 'bg-red-50 text-red-700 border-red-200 shadow-sm' 
-                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                                }`}
-                            >
-                                ⚠️ <span className="hidden sm:inline">Solo Stock Bajo</span>
-                            </button>
-                        )}
-                        {tab === 'kardex' && (
-                            <div className="flex flex-wrap items-center bg-gray-50 rounded-xl border border-gray-100 p-1 shadow-inner gap-1">
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="bg-white border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 outline-none w-[115px]"
-                                    title="Fecha Inicio"
-                                />
-                                <span className="text-gray-400 text-[10px] my-auto px-1">a</span>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="bg-white border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-700 outline-none w-[115px]"
-                                    title="Fecha Fin"
-                                />
-                                {(startDate || endDate || kardexProductoId || tipoMovimiento) && (
-                                    <button 
-                                        onClick={() => { setStartDate(''); setEndDate(''); setKardexProductoId(undefined); setKardexProductoNombre(null); setSearchTerm(''); setTipoMovimiento(''); }}
-                                        className="ml-1 p-1 text-red-500 hover:bg-red-50 rounded-md"
-                                        title="Limpiar Filtros"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                        {tab === 'kardex' && (
-                            <div className="w-36">
-                                <select
-                                    value={tipoMovimiento}
-                                    onChange={e => setTipoMovimiento(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-2 py-2.5 outline-none transition-all text-[11px] font-bold text-gray-700 shadow-inner"
-                                >
-                                    <option value="">Todos los Movimientos</option>
-                                    <option value="COMPRA">Compras / Ingresos</option>
-                                    <option value="VENTA">Solo Ventas</option>
-                                    <option value="ENTRADA_MANUAL">Entradas</option>
-                                    <option value="SALIDA_MANUAL">Salidas / Mermas</option>
-                                    <option value="TRASLADO">Traslados</option>
-                                    <option value="AJUSTE_FISICO">Ajustes Físicos</option>
-                                    <option value="ANULACION">Anulaciones</option>
-                                </select>
-                            </div>
-                        )}
-                    </div>
-
-                    {tab === 'kardex' && kardexProductoNombre && (
-                        <div className="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <History size={16} className="text-indigo-600" />
-                                <span className="text-xs font-bold text-indigo-900">Mostrando historial de: <span className="uppercase">{kardexProductoNombre}</span></span>
-                            </div>
-                            <button 
-                                onClick={() => { setKardexProductoId(undefined); setKardexProductoNombre(null); }}
-                                className="text-xs font-bold text-indigo-600 hover:underline"
-                            >
-                                Ver todos los productos
-                            </button>
-                        </div>
-                    )}
-
-
-                    {/* Tabs e Importar */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <div className="bg-gray-50 p-1.5 rounded-xl shadow-inner border border-gray-100 inline-flex flex-1 sm:flex-none">
-                            <button
-                                onClick={() => setTab('stock')}
-                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'stock' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                <Warehouse size={16} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
-                                <span>Stock Actual</span>
-                            </button>
-                            <button
-                                onClick={() => setTab('kardex')}
-                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'kardex' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-900'}`}
-                            >
-                                <History size={16} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
-                                <span>Kárdex</span>
-                            </button>
+                    {/* Menú Desplegable de Tres Puntitos */}
+                    {isActionsMenuOpen && (
+                        <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                             {esAdminSucursal && (
                                 <button
-                                    onClick={() => setTab('masivo')}
-                                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'masivo' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-900'}`}
+                                    type="button"
+                                    onClick={() => {
+                                        setIsActionsMenuOpen(false);
+                                        setIsImportModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left"
                                 >
-                                    <Scale size={16} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
-                                    <span>Ajuste Rápido</span>
+                                    <Upload size={14} className="text-emerald-600" />
+                                    <span>Importar inventario Excel</span>
                                 </button>
                             )}
+
                             <button
-                                onClick={() => setTab('lotes')}
-                                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'lotes' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-900'}`}
+                                type="button"
+                                onClick={async () => {
+                                    setIsActionsMenuOpen(false);
+                                    setIsExportingExcel(true);
+                                    try {
+                                        await exportInventarioExcel();
+                                        toast.success('Inventario exportado exitosamente');
+                                    } catch (e) {
+                                        toast.error('Error al exportar inventario');
+                                    } finally {
+                                        setIsExportingExcel(false);
+                                    }
+                                }}
+                                disabled={isExportingExcel}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left disabled:opacity-50"
                             >
-                                <Clock size={16} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
-                                <span>Lotes & Caducidades</span>
+                                {isExportingExcel ? <Loader2 size={14} className="animate-spin text-indigo-600" /> : <FileSpreadsheet size={14} className="text-indigo-600" />}
+                                <span>{isExportingExcel ? 'Exportando...' : 'Exportar Stock a Excel'}</span>
                             </button>
-                        </div>
-                        {tab === 'stock' && esAdminSucursal && (
-                            <div className="flex items-center gap-2">
+
+                            {esAdminSucursal && (
                                 <button
+                                    type="button"
                                     onClick={async () => {
+                                        setIsActionsMenuOpen(false);
                                         const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
-                                        if (!window.confirm("⚠️ ¿Deseas cuadrar el inventario de " + sucName + "?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.")) {
+                                        if (!window.confirm(`⚠️ ¿Deseas cuadrar el inventario de ${sucName}?\n\nEsto calculará secuencialmente la sumatoria matemática real de entradas y salidas registradas en el Kárdex y actualizará el stock físico resultante para todos los productos.`)) {
                                             return;
                                         }
                                         setIsRecalculating(true);
                                         try {
                                             const res = await recalcularKardex('ALL', selectedSucursal, selectedAlmacen);
-                                            toast.success("Inventario cuadrado: " + res.data.corregidos + " productos procesados, " + res.data.inventarios_modificados + " stock(s) alineado(s).");
+                                            toast.success(`Inventario cuadrado: ${res.data.corregidos} productos procesados, ${res.data.inventarios_modificados} stock(s) alineado(s).`);
                                             queryClient.invalidateQueries({ queryKey: ['inventario'] });
                                             queryClient.invalidateQueries({ queryKey: ['movimientos'] });
                                         } catch (err: any) {
@@ -351,162 +391,263 @@ export default function InventarioPage() {
                                         }
                                     }}
                                     disabled={isRecalculating}
-                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap disabled:opacity-50"
-                                    title="Cuadrar inventario recalculando sumas y restas de movimientos en Kárdex"
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50/70 transition-colors text-left disabled:opacity-50 border-t border-gray-100"
                                 >
-                                    <RefreshCw size={16} className={isRecalculating ? "animate-spin text-amber-700" : "text-amber-700"} />
+                                    <RefreshCw size={14} className={isRecalculating ? "animate-spin text-amber-600" : "text-amber-600"} />
                                     <span>{isRecalculating ? "Cuadrando..." : "Cuadrar con Kárdex"}</span>
                                 </button>
-                                <button 
-                                    onClick={() => setIsImportModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-                                >
-                                    <FileSpreadsheet size={16} />
-                                    Importar Excel
-                                </button>
-                            </div>
-                        )}
-                        {tab === 'kardex' && (
-                            <div className="flex items-center gap-2">
-                                {esAdminSucursal && (
+                            )}
+
+                            {tab === 'kardex' && (
+                                <>
+                                    <div className="border-t border-gray-100 my-1" />
                                     <button
-                                        onClick={async () => {
-                                            const targetText = kardexProductoNombre ? `el producto "${kardexProductoNombre}"` : 'TODOS los productos de esta sucursal';
-                                            if (!window.confirm(`⚠️ ¿Deseas recalcular y alinear el Kárdex para ${targetText}? Esto verificará cronológicamente cada movimiento y alineará el stock físico real.`)) {
-                                                return;
-                                            }
-                                            setIsRecalculating(true);
-                                            try {
-                                                const res = await recalcularKardex(kardexProductoId || 'ALL', selectedSucursal, selectedAlmacen);
-                                                toast.success(`Kárdex recalculado: ${res.data.corregidos} productos procesados, ${res.data.inventarios_modificados} stock(s) alineado(s).`);
-                                                queryClient.invalidateQueries({ queryKey: ['inventario'] });
-                                                queryClient.invalidateQueries({ queryKey: ['movimientos'] });
-                                            } catch (err: any) {
-                                                toast.error(err?.message || 'Error al recalcular el Kárdex');
-                                            } finally {
-                                                setIsRecalculating(false);
-                                            }
+                                        type="button"
+                                        onClick={() => {
+                                            setIsActionsMenuOpen(false);
+                                            exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined);
                                         }}
-                                        disabled={isRecalculating}
-                                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap disabled:opacity-50"
-                                        title="Recalcular sumas/restas y alinear stock real"
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-emerald-600 transition-colors text-left"
                                     >
-                                        <RefreshCw size={16} className={isRecalculating ? 'animate-spin text-amber-700' : 'text-amber-700'} />
-                                        <span>{isRecalculating ? 'Alineando...' : 'Alinear y Recalcular'}</span>
+                                        <FileSpreadsheet size={14} className="text-emerald-600" />
+                                        <span>Exportar Kárdex Excel</span>
                                     </button>
-                                )}
-                                <button 
-                                    onClick={() => exportMovimientosInventario(selectedSucursal, selectedAlmacen, kardexProductoId, startDate || undefined, endDate || undefined, kardexProductoId ? undefined : (debouncedSearch || undefined), tipoMovimiento || undefined)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-                                    title="Exportar a Excel"
-                                >
-                                    <FileSpreadsheet size={16} />
-                                    <span>Excel</span>
-                                </button>
-                                <button 
-                                    onClick={() => window.print()}
-                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-bold transition-all shadow-sm whitespace-nowrap"
-                                    title="Imprimir PDF"
-                                >
-                                    <Printer size={16} />
-                                    <span>PDF</span>
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsActionsMenuOpen(false);
+                                            window.print();
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors text-left"
+                                    >
+                                        <Printer size={14} className="text-indigo-600" />
+                                        <span>Imprimir Kárdex PDF</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Relieve Category Pills */}
-                {tab === 'stock' && (
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-4">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Categorías</h3>
-                            <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar categoría..."
-                                    value={categorySearch}
-                                    onChange={(e) => setCategorySearch(e.target.value)}
-                                    className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 rounded-lg outline-none transition-all text-xs text-gray-900"
-                                />
-                                {categorySearch && (
-                                    <button 
-                                        onClick={() => setCategorySearch('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                            <button
-                                onClick={() => setSelectedCategory('ALL')}
-                                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                    selectedCategory === 'ALL' 
-                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
-                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                                }`}
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Selector de Sucursal (para Matriz / Admin) */}
+                    {esMatriz && (
+                        <div className="min-w-[180px]">
+                            <select
+                                value={selectedSucursal}
+                                onChange={e => setSelectedSucursal(e.target.value)}
+                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-1.5 outline-none text-xs font-semibold text-gray-900 shadow-xs cursor-pointer"
                             >
-                                Todas
-                            </button>
-                            {filteredCategories.map((cat: any) => (
-                                <button
-                                    key={cat._id}
-                                    onClick={() => setSelectedCategory(cat._id!)}
-                                    className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                        selectedCategory === cat._id 
-                                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-100' 
-                                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                                    }`}
-                                >
-                                    {cat.name}
-                                </button>
-                            ))}
+                                <option value="CENTRAL">🏢 Almacén Central (Matriz)</option>
+                                {sucursales.map(s => <option key={s._id} value={s._id}>🏬 {s.nombre}</option>)}
+                            </select>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {/* Selector de Almacén */}
+                    {almacenes.length > 0 && (
+                        <div className="min-w-[160px]">
+                            <select
+                                value={selectedAlmacen}
+                                onChange={e => setSelectedAlmacen(e.target.value)}
+                                className="w-full bg-indigo-50/60 border border-indigo-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3 py-1.5 outline-none text-xs font-bold text-indigo-900 shadow-xs cursor-pointer"
+                            >
+                                {almacenes.map(a => <option key={a.id} value={a.id}>📦 {a.nombre}</option>)}
+                            </select>
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {/* Barra de Búsqueda y Filtros Unificada Estilo Odoo */}
+            {(tab === 'stock' || tab === 'kardex') && (
+                <div className="w-full">
+                    <OdooSearchBar
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        tab={tab}
+                        setTab={setTab}
+                        esAdminSucursal={esAdminSucursal}
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        setSelectedCategory={setSelectedCategory}
+                        stockBajoOnly={stockBajoOnly}
+                        setStockBajoOnly={setStockBajoOnly}
+                        stockFilter={stockFilter}
+                        setStockFilter={setStockFilter}
+                        kardexProductoNombre={kardexProductoNombre}
+                        onClearKardexProducto={() => {
+                            setKardexProductoId(undefined);
+                            setKardexProductoNombre(null);
+                        }}
+                        tipoMovimiento={tipoMovimiento}
+                        setTipoMovimiento={setTipoMovimiento}
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
+                        onResetAllFilters={handleResetAllFilters}
+                        groupByCategory={groupByCategory}
+                        setGroupByCategory={setGroupByCategory}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
+                    />
+                </div>
+            )}
+
 
             {tab === 'stock' && (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                                <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
-                                    <tr>
-                                        <th className="px-3 py-2">Producto</th>
-                                        <th className="px-3 py-2 text-center">Stock Físico</th>
-                                        <th className="px-3 py-2 text-right">Precio Actual</th>
-                                        {esAdminSucursal && <th className="px-3 py-2 text-right">Acciones</th>}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {loadingInv ? (
+                    {/* Barra de cabecera de vista con Paginador Odoo y Selector de vista */}
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-semibold text-gray-500">
+                            {processedInventario.length} {processedInventario.length === 1 ? 'producto listado' : 'productos listados'}
+                        </span>
+                        
+                        <div className="flex items-center gap-2.5">
+                            {/* Paginador superior estilo Odoo (1-60 / 353 < >) */}
+                            {totalItemsStock > 0 && (
+                                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200/80 shadow-2xs text-xs">
+                                    <span className="font-mono font-bold text-gray-700 tracking-tight">
+                                        {startItemStock}-{endItemStock} / {totalItemsStock}
+                                    </span>
+                                    <div className="flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPageStock(p => Math.max(1, p - 1))}
+                                            disabled={currentPageStock <= 1}
+                                            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                            title="Página anterior"
+                                        >
+                                            <ChevronLeft size={15} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPageStock(p => Math.min(totalPagesStock, p + 1))}
+                                            disabled={currentPageStock >= totalPagesStock}
+                                            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                            title="Página siguiente"
+                                        >
+                                            <ChevronRight size={15} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Selector de vista Tarjetas / Tabla */}
+                            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200/60 shadow-inner">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('kanban')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                        viewMode === 'kanban'
+                                            ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                            : 'text-gray-500 hover:text-gray-900'
+                                    }`}
+                                    title="Vista Tarjetas (Kanban Odoo)"
+                                >
+                                    <LayoutGrid size={13} />
+                                    <span>Tarjetas</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('lista')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                        viewMode === 'lista'
+                                            ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-gray-900/5'
+                                            : 'text-gray-500 hover:text-gray-900'
+                                    }`}
+                                    title="Vista Tabla (Lista)"
+                                >
+                                    <List size={13} />
+                                    <span>Tabla</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {loadingInv ? (
+                        <div className="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-100 shadow-xs">
+                            <Loader2 size={36} className="mx-auto animate-spin mb-3 text-indigo-500" />
+                            <p className="text-sm font-semibold text-gray-600">Cargando inventario...</p>
+                        </div>
+                    ) : processedInventario.length === 0 ? (
+                        <div className="bg-white rounded-2xl p-12 text-center text-gray-400 border border-gray-100 shadow-xs">
+                            <Package size={52} className="mx-auto mb-4 text-gray-300 opacity-60" />
+                            <p className="text-base font-bold text-gray-700">No se encontraron productos</p>
+                            <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                                Intenta cambiar los filtros, buscar por otro término o realizar un ajuste inicial de inventario.
+                            </p>
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={handleResetAllFilters}
+                                    className="mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-colors border border-indigo-200"
+                                >
+                                    Restablecer todos los filtros
+                                </button>
+                            )}
+                        </div>
+                    ) : viewMode === 'kanban' ? (
+                        /* Vista Kanban / Tarjetas estilo Odoo con grid auto-fill (4 cols en 100%, 5 cols en 80%, etc.) */
+                        <div className="space-y-6">
+                            {groupByCategory && groupedInventario ? (
+                                Object.entries(groupedInventario).map(([categoryName, items]) => (
+                                    <div key={categoryName} className="space-y-3">
+                                        <div className="flex items-center gap-2 pb-1.5 border-b border-gray-200">
+                                            <Layers size={15} className="text-indigo-600" />
+                                            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                                                {categoryName}
+                                            </h3>
+                                            <span className="text-[11px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100">
+                                                {items.length}
+                                            </span>
+                                        </div>
+                                        <div 
+                                            className="grid gap-2.5" 
+                                            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
+                                        >
+                                            {items.map(renderProductCard)}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div 
+                                    className="grid gap-2.5" 
+                                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}
+                                >
+                                    {processedInventario.map(renderProductCard)}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* Vista Tabla / Lista estándar */
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs">
+                                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
                                         <tr>
-                                            <td colSpan={esAdminSucursal ? 4 : 3} className="px-4 py-8 text-center text-gray-400">
-                                                <Loader2 size={32} className="mx-auto animate-spin mb-3 text-indigo-400" />
-                                                <p>Cargando inventario...</p>
-                                            </td>
+                                            <th className="px-3 py-2">Producto</th>
+                                            <th className="px-3 py-2 text-center">Stock Físico</th>
+                                            <th className="px-3 py-2 text-right">Precio Actual</th>
+                                            {esAdminSucursal && <th className="px-3 py-2 text-right">Acciones</th>}
                                         </tr>
-                                    ) : inventario.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={esAdminSucursal ? 4 : 3} className="px-4 py-8 text-center text-gray-400">
-                                                <Package size={48} className="mx-auto mb-4 opacity-20" />
-                                                <p className="text-base font-medium text-gray-600">No hay stock registrado</p>
-                                                <p className="text-sm mt-1">Realiza un ajuste de inventario para inicializar el stock.</p>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        inventario.map((item) => (
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {processedInventario.map((item) => (
                                             <tr key={item.producto_id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-3 py-2">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-8 h-8 rounded-md bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                                                             {item.image_url ? <img src={item.image_url} alt="" className="w-full h-full object-cover" /> : <Package size={16} className="text-gray-300" />}
                                                         </div>
-                                                        <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
+                                                        <div>
+                                                            <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
+                                                            {item.codigo_barras && (
+                                                                <div className="text-[10px] text-gray-400 font-mono">{item.codigo_barras}</div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-2 text-center">
@@ -565,21 +706,14 @@ export default function InventarioPage() {
                                                     </td>
                                                 )}
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        {totalItemsStock > ITEMS_PER_PAGE && (
-                            <Pagination 
-                                currentPage={currentPageStock}
-                                totalPages={totalPagesStock}
-                                onPageChange={setCurrentPageStock}
-                                totalItems={totalItemsStock}
-                                itemsPerPage={ITEMS_PER_PAGE}
-                            />
-                        )}
-                    </div>
+                    )}
+
+
                 </div>
             )}
 
@@ -596,7 +730,41 @@ export default function InventarioPage() {
             )}
 
             {tab === 'kardex' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-semibold text-gray-500">
+                            {movimientos.length} {movimientos.length === 1 ? 'movimiento listado' : 'movimientos listados'}
+                        </span>
+                        {totalItemsKardex > 0 && (
+                            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200/80 shadow-2xs text-xs">
+                                <span className="font-mono font-bold text-gray-700 tracking-tight">
+                                    {startItemKardex}-{endItemKardex} / {totalItemsKardex}
+                                </span>
+                                <div className="flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPageKardex(p => Math.max(1, p - 1))}
+                                        disabled={currentPageKardex <= 1}
+                                        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                        title="Página anterior"
+                                    >
+                                        <ChevronLeft size={15} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPageKardex(p => Math.min(totalPagesKardex, p + 1))}
+                                        disabled={currentPageKardex >= totalPagesKardex}
+                                        className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-25 disabled:hover:bg-transparent text-gray-700 transition-colors cursor-pointer"
+                                        title="Página siguiente"
+                                    >
+                                        <ChevronRight size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                             <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
@@ -674,15 +842,7 @@ export default function InventarioPage() {
                             </tbody>
                         </table>
                     </div>
-                    {totalItemsKardex > ITEMS_PER_PAGE && (
-                        <Pagination 
-                            currentPage={currentPageKardex}
-                            totalPages={totalPagesKardex}
-                            onPageChange={setCurrentPageKardex}
-                            totalItems={totalItemsKardex}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                        />
-                    )}
+                </div>
                 </div>
             )}
 

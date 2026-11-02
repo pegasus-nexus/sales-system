@@ -70,17 +70,12 @@ async def list_sucursales(
     
     if all_branches:
         return sucursales
-        
-    # === LISTA BLANCA ESTRICTA (Limpiar Dropdown del Frontend) ===
-    sucursales_limpias = []
-    for s in sucursales:
-        nombre = str(s.nombre).lower()
-        if any(bad in nombre for bad in ["fexco", "distribucion", "dsitribucion", "distribución", "vendedores", "sucre", "mayorista"]):
-            continue
-        if "heroinas" in nombre or "heroína" in nombre or "calacoto" in nombre or "recoleta" in nombre:
-            sucursales_limpias.append(s)
-            
-    return sucursales_limpias
+
+    # Retorna solo las sucursales físicas activas del tenant sin listas fijas
+    return [
+        s for s in sucursales 
+        if getattr(s, "is_active", True) and getattr(s, "tipo", TipoSucursal.FISICA) == TipoSucursal.FISICA
+    ]
 
 
 @router.post("/sucursales")

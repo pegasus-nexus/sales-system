@@ -112,6 +112,7 @@ export interface BIPanelGeneralResponse {
     ventas_por_hora: HourlyDistributionItemBI[];
     horario_inteligente?: VentasHorarioInteligenteBI;
     ventas_recientes: VentaRecienteBI[];
+    top_productos?: TopProductoItemBI[];
     resumen_operativo: ResumenOperativoBI;
     alertas_operativas: AlertaOperativaBI[];
 

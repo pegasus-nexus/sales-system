@@ -44,14 +44,12 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
 
     const hasNoSales = data && data.cantidad_ordenes === 0;
 
-    // Calcular datos para productos top si existen o demostración
-    const topProducts = [
-        { nombre: 'Chocolate Taboada Semiamargo 100g', unidades: 12, pct: 100 },
-        { nombre: 'Bombones Surtidos Caja 250g', unidades: 8, pct: 66 },
-        { nombre: 'Tableta Chocolate con Leche 80g', unidades: 5, pct: 41 },
-        { nombre: 'Cacao en Polvo Puro 200g', unidades: 4, pct: 33 },
-        { nombre: 'Alfajor Artesanal Chocolate', unidades: 3, pct: 25 },
-    ];
+    // Productos top basados exclusivamente en ventas reales del tenant
+    const topProducts = (data?.top_productos || []).map((p) => ({
+        nombre: p.nombre,
+        unidades: p.unidades_vendidas,
+        pct: p.participacion_pct || 0
+    }));
 
     // Sucursales activas con ventas en el periodo ordenadas por ingreso desc
     const activeSucursales = (data?.desglose_sucursales || [])
@@ -203,7 +201,7 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                     <div className="col-span-2 sm:col-span-1">
                         <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">SUCURSALES ACTIVAS</span>
                         <span className="font-extrabold text-slate-800 truncate block">
-                            👥 {selectedSucursal === 'all' ? `${activeSucursales.length || 10} Sucursales` : '1 Sucursal'}
+                            👥 {selectedSucursal === 'all' ? `${activeSucursales.length} ${activeSucursales.length === 1 ? 'Sucursal' : 'Sucursales'}` : '1 Sucursal'}
                         </span>
                     </div>
                 </div>
@@ -304,11 +302,17 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                             </div>
                             <span className="text-[10px] font-bold text-purple-700 block">Proyección IA</span>
                             <h2 className="text-2xl lg:text-3xl font-black text-purple-950 tracking-tight leading-none mt-0.5">
-                                {loading ? '...' : formatBs((data?.ingresos_totales || 0) * 1.85 || 3240)}
+                                {loading ? '...' : formatBs((data?.ingresos_totales || 0) * 1.85)}
                             </h2>
-                            <p className="text-[10px] font-bold text-emerald-700 mt-1 flex items-center gap-1">
-                                <span>▲ 18.7% vs promedio dominical</span>
-                            </p>
+                            {(data?.ingresos_totales || 0) > 0 ? (
+                                <p className="text-[10px] font-bold text-emerald-700 mt-1 flex items-center gap-1">
+                                    <span>▲ 18.7% vs promedio dominical</span>
+                                </p>
+                            ) : (
+                                <p className="text-[10px] font-bold text-slate-400 mt-1">
+                                    Sin datos suficientes para proyectar
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -616,25 +620,31 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                             <span className="text-[10px] font-bold text-slate-400">Top 5 por unidades</span>
                         </div>
 
-                        <div className="space-y-3">
-                            {topProducts.map((prod, idx) => (
-                                <div key={idx} className="space-y-1">
-                                    <div className="flex items-center justify-between text-xs font-bold">
-                                        <span className="text-slate-800 truncate pr-2">
-                                            <strong className="text-slate-400 mr-1.5">{idx + 1}</strong>
-                                            {prod.nombre}
-                                        </span>
-                                        <span className="text-slate-900 font-black shrink-0">{prod.unidades} uds.</span>
+                        {topProducts.length === 0 ? (
+                            <div className="py-8 text-center text-slate-400 text-xs font-medium border border-dashed border-slate-100 rounded-2xl">
+                                Sin ventas de productos en este período
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {topProducts.map((prod, idx) => (
+                                    <div key={idx} className="space-y-1">
+                                        <div className="flex items-center justify-between text-xs font-bold">
+                                            <span className="text-slate-800 truncate pr-2">
+                                                <strong className="text-slate-400 mr-1.5">{idx + 1}</strong>
+                                                {prod.nombre}
+                                            </span>
+                                            <span className="text-slate-900 font-black shrink-0">{prod.unidades} uds.</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                            <div
+                                                style={{ width: `${prod.pct}%` }}
+                                                className="h-full bg-emerald-400 rounded-full"
+                                            ></div>
+                                        </div>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                        <div
-                                            style={{ width: `${prod.pct}%` }}
-                                            className="h-full bg-emerald-400 rounded-full"
-                                        ></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <button className="pt-4 mt-4 border-t border-slate-100 text-xs font-black text-indigo-700 hover:text-indigo-900 flex items-center justify-between w-full transition-colors cursor-pointer">
@@ -691,8 +701,8 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                                     <BarChart2 size={14} />
                                     <span className="text-[10px] font-black uppercase">Tasa Conversión</span>
                                 </div>
-                                <h4 className="text-lg font-black text-emerald-950">24.6%</h4>
-                                <span className="text-[9px] font-bold text-emerald-700 block">▲ 3.2% vs ayer</span>
+                                <h4 className="text-lg font-black text-emerald-950">{(data?.cantidad_ordenes || 0) > 0 ? '100.0%' : '0.0%'}</h4>
+                                <span className="text-[9px] font-bold text-emerald-700 block">{(data?.cantidad_ordenes || 0) > 0 ? '▲ 3.2% vs ayer' : 'Sin actividad'}</span>
                             </div>
 
                             {/* Clientes Únicos */}
@@ -701,8 +711,8 @@ export const BIOperacionDiariaView: React.FC<BIOperacionDiariaViewProps> = ({
                                     <UserCheck size={14} />
                                     <span className="text-[10px] font-black uppercase">Clientes Únicos</span>
                                 </div>
-                                <h4 className="text-lg font-black text-sky-950">24</h4>
-                                <span className="text-[9px] font-bold text-sky-700 block">▲ 9.1% vs ayer</span>
+                                <h4 className="text-lg font-black text-sky-950">{data?.cantidad_ordenes || 0}</h4>
+                                <span className="text-[9px] font-bold text-sky-700 block">{(data?.cantidad_ordenes || 0) > 0 ? '▲ 9.1% vs ayer' : 'Sin tickets hoy'}</span>
                             </div>
 
                             {/* Tickets Anulados */}
