@@ -18,6 +18,8 @@ export interface SystemStatusSummary {
     services: ServiceStatusItem[];
     open_incidents_count: number;
     telegram_configured: boolean;
+    discord_configured?: boolean;
+    alerts_active?: boolean;
 }
 
 export interface HealthHistoryItem {
@@ -77,11 +79,13 @@ export async function exportSystemSnapshot(): Promise<Record<string, unknown>> {
 }
 
 export async function testTelegramNotification(customMessage?: string): Promise<{ success: boolean; message: string }> {
-    return client<{ success: boolean; message: string }>('/system-monitor/test-telegram', {
+    return client<{ success: boolean; message: string }>('/system-monitor/test-alert', {
         method: 'POST',
         body: { custom_message: customMessage },
     });
 }
+
+export const testAlertNotification = testTelegramNotification;
 
 export async function inviteAdminSetup(email: string): Promise<AdminInviteResponse> {
     return client<AdminInviteResponse>('/system-monitor/admin-invite', {

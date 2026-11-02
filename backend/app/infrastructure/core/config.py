@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     DEFAULT_PUBLIC_TENANT_ID: str = "69cd7f0a8f3f6866d4cfbb62"
     PROJECT_NAME: str = "Pegasus SalesSystem API"
@@ -10,22 +11,23 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     ENVIRONMENT: str = "development"
     GEMINI_API_KEY: str = ""
-    
+
     # Business Timezone Config
     BUSINESS_TIMEZONE: str = "America/La_Paz"
-    
+
     # Cloudinary Integration
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
-    
-    # System Monitor & Telegram Alerts (Zero hardcoding)
+
+    # System Monitor & Multi-channel Alerts (Zero hardcoding)
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
+    DISCORD_WEBHOOK_URL: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
     GOOGLE_DRIVE_FOLDER_ID: str = ""
     STATUS_PAGE_PROBE_INTERVAL_SECONDS: int = 60
-    
+
     model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 
 settings = Settings()
