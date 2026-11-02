@@ -252,40 +252,59 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    # 1. Calculate MRR
     tenants = await Tenant.find_all().to_list()
-    mrr = 0.0
+    active_tenants = [t for t in tenants if t.is_active and not t.deleted_at]
+    inactive_tenants = [t for t in tenants if not t.is_active or t.deleted_at]
     
-    # Fetch all plans to map code -> precio_mensual
+    # 1. Calculate Real MRR
     plans = await Plan.find_all().to_list()
-    plan_prices = {p.code: float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
+    plan_prices_by_id = {str(p.id): float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
+    plan_prices_by_code = {p.code: float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
     
-    for t in tenants:
-        if t.is_active:
-            # Add plan price to MRR
-            mrr += plan_prices.get(t.plan, 0.0)
+    DEFAULT_PLAN_PRICES = {
+        "BASICO": 40.0,
+        "PRO": 80.0,
+        "ENTERPRISE": 150.0,
+        "ILIMITADO": 250.0,
+        "FREE": 0.0,
+    }
+    
+    mrr = 0.0
+    plans_distribution = {}
+    
+    for t in active_tenants:
+        plan_key = getattr(t, "plan", "BASICO")
+        plan_str = plan_key.value if hasattr(plan_key, "value") else str(plan_key)
+        plans_distribution[plan_str] = plans_distribution.get(plan_str, 0) + 1
+        
+        price = 0.0
+        if t.plan_id and str(t.plan_id) in plan_prices_by_id:
+            price = plan_prices_by_id[str(t.plan_id)]
+        elif plan_str in plan_prices_by_code:
+            price = plan_prices_by_code[plan_str]
+        elif f"CUSTOM_PLAN_{plan_str.upper()}" in plan_prices_by_code:
+            price = plan_prices_by_code[f"CUSTOM_PLAN_{plan_str.upper()}"]
+        else:
+            price = DEFAULT_PLAN_PRICES.get(plan_str, 40.0)
             
-    # 2. Storage Estimation
-    # Instead of running dbStats (which doesn't separate by tenant),
-    # we estimate: Base (5MB) + Products (1KB each) + Sales (2KB each)
+        mrr += price
+            
+    # 2. Global Platform Counters
+    total_users_count = await User.find(User.is_active == True).count()
+    total_sales_count = await Sale.count()
+    total_branches_count = await Sucursal.find(Sucursal.is_active == True).count()
+
+    # 3. Storage Estimation by Tenant
     storage_by_tenant = []
-    
-    # Just estimate for active tenants, and sort by highest storage
-    for t in tenants:
-        if not t.is_active: continue
+    for t in active_tenants:
+        tid = str(t.id)
+        active_products = await Product.find(Product.tenant_id == tid).count()
+        sales_count = await Sale.find(Sale.tenant_id == tid).count()
         
-        # We can't do parallel queries easily in a loop without asyncio.gather, but for a small amount of tenants it's fine.
-        # To make it fast, we will just use a heuristic based on active tenants.
-        active_products = await Product.find(Product.tenant_id == str(t.id)).count()
-        sales_count = await Sale.find(Sale.tenant_id == str(t.id)).count()
-        
-        # Estimate in MB
         base_mb = 5.0
         products_mb = active_products * 0.001
         sales_mb = sales_count * 0.002
-        
         total_mb = base_mb + products_mb + sales_mb
-        # Convert to GB for pie chart, format to 2 decimal places
         total_gb = round(total_mb / 1024, 4)
         
         if total_gb > 0.0001:
@@ -294,7 +313,6 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
                 "value": total_gb
             })
             
-    # Sort and take top 5, group rest into 'Otros'
     storage_by_tenant.sort(key=lambda x: x["value"], reverse=True)
     if len(storage_by_tenant) > 5:
         top_5 = storage_by_tenant[:5]
@@ -303,18 +321,23 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
             top_5.append({"name": "Otros", "value": round(otros_gb, 4)})
         storage_by_tenant = top_5
         
-    # Get actual real DB storage size via dbStats
     try:
         db = Tenant.get_motor_collection().database
         stats = await db.command("dbStats")
         total_db_gb = round(stats.get("dataSize", 0) / (1024**3), 4)
     except Exception:
-        total_db_gb = 0.0
+        total_db_gb = round(sum(x["value"] for x in storage_by_tenant), 4)
         
     return {
-        "mrr": mrr,
+        "mrr": round(mrr, 2),
+        "activeTenants": len(active_tenants),
+        "inactiveTenants": len(inactive_tenants),
+        "totalUsers": total_users_count,
+        "totalSales": total_sales_count,
+        "totalBranches": total_branches_count,
         "storageByTenant": storage_by_tenant,
-        "totalDbGb": total_db_gb
+        "totalDbGb": total_db_gb,
+        "plansDistribution": [{"name": k, "count": v} for k, v in plans_distribution.items()],
     }
 
 @router.put("/tenants/{tenant_id}", response_model=Tenant)
@@ -412,6 +435,7 @@ async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate
 
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):
+    """Archiva la empresa (Soft Delete) protegiendo el histórico sin borrado destructivo."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
@@ -419,26 +443,32 @@ async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
-    # Hard delete the tenant for MVP cleanup
-    await tenant.soft_delete()
-    
-    # Cascade delete all related entities so credentials and codes are freed
-    from app.domain.models.user import User
-    from app.domain.models.product import Product
-    from app.domain.models.category import Category
-    from app.domain.models.sucursal import Sucursal
-    from app.domain.models.inventario import Inventario, InventoryLog
-    from app.domain.models.sale import Sale
-    
-    await User.find(User.tenant_id == tenant_id).delete()
-    await Sucursal.find(Sucursal.tenant_id == tenant_id).delete()
-    await Category.find(Category.tenant_id == tenant_id).delete()
-    await Product.find(Product.tenant_id == tenant_id).delete()
-    await Inventario.find(Inventario.tenant_id == tenant_id).delete()
-    await InventoryLog.find(InventoryLog.tenant_id == tenant_id).delete()
-    await Sale.find(Sale.tenant_id == tenant_id).delete()
+    await tenant.soft_delete(deleted_by=str(current_user.id))
+    # Desactivar accesos de usuarios de esta empresa para bloquear inicio de sesión
+    await User.find(User.tenant_id == tenant_id).update({"$set": {"is_active": False}})
 
-    return {"message": "Tenant and all associated data deleted successfully"}
+    return {"message": f"Empresa '{tenant.name}' archivada exitosamente"}
+
+
+@router.post("/tenants/{tenant_id}/restore")
+async def restore_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):
+    """Restaura una empresa archivada, reactivando su acceso."""
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    tenant = await _get_tenant_by_id_or_slug(tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
+    tenant.is_active = True
+    tenant.deleted_at = None
+    tenant.deleted_by = None
+    await tenant.save()
+    
+    # Reactivar usuarios de esta empresa
+    await User.find(User.tenant_id == tenant_id).update({"$set": {"is_active": True}})
+
+    return {"message": f"Empresa '{tenant.name}' restaurada y reactivada exitosamente"}
 
 
 class WhatsAppSettingsUpdate(BaseModel):

@@ -698,8 +698,10 @@ export default function Layout({ children }: LayoutProps) {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* Selector Contextual de Sucursal Activa */}
-                            <BranchSwitcherDropdown />
+                            {/* Selector Contextual de Sucursal Activa (Oculto para Admin SaaS) */}
+                            {role !== 'SUPERADMIN' && role !== 'SUPERADMIN_STAFF' && !location.pathname.startsWith('/admin') && (
+                                <BranchSwitcherDropdown />
+                            )}
 
                             {/* Botón de Novedades */}
                             <button
@@ -733,7 +735,9 @@ export default function Layout({ children }: LayoutProps) {
                         <span className="font-bold text-xs text-gray-900 hidden sm:inline">Pegasus Nexus</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <BranchSwitcherDropdown />
+                        {role !== 'SUPERADMIN' && role !== 'SUPERADMIN_STAFF' && !location.pathname.startsWith('/admin') && (
+                            <BranchSwitcherDropdown />
+                        )}
                         {role !== 'CAJERO' && (
                             <button
                                 onClick={() => setMobileMenuOpen(true)}

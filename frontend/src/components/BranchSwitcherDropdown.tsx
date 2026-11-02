@@ -12,13 +12,15 @@ export default function BranchSwitcherDropdown() {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const isMatrixUser = role && ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'SUPERADMIN_STAFF'].includes(role);
+    // Los administradores de SaaS gestionan la plataforma globalmente y no pertenecen a sucursales locales
+    const isSaaSAdmin = role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF';
+    const isMatrixUser = role && ['ADMIN_MATRIZ', 'ADMIN'].includes(role);
 
     const { data: sucursales = [], isLoading } = useQuery({
         queryKey: ['sucursales-list-switcher'],
         queryFn: () => getSucursales(true),
         staleTime: 1000 * 60 * 5, // 5 min
-        enabled: !!isMatrixUser,
+        enabled: !isSaaSAdmin && !!isMatrixUser,
     });
 
     // Close on outside click
@@ -31,6 +33,11 @@ export default function BranchSwitcherDropdown() {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Para Superadmins de SaaS, ocultar completamente el selector de sucursales
+    if (isSaaSAdmin) {
+        return null;
+    }
 
     // For single-branch user (Cajero / Admin de sucursal), show simple badge
     if (!isMatrixUser) {

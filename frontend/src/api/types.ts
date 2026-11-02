@@ -50,12 +50,25 @@ export interface Tenant {
     name: string;
     slug?: string;
     plan: string;
+    plan_id?: string;
     is_active: boolean;
+    deleted_at?: string | null;
     plan_expires_at?: string;
     settings?: TenantSettings;
     configuracion?: Record<string, unknown>;
     modulos_activos?: string[];
     created_at: string;
+}
+
+export interface Plan {
+    _id?: string;
+    code: string;
+    name: string;
+    max_sucursales?: number;
+    max_usuarios_por_sucursal?: number;
+    is_public: boolean;
+    precio_mensual?: number;
+    features: string[];
 }
 
 export interface TenantCreate {

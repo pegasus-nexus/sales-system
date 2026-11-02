@@ -74,6 +74,7 @@ export const createTenant = (data: TenantCreate) => client<Tenant>('/tenants', {
 export const updateTenant = (id: string, data: TenantUpdate) => client<Tenant>(`/tenants/${id}`, { method: 'PUT', body: data });
 
 export const deleteTenant = (id: string) => client<{message: string}>(`/tenants/${id}`, { method: 'DELETE' });
+export const restoreTenant = (id: string) => client<{message: string}>(`/tenants/${id}/restore`, { method: 'POST' });
 
 export const getMyFeatures = () => client<{ features: string[]; plan: string; plan_name?: string; rubro: string; modulos_activos: string[] }>('/tenants/my-features');
 
