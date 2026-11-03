@@ -29,6 +29,13 @@ class ProductCreate(BaseModel):
     tipo_item: Optional[TipoItem] = TipoItem.FISICO
     show_on_web: Optional[bool] = True
     is_destacado: Optional[bool] = False
+    # Variantes Odoo Style
+    parent_id: Optional[str] = None
+    is_variant: Optional[bool] = False
+    has_variants: Optional[bool] = False
+    atributos: Optional[dict[str, str]] = None
+    variantes_resumen: Optional[List[dict]] = None
+    variantes_payload: Optional[List[dict]] = None
 
 
 class ProductUpdate(BaseModel):
@@ -48,3 +55,9 @@ class ProductUpdate(BaseModel):
     tipo_item: Optional[TipoItem] = None
     show_on_web: Optional[bool] = None
     is_destacado: Optional[bool] = None
+    parent_id: Optional[str] = None
+    is_variant: Optional[bool] = None
+    has_variants: Optional[bool] = None
+    atributos: Optional[dict[str, str]] = None
+    variantes_resumen: Optional[List[dict]] = None
+    variantes_payload: Optional[List[dict]] = None

@@ -62,10 +62,12 @@ class ProductService:
             query = query.find({
                 "$or": [
                     {"descripcion": {"$regex": search, "$options": "i"}},
-                    {"codigo": {"$regex": search, "$options": "i"}},
+                    {"codigo_largo": {"$regex": search, "$options": "i"}},
                     {"codigo_corto": {"$regex": search, "$options": "i"}}
                 ]
             })
+        else:
+            query = query.find({"is_variant": {"$ne": True}})
             
         if category_id:
             query = query.find(Product.categoria_id == category_id)
@@ -161,21 +163,67 @@ class ProductService:
             if existing:
                 raise HTTPException(status_code=400, detail=f"El código corto '{data.codigo_corto}' ya existe en tu catálogo")
 
-        # Validate descripcion uniqueness within tenant (case-insensitive)
-        if data.descripcion:
+        # Validate descripcion uniqueness within tenant (case-insensitive) for primary products
+        if data.descripcion and not data.is_variant:
             existing_name = await Product.find_one(
                 Product.tenant_id == tenant_id,
                 Product.is_active == True,
+                Product.is_variant == False,
                 {"descripcion": {"$regex": f"^{data.descripcion.strip()}$", "$options": "i"}}
             )
             if existing_name:
                 raise HTTPException(status_code=400, detail=f"El producto con nombre '{data.descripcion}' ya existe en tu catálogo")
     
+        variantes_payload = data.variantes_payload or []
+        create_payload = data.model_dump(exclude={"precios_sucursales", "variantes_payload"})
+
         product = Product(
             tenant_id=tenant_id,
-            **data.model_dump(exclude={"precios_sucursales"}),
+            **create_payload,
         )
         await product.create()
+
+        # Si tiene variantes, crearlas de forma atómica y enlazada
+        if data.has_variants and variantes_payload:
+            created_variantes = []
+            for v_idx, v in enumerate(variantes_payload):
+                v_desc = v.get("descripcion") or f"{product.descripcion} ({', '.join(v.get('atributos', {}).values())})"
+                v_sku = v.get("codigo_corto") or f"{product.codigo_corto or 'SKU'}-{v_idx+1}"
+                v_barcode = v.get("codigo_largo")
+                v_precio = float(v.get("precio_venta", product.precio_venta))
+                v_costo = float(v.get("costo_producto", product.costo_producto))
+                v_atributos = v.get("atributos", {})
+
+                child = Product(
+                    tenant_id=tenant_id,
+                    parent_id=str(product.id),
+                    is_variant=True,
+                    has_variants=False,
+                    descripcion=v_desc,
+                    categoria_id=product.categoria_id,
+                    codigo_corto=v_sku,
+                    codigo_largo=v_barcode,
+                    costo_producto=v_costo,
+                    precio_venta=v_precio,
+                    atributos=v_atributos,
+                    image_url=v.get("image_url") or product.image_url,
+                    tipo_item=product.tipo_item,
+                    show_on_web=product.show_on_web,
+                )
+                await child.create()
+                created_variantes.append({
+                    "_id": str(child.id),
+                    "id": str(child.id),
+                    "descripcion": child.descripcion,
+                    "codigo_corto": child.codigo_corto,
+                    "codigo_largo": child.codigo_largo,
+                    "precio_venta": float(child.precio_venta),
+                    "costo_producto": float(child.costo_producto),
+                    "atributos": child.atributos or {},
+                })
+
+            product.variantes_resumen = created_variantes
+            await product.save()
         from app.infrastructure.core.audit import log_audit
         await log_audit(tenant_id, str(current_user.id), current_user.username, "CREATE_PRODUCT", "PRODUCT", str(product.id), {"codigo": product.codigo_corto})
         

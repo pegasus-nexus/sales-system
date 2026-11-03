@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit2, Loader2, Package, Image as ImageIcon, Check, X, Tag, Upload, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
-import { getProducts, getCategories, createProduct, updateProduct, deactivateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, uploadImage, getMealPlanTemplates, getProveedores } from '../api/api';
+import { getProducts, getCategories, updateProduct, deactivateProduct, exportProductTemplate, importProductsExcel, importGlobalExcel, exportProductPriceTemplate, importProductPrices, getSucursales, getProveedores } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
 import { useConfirm } from '../components/ConfirmModal';
 
-import type { Product, Category, ProductCreate, Sucursal } from '../api/types';
+import type { Product, Sucursal } from '../api/types';
 import Pagination from '../components/Pagination';
+import ProductModal from '../components/catalogo/ProductModal';
 
 export default function CatalogoPage() {
     const confirm = useConfirm();
@@ -308,7 +309,14 @@ export default function CatalogoPage() {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <div className="font-medium text-gray-900">{p.descripcion}</div>
+                                                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                                                        <span>{p.descripcion}</span>
+                                                        {p.has_variants && (
+                                                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                                                {p.variantes_resumen?.length ? `${p.variantes_resumen.length} Variantes` : 'Con Variantes'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="text-xs text-indigo-500 mt-0.5 font-mono flex gap-2">
                                                         <span>{p.codigo_corto || 'SIN SKU'}</span>
                                                         {p.codigo_largo && <span className="text-gray-400">| EAN: {p.codigo_largo}</span>}
@@ -582,329 +590,6 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
-    );
-}
-
-function ProductModal({ onClose, product, categories, sucursales, isBranchAdmin, proveedores = [] }: { isOpen: boolean, onClose: () => void, product: Product | null, categories: Category[], sucursales: Sucursal[], isBranchAdmin?: boolean, proveedores?: any[] }) {
-    const { user } = useAuthStore();
-    const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ' || user?.role === 'ADMIN';
-    const isEditing = !!product;
-    const queryClient = useQueryClient();
-    const [isUploading, setIsUploading] = useState(false);
-
-    const { data: planTemplates } = useQuery({
-        queryKey: ['meal-plan-templates-catalog'],
-        queryFn: getMealPlanTemplates
-    });
-
-    const [formData, setFormData] = useState<ProductCreate>({
-        descripcion: product?.descripcion || '',
-        categoria_id: product?.categoria_id || (categories.length > 0 ? categories[0]._id : ''),
-        precio_venta: product?.precio_venta || 0,
-        costo_producto: product?.costo_producto || 0,
-        codigo_corto: product?.codigo_corto || '',
-        codigo_largo: product?.codigo_largo || '',
-        proveedores: product?.proveedores || [],
-        image_url: product?.image_url || '',
-        precios_sucursales: product?.precios_sucursales || {},
-        meal_plan_template_id: product?.meal_plan_template_id || '',
-    });
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (file.size > 5 * 1024 * 1024) { 
-            toast.error("La imagen no debe superar los 5MB.");
-            return;
-        }
-
-        try {
-            setIsUploading(true);
-            const res = await uploadImage(file);
-            setFormData({ ...formData, image_url: res.url });
-            toast.success("Foto del producto subida correctamente.");
-        } catch (error: any) {
-            toast.error(error.message || "Error al subir la foto");
-        } finally {
-            setIsUploading(false);
-        }
-    };
-    
-    const handlePriceChange = (sucursalId: string, val: string) => {
-        const numVal = parseFloat(val);
-        setFormData(prev => ({
-            ...prev,
-            precios_sucursales: {
-                ...(prev.precios_sucursales || {}),
-                [sucursalId]: isNaN(numVal) ? 0 : numVal
-            }
-        }));
-    };
-
-    const createMut = useMutation({
-        mutationFn: createProduct,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['products'] });
-            onClose();
-        }
-    });
-
-    const updateMut = useMutation({
-        mutationFn: (data: ProductCreate) => updateProduct(product!._id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['products'] });
-            onClose();
-        }
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isEditing) {
-            updateMut.mutate(formData);
-        } else {
-            createMut.mutate(formData);
-        }
-    };
-
-    const isPending = createMut.isPending || updateMut.isPending;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
-                    <h3 className="text-lg font-bold text-gray-900">
-                        {isBranchAdmin ? 'Gestionar Foto del Producto' : (isEditing ? 'Editar Producto' : 'Crear Nuevo Producto')}
-                    </h3>
-                    <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5">
-                    {isBranchAdmin && (
-                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-                            🔒 Como Administrador de Sucursal solo puedes actualizar o eliminar la fotografía del producto. Los nombres, precios y costos son administrados por la Administración Matriz.
-                        </div>
-                    )}
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Descripción / Nombre</label>
-                        <input
-                            required
-                            type="text"
-                            disabled={isBranchAdmin}
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            value={formData.descripcion}
-                            onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-                            placeholder="Ej. Coca Cola 2L"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Categoría</label>
-                        <select
-                            required
-                            disabled={isBranchAdmin}
-                            className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            value={formData.categoria_id}
-                            onChange={e => setFormData({ ...formData, categoria_id: e.target.value })}
-                        >
-                            <option value="" disabled>Seleccionar...</option>
-                            {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">SKU (Código Corto)</label>
-                            <input
-                                type="text"
-                                disabled={isBranchAdmin}
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 uppercase font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                value={formData.codigo_corto}
-                                onChange={e => setFormData({ ...formData, codigo_corto: e.target.value })}
-                                placeholder="Ej: C-COLA-2L"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">EAN (Código Largo)</label>
-                            <input
-                                type="text"
-                                disabled={isBranchAdmin}
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900 placeholder-gray-400 font-mono disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                value={formData.codigo_largo}
-                                onChange={e => setFormData({ ...formData, codigo_largo: e.target.value })}
-                                placeholder="Ej: 777123456789"
-                            />
-                        </div>
-                    </div>
-
-                    {!isBranchAdmin && (
-                        <div className="pb-4 border-b border-gray-100">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Costo Base (Bs) (Opcional)</label>
-                            <input
-                                type="number" step="0.01" min="0" required
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value={formData.costo_producto === 0 ? '' : formData.costo_producto}
-                                onChange={e => setFormData({ ...formData, costo_producto: parseFloat(e.target.value) || 0 })}
-                                placeholder="Costo de adquisición"
-                            />
-                        </div>
-                    )}
-
-                    {!isBranchAdmin && (
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Proveedores (Opcional)</label>
-                            <select
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value=""
-                                onChange={(e) => {
-                                    if (!e.target.value) return;
-                                    const current = formData.proveedores || [];
-                                    if (!current.includes(e.target.value)) {
-                                        setFormData({ ...formData, proveedores: [...current, e.target.value] });
-                                    }
-                                }}
-                            >
-                                <option value="">Añadir proveedor...</option>
-                                {proveedores.filter((p: any) => !(formData.proveedores || []).includes(p.nombre)).map((p: any) => (
-                                    <option key={p.id || p._id} value={p.nombre}>{p.nombre}</option>
-                                ))}
-                            </select>
-                            
-                            {(formData.proveedores || []).length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {(formData.proveedores || []).map((provName) => (
-                                        <span key={provName} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm transition-all hover:shadow">
-                                            {provName}
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, proveedores: (formData.proveedores || []).filter(n => n !== provName) })}
-                                                className="hover:bg-indigo-200 hover:text-indigo-900 p-0.5 rounded-full transition-colors flex items-center justify-center"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {!isBranchAdmin && (
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Vincular a Plan de Comidas (Opcional)</label>
-                            <select
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value={formData.meal_plan_template_id || ''}
-                                onChange={e => setFormData({ ...formData, meal_plan_template_id: e.target.value || '' })}
-                            >
-                                <option value="">No vincular a ningún plan</option>
-                                {planTemplates?.map((t: any) => (
-                                    <option key={t._id} value={t._id}>{t.nombre} ({t.cantidad_comidas} comidas)</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div className="flex gap-4 items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fotografía del Producto (Opcional)</label>
-                            <label className={`flex items-center justify-center w-full h-12 px-4 transition bg-white border-2 border-gray-200 border-dashed rounded-xl appearance-none cursor-pointer hover:border-indigo-400 focus:outline-none ${isUploading ? 'opacity-50' : ''}`}>
-                                <span className="flex items-center space-x-2 text-gray-600">
-                                    {isUploading ? <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" /> : <Upload className="w-5 h-5 text-gray-400" />}
-                                    <span className="font-medium text-sm">{isUploading ? 'Subiendo...' : 'Subir archivo (Max 5MB)'}</span>
-                                </span>
-                                <input type="file" name="file_upload" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} disabled={isUploading} />
-                            </label>
-                        </div>
-                        {formData.image_url && (
-                            <div className="shrink-0 relative group h-12 w-12 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
-                                <img src={formData.image_url} alt="Preview" className="h-full w-full object-cover" />
-                                <button type="button" onClick={() => setFormData({ ...formData, image_url: '' })} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Eliminar foto">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    
-                    {isMatrizAdmin && (
-                        <div className="pb-4 border-b border-gray-100">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sucursales Permitidas (Alcance)</label>
-                            <p className="text-xs text-gray-500 mb-2">Si no seleccionas ninguna, el producto será Global y todas las sucursales lo podrán ver. Si seleccionas alguna, será exclusivo para ellas.</p>
-                            <select
-                                multiple
-                                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl px-4 py-2.5 outline-none transition-all text-sm text-gray-900"
-                                value={formData.sucursales_permitidas || []}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions).map(o => o.value);
-                                    setFormData({ ...formData, sucursales_permitidas: options });
-                                }}
-                            >
-                                {sucursales.map(suc => (
-                                    <option key={suc._id} value={suc._id}>{suc.nombre}</option>
-                                ))}
-                            </select>
-                            {(formData.sucursales_permitidas || []).length > 0 && (
-                                <div className="mt-2 flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, sucursales_permitidas: [] })}
-                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold"
-                                    >
-                                        Limpiar selección (Hacer Global)
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-{!isBranchAdmin && sucursales.length > 0 && (
-                        <div className="border-t border-gray-100 pt-5 mt-2">
-                            <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <Tag size={16} className="text-indigo-500" />
-                                Precios Específicos por Sucursal
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {sucursales.map(suc => (
-                                    <div key={suc._id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                        <label className="block text-xs font-semibold text-gray-600 mb-1.5 truncate" title={suc.nombre}>{suc.nombre}</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Bs.</span>
-                                            <input
-                                                type="number" step="0.01" min="0" required
-                                                className="w-full bg-white border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg pl-9 pr-3 py-1.5 outline-none transition-all text-sm text-gray-900"
-                                                value={formData.precios_sucursales?.[suc._id] ?? ''}
-                                                onChange={e => handlePriceChange(suc._id, e.target.value)}
-                                                placeholder="0.00"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {(createMut.isError || updateMut.isError) && (
-                        <div className="p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200 font-medium">
-                            Hubo un error al guardar el producto. Verifica los datos o el SKU.
-                        </div>
-                    )}
-
-                    <div className="flex gap-3 pt-4 mt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-2.5 text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 font-semibold rounded-xl text-sm transition-all shadow-sm">
-                            Cancelar
-                        </button>
-                        <button type="submit" disabled={isPending} className="flex-1 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2">
-                            {isPending ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                            {isBranchAdmin ? 'Guardar Foto' : (isEditing ? 'Guardar Cambios' : 'Crear Producto')}
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     );

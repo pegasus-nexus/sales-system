@@ -49,6 +49,13 @@ class Product(Document, SoftDeleteMixin):
     precios_sucursales: Optional[dict[str, DecimalMoney]] = None
     sucursales_permitidas: list[str] = []  # Si esta vacio, es global. Si tiene IDs, solo esas sucursales lo ven.
 
+    # Variantes Dinámicas Odoo Style
+    parent_id: Optional[str] = None       # ID de la plantilla madre si este ítem es una variante
+    is_variant: bool = False              # True si es una variante derivada (ej: 50g, Talla 40)
+    has_variants: bool = False            # True si es una plantilla que agrupa variantes
+    atributos: Optional[dict[str, str]] = None # ej: {"Presentación": "100g", "Sabor": "Amargo"} o {"Talla": "40", "Color": "Negro"}
+    variantes_resumen: Optional[List[dict]] = None # Resumen cacheado de variantes de esta plantilla para el catálogo
+
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
@@ -58,5 +65,7 @@ class Product(Document, SoftDeleteMixin):
             "tenant_id",
             "categoria_id",
             "codigo_corto",
+            "parent_id",
+            "is_variant",
             IndexModel([("descripcion", TEXT), ("codigo_corto", TEXT)], name="product_text_search"),
         ]

@@ -134,6 +134,23 @@ export interface AlmacenUpdate {
 }
 
 /** Canonical product model matching the backend Product document. */
+export interface ProductVariantItem {
+    _id?: string;
+    id?: string;
+    descripcion: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    precio_venta: number;
+    costo_producto: number;
+    atributos: Record<string, string>;
+    image_url?: string;
+}
+
+export interface ProductAttributeDef {
+    name: string;
+    values: string[];
+}
+
 export interface Product {
     _id: string;
     tenant_id: string;
@@ -154,6 +171,11 @@ export interface Product {
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
+    parent_id?: string;
+    is_variant?: boolean;
+    has_variants?: boolean;
+    atributos?: Record<string, string>;
+    variantes_resumen?: ProductVariantItem[];
 }
 
 export interface ProductCreate {
@@ -171,6 +193,12 @@ export interface ProductCreate {
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
+    parent_id?: string;
+    is_variant?: boolean;
+    has_variants?: boolean;
+    atributos?: Record<string, string>;
+    variantes_resumen?: ProductVariantItem[];
+    variantes_payload?: ProductVariantItem[];
 }
 
 export type ProductUpdate = Partial<ProductCreate>;
