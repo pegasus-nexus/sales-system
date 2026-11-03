@@ -116,7 +116,11 @@ export default function LoginPage() {
 
             // 3. Actualizar estado y redirigir
             login(token, userData);
-            navigate('/');
+            if (userData.role === 'SUPERADMIN' || userData.role === 'SUPERADMIN_STAFF') {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Error de autenticación';
             setError(message);

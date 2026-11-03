@@ -235,13 +235,15 @@ function App() {
                   <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                     <SaasWorkspaceLayout>
                       <Routes>
-                        <Route path="/" element={<SaasAppsLauncher />} />
-                        <Route path="/dashboard" element={<AdminDashboardPage />} />
-                        <Route path="/empresas" element={<TenantsAdminPage />} />
-                        <Route path="/planes" element={<PlanesAdminPage />} />
-                        <Route path="/health" element={<SystemHealthPage />} />
-                        <Route path="/monitor" element={<SystemHealthPage />} />
-                        <Route path="/colaboradores" element={<SaasCollaboratorsPage />} />
+                        <Route index element={<SaasAppsLauncher />} />
+                        <Route path="dashboard" element={<AdminDashboardPage />} />
+                        <Route path="empresas" element={<TenantsAdminPage />} />
+                        <Route path="planes" element={<PlanesAdminPage />} />
+                        <Route path="health" element={<SystemHealthPage />} />
+                        <Route path="monitor" element={<SystemHealthPage />} />
+                        <Route path="colaboradores" element={<SaasCollaboratorsPage />} />
+                        <Route path="auditoria" element={<AuditLogsPage />} />
+                        <Route path="*" element={<SaasAppsLauncher />} />
                       </Routes>
                     </SaasWorkspaceLayout>
                   </ProtectedRoute>
