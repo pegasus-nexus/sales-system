@@ -2262,3 +2262,49 @@ export const getLoginBranding = async (slug?: string): Promise<LoginBrandingResp
     const query = slug ? `?slug=${encodeURIComponent(slug)}` : '';
     return client<LoginBrandingResponse>(`/auth/login-branding${query}`);
 };
+
+
+// ── WhatsApp App API (Odoo Style) ──────────────────────────────
+import type { WhatsAppAccountStatus, WhatsAppTemplate, WhatsAppLog, WhatsAppSendPayload } from './types';
+
+export const getWhatsAppStatus = (): Promise<WhatsAppAccountStatus> =>
+    client<WhatsAppAccountStatus>('/whatsapp/status');
+
+export const updateWhatsAppConfig = (data: Partial<WhatsAppAccountStatus>): Promise<WhatsAppAccountStatus> =>
+    client<WhatsAppAccountStatus>('/whatsapp/config', {
+        method: 'POST',
+        body: data,
+    });
+
+export const getWhatsAppTemplates = (): Promise<WhatsAppTemplate[]> =>
+    client<WhatsAppTemplate[]>('/whatsapp/templates');
+
+export const createWhatsAppTemplate = (data: Omit<WhatsAppTemplate, 'id' | '_id' | 'created_at'>): Promise<WhatsAppTemplate> =>
+    client<WhatsAppTemplate>('/whatsapp/templates', {
+        method: 'POST',
+        body: data,
+    });
+
+export const updateWhatsAppTemplate = (id: string, data: Partial<WhatsAppTemplate>): Promise<WhatsAppTemplate> =>
+    client<WhatsAppTemplate>(`/whatsapp/templates/${id}`, {
+        method: 'PUT',
+        body: data,
+    });
+
+export const deleteWhatsAppTemplate = (id: string): Promise<{ status: string }> =>
+    client<{ status: string }>(`/whatsapp/templates/${id}`, {
+        method: 'DELETE',
+    });
+
+export const sendWhatsAppCustomMessage = (payload: WhatsAppSendPayload): Promise<{ success: boolean; log_id: string; phone: string }> =>
+    client<{ success: boolean; log_id: string; phone: string }>('/whatsapp/send', {
+        method: 'POST',
+        body: payload,
+    });
+
+export const getWhatsAppLogs = (page: number = 1, limit: number = 30, origen?: string, estado?: string): Promise<{ items: WhatsAppLog[]; total: number; page: number; pages: number }> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (origen) params.append('origen', origen);
+    if (estado) params.append('estado', estado);
+    return client<{ items: WhatsAppLog[]; total: number; page: number; pages: number }>(`/whatsapp/logs?${params.toString()}`);
+};

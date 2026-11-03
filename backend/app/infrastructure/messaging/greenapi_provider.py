@@ -49,3 +49,36 @@ class GreenApiProvider(BaseMessageProvider):
         except Exception as e:
             logger.error(f"GreenAPI Provider Error: {e!s}")
             return False
+
+    async def get_status(self) -> dict:
+        url_state = f"https://api.green-api.com/waInstance{self.instance_id}/getStateInstance/{self.api_token}"
+        url_qr = f"https://api.green-api.com/waInstance{self.instance_id}/qr/{self.api_token}"
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res_state = await client.get(url_state)
+                state = "unknown"
+                if res_state.status_code == 200:
+                    state_data = res_state.json()
+                    state = state_data.get("stateInstance", "unknown")
+                
+                qr_base64 = None
+                if state in ("notAuthorized", "unknown"):
+                    res_qr = await client.get(url_qr)
+                    if res_qr.status_code == 200:
+                        qr_data = res_qr.json()
+                        qr_base64 = qr_data.get("message")
+
+                return {
+                    "provider": "GREENAPI",
+                    "state": state,
+                    "is_authorized": state == "authorized",
+                    "qr_code": qr_base64
+                }
+        except Exception as e:
+            logger.error(f"GreenAPI get_status error: {e}")
+            return {
+                "provider": "GREENAPI",
+                "state": "error",
+                "error": str(e),
+                "is_authorized": False
+            }

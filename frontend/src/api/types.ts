@@ -947,3 +947,53 @@ export interface LoginBrandingResponse {
     description: string;
     badge_text: string;
 }
+
+
+export interface WhatsAppLiveStatus {
+    provider?: string;
+    state?: string;
+    is_authorized?: boolean;
+    qr_code?: string | null;
+    error?: string;
+}
+
+export interface WhatsAppAccountStatus {
+    enabled: boolean;
+    provider: string;
+    instance_id?: string;
+    api_token?: string | null;
+    default_message: string;
+    live_status: WhatsAppLiveStatus;
+}
+
+export interface WhatsAppTemplate {
+    id: string;
+    _id?: string;
+    nombre: string;
+    categoria: 'POS' | 'CREDITOS' | 'PEDIDOS' | 'MARKETING' | 'GENERAL' | string;
+    mensaje: string;
+    is_default: boolean;
+    created_at?: string;
+}
+
+export interface WhatsAppLog {
+    id: string;
+    telefono: string;
+    cliente_nombre?: string;
+    mensaje: string;
+    origen: string;
+    estado: 'ENVIADO' | 'ERROR' | 'PENDIENTE' | string;
+    error_detalle?: string;
+    pdf_url?: string;
+    usuario_nombre: string;
+    created_at: string;
+}
+
+export interface WhatsAppSendPayload {
+    phone: string;
+    message: string;
+    origen?: string;
+    cliente_nombre?: string;
+    pdf_url?: string;
+    variables?: Record<string, string>;
+}

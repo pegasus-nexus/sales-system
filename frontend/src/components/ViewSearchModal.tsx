@@ -4,7 +4,7 @@ import {
     Search, Wallet, ShoppingBag, RotateCcw,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
     Percent, QrCode, BarChart3, Banknote, Truck, Settings, Shield,
-    Briefcase, TrendingUp, X, Sparkles, ArrowRight, User as UserIcon, Loader2
+    Briefcase, TrendingUp, X, Sparkles, ArrowRight, User as UserIcon, Loader2, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts, getClientes } from '../api/api';
@@ -37,6 +37,7 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
         { id: 'ventas', title: 'Historial de Ventas', category: 'Ventas & Caja', path: '/ventas', icon: RotateCcw, keywords: ['ventas', 'historial', 'tickets', 'facturas', 'facturador', 'anulaciones'] },
         { id: 'caja', title: 'Caja & Arqueo', category: 'Ventas & Caja', path: '/caja', icon: Wallet, keywords: ['caja', 'arqueo', 'abrir caja', 'cerrar caja', 'gastos', 'movimientos', 'efectivo'] },
         { id: 'creditos', title: 'Créditos & Cobranzas', category: 'Ventas & Caja', path: '/creditos', icon: Banknote, keywords: ['creditos', 'deuda', 'cobro', 'cuotas', 'pagos', 'cobranza', 'settle due'] },
+        { id: 'whatsapp', title: 'WhatsApp Nexus', category: 'Ventas & Caja', path: '/whatsapp', icon: MessageSquare, keywords: ['whatsapp', 'mensajes', 'comprobantes', 'plantillas', 'notificaciones', 'chat'] },
 
         // Inventario & Productos
         { id: 'pedidos', title: 'Pedidos Internos (B2B)', category: 'Inventario & Logística', path: '/pedidos', icon: ClipboardList, keywords: ['pedidos', 'pedidos internos', 'solicitud stock', 'b2b', 'reposicion', 'despacho'] },

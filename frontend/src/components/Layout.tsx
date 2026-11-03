@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut, Calculator,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen, MessageSquare
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -356,6 +356,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: Wallet, label: 'Caja', path: '/caja', feature: 'CAJA', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'] },
                     { icon: Banknote, label: 'Créditos', path: '/creditos', feature: 'CREDITOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: FileText, label: 'Cotizaciones (B2B)', path: '/cotizaciones', feature: 'COTIZACIONES', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
+                    { icon: MessageSquare, label: 'WhatsApp', path: '/whatsapp', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO', 'SUPERADMIN'] },
                 ]
             },
             {

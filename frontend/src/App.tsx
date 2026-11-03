@@ -50,6 +50,7 @@ const IngresoHistoricoPage = lazy(() => import('./pages/IngresoHistoricoPage'));
 const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage'));
 const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
+const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -243,6 +244,7 @@ function App() {
                         <Route path="monitor" element={<SystemHealthPage />} />
                         <Route path="colaboradores" element={<SaasCollaboratorsPage />} />
                         <Route path="auditoria" element={<AuditLogsPage />} />
+                        <Route path="whatsapp" element={<WhatsAppPage />} />
                         <Route path="*" element={<SaasAppsLauncher />} />
                       </Routes>
                     </SaasWorkspaceLayout>
@@ -466,6 +468,13 @@ function App() {
                       <Route path="/premios-web" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                           <PremiosWebPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* WhatsApp Nexus */}
+                      <Route path="/whatsapp" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF}>
+                          <WhatsAppPage />
                         </ProtectedRoute>
                       } />
 
