@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight, Barcode } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -12,6 +12,7 @@ import type { AjusteInventario } from '../api/types';
 import BulkAjusteView from '../components/BulkAjusteView';
 import LotesTab from '../components/inventario/LotesTab';
 import { OdooSearchBar } from '../components/inventario/OdooSearchBar';
+import BarcodeScannerModal from '../components/inventario/BarcodeScannerModal';
 
 import { formatFullDate as formatDate } from '../utils/dateUtils';
 
@@ -41,6 +42,7 @@ export default function InventarioPage() {
     const [isExportingExcel, setIsExportingExcel] = useState(false);
     const [isRecalculating, setIsRecalculating] = useState(false);
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
     const actionsMenuRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -329,6 +331,17 @@ export default function InventarioPage() {
                         title="Opciones y Acciones de Inventario"
                     >
                         <MoreVertical size={17} />
+                    </button>
+
+                    {/* Botón Modo Escáner (Odoo stock_barcode) */}
+                    <button
+                        type="button"
+                        onClick={() => setIsBarcodeScannerOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer ml-1"
+                        title="Terminal de Código de Barras Continuo (Odoo stock_barcode)"
+                    >
+                        <Barcode size={15} />
+                        <span className="hidden sm:inline">Modo Escáner</span>
                     </button>
 
                     {/* Menú Desplegable de Tres Puntitos */}
@@ -882,6 +895,24 @@ export default function InventarioPage() {
             {isImportModalOpen && (
                 <ImportInventoryModal onClose={() => setIsImportModalOpen(false)} sucursalId={selectedSucursal} />
             )}
+
+            <BarcodeScannerModal
+                isOpen={isBarcodeScannerOpen}
+                onClose={() => setIsBarcodeScannerOpen(false)}
+                products={inventario.map((item: any) => ({
+                    id: String(item.producto_id),
+                    nombre: item.producto_nombre || 'Sin nombre',
+                    codigo_barras: item.codigo_barras,
+                    sku: item.sku,
+                    precio_venta: item.precio_venta || 0,
+                    categoria: item.categoria,
+                }))}
+                stockMap={inventario.reduce((acc: Record<string, number>, item: any) => {
+                    acc[item.producto_id] = item.cantidad || 0;
+                    return acc;
+                }, {})}
+                currentAlmacenNombre={almacenes.find(a => a.id === selectedAlmacen)?.nombre || 'Almacén Principal'}
+            />
         </div>
     );
 }

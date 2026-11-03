@@ -19,6 +19,7 @@ import { POSAlmacenModal } from '../components/pos/POSAlmacenModal';
 import { POSCatalogGrid } from '../components/pos/POSCatalogGrid';
 import { POSModals } from '../components/pos/POSModals';
 import { POSCustomizeModal, type POSQuickWidget } from '../components/pos/POSCustomizeModal';
+import POSSettleDueModal from '../components/pos/POSSettleDueModal';
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
 
@@ -71,6 +72,7 @@ export default function POSPage() {
     const [pendingConfirmDuplicate, setPendingConfirmDuplicate] = useState(false);
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
     const [fechaVenta, setFechaVenta] = useState<string>('');
+    const [isSettleDueOpen, setIsSettleDueOpen] = useState(false);
 
     const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') ||
         ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
@@ -347,6 +349,7 @@ export default function POSPage() {
                 fechaVenta={fechaVenta}
                 setFechaVenta={setFechaVenta}
                 canEditDate={canEditDate}
+                onOpenSettleDue={() => setIsSettleDueOpen(true)}
             />
 
             {/* ══════════════ RIGHT COLUMN: High-Density Catalog Grid ══════════════ */}
@@ -411,6 +414,17 @@ export default function POSPage() {
                 onParkTicket={parkTicket}
                 onClearTicket={resetSaleState}
                 hasItems={items.length > 0}
+                onOpenSettleDue={() => setIsSettleDueOpen(true)}
+            />
+
+            <POSSettleDueModal
+                isOpen={isSettleDueOpen}
+                onClose={() => setIsSettleDueOpen(false)}
+                initialClientNit={cliente.nit}
+                initialClientName={cliente.razon_social}
+                onPaymentSuccess={() => {
+                    qc.invalidateQueries({ queryKey: ['sesion_activa'] });
+                }}
             />
 
             <POSPaymentModal

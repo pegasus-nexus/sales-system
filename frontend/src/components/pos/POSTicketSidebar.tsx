@@ -47,6 +47,7 @@ interface POSTicketSidebarProps {
     fechaVenta: string;
     setFechaVenta: (val: string) => void;
     canEditDate: boolean;
+    onOpenSettleDue?: () => void;
 }
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
@@ -87,6 +88,7 @@ export function POSTicketSidebar({
     fechaVenta,
     setFechaVenta,
     canEditDate,
+    onOpenSettleDue,
 }: POSTicketSidebarProps) {
     const [showNumpad, setShowNumpad] = useLocalStorage<boolean>('pos-show-numpad', false);
 
@@ -168,6 +170,17 @@ export function POSTicketSidebar({
                             <span className="text-[9px] bg-indigo-600 text-white font-bold px-1 rounded">NIT</span>
                         )}
                     </button>
+                    {onOpenSettleDue && (
+                        <button
+                            type="button"
+                            onClick={onOpenSettleDue}
+                            className="py-1.5 px-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                            title="Cobrar Crédito / Saldar Deuda de Cliente (Odoo Settle Due)"
+                        >
+                            <CreditCard size={13} className="text-emerald-600" />
+                            <span className="hidden sm:inline">Crédito</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onOpenActionsModal}

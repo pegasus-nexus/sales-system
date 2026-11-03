@@ -52,10 +52,33 @@ function TrialWarningBanner() {
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays <= 7 && diffDays > 0) {
+    if (diffDays <= 15 && diffDays > 0) {
+        const isUrgent = diffDays <= 3;
         return (
-            <div className="mb-2 bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold flex justify-center items-center text-center shadow-md z-50 animate-pulse">
-                ⚠️ Tu periodo de prueba vence en {diffDays} {diffDays === 1 ? "día" : "días"}. Contacta a soporte para renovar tu suscripción.
+            <div className={`mx-4 mt-2 mb-1 p-2.5 rounded-2xl flex items-center justify-between gap-3 text-xs shadow-xs border transition-all ${
+                isUrgent
+                    ? 'bg-rose-50 border-rose-200 text-rose-900'
+                    : 'bg-amber-50 border-amber-200 text-amber-900'
+            }`}>
+                <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full animate-ping ${isUrgent ? 'bg-rose-600' : 'bg-amber-500'}`} />
+                    <span className="font-bold">
+                        {isUrgent ? '⚠️ Aviso Urgente:' : '⏳ Recordatorio de Plan:'}
+                    </span>
+                    <span>
+                        Tu suscripción vence en <b>{diffDays} {diffDays === 1 ? 'día' : 'días'}</b>. Renueva tu cuenta para mantener tus módulos operativos.
+                    </span>
+                </div>
+                <a
+                    href="https://wa.me/59170000000?text=Hola,%20deseo%20renovar%20la%20suscripci%C3%B3n%20de%20mi%20empresa%20en%20Pegasus%20SalesSystem"
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`px-3 py-1 rounded-xl text-white font-bold text-[11px] shrink-0 transition-colors shadow-2xs ${
+                        isUrgent ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'
+                    }`}
+                >
+                    Renovar Suscripción →
+                </a>
             </div>
         );
     }

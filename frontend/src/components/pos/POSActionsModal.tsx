@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2, CreditCard } from 'lucide-react';
 import { ClientCombobox } from '../ClientCombobox';
 import { getClienteByNit } from '../../api/api';
 import type { ClienteData, VendedorData } from '../../store/usePosStore';
@@ -27,6 +27,7 @@ interface POSActionsModalProps {
     onParkTicket: () => void;
     onClearTicket: () => void;
     hasItems: boolean;
+    onOpenSettleDue?: () => void;
 }
 
 export function POSActionsModal({
@@ -49,7 +50,8 @@ export function POSActionsModal({
     hasWhatsAppEnabled,
     onParkTicket,
     onClearTicket,
-    hasItems
+    hasItems,
+    onOpenSettleDue
 }: POSActionsModalProps) {
     const [isSearchingNit, setIsSearchingNit] = useState(false);
     const [nitClientMatch, setNitClientMatch] = useState<string | null>(null);
@@ -288,6 +290,31 @@ export function POSActionsModal({
                                 <span className="text-[10px] text-gray-400 mt-1 block">
                                     Dejar en blanco para usar la fecha y hora actual automáticamente.
                                 </span>
+                            </div>
+                        )}
+
+                        {/* Seccion 3.5: Odoo Settle Due (Cobrar Crédito) */}
+                        {onOpenSettleDue && (
+                            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                        <CreditCard size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-black text-emerald-950">Cobrar Crédito / Saldar Deuda</h4>
+                                        <p className="text-[11px] text-emerald-800">Registra abono de un cliente directo en caja (Odoo Settle Due)</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onClose();
+                                        onOpenSettleDue();
+                                    }}
+                                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                                >
+                                    Abrir Cobro →
+                                </button>
                             </div>
                         )}
 
