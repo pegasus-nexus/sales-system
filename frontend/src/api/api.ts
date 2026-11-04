@@ -2265,7 +2265,17 @@ export const getLoginBranding = async (slug?: string): Promise<LoginBrandingResp
 
 
 // ── WhatsApp App API (Odoo Style) ──────────────────────────────
-import type { WhatsAppAccountStatus, WhatsAppTemplate, WhatsAppLog, WhatsAppSendPayload } from './types';
+import type { 
+    WhatsAppAccountStatus, 
+    WhatsAppTemplate, 
+    WhatsAppLog, 
+    WhatsAppSendPayload,
+    PremioMomentosTaboada,
+    CanjeMomentosTaboada,
+    ClienteSellosResponse,
+    MetricasMomentosTaboada,
+    CajaChicaTaboadaResponse 
+} from './types';
 
 export const getWhatsAppStatus = (): Promise<WhatsAppAccountStatus> =>
     client<WhatsAppAccountStatus>('/whatsapp/status');
@@ -2307,4 +2317,41 @@ export const getWhatsAppLogs = (page: number = 1, limit: number = 30, origen?: s
     if (origen) params.append('origen', origen);
     if (estado) params.append('estado', estado);
     return client<{ items: WhatsAppLog[]; total: number; page: number; pages: number }>(`/whatsapp/logs?${params.toString()}`);
+};
+
+// ── Momentos Taboada (Campaña de Fidelización Exclusiva) ────────
+export const getMomentosTaboadaPremios = (): Promise<PremioMomentosTaboada[]> =>
+    client<PremioMomentosTaboada[]>('/momentos-taboada/premios');
+
+export const updateMomentosTaboadaStock = (premioId: string, sucursalId: string, nuevoStock: number): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>(`/momentos-taboada/premios/${premioId}/stock`, {
+        method: 'PUT',
+        body: { sucursal_id: sucursalId, nuevo_stock: nuevoStock },
+    });
+
+export const getMomentosTaboadaClienteSellos = (query: string): Promise<ClienteSellosResponse> =>
+    client<ClienteSellosResponse>(`/momentos-taboada/cliente-sellos?query=${encodeURIComponent(query)}`);
+
+export const registrarMomentosTaboadaCanje = (data: {
+    premio_id: string;
+    sucursal_id: string;
+    cliente_telefono: string;
+    cliente_nombre?: string;
+    metodo_pago?: string;
+    notas?: string;
+}): Promise<{ status: string; message: string; canje_id: string; sellos_descontados: number; sellos_restantes: number; copago_recaudado_bs: number }> =>
+    client('/momentos-taboada/canjes', {
+        method: 'POST',
+        body: data,
+    });
+
+export const getMomentosTaboadaCanjes = (): Promise<CanjeMomentosTaboada[]> =>
+    client<CanjeMomentosTaboada[]>('/momentos-taboada/canjes');
+
+export const getMomentosTaboadaMetricas = (): Promise<MetricasMomentosTaboada> =>
+    client<MetricasMomentosTaboada>('/momentos-taboada/metricas');
+
+export const getMomentosTaboadaCajaChica = (sucursalId?: string): Promise<CajaChicaTaboadaResponse> => {
+    const q = sucursalId ? `?sucursal_id=${encodeURIComponent(sucursalId)}` : '';
+    return client<CajaChicaTaboadaResponse>(`/momentos-taboada/caja-chica${q}`);
 };

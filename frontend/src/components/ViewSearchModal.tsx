@@ -38,6 +38,7 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
         { id: 'caja', title: 'Caja & Arqueo', category: 'Ventas & Caja', path: '/caja', icon: Wallet, keywords: ['caja', 'arqueo', 'abrir caja', 'cerrar caja', 'gastos', 'movimientos', 'efectivo'] },
         { id: 'creditos', title: 'Créditos & Cobranzas', category: 'Ventas & Caja', path: '/creditos', icon: Banknote, keywords: ['creditos', 'deuda', 'cobro', 'cuotas', 'pagos', 'cobranza', 'settle due'] },
         { id: 'whatsapp', title: 'WhatsApp Nexus', category: 'Ventas & Caja', path: '/whatsapp', icon: MessageSquare, keywords: ['whatsapp', 'mensajes', 'comprobantes', 'plantillas', 'notificaciones', 'chat'] },
+        { id: 'momentos-taboada', title: 'Momentos Taboada (Campaña & Premios)', category: 'Ventas & Caja', path: '/momentos-taboada', icon: Sparkles, keywords: ['momentos taboada', 'sellos', 'canjes', 'premios', 'tazas', 'fidelizacion', 'cartilla', 'taboada'] },
 
         // Inventario & Productos
         { id: 'pedidos', title: 'Pedidos Internos (B2B)', category: 'Inventario & Logística', path: '/pedidos', icon: ClipboardList, keywords: ['pedidos', 'pedidos internos', 'solicitud stock', 'b2b', 'reposicion', 'despacho'] },

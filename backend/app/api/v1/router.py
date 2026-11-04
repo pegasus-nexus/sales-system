@@ -1,6 +1,7 @@
 from app.api.v1.endpoints import dashboard_matriz
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
+    momentos_taboada,
     whatsapp,
     conteos_fisicos,
     auth, tenants, users, products, sales,
@@ -64,6 +65,7 @@ api_router.include_router(compras.router, prefix="/compras", tags=["compras"])
 api_router.include_router(conteos_fisicos.router, prefix="/conteos-fisicos", tags=["conteos_fisicos"])
 api_router.include_router(lotes.router, prefix="/lotes", tags=["lotes"])
 api_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["whatsapp"])
+api_router.include_router(momentos_taboada.router, prefix="/momentos-taboada", tags=["momentos-taboada"])
 
 api_router.include_router(dashboard_matriz.router, prefix="/dashboard-matriz", tags=["dashboard-matriz"])
 api_router.include_router(system_monitor.router)

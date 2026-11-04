@@ -42,6 +42,11 @@ from app.domain.models.cotizacion import Cotizacion
 from app.domain.models.service_monitor import ServiceHealthCheck, ServiceIncidentAlert, AdminPasswordSetupToken
 from app.domain.models.whatsapp_template import WhatsAppTemplate
 from app.domain.models.whatsapp_log import WhatsAppLog
+from app.domain.models.momentos_taboada import (
+    PremioMomentosTaboada,
+    CanjeMomentosTaboada,
+    MovimientoCajaChicaTaboada
+)
 
 from app.infrastructure.core.config import settings
 
@@ -140,6 +145,9 @@ async def init_db():
             AdminPasswordSetupToken,
             WhatsAppTemplate,
             WhatsAppLog,
+            PremioMomentosTaboada,
+            CanjeMomentosTaboada,
+            MovimientoCajaChicaTaboada,
             Sucursal, WebCollection, WebConfig
         ],
         skip_indexes=True

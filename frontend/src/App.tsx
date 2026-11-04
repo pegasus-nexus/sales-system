@@ -51,6 +51,7 @@ const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage')
 const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
+const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -475,6 +476,13 @@ function App() {
                       <Route path="/whatsapp" element={
                         <ProtectedRoute allowedRoles={ALL_STAFF}>
                           <WhatsAppPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Momentos Taboada (Exclusivo Chocolates Taboada) */}
+                      <Route path="/momentos-taboada" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <MomentosTaboadaPage />
                         </ProtectedRoute>
                       } />
 

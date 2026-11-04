@@ -88,6 +88,7 @@ export interface TenantUpdate {
 
 export interface Sucursal {
     _id: string;
+    id?: string;
     tenant_id: string;
     nombre: string;
     ciudad: string;
@@ -996,4 +997,115 @@ export interface WhatsAppSendPayload {
     cliente_nombre?: string;
     pdf_url?: string;
     variables?: Record<string, string>;
+}
+
+// ─── Momentos Taboada (Campaña de Fidelización Exclusiva) ──────────────────────
+export interface PremioMomentosTaboada {
+    id: string;
+    _id?: string;
+    codigo: string;
+    nombre: string;
+    descripcion: string;
+    sellos_requeridos: number;
+    copago_bs: number;
+    stock_por_sucursal: Record<string, number>;
+    imagen_url?: string;
+    is_active: boolean;
+    stock_total?: number;
+    total_canjeados?: number;
+}
+
+export interface CanjeMomentosTaboada {
+    id: string;
+    _id?: string;
+    sucursal_id: string;
+    sucursal_nombre: string;
+    cliente_id?: string;
+    cliente_nombre: string;
+    cliente_telefono: string;
+    premio_id: string;
+    premio_codigo: string;
+    premio_nombre: string;
+    sellos_utilizados: number;
+    copago_bs: number;
+    metodo_pago: 'EFECTIVO' | 'QR';
+    cajero_nombre?: string;
+    estado: string;
+    notas?: string;
+    created_at: string;
+}
+
+export interface CartillaCasilla {
+    numero: number;
+    marcado: boolean;
+    es_hito: boolean;
+}
+
+export interface TicketCampanaInfo {
+    ticket_id: string;
+    fecha: string;
+    monto_bs: number;
+    sellos_otorgados: number;
+    sobrante_no_acumulable_bs: number;
+    sucursal_id: string;
+}
+
+export interface ClienteSellosResponse {
+    cliente: {
+        id?: string;
+        nombre: string;
+        telefono: string;
+        is_registrado: boolean;
+    };
+    balance: {
+        sellos_totales_ganados: number;
+        sellos_canjeados: number;
+        sellos_disponibles: number;
+        total_compras_campana_bs: number;
+        tickets_computados: number;
+    };
+    cartilla_progreso: CartillaCasilla[];
+    historial_tickets: TicketCampanaInfo[];
+    historial_canjes: {
+        canje_id: string;
+        fecha: string;
+        premio_nombre: string;
+        sellos_utilizados: number;
+        copago_bs: number;
+        sucursal_nombre: string;
+    }[];
+}
+
+export interface MetricasMomentosTaboada {
+    fecha_inicio: string;
+    metricas: {
+        total_canjes: number;
+        total_sellos_redimidos: number;
+        total_sellos_emitidos: number;
+        sellos_circulantes: number;
+        total_recaudado_fondo_bs: number;
+        recaudado_efectivo_bs: number;
+        recaudado_qr_bs: number;
+        total_facturado_ventas_bs: number;
+        total_tickets_participantes: number;
+    };
+    premios: PremioMomentosTaboada[];
+}
+
+export interface MovimientoCajaChicaTaboada {
+    id: string;
+    fecha: string;
+    sucursal_nombre: string;
+    tipo: 'INGRESO_CANJE' | 'EGRESO_FONDO' | 'AJUSTE_FONDO';
+    monto: number;
+    metodo_pago: string;
+    descripcion: string;
+    usuario_nombre?: string;
+}
+
+export interface CajaChicaTaboadaResponse {
+    saldo_fondo_bs: number;
+    total_ingresos_bs: number;
+    total_egresos_bs: number;
+    movimientos: MovimientoCajaChicaTaboada[];
 }
