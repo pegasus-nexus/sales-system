@@ -100,25 +100,54 @@ async def crear_cliente(
 ):
     tenant_id = current_user.tenant_id or "default"
     
-    # Optional NIT uniqueness check per tenant — only among active clients
-    if data.nit_ci:
-        existing = await Cliente.find_one(
+    # 1. Validación de NIT/CI único por tenant (homónimos permitidos, pero NIT único)
+    if data.nit_ci and data.nit_ci.strip():
+        nit_clean = data.nit_ci.strip()
+        existing_nit = await Cliente.find_one(
             Cliente.tenant_id == tenant_id,
-            Cliente.nit_ci == data.nit_ci,
-            Cliente.is_active == True  # noqa: E712 — ignore deleted clients
+            Cliente.nit_ci == nit_clean,
+            Cliente.is_active == True
         )
-        if existing:
+        if existing_nit:
             raise HTTPException(
                 status_code=400,
-                detail="Ya existe un cliente activo con este NIT/CI."
+                detail=f"Ya existe un cliente activo con este NIT/CI ({nit_clean}): '{existing_nit.nombre}'."
+            )
+
+    # 2. Validación de Celular/Teléfono único por tenant
+    if data.telefono and data.telefono.strip():
+        tel_clean = data.telefono.strip()
+        existing_tel = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.telefono == tel_clean,
+            Cliente.is_active == True
+        )
+        if existing_tel:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un cliente activo con este número de celular/teléfono ({tel_clean}): '{existing_tel.nombre}'."
+            )
+
+    # 3. Validación de Correo Electrónico único por tenant
+    if data.email and data.email.strip():
+        email_clean = data.email.strip().lower()
+        existing_email = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.email == email_clean,
+            Cliente.is_active == True
+        )
+        if existing_email:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un cliente activo con este correo electrónico ({email_clean}): '{existing_email.nombre}'."
             )
 
     cliente = Cliente(
         tenant_id=tenant_id,
-        nombre=data.nombre,
-        telefono=data.telefono,
-        email=data.email,
-        nit_ci=data.nit_ci,
+        nombre=data.nombre.strip(),
+        telefono=data.telefono.strip() if data.telefono else None,
+        email=data.email.strip().lower() if data.email else None,
+        nit_ci=data.nit_ci.strip() if data.nit_ci else None,
         direccion=data.direccion,
         notas=data.notas,
         lista_precio_id=data.lista_precio_id,
@@ -178,10 +207,38 @@ async def actualizar_cliente(
     if not cliente or cliente.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
-    if data.nit_ci and data.nit_ci != cliente.nit_ci:
-        existing = await Cliente.find_one(Cliente.tenant_id == tenant_id, Cliente.nit_ci == data.nit_ci)
-        if existing:
-            raise HTTPException(status_code=400, detail="Ya existe un cliente con este NIT/CI.")
+    if data.nit_ci and data.nit_ci.strip() != (cliente.nit_ci or "").strip():
+        nit_clean = data.nit_ci.strip()
+        existing_nit = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.nit_ci == nit_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_nit:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este NIT/CI ({nit_clean}): '{existing_nit.nombre}'.")
+
+    if data.telefono and data.telefono.strip() != (cliente.telefono or "").strip():
+        tel_clean = data.telefono.strip()
+        existing_tel = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.telefono == tel_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_tel:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este teléfono/celular ({tel_clean}): '{existing_tel.nombre}'.")
+
+    if data.email and data.email.strip().lower() != (cliente.email or "").strip().lower():
+        email_clean = data.email.strip().lower()
+        existing_email = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.email == email_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_email:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este correo ({email_clean}): '{existing_email.nombre}'.")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -226,3 +283,96 @@ async def obtener_wallet_cliente(
     ).to_list()
     
     return wallets
+
+@router.get("/clientes/check-homonimo")
+async def check_homonimo_endpoint(
+    nombre: Optional[str] = Query(None, description="Nombre o razón social a evaluar"),
+    nit_ci: Optional[str] = Query(None, description="NIT/CI a evaluar"),
+    telefono: Optional[str] = Query(None, description="Teléfono a evaluar"),
+    email: Optional[str] = Query(None, description="Email a evaluar"),
+    exclude_id: Optional[str] = Query(None, description="ID del cliente a excluir en edición"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Evalúa si un nombre ya existe (homónimo) y verifica que los datos únicos (NIT/CI, celular, correo) no colisionen.
+    """
+    tenant_id = current_user.tenant_id or "default"
+    result = {
+        "es_homonimo": False,
+        "homonimo_count": 0,
+        "homonimo_nombres": [],
+        "duplicado_nit": None,
+        "duplicado_telefono": None,
+        "duplicado_email": None,
+    }
+
+    from bson import ObjectId
+    exclude_oid = None
+    if exclude_id and len(exclude_id) == 24:
+        try:
+            exclude_oid = ObjectId(exclude_id)
+        except Exception:
+            pass
+
+    col = Cliente.get_pymongo_collection()
+
+    # 1. Evaluar Homónimo por Nombre
+    if nombre and nombre.strip():
+        import re
+        nom_clean = nombre.strip()
+        query_nom = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "nombre": {"$regex": f"^{re.escape(nom_clean)}$", "$options": "i"}
+        }
+        if exclude_oid:
+            query_nom["_id"] = {"$ne": exclude_oid}
+        homonimos = await col.find(query_nom, {"nombre": 1, "nit_ci": 1, "telefono": 1}).to_list(10)
+        if homonimos:
+            result["es_homonimo"] = True
+            result["homonimo_count"] = len(homonimos)
+            result["homonimo_nombres"] = [h.get("nombre") for h in homonimos]
+
+    # 2. Evaluar duplicado por NIT/CI
+    if nit_ci and nit_ci.strip():
+        nit_clean = nit_ci.strip()
+        query_nit = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "nit_ci": nit_clean
+        }
+        if exclude_oid:
+            query_nit["_id"] = {"$ne": exclude_oid}
+        exist_nit = await col.find_one(query_nit, {"nombre": 1, "nit_ci": 1})
+        if exist_nit:
+            result["duplicado_nit"] = f"El NIT/CI {nit_clean} ya pertenece a '{exist_nit.get('nombre')}'."
+
+    # 3. Evaluar duplicado por Teléfono
+    if telefono and telefono.strip():
+        tel_clean = telefono.strip()
+        query_tel = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "telefono": tel_clean
+        }
+        if exclude_oid:
+            query_tel["_id"] = {"$ne": exclude_oid}
+        exist_tel = await col.find_one(query_tel, {"nombre": 1, "telefono": 1})
+        if exist_tel:
+            result["duplicado_telefono"] = f"El teléfono {tel_clean} ya pertenece a '{exist_tel.get('nombre')}'."
+
+    # 4. Evaluar duplicado por Email
+    if email and email.strip():
+        email_clean = email.strip().lower()
+        query_email = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "email": email_clean
+        }
+        if exclude_oid:
+            query_email["_id"] = {"$ne": exclude_oid}
+        exist_email = await col.find_one(query_email, {"nombre": 1, "email": 1})
+        if exist_email:
+            result["duplicado_email"] = f"El correo {email_clean} ya pertenece a '{exist_email.get('nombre')}'."
+
+    return result

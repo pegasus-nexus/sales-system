@@ -1735,6 +1735,31 @@ export const getClienteByNit = async (nit: string): Promise<any | null> => {
 
 };
 
+export interface CheckHomonimoResponse {
+    es_homonimo: boolean;
+    homonimo_count: number;
+    homonimo_nombres: string[];
+    duplicado_nit?: string | null;
+    duplicado_telefono?: string | null;
+    duplicado_email?: string | null;
+}
+
+export const checkHomonimoCliente = async (params: {
+    nombre?: string;
+    nit_ci?: string;
+    telefono?: string;
+    email?: string;
+    exclude_id?: string;
+}): Promise<CheckHomonimoResponse> => {
+    const q = new URLSearchParams();
+    if (params.nombre) q.set('nombre', params.nombre);
+    if (params.nit_ci) q.set('nit_ci', params.nit_ci);
+    if (params.telefono) q.set('telefono', params.telefono);
+    if (params.email) q.set('email', params.email);
+    if (params.exclude_id) q.set('exclude_id', params.exclude_id);
+    return await client<CheckHomonimoResponse>(`/clientes/check-homonimo?${q.toString()}`);
+};
+
 
 
 // ── Listas de Precios ─────────────────────────────────────────────────────
