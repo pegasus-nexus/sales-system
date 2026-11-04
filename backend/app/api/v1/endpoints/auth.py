@@ -91,32 +91,6 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         except Exception:
             pass
 
-    # Auto-asignar permisos a usuario/sucursal de supermercados
-    user_ident = f"{current_user.username or ''} {current_user.email or ''} {current_user.full_name or ''} {user_dict.get('sucursal_nombre', '')}".lower()
-    is_super = any(term in user_ident for term in ["supermercado", "super", "mercado"])
-    if not is_super and current_user.sucursal_id:
-        from app.domain.models.sucursal import Sucursal
-        from beanie import PydanticObjectId
-        try:
-            s_obj = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
-            if not s_obj:
-                s_obj = await Sucursal.find_one(Sucursal.id == current_user.sucursal_id)
-            if s_obj and any(term in (s_obj.nombre or "").lower() for term in ["supermercado", "super", "mercado"]):
-                is_super = True
-                user_dict["sucursal_nombre"] = s_obj.nombre
-        except Exception:
-            pass
-
-    if is_super:
-        perms = set(user_dict.get("permisos_especiales") or [])
-        perms.add("INGRESO_HISTORICO_INVENTARIO")
-        perms.add("EDITAR_FECHA_VENTA")
-        user_dict["permisos_especiales"] = list(perms)
-        curr_perms = set(current_user.permisos_especiales or [])
-        if not {"INGRESO_HISTORICO_INVENTARIO", "EDITAR_FECHA_VENTA"}.issubset(curr_perms):
-            current_user.permisos_especiales = list(curr_perms.union({"INGRESO_HISTORICO_INVENTARIO", "EDITAR_FECHA_VENTA"}))
-            await current_user.save()
-
     # Asegurar que el ID sea string
     user_dict["id"] = str(current_user.id)
     user_dict["_id"] = str(current_user.id)
@@ -148,17 +122,29 @@ async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_cu
 
 @router.post("/impersonate/user/{user_id}")
 async def impersonate_user(user_id: str, current_user: User = Depends(get_current_active_user)):
-    """[ADMIN_MATRIZ] Logs in as a specific user within the same tenant."""
+    """[ADMIN_MATRIZ / SUPERADMIN] Logs in as a specific user within the tenant with strict hierarchy controls."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]:
-        raise HTTPException(status_code=403, detail="Not authorized to impersonate users")
-        
+        raise HTTPException(status_code=403, detail="No autorizado para suplantar usuarios")
+
     target_user = await User.get(PydanticObjectId(user_id))
     if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Aislamiento de Tenant
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF] and target_user.tenant_id != current_user.tenant_id:
-        raise HTTPException(status_code=403, detail="Cannot impersonate user from another tenant")
-        
+        raise HTTPException(status_code=403, detail="No puedes suplantar usuarios de otra empresa")
+
+    # Jerarquía estricta contra escalación de privilegios
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
+        if target_user.role in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
+            raise HTTPException(status_code=403, detail="No puedes suplantar a un superadministrador")
+
+        if current_user.role == UserRole.ADMIN_SUCURSAL:
+            if target_user.role in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.ADMIN_SUCURSAL]:
+                raise HTTPException(status_code=403, detail="Un administrador de sucursal no puede suplantar directivos ni administradores")
+            if target_user.sucursal_id != current_user.sucursal_id:
+                raise HTTPException(status_code=403, detail="Solo puedes suplantar usuarios de tu propia sucursal")
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
@@ -169,6 +155,18 @@ async def impersonate_user(user_id: str, current_user: User = Depends(get_curren
         },
         expires_delta=access_token_expires
     )
+
+    from app.infrastructure.core.audit import log_audit
+    await log_audit(
+        current_user.tenant_id or "default",
+        str(current_user.id),
+        current_user.username,
+        "IMPERSONATE_USER",
+        "USER",
+        str(target_user.id),
+        {"target_username": target_user.username, "target_role": target_user.role}
+    )
+
     return {"access_token": access_token, "token_type": "bearer", "role": target_user.role}
 
 

@@ -40,6 +40,17 @@ async def create_almacen(
     current_user: User = Depends(require_roles(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL))
 ):
     tenant_id = current_user.tenant_id
+
+    # Validar que ADMIN_SUCURSAL solo opere en su propia sucursal
+    if current_user.role == UserRole.ADMIN_SUCURSAL:
+        if current_user.sucursal_id and sucursal_id != current_user.sucursal_id:
+            raise HTTPException(status_code=403, detail="No tienes permisos para crear almacenes en otra sucursal")
+
+    from app.domain.models.sucursal import Sucursal
+    from beanie import PydanticObjectId
+    suc = await Sucursal.get(PydanticObjectId(sucursal_id)) if PydanticObjectId.is_valid(sucursal_id) else None
+    if not suc or (current_user.role != UserRole.SUPERADMIN and suc.tenant_id != tenant_id):
+        raise HTTPException(status_code=404, detail="Sucursal no encontrada o no pertenece a tu empresa")
     
     exists = await Almacen.find_one({"tenant_id": tenant_id, "sucursal_id": sucursal_id, "nombre": data.nombre, "deleted_at": None})
     if exists:
@@ -68,6 +79,9 @@ async def update_almacen(
     if not almacen or almacen.tenant_id != current_user.tenant_id or almacen.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Almacén no encontrado")
 
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id and almacen.sucursal_id != current_user.sucursal_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para modificar almacenes de otra sucursal")
+
     if data.nombre is not None:
         almacen.nombre = data.nombre
     if data.tipo is not None:
@@ -88,6 +102,9 @@ async def delete_almacen(
     almacen = await Almacen.get(almacen_id)
     if not almacen or almacen.tenant_id != current_user.tenant_id or almacen.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Almacén no encontrado")
+
+    if current_user.role == UserRole.ADMIN_SUCURSAL and current_user.sucursal_id and almacen.sucursal_id != current_user.sucursal_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar almacenes de otra sucursal")
         
     if almacen.is_default:
         raise HTTPException(status_code=400, detail="No puedes eliminar el almacén principal por defecto")
