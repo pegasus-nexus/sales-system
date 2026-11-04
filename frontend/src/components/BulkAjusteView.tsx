@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getInventario, ajustarInventarioMasivo } from '../api/api';
-import { Search, Loader2, Plus, Minus, Trash2, Scale, PackageCheck, AlertCircle } from 'lucide-react';
+import { Search, Loader2, Plus, Minus, Trash2, Scale, PackageCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CartItem {
@@ -15,9 +15,10 @@ interface Props {
     sucursalId: string;
     almacenId: string;
     onSuccess: () => void;
+    onCancel?: () => void;
 }
 
-export default function BulkAjusteView({ sucursalId, almacenId, onSuccess }: Props) {
+export default function BulkAjusteView({ sucursalId, almacenId, onSuccess, onCancel }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -100,7 +101,24 @@ export default function BulkAjusteView({ sucursalId, almacenId, onSuccess }: Pro
     const totalAdjustments = cart.filter(c => c.delta !== 0).length;
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {onCancel && (
+                <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-gray-150 shadow-xs">
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            <ArrowLeft size={14} className="text-indigo-600" />
+                            <span>Volver a Stock de Productos</span>
+                        </button>
+                        <span className="text-xs text-gray-300">/</span>
+                        <span className="text-xs font-bold text-gray-700">Ajuste Masivo de Existencias Físicas</span>
+                    </div>
+                </div>
+            )}
+            <div className="flex flex-col lg:flex-row gap-6">
             {/* Columna Izquierda: Buscador */}
             <div className="w-full lg:w-1/3 space-y-4">
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -266,6 +284,7 @@ export default function BulkAjusteView({ sucursalId, almacenId, onSuccess }: Pro
                         </button>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

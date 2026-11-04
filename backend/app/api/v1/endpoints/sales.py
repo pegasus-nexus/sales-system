@@ -179,11 +179,10 @@ async def get_today_stats(
 
         
 
-    all_sales = await Sale.find(*filters).to_list()
-
-    # Filter by date and NOT voided
-
-    today_sales = [s for s in all_sales if s.created_at.date() == today and not s.anulada]
+    today_date = get_now_bolivia().date()
+    start_of_day_utc = datetime(today_date.year, today_date.month, today_date.day, 4, 0, 0)
+    filters.extend([Sale.created_at >= start_of_day_utc, Sale.anulada == False])
+    today_sales = await Sale.find(*filters).to_list()
 
     
 
