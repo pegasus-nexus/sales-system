@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2 } from 'lucide-react';
 import { ClientCombobox } from '../ClientCombobox';
-import { getClienteByNit } from '../../api/api';
+import { getClienteByNit, checkHomonimoCliente, type CheckHomonimoResponse } from '../../api/api';
 import type { ClienteData, VendedorData } from '../../store/usePosStore';
 import type { Descuento, User } from '../../api/types';
 
@@ -55,6 +55,60 @@ export function POSActionsModal({
     const [nitClientMatch, setNitClientMatch] = useState<string | null>(null);
     const nitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const [homonimoCheck, setHomonimoCheck] = useState<CheckHomonimoResponse | null>(null);
+    const [isValidatingHomonimo, setIsValidatingHomonimo] = useState(false);
+    const homonimoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        if (cliente.cliente_id) {
+            setHomonimoCheck(null);
+            return;
+        }
+
+        const nombre = cliente.razon_social?.trim() || '';
+        const nit = cliente.nit?.trim() || '';
+        const telefono = cliente.telefono?.trim() || '';
+        const email = cliente.email?.trim() || '';
+
+        if (!nombre && !nit && !telefono && !email) {
+            setHomonimoCheck(null);
+            return;
+        }
+
+        if (homonimoTimerRef.current) {
+            clearTimeout(homonimoTimerRef.current);
+        }
+
+        homonimoTimerRef.current = setTimeout(async () => {
+            setIsValidatingHomonimo(true);
+            try {
+                const res = await checkHomonimoCliente({
+                    nombre: nombre.length >= 2 ? nombre : undefined,
+                    nit_ci: nit || undefined,
+                    telefono: telefono || undefined,
+                    email: email || undefined
+                });
+                setHomonimoCheck(res);
+            } catch (err) {
+                console.error("Error validando homonimo:", err);
+            } finally {
+                setIsValidatingHomonimo(false);
+            }
+        }, 400);
+
+        return () => {
+            if (homonimoTimerRef.current) clearTimeout(homonimoTimerRef.current);
+        };
+    }, [cliente.cliente_id, cliente.razon_social, cliente.nit, cliente.telefono, cliente.email]);
+
+    const hasDuplicateCollision = Boolean(
+        !cliente.cliente_id && (
+            homonimoCheck?.duplicado_nit ||
+            homonimoCheck?.duplicado_telefono ||
+            homonimoCheck?.duplicado_email
+        )
+    );
+
     const handleNitChange = (val: string) => {
         const cleanNit = val.replace(/\D/g, '');
         setCliente({ nit: cleanNit, cliente_id: undefined });
@@ -76,6 +130,7 @@ export function POSActionsModal({
                             razon_social: found.nombre || '',
                             email: found.email || '',
                             telefono: found.telefono || '',
+                            is_miembro_comunidad: cliente.is_miembro_comunidad || !!found.is_miembro_comunidad,
                         });
                         setNitClientMatch(found.nombre);
                     }
@@ -118,28 +173,41 @@ export function POSActionsModal({
                     <div className="flex-1 overflow-y-auto p-6 space-y-5">
                         {/* Seccion 1: Cliente y Factura */}
                         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
                                 <span className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
                                     <UserIcon size={14} className="text-indigo-600" /> Cliente / Facturación
                                 </span>
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={cliente.es_factura}
-                                        onChange={(e) => setCliente({ es_factura: e.target.checked })}
-                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                    />
-                                    <span className="text-xs font-bold text-indigo-700">Emitir Factura (NIT)</span>
-                                </label>
+                                <div className="flex items-center gap-2">
+                                    <label className="flex items-center gap-1.5 cursor-pointer select-none bg-yellow-50 hover:bg-yellow-100/80 border border-yellow-200 px-2.5 py-1 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={cliente.is_miembro_comunidad || false}
+                                            onChange={(e) => setCliente({ is_miembro_comunidad: e.target.checked })}
+                                            className="w-3.5 h-3.5 rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500"
+                                        />
+                                        <span className="text-xs font-bold text-yellow-900 flex items-center gap-1">
+                                            ⭐ Comunidad
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center gap-1.5 cursor-pointer select-none bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 px-2.5 py-1 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={cliente.es_factura}
+                                            onChange={(e) => setCliente({ es_factura: e.target.checked })}
+                                            className="w-3.5 h-3.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-xs font-bold text-indigo-700">Factura (NIT)</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <ClientCombobox
                                 selectedClient={cliente}
                                 onSelect={(c) => setCliente(c)}
-                                onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false })}
+                                onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false, is_miembro_comunidad: false })}
                             />
 
-                            {(cliente.es_factura || (!cliente.cliente_id && cliente.razon_social)) && (
+                            {(cliente.es_factura || cliente.is_miembro_comunidad || (!cliente.cliente_id && cliente.razon_social)) && (
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200/60">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 mb-1 block">NIT / CI</label>
@@ -192,6 +260,36 @@ export function POSActionsModal({
                                         <div className="col-span-2 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1 font-medium flex items-center gap-1 mt-1">
                                             <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
                                             <span>Cliente recurrente: <strong>{nitClientMatch}</strong></span>
+                                        </div>
+                                    )}
+
+                                    {isValidatingHomonimo && (
+                                        <div className="col-span-2 text-[11px] text-gray-500 font-medium animate-pulse">
+                                            Verificando datos y homónimos...
+                                        </div>
+                                    )}
+
+                                    {homonimoCheck?.es_homonimo && !cliente.cliente_id && (
+                                        <div className="col-span-2 bg-amber-50 border border-amber-300 rounded-xl p-3 text-amber-900 flex items-start gap-2.5 shadow-sm">
+                                            <span className="text-base leading-none">⚠️</span>
+                                            <div className="flex-1 text-xs">
+                                                <p className="font-bold">Ya existe un cliente con este nombre (Homónimo permitido)</p>
+                                                <p className="text-amber-800 mt-0.5 leading-relaxed">
+                                                    El sistema permite registrar personas con el mismo nombre y apellido, pero <strong>el NIT/CI, celular y correo deben ser únicos</strong> de este nuevo cliente.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {hasDuplicateCollision && (
+                                        <div className="col-span-2 bg-red-50 border border-red-300 rounded-xl p-3 text-red-900 flex items-start gap-2.5 shadow-sm">
+                                            <span className="text-base leading-none">🚫</span>
+                                            <div className="flex-1 text-xs space-y-1">
+                                                <p className="font-bold">Datos duplicados (deben ser únicos por persona):</p>
+                                                {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_nit}</p>}
+                                                {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_telefono}</p>}
+                                                {homonimoCheck?.duplicado_email && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_email}</p>}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -322,10 +420,11 @@ export function POSActionsModal({
                     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
                         <button
                             type="button"
+                            disabled={hasDuplicateCollision}
                             onClick={onClose}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Listo
+                            {hasDuplicateCollision ? 'Corrige los datos duplicados' : 'Listo'}
                         </button>
                     </div>
                 </motion.div>

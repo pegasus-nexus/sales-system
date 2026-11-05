@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '../components/ConfirmModal';
 
 import type { Cliente } from '../api/clientes';
-import { getClientMealPlans, assignPlanToClient, getMealPlanTemplates, getMealSchedules, createMealSchedule, getRecipes } from '../api/api';
+import { getClientMealPlans, assignPlanToClient, getMealPlanTemplates, getMealSchedules, createMealSchedule, getRecipes, checkHomonimoCliente, type CheckHomonimoResponse } from '../api/api';
 import type { ClientMealPlan, MealSchedule } from '../api/types';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -59,6 +59,59 @@ export default function ClientesPage() {
         direccion: '',
         notas: ''
     });
+
+    const [homonimoCheck, setHomonimoCheck] = useState<CheckHomonimoResponse | null>(null);
+    const [isValidatingHomonimo, setIsValidatingHomonimo] = useState(false);
+    const homonimoTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    React.useEffect(() => {
+        if (!isModalOpen) {
+            setHomonimoCheck(null);
+            return;
+        }
+
+        const nombre = formData.nombre?.trim() || '';
+        const nit = formData.nit_ci?.trim() || '';
+        const telefono = formData.telefono?.trim() || '';
+        const email = formData.email?.trim() || '';
+
+        if (!nombre && !nit && !telefono && !email) {
+            setHomonimoCheck(null);
+            return;
+        }
+
+        if (homonimoTimerRef.current) {
+            clearTimeout(homonimoTimerRef.current);
+        }
+
+        homonimoTimerRef.current = setTimeout(async () => {
+            setIsValidatingHomonimo(true);
+            try {
+                const res = await checkHomonimoCliente({
+                    nombre: nombre.length >= 2 ? nombre : undefined,
+                    nit_ci: nit || undefined,
+                    telefono: telefono || undefined,
+                    email: email || undefined,
+                    exclude_id: editingCliente?._id
+                });
+                setHomonimoCheck(res);
+            } catch (err) {
+                console.error("Error comprobando homonimo:", err);
+            } finally {
+                setIsValidatingHomonimo(false);
+            }
+        }, 350);
+
+        return () => {
+            if (homonimoTimerRef.current) clearTimeout(homonimoTimerRef.current);
+        };
+    }, [isModalOpen, formData.nombre, formData.nit_ci, formData.telefono, formData.email, editingCliente?._id]);
+
+    const hasDuplicateCollision = Boolean(
+        homonimoCheck?.duplicado_nit ||
+        homonimoCheck?.duplicado_telefono ||
+        homonimoCheck?.duplicado_email
+    );
 
     // Queries for client plans (only active when details modal is open)
     const { data: clientPlans, refetch: refetchPlans } = useQuery({
@@ -631,6 +684,20 @@ export default function ClientesPage() {
                                         className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-sm font-medium"
                                         placeholder="Ej: Juan Pérez o Empresa S.A."
                                     />
+                                    {isValidatingHomonimo && (
+                                        <p className="text-[11px] text-gray-500 animate-pulse mt-1">Verificando datos y homónimos...</p>
+                                    )}
+                                    {homonimoCheck?.es_homonimo && (
+                                        <div className="mt-2 bg-amber-50 border border-amber-300 rounded-xl p-3 text-amber-900 flex items-start gap-2.5 shadow-sm">
+                                            <span className="text-base leading-none">⚠️</span>
+                                            <div className="flex-1 text-xs">
+                                                <p className="font-bold">Ya existe cliente con este nombre (Homónimo permitido)</p>
+                                                <p className="text-amber-800 mt-0.5 leading-relaxed">
+                                                    El sistema permite registrar personas con el mismo nombre y apellido. Recuerda que <strong>el NIT/CI, celular y correo deben ser únicos</strong> de este registro.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-4">
@@ -674,6 +741,18 @@ export default function ClientesPage() {
                                     />
                                 </div>
 
+                                {hasDuplicateCollision && (
+                                    <div className="bg-red-50 border border-red-300 rounded-xl p-3 text-red-900 flex items-start gap-2.5 shadow-sm">
+                                        <span className="text-base leading-none">🚫</span>
+                                        <div className="flex-1 text-xs space-y-1">
+                                            <p className="font-bold">Conflicto de datos duplicados (deben ser únicos):</p>
+                                            {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-red-700 font-medium">• {homonimoCheck.duplicado_nit}</p>}
+                                            {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-red-700 font-medium">• {homonimoCheck.duplicado_telefono}</p>}
+                                            {homonimoCheck?.duplicado_email && <p className="text-[11px] text-red-700 font-medium">• {homonimoCheck.duplicado_email}</p>}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="mt-4 flex gap-3">
                                     <button 
                                         type="button" onClick={closeModal}
@@ -683,10 +762,10 @@ export default function ClientesPage() {
                                     </button>
                                     <button 
                                         type="submit" 
-                                        disabled={createMut.isPending || updateMut.isPending}
-                                        className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md shadow-indigo-200 disabled:opacity-50"
+                                        disabled={createMut.isPending || updateMut.isPending || hasDuplicateCollision}
+                                        className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {createMut.isPending || updateMut.isPending ? 'Guardando...' : 'Guardar Cliente'}
+                                        {hasDuplicateCollision ? 'Corrige datos duplicados' : (createMut.isPending || updateMut.isPending ? 'Guardando...' : 'Guardar Cliente')}
                                     </button>
                                 </div>
                             </form>

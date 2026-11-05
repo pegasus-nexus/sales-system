@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight, Clock, ArrowLeft } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
@@ -25,7 +26,24 @@ export default function InventarioPage() {
     const esAdminSucursal = esMatriz || user?.role === 'ADMIN_SUCURSAL';
     const [selectedSucursal, setSelectedSucursal] = useState<string>(esMatriz ? 'CENTRAL' : (user?.sucursal_id || 'CENTRAL'));
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>('default');
-    const [tab, setTab] = useLocalStorage<'stock' | 'kardex' | 'masivo' | 'lotes'>('inventario-tab', 'stock');
+        const [searchParams, setSearchParams] = useSearchParams();
+    const urlTab = searchParams.get('tab') as 'stock' | 'kardex' | 'masivo' | 'lotes' | null;
+    const [storedTab, setStoredTab] = useLocalStorage<'stock' | 'kardex' | 'masivo' | 'lotes'>('inventario-tab', 'stock');
+    
+    // Si la URL tiene un tab explícito, usarlo; de lo contrario, el almacenado
+    const tab = urlTab || storedTab || 'stock';
+
+    const handleTabChange = (newTab: 'stock' | 'kardex' | 'masivo' | 'lotes') => {
+        setStoredTab(newTab);
+        const newParams = new URLSearchParams(searchParams);
+        if (newTab === 'stock') {
+            newParams.delete('tab');
+        } else {
+            newParams.set('tab', newTab);
+        }
+        setSearchParams(newParams, { replace: true });
+    };
+    const setTab = handleTabChange;
     const [viewMode, setViewMode] = useLocalStorage<'lista' | 'kanban'>('inventario-view-mode', 'kanban');
     const [searchTerm, setSearchTerm] = useLocalStorage('inventario-search', '');
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -459,6 +477,77 @@ export default function InventarioPage() {
                 </div>
             </div>
 
+                        {/* Navegación Segmentada Persistente Estilo Odoo */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-gray-150 shadow-xs">
+                <div className="flex items-center gap-1 overflow-x-auto p-0.5 bg-gray-100/80 rounded-xl">
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('stock')}
+                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                            tab === 'stock'
+                                ? 'bg-white text-indigo-700 shadow-xs border border-gray-200/50'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                        }`}
+                    >
+                        <Package size={14} className={tab === 'stock' ? 'text-indigo-600' : 'text-gray-400'} />
+                        <span>Stock de Productos</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('kardex')}
+                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                            tab === 'kardex'
+                                ? 'bg-white text-indigo-700 shadow-xs border border-gray-200/50'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                        }`}
+                    >
+                        <History size={14} className={tab === 'kardex' ? 'text-indigo-600' : 'text-gray-400'} />
+                        <span>Movimientos / Kárdex</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('lotes')}
+                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                            tab === 'lotes'
+                                ? 'bg-white text-indigo-700 shadow-xs border border-gray-200/50'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                        }`}
+                    >
+                        <Clock size={14} className={tab === 'lotes' ? 'text-indigo-600' : 'text-gray-400'} />
+                        <span>Lotes y Vencimientos</span>
+                    </button>
+
+                    {esAdminSucursal && (
+                        <button
+                            type="button"
+                            onClick={() => handleTabChange('masivo')}
+                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                                tab === 'masivo'
+                                ? 'bg-white text-indigo-700 shadow-xs border border-gray-200/50'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                            }`}
+                        >
+                            <Scale size={14} className={tab === 'masivo' ? 'text-indigo-600' : 'text-gray-400'} />
+                            <span>Ajuste Rápido</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* Botón de retorno rápido si está en Lotes o Ajuste */}
+                {tab !== 'stock' && (
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('stock')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-bold text-indigo-600 border border-gray-200 transition-all cursor-pointer self-start sm:self-auto shrink-0"
+                    >
+                        <ArrowLeft size={14} />
+                        <span>Volver a Stock de Productos</span>
+                    </button>
+                )}
+            </div>
+
             {/* Barra de Búsqueda y Filtros Unificada Estilo Odoo */}
             {(tab === 'stock' || tab === 'kardex') && (
                 <div className="w-full">
@@ -724,8 +813,9 @@ export default function InventarioPage() {
                     onSuccess={() => {
                         queryClient.invalidateQueries({ queryKey: ['inventario', selectedSucursal] });
                         queryClient.invalidateQueries({ queryKey: ['movimientos', selectedSucursal] });
-                        setTab('stock');
+                        handleTabChange('stock');
                     }}
+                    onCancel={() => handleTabChange('stock')}
                 />
             )}
 
@@ -847,7 +937,7 @@ export default function InventarioPage() {
             )}
 
             {tab === 'lotes' && (
-                <LotesTab selectedSucursal={selectedSucursal} selectedAlmacen={selectedAlmacen} />
+                <LotesTab selectedSucursal={selectedSucursal} selectedAlmacen={selectedAlmacen} onBack={() => handleTabChange('stock')} />
             )}
 
             {/* Modal de Cambio de Precio */}

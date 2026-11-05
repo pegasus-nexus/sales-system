@@ -163,27 +163,21 @@ async def get_today_stats(
 
     """Today's total sales and transaction count for the current tenant."""
 
-    today = get_now_bolivia().date()
-
-
+    now_b = get_now_bolivia()
+    start_of_day_b = now_b.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_day_utc = start_of_day_b.astimezone(timezone.utc).replace(tzinfo=None)
 
     tenant_id = current_user.tenant_id or ""
-
     
-
-    filters = [Sale.tenant_id == tenant_id]
-
+    filters = [
+        Sale.tenant_id == tenant_id,
+        Sale.anulada != True,
+        Sale.created_at >= start_of_day_utc
+    ]
     if sucursal_id:
-
         filters.append(Sale.sucursal_id == sucursal_id)
-
         
-
-    all_sales = await Sale.find(*filters).to_list()
-
-    # Filter by date and NOT voided
-
-    today_sales = [s for s in all_sales if s.created_at.date() == today and not s.anulada]
+    today_sales = await Sale.find(*filters).to_list()
 
     
 

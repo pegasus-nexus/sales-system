@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
     AlertTriangle, ShieldAlert, CheckCircle2, Clock, 
-    Search, Lock, Unlock, Loader2 
+    Search, Lock, Unlock, Loader2, ArrowLeft 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getLotes, getResumenLotes, cambiarEstadoLote, type LoteInventario } from '../../api/lotes';
@@ -11,9 +11,10 @@ import Pagination from '../Pagination';
 interface LotesTabProps {
     selectedSucursal: string;
     selectedAlmacen: string;
+    onBack?: () => void;
 }
 
-export default function LotesTab({ selectedSucursal, selectedAlmacen }: LotesTabProps) {
+export default function LotesTab({ selectedSucursal, selectedAlmacen, onBack }: LotesTabProps) {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [filtroVencimiento, setFiltroVencimiento] = useState<'TODOS' | 'POR_VENCER' | 'VENCIDOS'>('TODOS');
@@ -74,6 +75,22 @@ export default function LotesTab({ selectedSucursal, selectedAlmacen }: LotesTab
 
     return (
         <div className="space-y-6">
+            {onBack && (
+                <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-gray-150 shadow-xs">
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            <ArrowLeft size={14} className="text-indigo-600" />
+                            <span>Volver a Stock de Productos</span>
+                        </button>
+                        <span className="text-xs text-gray-300">/</span>
+                        <span className="text-xs font-bold text-gray-700">Control de Lotes y Vencimientos</span>
+                    </div>
+                </div>
+            )}
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div 
