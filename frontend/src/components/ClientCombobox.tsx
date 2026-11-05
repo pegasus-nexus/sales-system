@@ -106,28 +106,28 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                         onClick={() => {
                                             onSelect({
                                                 cliente_id: undefined,
-                                                razon_social: search.toUpperCase(),
-                                                telefono: '',
-                                                nit: '',
-                                                email: '',
-                                                es_factura: false,
-                                                is_miembro_comunidad: false
+                                                razon_social: search.trim().toUpperCase(),
+                                                telefono: selectedClient?.telefono || '',
+                                                nit: selectedClient?.nit || '',
+                                                email: selectedClient?.email || '',
+                                                es_factura: selectedClient?.es_factura || false,
+                                                is_miembro_comunidad: selectedClient?.is_miembro_comunidad || false
                                             });
                                             setOpen(false);
                                         }}
                                         className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 w-full mb-2"
                                     >
-                                        + Continuar como "{search.toUpperCase()}" nuevo
+                                        + Continuar como "{search.trim().toUpperCase()}" nuevo
                                     </button>
                                     <button 
                                         onClick={() => {
                                             onSelect({
                                                 cliente_id: undefined,
-                                                razon_social: search.toUpperCase(),
-                                                telefono: '',
-                                                nit: '',
-                                                email: '',
-                                                es_factura: false,
+                                                razon_social: search.trim().toUpperCase(),
+                                                telefono: selectedClient?.telefono || '',
+                                                nit: selectedClient?.nit || '',
+                                                email: selectedClient?.email || '',
+                                                es_factura: selectedClient?.es_factura || false,
                                                 is_miembro_comunidad: true
                                             });
                                             setOpen(false);
@@ -147,11 +147,11 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                             onSelect({
                                                 cliente_id: c._id,
                                                 razon_social: c.nombre,
-                                                telefono: c.telefono || '',
-                                                nit: c.nit_ci || '',
-                                                email: c.email || '',
-                                                es_factura: !!c.nit_ci,
-                                                is_miembro_comunidad: !!c.is_miembro_comunidad
+                                                telefono: c.telefono || selectedClient?.telefono || '',
+                                                nit: c.nit_ci || selectedClient?.nit || '',
+                                                email: c.email || selectedClient?.email || '',
+                                                es_factura: selectedClient?.es_factura || !!c.nit_ci,
+                                                is_miembro_comunidad: selectedClient?.is_miembro_comunidad || !!c.is_miembro_comunidad
                                             });
                                             setOpen(false);
                                             setSearch('');
@@ -172,10 +172,10 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                                             onSelect({
                                                                 cliente_id: c._id,
                                                                 razon_social: c.nombre,
-                                                                telefono: c.telefono || '',
-                                                                nit: c.nit_ci || '',
-                                                                email: c.email || '',
-                                                                es_factura: !!c.nit_ci,
+                                                                telefono: c.telefono || selectedClient?.telefono || '',
+                                                                nit: c.nit_ci || selectedClient?.nit || '',
+                                                                email: c.email || selectedClient?.email || '',
+                                                                es_factura: selectedClient?.es_factura || !!c.nit_ci,
                                                                 is_miembro_comunidad: true
                                                             });
                                                             setOpen(false);
@@ -202,11 +202,11 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                         onSelect({
                                             cliente_id: undefined,
                                             razon_social: search.trim().toUpperCase(),
-                                            telefono: '',
-                                            nit: '',
-                                            email: '',
-                                            es_factura: false,
-                                            is_miembro_comunidad: false
+                                            telefono: selectedClient?.telefono || '',
+                                            nit: selectedClient?.nit || '',
+                                            email: selectedClient?.email || '',
+                                            es_factura: selectedClient?.es_factura || false,
+                                            is_miembro_comunidad: selectedClient?.is_miembro_comunidad || false
                                         });
                                         setOpen(false);
                                         setSearch('');
@@ -224,10 +224,10 @@ export function ClientCombobox({ onSelect, onClear, selectedClient, disabled }: 
                                         onSelect({
                                             cliente_id: undefined,
                                             razon_social: search.trim().toUpperCase(),
-                                            telefono: '',
-                                            nit: '',
-                                            email: '',
-                                            es_factura: false,
+                                            telefono: selectedClient?.telefono || '',
+                                            nit: selectedClient?.nit || '',
+                                            email: selectedClient?.email || '',
+                                            es_factura: selectedClient?.es_factura || false,
                                             is_miembro_comunidad: true
                                         });
                                         setOpen(false);

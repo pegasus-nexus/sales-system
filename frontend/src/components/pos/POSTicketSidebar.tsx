@@ -166,9 +166,14 @@ export function POSTicketSidebar({
                             <UserIcon size={13} className="text-indigo-600 shrink-0" />
                             <span className="truncate">{cliente.razon_social || 'Asignar Cliente'}</span>
                         </span>
-                        {cliente.es_factura && (
-                            <span className="text-[9px] bg-indigo-600 text-white font-bold px-1 rounded">NIT</span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                            {cliente.is_miembro_comunidad && (
+                                <span className="text-[9px] bg-yellow-400 text-yellow-950 font-bold px-1 rounded shadow-xs" title="Miembro de Comunidad">⭐ COM</span>
+                            )}
+                            {cliente.es_factura && (
+                                <span className="text-[9px] bg-indigo-600 text-white font-bold px-1 rounded">NIT</span>
+                            )}
+                        </div>
                     </button>
                     {onOpenSettleDue && (
                         <button
