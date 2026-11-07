@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+import { getClienteByNit } from '../../api/api';
 import { 
     CreditCard, MoreHorizontal, User as UserIcon, Plus, Keyboard, 
     ChevronDown, ChevronUp, SlidersHorizontal, Tag, MessageSquare, Calendar, FileText 
@@ -91,6 +93,33 @@ export function POSTicketSidebar({
     onOpenSettleDue,
 }: POSTicketSidebarProps) {
     const [showNumpad, setShowNumpad] = useLocalStorage<boolean>('pos-show-numpad', false);
+    const nitSidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleQuickNitChange = (val: string) => {
+        const cleanNit = val.replace(/\D/g, '');
+        setCliente({ nit: cleanNit });
+        if (nitSidebarTimerRef.current) clearTimeout(nitSidebarTimerRef.current);
+        if (cleanNit.length >= 4) {
+            nitSidebarTimerRef.current = setTimeout(async () => {
+                try {
+                    const found = await getClienteByNit(cleanNit);
+                    const foundId = found?._id || found?.id;
+                    if (found && foundId) {
+                        setCliente({
+                            cliente_id: foundId,
+                            nit: found.nit_ci || cleanNit,
+                            razon_social: found.nombre || '',
+                            email: found.email || '',
+                            telefono: found.telefono || '',
+                            is_miembro_comunidad: cliente.is_miembro_comunidad || !!found.is_miembro_comunidad,
+                        });
+                    }
+                } catch {
+                    // Ignore not found
+                }
+            }, 350);
+        }
+    };
 
     return (
         <div
@@ -279,9 +308,9 @@ export function POSTicketSidebar({
                                         type="text"
                                         inputMode="numeric"
                                         value={cliente.nit}
-                                        onChange={(e) => setCliente({ nit: e.target.value.replace(/\D/g, '') })}
+                                        onChange={(e) => handleQuickNitChange(e.target.value)}
                                         placeholder="NIT / CI"
-                                        className="flex-1 px-2 py-0.5 border border-gray-200 rounded text-xs text-gray-900 bg-white outline-none"
+                                        className="flex-1 px-2 py-0.5 border border-gray-200 rounded text-xs text-gray-900 bg-white outline-none focus:ring-1 focus:ring-indigo-400"
                                     />
                                 )}
                             </div>

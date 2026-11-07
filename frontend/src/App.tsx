@@ -24,6 +24,9 @@ const POSPage = lazy(() => import('./pages/POSPage'));
 const CajaPage = lazy(() => import('./pages/CajaPage'));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
 const CatalogoWebPage = lazy(() => import('./pages/CatalogoWebPage'));
+const PublicCatalogoPage = lazy(() => import('./pages/PublicCatalogoPage'));
+const CatalogoAuthPage = lazy(() => import('./pages/CatalogoAuthPage'));
+const CatalogoAdminPage = lazy(() => import('./pages/CatalogoAdminPage'));
 const WebConfigPage = lazy(() => import('./pages/WebConfigPage'));
 const PremiosWebPage = lazy(() => import('./pages/PremiosWebPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -231,6 +234,17 @@ function App() {
                 {/* 1. Ruta de Login fuera del Layout */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/crear-password" element={<SetupPasswordPage />} />
+
+                {/* Rutas Públicas de Micro-Catálogo Digital y WhatsApp */}
+                <Route path="/c/:slug" element={<PublicCatalogoPage />} />
+                <Route path="/catalogo/auth" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/login" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/registro" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/admin" element={
+                  <ProtectedRoute>
+                    <CatalogoAdminPage />
+                  </ProtectedRoute>
+                } />
 
                 {/* 2. Rutas del SuperAdmin SaaS dentro de SaasWorkspaceLayout */}
                 <Route path="/admin/*" element={

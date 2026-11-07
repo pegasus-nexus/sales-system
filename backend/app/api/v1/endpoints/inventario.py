@@ -27,6 +27,7 @@ async def get_inventario(
     search: Optional[str] = Query(None, description="Filtrar por nombre del producto"),
     categoria_id: Optional[str] = Query(None, description="Filtrar por categoría del producto"),
     stock_bajo: bool = Query(False, description="Solo ver productos con stock <= 5"),
+    include_inactive: bool = Query(False, description="Incluir productos inactivos"),
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -41,6 +42,8 @@ async def get_inventario(
         sucursal_id = current_user.sucursal_id or "CENTRAL"
 
     prod_match = {"tenant_id": tenant_id}
+    if not include_inactive:
+        prod_match["is_active"] = {"$ne": False}
     if search and search.strip():
         # Escapar caracteres para búsqueda segura y permitir coincidencias parciales
         import re
@@ -128,6 +131,12 @@ async def get_inventario(
             sucursal_id=sucursal_id,
             almacen_id=almacen_id,
             cantidad=inv_doc.get("cantidad", 0),
+            codigo_corto=doc.get("codigo_corto"),
+            codigo_largo=doc.get("codigo_largo"),
+            codigo_sistema=doc.get("codigo_sistema"),
+            categoria_id=doc.get("categoria_id"),
+            costo_producto=doc.get("costo_producto"),
+            tipo_item=doc.get("tipo_item"),
         ))
         
     return InventarioPaginated(
@@ -930,174 +939,56 @@ async def export_inventory_excel(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
-@router.post("/inventario/corregir-kardex/{producto_id}")
-async def corregir_kardex(
-    producto_id: str,
-    sucursal_id: str = "CENTRAL",
-    almacen_id: str = "default",
+class CorregirKardexPayload(BaseModel):
+    producto_ids: Optional[List[str]] = None
+    sucursal_id: Optional[str] = None
+    almacen_id: Optional[str] = None
+
+@router.post("/inventario/corregir-kardex")
+async def corregir_kardex_batch(
+    sucursal_id: str = Query("CENTRAL"),
+    almacen_id: str = Query("default"),
+    payload: Optional[CorregirKardexPayload] = None,
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN]))
 ):
     """
     Recalcula secuencialmente el Kardex y alinea el Inventario actual
-    con el resultado matematico real (sum de todos los cantidad_movida).
-    Soporta producto_id = "ALL" para recalcular todos los productos.
+    con el resultado matemático real (sum de todos los cantidad_movida).
+    Soporta lista de producto_ids seleccionados (estilo Odoo ERP) o ALL.
     """
     tenant_id = current_user.tenant_id or "default"
+    from app.application.services.kardex_cuadre_service import KardexCuadreService
 
-    from app.domain.models.inventario import InventoryLog, Inventario
-    from app.domain.models.product import Product as ProductModel
+    target_sucursal = (payload.sucursal_id if payload and payload.sucursal_id else sucursal_id) or "CENTRAL"
+    target_almacen = (payload.almacen_id if payload and payload.almacen_id else almacen_id) or "default"
+    target_pids = payload.producto_ids if payload and payload.producto_ids else None
 
-    TOLERANCE = 0.001
+    return await KardexCuadreService.cuadrar_kardex(
+        tenant_id=tenant_id,
+        sucursal_id=target_sucursal,
+        almacen_id=target_almacen,
+        producto_id=None,
+        producto_ids=target_pids,
+    )
 
-    # --- Determinar que productos recalcular ---
-    log_base_query: dict = {"tenant_id": tenant_id, "sucursal_id": sucursal_id}
-    if producto_id != "ALL":
-        log_base_query["producto_id"] = producto_id
 
-    # Filtrar logs por almacen_id (tolerando "default" legacy)
-    if almacen_id == "default":
-        log_base_query["$or"] = [
-            {"almacen_id": "default"},
-            {"almacen_id": {"$exists": False}},
-            {"almacen_id": None},
-        ]
-    else:
-        log_base_query["almacen_id"] = almacen_id
+@router.post("/inventario/corregir-kardex/{producto_id}")
+async def corregir_kardex_individual(
+    producto_id: str,
+    sucursal_id: str = Query("CENTRAL"),
+    almacen_id: str = Query("default"),
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN]))
+):
+    """
+    Recalcula secuencialmente el Kardex y alinea el Inventario físico
+    de un único producto individual.
+    """
+    tenant_id = current_user.tenant_id or "default"
+    from app.application.services.kardex_cuadre_service import KardexCuadreService
 
-    # Obtener todos los producto_ids distintos que tengan logs
-    log_coll = InventoryLog.get_motor_collection()
-    productos_distinct = await log_coll.distinct("producto_id", log_base_query)
-
-    if not productos_distinct:
-        return {"message": "No se encontraron movimientos para recalcular.", "data": {
-            "corregidos": 0, "logs_modificados": 0, "inventarios_modificados": 0, "detalles": []
-        }}
-
-    # Pre-cargar nombres de productos para el reporte
-    product_names: dict = {}
-    try:
-        import bson
-        valid_oids = [bson.ObjectId(p) for p in productos_distinct if bson.ObjectId.is_valid(p)]
-        if valid_oids:
-            prods = await ProductModel.get_pymongo_collection().find(
-                {"_id": {"$in": valid_oids}}, {"descripcion": 1}
-            ).to_list(length=None)
-            product_names = {str(p["_id"]): p.get("descripcion", "Sin nombre") for p in prods}
-    except Exception:
-        pass
-
-    resultados: dict = {"corregidos": 0, "logs_modificados": 0, "inventarios_modificados": 0, "detalles": []}
-
-    for pid in productos_distinct:
-        # --- Obtener todos los logs de este producto, ordenados cronologicamente ---
-        per_product_query: dict = {
-            "tenant_id": tenant_id,
-            "sucursal_id": sucursal_id,
-            "producto_id": pid,
-        }
-        if almacen_id == "default":
-            per_product_query["$or"] = [
-                {"almacen_id": "default"},
-                {"almacen_id": {"$exists": False}},
-                {"almacen_id": None},
-            ]
-        else:
-            per_product_query["almacen_id"] = almacen_id
-
-        logs = await InventoryLog.find(per_product_query).sort("+created_at").to_list()
-        if not logs:
-            continue
-
-        # --- Recalcular stock_resultante secuencialmente con detección inteligente de línea base ---
-        baseline_idx = -1
-        for i, log in enumerate(logs):
-            mov = getattr(log, "tipo_movimiento", None)
-            notas = getattr(log, "notas", "") or ""
-            if (
-                mov == TipoMovimiento.AJUSTE_FISICO
-                or "Sincronización por Excel" in notas
-                or "[Ajuste Físico" in notas
-                or "[Entrada Masiva" in notas
-                or "Ajuste de Inventario" in notas
-                or "Conteo Físico" in notas
-            ):
-                baseline_idx = i
-
-        if baseline_idx >= 0:
-            stock_running = float(str(logs[baseline_idx].stock_resultante))
-            logs_to_recalc = logs[baseline_idx + 1:]
-        else:
-            first_log = logs[0]
-            stock_running = float(str(first_log.stock_resultante if first_log.stock_resultante is not None else first_log.cantidad_movida))
-            logs_to_recalc = logs[1:]
-
-        for log in logs_to_recalc:
-            stock_running += float(str(log.cantidad_movida))
-            expected = round(stock_running, 4)
-            actual = round(float(str(log.stock_resultante)), 4)
-            if abs(expected - actual) > TOLERANCE:
-                log.stock_resultante = expected
-                await log.save()
-                resultados["logs_modificados"] += 1
-
-        # --- Alinear el documento de Inventario con el stock final calculado ---
-        inv_query: dict = {
-            "tenant_id": tenant_id,
-            "sucursal_id": sucursal_id,
-            "producto_id": pid,
-        }
-        if almacen_id == "default":
-            inv_query["$or"] = [
-                {"almacen_id": "default"},
-                {"almacen_id": {"$exists": False}},
-                {"almacen_id": None},
-            ]
-        else:
-            inv_query["almacen_id"] = almacen_id
-
-        inventario = await Inventario.find_one(inv_query)
-        stock_anterior = float(str(inventario.cantidad)) if inventario else 0.0
-        stock_final = round(stock_running, 4)
-
-        # Si el inventario actual ya coincide con el último log registrado, preservar consistencia
-        last_log_res = round(float(str(logs[-1].stock_resultante)), 4) if logs else stock_final
-        if abs(stock_anterior - last_log_res) <= TOLERANCE:
-            stock_final = stock_anterior
-
-        if inventario:
-            if abs(stock_anterior - stock_final) > TOLERANCE:
-                inventario.cantidad = stock_final
-                # Sanar almacen_id si es legacy
-                if not getattr(inventario, "almacen_id", None) or inventario.almacen_id is None:
-                    inventario.almacen_id = almacen_id
-                await inventario.save()
-                resultados["inventarios_modificados"] += 1
-                resultados["detalles"].append({
-                    "producto_id": pid,
-                    "descripcion": product_names.get(pid, pid),
-                    "stock_anterior": stock_anterior,
-                    "stock_nuevo": stock_final,
-                })
-        else:
-            if abs(stock_final) > TOLERANCE:
-                from datetime import datetime, timezone
-                new_inv = Inventario(
-                    tenant_id=tenant_id,
-                    sucursal_id=sucursal_id,
-                    almacen_id=almacen_id,
-                    producto_id=pid,
-                    cantidad=stock_final,
-                    created_at=datetime.now(timezone.utc),
-                )
-                await new_inv.insert()
-                resultados["inventarios_modificados"] += 1
-                resultados["detalles"].append({
-                    "producto_id": pid,
-                    "descripcion": product_names.get(pid, pid),
-                    "stock_anterior": 0.0,
-                    "stock_nuevo": stock_final,
-                })
-
-        resultados["corregidos"] += 1
-
-    return {"message": "Kardex recalculado exitosamente", "data": resultados}
+    return await KardexCuadreService.cuadrar_kardex(
+        tenant_id=tenant_id,
+        sucursal_id=sucursal_id,
+        almacen_id=almacen_id,
+        producto_id=producto_id,
+    )

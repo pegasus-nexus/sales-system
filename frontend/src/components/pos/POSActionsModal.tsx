@@ -113,7 +113,7 @@ export function POSActionsModal({
 
     const handleNitChange = (val: string) => {
         const cleanNit = val.replace(/\D/g, '');
-        setCliente({ nit: cleanNit, cliente_id: undefined });
+        setCliente({ nit: cleanNit });
         setNitClientMatch(null);
 
         if (nitTimerRef.current) {
@@ -125,9 +125,10 @@ export function POSActionsModal({
                 setIsSearchingNit(true);
                 try {
                     const found = await getClienteByNit(cleanNit);
-                    if (found && found._id) {
+                    const foundId = found?._id || found?.id;
+                    if (found && foundId) {
                         setCliente({
-                            cliente_id: found._id,
+                            cliente_id: foundId,
                             nit: found.nit_ci || cleanNit,
                             razon_social: found.nombre || '',
                             email: found.email || '',
@@ -284,13 +285,14 @@ export function POSActionsModal({
                                     )}
 
                                     {hasDuplicateCollision && (
-                                        <div className="col-span-2 bg-red-50 border border-red-300 rounded-xl p-3 text-red-900 flex items-start gap-2.5 shadow-sm">
-                                            <span className="text-base leading-none">🚫</span>
+                                        <div className="col-span-2 bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-900 flex items-start gap-2.5 shadow-sm">
+                                            <span className="text-base leading-none">ℹ️</span>
                                             <div className="flex-1 text-xs space-y-1">
-                                                <p className="font-bold">Datos duplicados (deben ser únicos por persona):</p>
-                                                {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_nit}</p>}
-                                                {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_telefono}</p>}
-                                                {homonimoCheck?.duplicado_email && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_email}</p>}
+                                                <p className="font-bold">Cliente existente identificado en el sistema:</p>
+                                                {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_nit}</p>}
+                                                {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_telefono}</p>}
+                                                {homonimoCheck?.duplicado_email && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_email}</p>}
+                                                <p className="text-[10px] text-indigo-600 mt-0.5">La venta se vinculará a este registro.</p>
                                             </div>
                                         </div>
                                     )}
@@ -447,11 +449,10 @@ export function POSActionsModal({
                     <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
                         <button
                             type="button"
-                            disabled={hasDuplicateCollision}
                             onClick={onClose}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
                         >
-                            {hasDuplicateCollision ? 'Corrige los datos duplicados' : 'Listo'}
+                            Listo
                         </button>
                     </div>
                 </motion.div>

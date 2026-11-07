@@ -1,63 +1,26 @@
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
-from fastapi import HTTPException
-from beanie import PydanticObjectId
 import re
+from datetime import UTC, datetime
+from typing import Any
 
+from beanie import PydanticObjectId
+from fastapi import HTTPException
+
+from app.domain.constants.momentos_taboada import FECHA_INICIO_CAMPANA, PREMIOS_DEFAULT
+from app.domain.models.cliente import Cliente
 from app.domain.models.momentos_taboada import (
-    PremioMomentosTaboada,
     CanjeMomentosTaboada,
     MovimientoCajaChicaTaboada,
+    PremioMomentosTaboada,
 )
 from app.domain.models.sale import Sale
-from app.domain.models.cliente import Cliente
 from app.domain.models.sucursal import Sucursal
 from app.domain.models.user import User
-
-# Fecha oficial de inicio de la promoción Momentos Taboada
-FECHA_INICIO_CAMPANA = datetime(2026, 11, 1, 0, 0, 0, tzinfo=timezone.utc)
-
-# 4 Premios oficiales según cartilla oficial
-PREMIOS_DEFAULT = [
-    {
-        "codigo": "TAZA_NEGRA",
-        "nombre": "Elegante taza negra",
-        "descripcion": "1 taza negra con logo dorado",
-        "sellos_requeridos": 5,
-        "copago_bs": 19.0,
-        "imagen_url": "https://res.cloudinary.com/dv71mcfvm/image/upload/v1741170000/taza_negra_taboada.jpg",
-    },
-    {
-        "codigo": "TAZA_CORCHO",
-        "nombre": "Tu taza de corcho",
-        "descripcion": "1 taza con base de corcho y tapa",
-        "sellos_requeridos": 10,
-        "copago_bs": 39.0,
-        "imagen_url": "https://res.cloudinary.com/dv71mcfvm/image/upload/v1741170000/taza_corcho_taboada.jpg",
-    },
-    {
-        "codigo": "CORAZONES_DOS",
-        "nombre": "Corazones para dos",
-        "descripcion": "2 tazas con asa de corazón",
-        "sellos_requeridos": 20,
-        "copago_bs": 69.0,
-        "imagen_url": "https://res.cloudinary.com/dv71mcfvm/image/upload/v1741170000/corazones_dos_taboada.jpg",
-    },
-    {
-        "codigo": "CHOCO_ESPUMA",
-        "nombre": "Chocolate con espuma",
-        "descripcion": "1 batidora pequeña + 1 taza de corcho",
-        "sellos_requeridos": 30,
-        "copago_bs": 99.0,
-        "imagen_url": "https://res.cloudinary.com/dv71mcfvm/image/upload/v1741170000/choco_espuma_taboada.jpg",
-    },
-]
 
 
 class MomentosTaboadaService:
 
     @staticmethod
-    async def get_or_seed_premios(tenant_id: str) -> List[PremioMomentosTaboada]:
+    async def get_or_seed_premios(tenant_id: str) -> list[PremioMomentosTaboada]:
         """Retorna los premios de la campaña o los inicializa si es la primera vez."""
         premios = await PremioMomentosTaboada.find(
             PremioMomentosTaboada.tenant_id == tenant_id,
@@ -98,12 +61,129 @@ class MomentosTaboadaService:
             raise HTTPException(status_code=400, detail="El stock no puede ser negativo")
 
         premio.stock_por_sucursal[sucursal_id] = nuevo_stock
-        premio.updated_at = datetime.now(timezone.utc)
+        premio.updated_at = datetime.now(UTC)
         await premio.save()
         return premio
 
     @staticmethod
-    async def buscar_cliente_sellos(tenant_id: str, query: str) -> Dict[str, Any]:
+    async def create_premio(tenant_id: str, data: dict[str, Any]) -> PremioMomentosTaboada:
+        """Crea un nuevo premio dinámico para la campaña Momentos Taboada."""
+        nombre = str(data.get("nombre", "")).strip()
+        if not nombre:
+            raise HTTPException(status_code=400, detail="El nombre del premio es obligatorio")
+
+        sellos = int(data.get("sellos_requeridos", 1))
+        if sellos < 1:
+            raise HTTPException(status_code=400, detail="Los sellos requeridos deben ser al menos 1")
+
+        copago = float(data.get("copago_bs", 0.0))
+        if copago < 0:
+            raise HTTPException(status_code=400, detail="El copago no puede ser negativo")
+
+        codigo = data.get("codigo")
+        if not codigo or not str(codigo).strip():
+            import unicodedata
+            norm = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode("ascii")
+            codigo = re.sub(r"[^A-Z0-9]+", "_", norm.upper()).strip("_")
+            if not codigo:
+                codigo = f"PREMIO_{int(datetime.now(UTC).timestamp())}"
+
+        # Evitar colisión de código activo
+        existente = await PremioMomentosTaboada.find_one(
+            PremioMomentosTaboada.tenant_id == tenant_id,
+            PremioMomentosTaboada.codigo == codigo,
+            PremioMomentosTaboada.is_active == True,
+        )
+        if existente:
+            codigo = f"{codigo}_{int(datetime.now(UTC).timestamp()) % 10000}"
+
+        stock_map = {str(k): max(0, int(v)) for k, v in (data.get("stock_por_sucursal") or {}).items()}
+
+        nuevo = PremioMomentosTaboada(
+            tenant_id=tenant_id,
+            codigo=codigo,
+            nombre=nombre,
+            descripcion=str(data.get("descripcion", "")).strip(),
+            sellos_requeridos=sellos,
+            copago_bs=copago,
+            imagen_url=data.get("imagen_url"),
+            stock_por_sucursal=stock_map,
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        await nuevo.create()
+        return nuevo
+
+    @staticmethod
+    async def update_premio(
+        tenant_id: str, premio_id: str, data: dict[str, Any]
+    ) -> PremioMomentosTaboada:
+        """Actualiza la información y/o inventario de un premio existente."""
+        if not PydanticObjectId.is_valid(premio_id):
+            raise HTTPException(status_code=400, detail="ID de premio inválido")
+
+        premio = await PremioMomentosTaboada.get(PydanticObjectId(premio_id))
+        if not premio or premio.tenant_id != tenant_id:
+            raise HTTPException(status_code=404, detail="Premio no encontrado")
+
+        if "nombre" in data and data["nombre"] is not None:
+            nombre = str(data["nombre"]).strip()
+            if not nombre:
+                raise HTTPException(status_code=400, detail="El nombre no puede estar vacío")
+            premio.nombre = nombre
+
+        if "descripcion" in data and data["descripcion"] is not None:
+            premio.descripcion = str(data["descripcion"]).strip()
+
+        if "sellos_requeridos" in data and data["sellos_requeridos"] is not None:
+            sellos = int(data["sellos_requeridos"])
+            if sellos < 1:
+                raise HTTPException(status_code=400, detail="Sellos debe ser >= 1")
+            premio.sellos_requeridos = sellos
+
+        if "copago_bs" in data and data["copago_bs"] is not None:
+            copago = float(data["copago_bs"])
+            if copago < 0:
+                raise HTTPException(status_code=400, detail="Copago debe ser >= 0")
+            premio.copago_bs = copago
+
+        if "imagen_url" in data:
+            premio.imagen_url = data["imagen_url"]
+
+        if "codigo" in data and data["codigo"] is not None:
+            c = str(data["codigo"]).strip().upper()
+            if c:
+                premio.codigo = c
+
+        if "stock_por_sucursal" in data and isinstance(data["stock_por_sucursal"], dict):
+            for s_id, qty in data["stock_por_sucursal"].items():
+                premio.stock_por_sucursal[str(s_id)] = max(0, int(qty))
+
+        if "is_active" in data and data["is_active"] is not None:
+            premio.is_active = bool(data["is_active"])
+
+        premio.updated_at = datetime.now(UTC)
+        await premio.save()
+        return premio
+
+    @staticmethod
+    async def delete_premio(tenant_id: str, premio_id: str) -> bool:
+        """Inactiva (soft-delete) un premio de la promoción."""
+        if not PydanticObjectId.is_valid(premio_id):
+            raise HTTPException(status_code=400, detail="ID de premio inválido")
+
+        premio = await PremioMomentosTaboada.get(PydanticObjectId(premio_id))
+        if not premio or premio.tenant_id != tenant_id:
+            raise HTTPException(status_code=404, detail="Premio no encontrado")
+
+        premio.is_active = False
+        premio.updated_at = datetime.now(UTC)
+        await premio.save()
+        return True
+
+    @staticmethod
+    async def buscar_cliente_sellos(tenant_id: str, query: str) -> dict[str, Any]:
         """
         Calcula los sellos ganados, canjeados y disponibles de un cliente.
         REGLA DE NEGOCIO ESTRICTA:
@@ -218,9 +298,9 @@ class MomentosTaboadaService:
     @staticmethod
     async def registrar_canje(
         tenant_id: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         current_user: User,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Registra un canje de premio:
         1. Valida que el premio exista y tenga stock en la sucursal seleccionada.
@@ -270,7 +350,7 @@ class MomentosTaboadaService:
 
         # 3. Descontar stock atómicamente
         premio.stock_por_sucursal[sucursal_id] = stock_actual - 1
-        premio.updated_at = datetime.now(timezone.utc)
+        premio.updated_at = datetime.now(UTC)
         await premio.save()
 
         # 4. Crear Canje
@@ -320,7 +400,7 @@ class MomentosTaboadaService:
         }
 
     @staticmethod
-    async def get_dashboard_metricas(tenant_id: str) -> Dict[str, Any]:
+    async def get_dashboard_metricas(tenant_id: str) -> dict[str, Any]:
         """Calcula las métricas ejecutivas de la campaña para el admin."""
         # 1. Total canjes completados
         canjes = await CanjeMomentosTaboada.find(
@@ -381,10 +461,10 @@ class MomentosTaboadaService:
 
     @staticmethod
     async def get_caja_chica_movimientos(
-        tenant_id: str, sucursal_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        tenant_id: str, sucursal_id: str | None = None
+    ) -> dict[str, Any]:
         """Retorna el balance y los movimientos del fondo promocional de Momentos Taboada."""
-        filtros: Dict[str, Any] = {"tenant_id": tenant_id}
+        filtros: dict[str, Any] = {"tenant_id": tenant_id}
         if sucursal_id and sucursal_id != "TODAS":
             filtros["sucursal_id"] = sucursal_id
 

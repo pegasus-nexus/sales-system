@@ -1,17 +1,15 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
-from fastapi.responses import StreamingResponse
-from pymongo import UpdateOne
-import pandas as pd
 import io
-import math
-import uuid
-from app.domain.schemas.product import ProductCreate, ProductUpdate
-from app.domain.models.product import Product
+
+import pandas as pd
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
+
 from app.domain.models.category import Category
-from app.domain.models.user import User, UserRole
+from app.domain.models.inventario import Inventario
+from app.domain.models.product import Product
 from app.domain.models.sucursal import Sucursal
-from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
+from app.domain.models.user import User, UserRole
+from app.domain.schemas.product import ProductCreate, ProductUpdate
 from app.infrastructure.auth import get_current_active_user, require_roles
 
 router = APIRouter()
@@ -28,8 +26,8 @@ async def _enrich(product: Product) -> Product:
 async def get_products(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=50, ge=1, le=2000),
-    search: Optional[str] = Query(default=None, description="Filtrar por nombre/descripción"),
-    categoria_id: Optional[str] = Query(default=None, description="Filtrar por categoría"),
+    search: str | None = Query(default=None, description="Filtrar por nombre/descripción"),
+    categoria_id: str | None = Query(default=None, description="Filtrar por categoría"),
     current_user: User = Depends(get_current_active_user)
 ):
     from app.application.services.product_service import ProductService
@@ -62,10 +60,19 @@ async def update_product(
     return await ProductService.update_product(product_id, data, current_user)
 
 
+@router.get("/products/{product_id}")
+async def get_product_detail(
+    product_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.application.services.product_service import ProductService
+    return await ProductService.get_product_detail(product_id, current_user)
+
+
 @router.delete("/products/{product_id}")
 async def deactivate_product(
     product_id: str,
-    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.ADMIN_SUCURSAL]))
 ):
     from app.application.services.product_service import ProductService
     return await ProductService.deactivate_product(product_id, current_user)
@@ -76,20 +83,20 @@ async def export_product_template(
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL]))
 ):
     tenant_id = current_user.tenant_id or "default"
-    
+
     categories = await Category.find(Category.tenant_id == tenant_id, Category.is_active == True).to_list()
     sucursales = await Sucursal.find(Sucursal.tenant_id == tenant_id).to_list()
-    
+
     # Construir cabeceras maestras
     headers = ["CODIGO", "CODIGO CORTO", "DESCRIPCION", "COSTO UNITARIO", "CATEGORIA", "PROVEEDOR"]
-    
+
     # Agregar cabecera de precio por cada sucursal
     for s in sucursales:
         clean_name = s.nombre.replace(" ", "").upper()
         headers.append(f"PRECIO PUBLICO {clean_name}")
-        
+
     df_products = pd.DataFrame(columns=headers)
-    
+
     # Guide sheet: show only the name — the import service resolves name→ID internally.
     # Never expose raw MongoDB ObjectIds to the end user.
     cat_data = [
@@ -107,9 +114,9 @@ async def export_product_template(
             df_categories.to_excel(writer, sheet_name='Categorias (Guia)', index=False)
         else:
             pd.DataFrame([{"Mensaje": "No tienes categorías creadas aún. Créalas primero desde el sistema."}]).to_excel(writer, sheet_name='Categorias (Guia)', index=False)
-            
+
     output.seek(0)
-    
+
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -143,37 +150,37 @@ async def export_product_price_template(
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     tenant_id = current_user.tenant_id or "default"
-    
+
     # Validar sucursal
     sucursal = await Sucursal.get(sucursal_id)
     if not sucursal or (current_user.role != UserRole.SUPERADMIN and sucursal.tenant_id != tenant_id):
         raise HTTPException(status_code=400, detail="Sucursal no encontrada o no pertenece a tu empresa")
-        
+
     products = await Product.find(Product.tenant_id == tenant_id, Product.is_active == True).to_list()
-    
+
     # Obtener inventarios p/ precio actual
     invs = await Inventario.find(Inventario.sucursal_id == sucursal_id).to_list()
     price_map = {str(i.producto_id): i.precio_sucursal for i in invs}
-    
+
     headers = ["CODIGO CORTO", "DESCRIPCION", "PRECIO ACTUAL", "NUEVO PRECIO"]
     data = []
-    
+
     for p in products:
         if not p.codigo_corto: continue
         precio_actual = price_map.get(str(p.id))
-        
+
         data.append({
             "CODIGO CORTO": p.codigo_corto,
             "DESCRIPCION": p.descripcion,
             "PRECIO ACTUAL": precio_actual if precio_actual is not None else p.precio_venta,
             "NUEVO PRECIO": "" # Usuario llena esto
         })
-        
+
     df = pd.DataFrame(data, columns=headers)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='ActualizacionPrecios', index=False)
-        
+
     output.seek(0)
     clean_name = sucursal.nombre.replace(" ", "_").lower()
     return StreamingResponse(

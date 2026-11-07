@@ -1,16 +1,16 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, Query, HTTPException
-from pydantic import BaseModel
 
-from app.domain.models.user import User, UserRole
-from app.domain.models.tenant import Tenant
-from app.infrastructure.auth import get_current_active_user, require_roles
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+
 from app.application.services.momentos_taboada_service import MomentosTaboadaService
+from app.domain.models.tenant import Tenant
+from app.domain.models.user import User, UserRole
+from app.infrastructure.auth import get_current_active_user, require_roles
 
 router = APIRouter()
 
 
-def check_taboada_access(current_user: User, tenant: Optional[Tenant] = None) -> bool:
+def check_taboada_access(current_user: User, tenant: Tenant | None = None) -> bool:
     """Verifica que el usuario pertenezca a Chocolates Taboada o sea SUPERADMIN."""
     if current_user.role == UserRole.SUPERADMIN:
         return True
@@ -47,15 +47,35 @@ async def get_taboada_tenant_id(current_user: User) -> str:
 class StockUpdateRequest(BaseModel):
     sucursal_id: str
     nuevo_stock: int
+class PremioCreateRequest(BaseModel):
+    nombre: str
+    descripcion: str | None = ""
+    sellos_requeridos: int = Field(..., ge=1)
+    copago_bs: float = Field(..., ge=0.0)
+    imagen_url: str | None = None
+    codigo: str | None = None
+    stock_por_sucursal: dict[str, int] | None = None
+
+
+class PremioUpdateRequest(BaseModel):
+    nombre: str | None = None
+    descripcion: str | None = None
+    sellos_requeridos: int | None = Field(None, ge=1)
+    copago_bs: float | None = Field(None, ge=0.0)
+    imagen_url: str | None = None
+    codigo: str | None = None
+    stock_por_sucursal: dict[str, int] | None = None
+    is_active: bool | None = None
+
 
 
 class CanjeRequest(BaseModel):
     premio_id: str
     sucursal_id: str
     cliente_telefono: str
-    cliente_nombre: Optional[str] = "Cliente"
+    cliente_nombre: str | None = "Cliente"
     metodo_pago: str = "EFECTIVO"
-    notas: Optional[str] = None
+    notas: str | None = None
 
 
 @router.get("/premios")
@@ -65,6 +85,38 @@ async def get_premios(
     """Retorna los premios oficiales de Momentos Taboada con stock por sucursal."""
     tenant_id = await get_taboada_tenant_id(current_user)
     return await MomentosTaboadaService.get_or_seed_premios(tenant_id)
+
+@router.post("/premios")
+async def create_premio(
+    payload: PremioCreateRequest,
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
+):
+    """Crea un nuevo premio en la campaña Momentos Taboada."""
+    tenant_id = await get_taboada_tenant_id(current_user)
+    return await MomentosTaboadaService.create_premio(tenant_id, payload.model_dump())
+
+
+@router.put("/premios/{premio_id}")
+async def update_premio(
+    premio_id: str,
+    payload: PremioUpdateRequest,
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
+):
+    """Edita la información o inventario de un premio existente."""
+    tenant_id = await get_taboada_tenant_id(current_user)
+    return await MomentosTaboadaService.update_premio(tenant_id, premio_id, payload.model_dump(exclude_unset=True))
+
+
+@router.delete("/premios/{premio_id}")
+async def delete_premio(
+    premio_id: str,
+    current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
+):
+    """Inactiva (soft delete) un premio de la campaña."""
+    tenant_id = await get_taboada_tenant_id(current_user)
+    success = await MomentosTaboadaService.delete_premio(tenant_id, premio_id)
+    return {"ok": success, "message": "Premio desactivado exitosamente"}
+
 
 
 @router.put("/premios/{premio_id}/stock")
@@ -133,7 +185,7 @@ async def get_metricas(
 
 @router.get("/caja-chica")
 async def get_caja_chica(
-    sucursal_id: Optional[str] = Query(None, description="ID de sucursal o TODAS"),
+    sucursal_id: str | None = Query(None, description="ID de sucursal o TODAS"),
     current_user: User = Depends(require_roles([UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]))
 ):
     """Retorna los movimientos y saldo de la Caja Chica de la Promoción (separada de las ventas POS)."""

@@ -184,106 +184,6 @@ async def obtener_cliente_por_nit(
     return cliente
 
 
-@router.get("/clientes/{cliente_id}", response_model=ClienteResponse)
-async def obtener_cliente(
-    cliente_id: str,
-    current_user: User = Depends(get_current_active_user)
-):
-    cliente = await Cliente.get(cliente_id)
-    if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    return cliente
-
-
-@router.put("/clientes/{cliente_id}", response_model=ClienteResponse)
-async def actualizar_cliente(
-    cliente_id: str,
-    data: ClienteUpdate,
-    current_user: User = Depends(get_current_active_user)
-):
-    tenant_id = current_user.tenant_id or "default"
-    cliente = await Cliente.get(cliente_id)
-    
-    if not cliente or cliente.tenant_id != tenant_id:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-
-    if data.nit_ci and data.nit_ci.strip() != (cliente.nit_ci or "").strip():
-        nit_clean = data.nit_ci.strip()
-        existing_nit = await Cliente.find_one(
-            Cliente.tenant_id == tenant_id,
-            Cliente.nit_ci == nit_clean,
-            Cliente.id != cliente.id,
-            Cliente.is_active == True
-        )
-        if existing_nit:
-            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este NIT/CI ({nit_clean}): '{existing_nit.nombre}'.")
-
-    if data.telefono and data.telefono.strip() != (cliente.telefono or "").strip():
-        tel_clean = data.telefono.strip()
-        existing_tel = await Cliente.find_one(
-            Cliente.tenant_id == tenant_id,
-            Cliente.telefono == tel_clean,
-            Cliente.id != cliente.id,
-            Cliente.is_active == True
-        )
-        if existing_tel:
-            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este teléfono/celular ({tel_clean}): '{existing_tel.nombre}'.")
-
-    if data.email and data.email.strip().lower() != (cliente.email or "").strip().lower():
-        email_clean = data.email.strip().lower()
-        existing_email = await Cliente.find_one(
-            Cliente.tenant_id == tenant_id,
-            Cliente.email == email_clean,
-            Cliente.id != cliente.id,
-            Cliente.is_active == True
-        )
-        if existing_email:
-            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este correo ({email_clean}): '{existing_email.nombre}'.")
-
-    update_data = data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(cliente, field, value)
-        
-    await cliente.save()
-    return cliente
-
-
-@router.delete("/clientes/{cliente_id}")
-async def eliminar_cliente(
-    cliente_id: str,
-    current_user: User = Depends(get_current_active_user)
-):
-    # Soft delete
-    cliente = await Cliente.get(cliente_id)
-    if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-        
-    cliente.is_active = False
-    cliente.deleted_at = datetime.now(timezone.utc)
-    cliente.deleted_by = str(current_user.id)
-    await cliente.save()
-    return {"message": "Cliente eliminado exitosamente"}
-
-
-@router.get("/clientes/{cliente_id}/wallet")
-async def obtener_wallet_cliente(
-    cliente_id: str,
-    current_user: User = Depends(get_current_active_user)
-):
-    tenant_id = current_user.tenant_id or "default"
-    
-    # Verificar que el cliente exista y pertenezca al tenant
-    cliente = await Cliente.get(cliente_id)
-    if not cliente or cliente.tenant_id != tenant_id:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-
-    wallets = await ClientWallet.find(
-        ClientWallet.tenant_id == tenant_id,
-        ClientWallet.cliente_id == cliente_id
-    ).to_list()
-    
-    return wallets
-
 @router.get("/clientes/check-homonimo")
 async def check_homonimo_endpoint(
     nombre: Optional[str] = Query(None, description="Nombre o razón social a evaluar"),
@@ -376,3 +276,116 @@ async def check_homonimo_endpoint(
             result["duplicado_email"] = f"El correo {email_clean} ya pertenece a '{exist_email.get('nombre')}'."
 
     return result
+
+
+@router.get("/clientes/{cliente_id}", response_model=ClienteResponse)
+async def obtener_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    cliente = await Cliente.get(cliente_id)
+    if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return cliente
+
+
+@router.put("/clientes/{cliente_id}", response_model=ClienteResponse)
+async def actualizar_cliente(
+    cliente_id: str,
+    data: ClienteUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    tenant_id = current_user.tenant_id or "default"
+    cliente = await Cliente.get(cliente_id)
+    
+    if not cliente or cliente.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    if data.nit_ci and data.nit_ci.strip() != (cliente.nit_ci or "").strip():
+        nit_clean = data.nit_ci.strip()
+        existing_nit = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.nit_ci == nit_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_nit:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este NIT/CI ({nit_clean}): '{existing_nit.nombre}'.")
+
+    if data.telefono and data.telefono.strip() != (cliente.telefono or "").strip():
+        tel_clean = data.telefono.strip()
+        existing_tel = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.telefono == tel_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_tel:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este teléfono/celular ({tel_clean}): '{existing_tel.nombre}'.")
+
+    if data.email and data.email.strip().lower() != (cliente.email or "").strip().lower():
+        email_clean = data.email.strip().lower()
+        existing_email = await Cliente.find_one(
+            Cliente.tenant_id == tenant_id,
+            Cliente.email == email_clean,
+            Cliente.id != cliente.id,
+            Cliente.is_active == True
+        )
+        if existing_email:
+            raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este correo ({email_clean}): '{existing_email.nombre}'.")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(cliente, field, value)
+        
+    await cliente.save()
+    return cliente
+
+
+@router.delete("/clientes/{cliente_id}")
+async def eliminar_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    # Soft delete
+    cliente = await Cliente.get(cliente_id)
+    if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        
+    cliente.is_active = False
+    cliente.deleted_at = datetime.now(timezone.utc)
+    cliente.deleted_by = str(current_user.id)
+    await cliente.save()
+    return {"message": "Cliente eliminado exitosamente"}
+
+
+@router.get("/clientes/{cliente_id}/wallet")
+async def obtener_wallet_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    tenant_id = current_user.tenant_id or "default"
+    
+    # Verificar que el cliente exista y pertenezca al tenant
+    cliente = await Cliente.get(cliente_id)
+    if not cliente or cliente.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    wallets = await ClientWallet.find(
+        ClientWallet.tenant_id == tenant_id,
+        ClientWallet.cliente_id == cliente_id
+    ).to_list()
+    
+    return wallets

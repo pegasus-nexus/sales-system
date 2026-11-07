@@ -2,18 +2,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLocalStorage } from 'usehooks-ts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight, Barcode, Clock, ArrowLeft } from 'lucide-react';
+import { Warehouse, ArrowDownRight, ArrowUpRight, Scale, Loader2, Package, History, X, Check, Tag, Upload, Download, FileSpreadsheet, Printer, RefreshCw, LayoutGrid, List, Layers, MoreVertical, ChevronLeft, ChevronRight, Barcode, Clock, ArrowLeft, Eye } from 'lucide-react';
 import { exportInventarioExcel, getInventario, getMovimientosInventario, ajustarInventario, getSucursales, getAlmacenes, crearSolicitudPrecio, exportInventoryTemplate, importInventoryBranchExcel, getCategories, exportMovimientosInventario, recalcularKardex } from '../api/api';
 import { useDropzone } from 'react-dropzone';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
-import type { AjusteInventario } from '../api/types';
+import type { AjusteInventario, InventarioItem } from '../api/types';
 
 import BulkAjusteView from '../components/BulkAjusteView';
 import LotesTab from '../components/inventario/LotesTab';
 import { OdooSearchBar } from '../components/inventario/OdooSearchBar';
 import BarcodeScannerModal from '../components/inventario/BarcodeScannerModal';
+import { ProductoDetalleModal } from '../components/inventario/ProductoDetalleModal';
 
 import { formatFullDate as formatDate } from '../utils/dateUtils';
 
@@ -181,6 +182,7 @@ export default function InventarioPage() {
 
     // Modals State
     const [adjItem, setAdjItem] = useState<{ id: string, name: string } | null>(null);
+    const [detailItem, setDetailItem] = useState<InventarioItem | null>(null);
     const [priceReqItem, setPriceReqItem] = useState<{ id: string, name: string, currentPrice: number } | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -221,6 +223,73 @@ export default function InventarioPage() {
         setKardexProductoNombre(null);
     };
 
+    const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+
+    const toggleSelectProduct = (productId: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setSelectedProductIds(prev => {
+            const next = new Set(prev);
+            if (next.has(productId)) next.delete(productId);
+            else next.add(productId);
+            return next;
+        });
+    };
+
+    const allVisibleSelected = processedInventario.length > 0 && processedInventario.every(i => selectedProductIds.has(i.producto_id));
+
+    const toggleSelectAllVisible = () => {
+        if (allVisibleSelected) {
+            setSelectedProductIds(new Set());
+        } else {
+            setSelectedProductIds(new Set(processedInventario.map(i => i.producto_id)));
+        }
+    };
+
+    const clearSelection = () => {
+        setSelectedProductIds(new Set());
+    };
+
+    const handleCuadrarSeleccionados = async () => {
+        if (selectedProductIds.size === 0) return;
+        const count = selectedProductIds.size;
+        const sucName = selectedSucursal === 'CENTRAL' ? 'Almacén Central (Matriz)' : 'esta sucursal';
+        if (!window.confirm(`⚠️ ¿Deseas cuadrar el Kárdex de ${count} producto(s) seleccionados en ${sucName}?\n\nEsto recalculará secuencialmente los movimientos reales de entradas y salidas en el Kárdex para estos productos y actualizará su stock físico.`)) {
+            return;
+        }
+        setIsRecalculating(true);
+        try {
+            const res = await recalcularKardex(Array.from(selectedProductIds), selectedSucursal, selectedAlmacen);
+            toast.success(`Kárdex cuadrado: ${res.data.corregidos} producto(s) procesados, ${res.data.inventarios_modificados} stock(s) alineados.`);
+            queryClient.invalidateQueries({ queryKey: ['inventario'] });
+            queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+            setSelectedProductIds(new Set());
+        } catch (err: any) {
+            toast.error(err?.message || 'Error al cuadrar productos seleccionados');
+        } finally {
+            setIsRecalculating(false);
+        }
+    };
+
+    const handleCuadrarIndividual = async (productId: string, productName: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setIsRecalculating(true);
+        try {
+            const res = await recalcularKardex(productId, selectedSucursal, selectedAlmacen);
+            const detalle = res.data?.detalles?.find(d => d.producto_id === productId);
+            if (detalle && Math.abs(detalle.stock_anterior - detalle.stock_nuevo) > 0.001) {
+                toast.success(`Kárdex de "${productName}" cuadrado: de ${detalle.stock_anterior} a ${detalle.stock_nuevo} u.`);
+            } else {
+                toast.success(`Kárdex de "${productName}" al día con los movimientos.`);
+            }
+            queryClient.invalidateQueries({ queryKey: ['inventario'] });
+            queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+        } catch (err: any) {
+            toast.error(err?.message || `Error al cuadrar Kárdex de ${productName}`);
+        } finally {
+            setIsRecalculating(false);
+        }
+    };
+
     const hasActiveFilters =
         (tab === 'stock' && (selectedCategory !== 'ALL' || stockBajoOnly || stockFilter !== 'ALL' || groupByCategory || sortBy !== 'default')) ||
         (tab === 'kardex' && (Boolean(kardexProductoNombre) || Boolean(tipoMovimiento) || Boolean(startDate) || Boolean(endDate))) ||
@@ -229,14 +298,35 @@ export default function InventarioPage() {
     const renderProductCard = (item: (typeof processedInventario)[0]) => {
         const isOutOfStock = item.cantidad <= 0;
         const isLowStock = item.cantidad > 0 && item.cantidad <= 10;
+        const isSelected = selectedProductIds.has(item.producto_id);
         
         return (
             <div
                 key={item.producto_id}
-                onClick={() => esAdminSucursal && setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
-                className="bg-white border border-gray-200/90 hover:border-indigo-400 rounded-lg p-2.5 sm:p-3 hover:shadow-md transition-all flex justify-between items-start gap-2.5 group relative cursor-pointer min-h-[92px]"
+                onClick={() => setDetailItem(item)}
+                className={`rounded-lg p-2.5 sm:p-3 hover:shadow-md transition-all flex justify-between items-start gap-2.5 group relative cursor-pointer min-h-[92px] ${
+                    isSelected 
+                        ? 'bg-indigo-50/30 border-2 border-indigo-500 shadow-xs' 
+                        : 'bg-white border border-gray-200/90 hover:border-indigo-400'
+                }`}
             >
-                <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                {/* Checkbox selector estilo Odoo */}
+                <div 
+                    onClick={(e) => toggleSelectProduct(item.producto_id, e)}
+                    className={`absolute top-2 left-2 z-10 p-0.5 rounded transition-all ${
+                        isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}
+                    title={isSelected ? "Deseleccionar" : "Seleccionar"}
+                >
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 cursor-pointer bg-white"
+                    />
+                </div>
+
+                <div className={`flex-1 min-w-0 flex flex-col justify-between self-stretch ${isSelected ? 'pl-5' : 'group-hover:pl-5'} transition-all`}>
                     <div>
                         <h4
                             className="text-[12px] font-bold text-gray-900 tracking-tight line-clamp-2 uppercase leading-snug group-hover:text-indigo-600 transition-colors"
@@ -280,6 +370,26 @@ export default function InventarioPage() {
 
                 {esAdminSucursal && (
                     <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/95 px-1 py-0.5 rounded shadow-xs border border-gray-200">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailItem(item);
+                            }}
+                            className="p-1 hover:bg-gray-100 text-gray-700 rounded transition-colors"
+                            title="Ver Información del Producto"
+                        >
+                            <Eye size={12} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={(e) => handleCuadrarIndividual(item.producto_id, item.producto_nombre, e)}
+                            disabled={isRecalculating}
+                            className="p-1 hover:bg-amber-50 text-amber-700 rounded transition-colors disabled:opacity-50"
+                            title="Cuadrar Kárdex de este Producto"
+                        >
+                            <RefreshCw size={12} className={isRecalculating ? "animate-spin" : ""} />
+                        </button>
                         <button
                             type="button"
                             onClick={(e) => {
@@ -731,6 +841,15 @@ export default function InventarioPage() {
                                 <table className="w-full text-left text-xs">
                                     <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
                                         <tr>
+                                            <th className="px-3 py-2 w-8">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allVisibleSelected}
+                                                    onChange={toggleSelectAllVisible}
+                                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 cursor-pointer bg-white"
+                                                    title={allVisibleSelected ? "Deseleccionar todos" : "Seleccionar todos los visibles"}
+                                                />
+                                            </th>
                                             <th className="px-3 py-2">Producto</th>
                                             <th className="px-3 py-2 text-center">Stock Físico</th>
                                             <th className="px-3 py-2 text-right">Precio Actual</th>
@@ -738,78 +857,110 @@ export default function InventarioPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {processedInventario.map((item) => (
-                                            <tr key={item.producto_id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="px-3 py-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-md bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                            {item.image_url ? <img src={item.image_url} alt="" className="w-full h-full object-cover" /> : <Package size={16} className="text-gray-300" />}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
-                                                            {item.codigo_barras && (
-                                                                <div className="text-[10px] text-gray-400 font-mono">{item.codigo_barras}</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-2 text-center">
-                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${item.cantidad > 10 ? 'bg-green-100 text-green-700 border border-green-200' :
-                                                        item.cantidad > 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                                                            'bg-red-100 text-red-700 border border-red-200'
-                                                        }`}>
-                                                        {item.cantidad} u.
-                                                    </span>
-                                                </td>
-                                                <td className="px-3 py-2 text-right">
-                                                    <div className="flex flex-col items-end">
-                                                        <span className={`font-mono font-bold ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
-                                                            Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
-                                                        </span>
-                                                        {item.precio_sucursal && (
-                                                            <span className="text-[9px] text-gray-400 line-through font-mono">
-                                                                Bs. {item.precio.toFixed(2)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                {esAdminSucursal && (
-                                                    <td className="px-3 py-2 text-right">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <button
-                                                                onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
-                                                                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-indigo-100"
-                                                                title="Ajustar Stock"
-                                                            >
-                                                                <Scale size={12} />
-                                                            </button>
-                                                            {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
-                                                                <button
-                                                                    onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
-                                                                    className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-amber-100"
-                                                                    title="Solicitar Cambio de Precio"
-                                                                >
-                                                                    <Tag size={12} />
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setKardexProductoId(item.producto_id);
-                                                                    setKardexProductoNombre(item.producto_nombre);
-                                                                    setTab('kardex');
-                                                                    setStartDate('');
-                                                                    setEndDate('');
-                                                                }}
-                                                                className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-gray-200"
-                                                                title="Ver Historial (Kárdex)"
-                                                            >
-                                                                <History size={12} />
-                                                            </button>
+                                        {processedInventario.map((item) => {
+                                            const isRowSelected = selectedProductIds.has(item.producto_id);
+                                            return (
+                                                <tr 
+                                                    key={item.producto_id} 
+                                                    onClick={() => setDetailItem(item)} 
+                                                    className={`transition-colors cursor-pointer ${
+                                                        isRowSelected ? 'bg-indigo-50/70' : 'hover:bg-indigo-50/40'
+                                                    }`}
+                                                >
+                                                    <td className="px-3 py-2 w-8" onClick={(e) => toggleSelectProduct(item.producto_id, e)}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isRowSelected}
+                                                            onChange={() => {}}
+                                                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 cursor-pointer bg-white"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-md bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                                {item.image_url ? <img src={item.image_url} alt="" className="w-full h-full object-cover" /> : <Package size={16} className="text-gray-300" />}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-semibold text-gray-900">{item.producto_nombre}</div>
+                                                                {item.codigo_barras && (
+                                                                    <div className="text-[10px] text-gray-400 font-mono">{item.codigo_barras}</div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
-                                                )}
-                                            </tr>
-                                        ))}
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${item.cantidad > 10 ? 'bg-green-100 text-green-700 border border-green-200' :
+                                                            item.cantidad > 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                                                                'bg-red-100 text-red-700 border border-red-200'
+                                                            }`}>
+                                                            {item.cantidad} u.
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className={`font-mono font-bold ${item.precio_sucursal ? 'text-indigo-600' : 'text-gray-900'}`}>
+                                                                Bs. {(item.precio_sucursal ?? item.precio ?? 0).toFixed(2)}
+                                                            </span>
+                                                            {item.precio_sucursal && (
+                                                                <span className="text-[9px] text-gray-400 line-through font-mono">
+                                                                    Bs. {item.precio.toFixed(2)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    {esAdminSucursal && (
+                                                        <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <button
+                                                                    onClick={() => setDetailItem(item)}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-gray-200"
+                                                                    title="Ver Información y Existencias"
+                                                                >
+                                                                    <Eye size={12} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => handleCuadrarIndividual(item.producto_id, item.producto_nombre, e)}
+                                                                    disabled={isRecalculating}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-bold uppercase rounded-md transition-colors border border-amber-200 disabled:opacity-50"
+                                                                    title="Cuadrar Kárdex de este Producto"
+                                                                >
+                                                                    <RefreshCw size={11} className={isRecalculating ? "animate-spin" : ""} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setAdjItem({ id: item.producto_id, name: item.producto_nombre })}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-indigo-100"
+                                                                    title="Ajustar Stock"
+                                                                >
+                                                                    <Scale size={12} />
+                                                                </button>
+                                                                {(!esMatriz || selectedSucursal !== 'CENTRAL') && (
+                                                                    <button
+                                                                        onClick={() => setPriceReqItem({ id: item.producto_id, name: item.producto_nombre, currentPrice: item.precio_sucursal ?? item.precio })}
+                                                                        className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-amber-100"
+                                                                        title="Solicitar Cambio de Precio"
+                                                                    >
+                                                                        <Tag size={12} />
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setKardexProductoId(item.producto_id);
+                                                                        setKardexProductoNombre(item.producto_nombre);
+                                                                        setTab('kardex');
+                                                                        setStartDate('');
+                                                                        setEndDate('');
+                                                                    }}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[10px] font-bold uppercase rounded-md transition-colors border border-gray-200"
+                                                                    title="Ver Historial (Kárdex)"
+                                                                >
+                                                                    <History size={12} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -954,6 +1105,40 @@ export default function InventarioPage() {
                 <LotesTab selectedSucursal={selectedSucursal} selectedAlmacen={selectedAlmacen} onBack={() => handleTabChange('stock')} />
             )}
 
+            {/* Barra flotante estilo Odoo ERP cuando hay productos seleccionados */}
+            {tab === 'stock' && selectedProductIds.size > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-gray-700/60 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                    <div className="flex items-center gap-2 pr-3 border-r border-gray-700">
+                        <span className="w-6 h-6 rounded-full bg-indigo-500 text-white font-bold text-xs flex items-center justify-center">
+                            {selectedProductIds.size}
+                        </span>
+                        <span className="text-xs font-semibold text-gray-200">
+                            {selectedProductIds.size === 1 ? 'producto seleccionado' : 'productos seleccionados'}
+                        </span>
+                    </div>
+
+                    {esAdminSucursal && (
+                        <button
+                            type="button"
+                            onClick={handleCuadrarSeleccionados}
+                            disabled={isRecalculating}
+                            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                        >
+                            <RefreshCw size={14} className={isRecalculating ? "animate-spin" : ""} />
+                            <span>{isRecalculating ? "Cuadrando..." : `Cuadrar Kárdex (${selectedProductIds.size})`}</span>
+                        </button>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={clearSelection}
+                        className="text-xs font-semibold text-gray-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                        Deseleccionar
+                    </button>
+                </div>
+            )}
+
             {/* Modal de Cambio de Precio */}
             {priceReqItem && (
                 <PriceRequestModal
@@ -971,6 +1156,23 @@ export default function InventarioPage() {
             )}
 
             {/* Modal de Ajuste */}
+            {detailItem && (
+                <ProductoDetalleModal
+                    isOpen={Boolean(detailItem)}
+                    item={detailItem}
+                    selectedSucursal={selectedSucursal}
+                    onClose={() => setDetailItem(null)}
+                    onAjustarStock={(it) => setAdjItem(it)}
+                    onVerKardex={(it) => {
+                        setKardexProductoId(it.id);
+                        setKardexProductoNombre(it.name);
+                        setTab('kardex');
+                        setStartDate('');
+                        setEndDate('');
+                    }}
+                />
+            )}
+
             {adjItem && (
                 <AjusteModal
                     isOpen={true}

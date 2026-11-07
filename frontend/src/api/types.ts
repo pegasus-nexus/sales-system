@@ -212,10 +212,46 @@ export interface InventarioItem {
     precio_sucursal?: number;
     image_url?: string;
     sucursal_id: string;
+    almacen_id?: string;
     cantidad: number;
     codigo_barras?: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    codigo_sistema?: string;
     categoria_id?: string;
     categoria_nombre?: string;
+    costo_producto?: number;
+    tipo_item?: string;
+    is_active?: boolean;
+}
+
+export interface StockDesgloseSucursal {
+    sucursal_id: string;
+    sucursal_nombre: string;
+    almacen_id: string;
+    cantidad: number;
+    precio_sucursal?: number | null;
+    updated_at?: string | null;
+}
+
+export interface ProductoDetalleResponse {
+    id: string;
+    descripcion: string;
+    codigo_sistema?: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    categoria_id: string;
+    categoria_nombre: string;
+    precio_venta: number;
+    costo_producto?: number | null;
+    tipo_item: string;
+    image_url?: string;
+    is_active: boolean;
+    is_destacado: boolean;
+    show_on_web: boolean;
+    created_at?: string;
+    stock_total: number;
+    stock_desglose: StockDesgloseSucursal[];
 }
 
 export interface AjusteInventario {

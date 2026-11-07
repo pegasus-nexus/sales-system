@@ -31,7 +31,7 @@ import type {
 
     Almacen, AlmacenCreate, AlmacenUpdate,
 
-    InventarioItem, AjusteInventario, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
+    InventarioItem, AjusteInventario, ProductoDetalleResponse, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
 
     PedidoInterno, PedidoCreate,
 
@@ -758,6 +758,10 @@ export const deactivateProduct = (id: string) =>
 
     client<{ message: string }>(`/products/${id}`, { method: 'DELETE' });
 
+export const getProductDetail = (id: string): Promise<ProductoDetalleResponse> =>
+
+    client<ProductoDetalleResponse>(`/products/${id}`);
+
 
 
 export const getAdminDashboardMetrics = async () => {
@@ -1124,10 +1128,42 @@ export const getMovimientosInventario = (
 
 
 
-export const recalcularKardex = (productoId: string, sucursalId: string, almacenId: string = 'default') =>
-    client<{ message: string, data: { corregidos: number, logs_modificados: number, inventarios_modificados: number, detalles: Array<{ producto_id: string, descripcion: string, stock_anterior: number, stock_nuevo: number }> } }>(`/inventario/corregir-kardex/${productoId}?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
-        method: 'POST'
+export const recalcularKardex = (
+    productoIdOrIds: string | string[],
+    sucursalId: string,
+    almacenId: string = 'default'
+) => {
+    if (Array.isArray(productoIdOrIds)) {
+        return client<{
+            message: string;
+            data: {
+                corregidos: number;
+                logs_modificados: number;
+                inventarios_modificados: number;
+                detalles: Array<{ producto_id: string; descripcion: string; stock_anterior: number; stock_nuevo: number }>;
+            };
+        }>(`/inventario/corregir-kardex?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
+            method: 'POST',
+            body: JSON.stringify({
+                producto_ids: productoIdOrIds,
+                sucursal_id: sucursalId,
+                almacen_id: almacenId,
+            }),
+        });
+    }
+
+    return client<{
+        message: string;
+        data: {
+            corregidos: number;
+            logs_modificados: number;
+            inventarios_modificados: number;
+            detalles: Array<{ producto_id: string; descripcion: string; stock_anterior: number; stock_nuevo: number }>;
+        };
+    }>(`/inventario/corregir-kardex/${productoIdOrIds}?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
+        method: 'POST',
     });
+};
 
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
 
@@ -2347,6 +2383,43 @@ export const getWhatsAppLogs = (page: number = 1, limit: number = 30, origen?: s
 // ── Momentos Taboada (Campaña de Fidelización Exclusiva) ────────
 export const getMomentosTaboadaPremios = (): Promise<PremioMomentosTaboada[]> =>
     client<PremioMomentosTaboada[]>('/momentos-taboada/premios');
+
+export const createMomentosTaboadaPremio = (data: {
+    nombre: string;
+    descripcion?: string;
+    sellos_requeridos: number;
+    copago_bs: number;
+    imagen_url?: string;
+    codigo?: string;
+    stock_por_sucursal?: Record<string, number>;
+}): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>('/momentos-taboada/premios', {
+        method: 'POST',
+        body: data,
+    });
+
+export const updateMomentosTaboadaPremio = (
+    premioId: string,
+    data: Partial<{
+        nombre: string;
+        descripcion: string;
+        sellos_requeridos: number;
+        copago_bs: number;
+        imagen_url: string;
+        codigo: string;
+        stock_por_sucursal: Record<string, number>;
+        is_active: boolean;
+    }>
+): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>(`/momentos-taboada/premios/${premioId}`, {
+        method: 'PUT',
+        body: data,
+    });
+
+export const deleteMomentosTaboadaPremio = (premioId: string): Promise<{ ok: boolean; message: string }> =>
+    client<{ ok: boolean; message: string }>(`/momentos-taboada/premios/${premioId}`, {
+        method: 'DELETE',
+    });
 
 export const updateMomentosTaboadaStock = (premioId: string, sucursalId: string, nuevoStock: number): Promise<PremioMomentosTaboada> =>
     client<PremioMomentosTaboada>(`/momentos-taboada/premios/${premioId}/stock`, {

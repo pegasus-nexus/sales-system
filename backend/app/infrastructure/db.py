@@ -48,6 +48,7 @@ from app.domain.models.momentos_taboada import (
     MovimientoCajaChicaTaboada
 )
 
+from app.domain.models.catalogo import CatalogoConfig, CatalogoProducto
 from app.infrastructure.core.config import settings
 
 class ClientWrapper:
@@ -148,7 +149,8 @@ async def init_db():
             PremioMomentosTaboada,
             CanjeMomentosTaboada,
             MovimientoCajaChicaTaboada,
-            Sucursal, WebCollection, WebConfig
+            Sucursal, WebCollection, WebConfig,
+            CatalogoConfig, CatalogoProducto
         ],
         skip_indexes=True
     )
