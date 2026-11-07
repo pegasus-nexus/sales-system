@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
     Store, 
@@ -44,6 +44,10 @@ export default function CatalogoAdminPage() {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<CatalogoProducto | null>(null);
     const [copiedLink, setCopiedLink] = useState(false);
+
+    useEffect(() => {
+        document.title = 'Mi Catálogo Digital - Panel de Administración | Pegasus';
+    }, []);
 
     // Queries
     const { data: config, isLoading: isConfigLoading } = useQuery({

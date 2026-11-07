@@ -43,6 +43,12 @@ export default function CatalogoAuthPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        document.title = isRegister 
+            ? 'Crear mi Catálogo Digital | Pegasus' 
+            : 'Iniciar Sesión | Catálogo Digital Pegasus';
+    }, [isRegister]);
+
     // Form fields
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');

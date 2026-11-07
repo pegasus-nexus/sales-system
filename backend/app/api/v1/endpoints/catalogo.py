@@ -1,5 +1,7 @@
 from typing import List, Dict, Any
+import html
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import HTMLResponse
 from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.domain.schemas.catalogo import (
@@ -67,6 +69,57 @@ async def get_public_catalog(
     Retorna la configuración de marca (logo, colores, WhatsApp) y la lista de productos disponibles.
     """
     return await service.get_public_catalog(slug)
+
+
+@router.get("/og/{slug}", response_class=HTMLResponse)
+async def get_catalog_og_preview(
+    slug: str,
+    service: CatalogoService = Depends(get_catalogo_service)
+):
+    """
+    Endpoint HTML estático con Open Graph tags para rastreadores (WhatsApp, Facebook, Twitter, Telegram).
+    """
+    try:
+        catalog_data = await service.get_public_catalog(slug)
+        cfg = catalog_data.config
+        title = html.escape(cfg.business_name or "Catálogo Digital")
+        desc = html.escape(cfg.description or f"Catálogo digital de {title}. Realiza tus pedidos en línea por WhatsApp.")
+        logo_url = html.escape(cfg.logo_url or cfg.banner_url or "https://app.pegasus-nexus.com/vite.svg")
+    except Exception:
+        title = "Catálogo Digital"
+        desc = "Explora nuestro catálogo de productos y haz tu pedido directamente por WhatsApp."
+        logo_url = "https://app.pegasus-nexus.com/vite.svg"
+
+    redirect_url = f"https://app.pegasus-nexus.com/c/{slug}"
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{title} | Catálogo Digital</title>
+  <meta name="description" content="{desc}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{title}">
+  <meta property="og:title" content="{title} | Catálogo Digital">
+  <meta property="og:description" content="{desc}">
+  <meta property="og:url" content="{redirect_url}">
+  <meta property="og:image" content="{logo_url}">
+  <meta property="og:image:secure_url" content="{logo_url}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{title} | Catálogo Digital">
+  <meta name="twitter:description" content="{desc}">
+  <meta name="twitter:image" content="{logo_url}">
+  <link rel="canonical" href="{redirect_url}">
+  <meta http-equiv="refresh" content="0; url={redirect_url}">
+  <script>window.location.replace("{redirect_url}");</script>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding:2rem; background:#0a0a0a; color:#fff;">
+  <h1>{title}</h1>
+  <p>{desc}</p>
+  <p><a href="{redirect_url}" style="color:#6366f1;">Abrir Catálogo</a></p>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content, status_code=200)
 
 
 @router.get("/check-slug/{slug}")
