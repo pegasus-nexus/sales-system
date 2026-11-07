@@ -105,13 +105,23 @@ export default function PublicCatalogoPage() {
     };
 
     // Format WhatsApp single inquiry
+    // Helper to clean and ensure international country code (default +591 for Bolivia 8-digit mobile)
+const sanitizeWhatsAppPhone = (rawPhone: string): string => {
+    if (!rawPhone) return '';
+    let clean = rawPhone.replace(/\D/g, '');
+    if (clean.length === 8 && (clean.startsWith('6') || clean.startsWith('7'))) {
+        clean = '591' + clean;
+    }
+    return clean;
+};
+
     const sendSingleProductInquiry = (product: CatalogoProducto) => {
         if (!config?.whatsapp_number) {
             toast.warning('Este negocio aún no ha configurado su número de WhatsApp.');
             return;
         }
 
-        const cleanPhone = config.whatsapp_number.replace(/\D/g, '');
+        const cleanPhone = sanitizeWhatsAppPhone(config.whatsapp_number);
         const currentUrl = window.location.href;
         const text = `¡Hola ${config.business_name}! Vi el producto *${product.title}* (${product.currency_symbol} ${product.price.toFixed(2)}) en su catálogo digital y me gustaría consultar disponibilidad:\n\n${currentUrl}`;
         const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
@@ -130,7 +140,7 @@ export default function PublicCatalogoPage() {
             return;
         }
 
-        const cleanPhone = config.whatsapp_number.replace(/\D/g, '');
+        const cleanPhone = sanitizeWhatsAppPhone(config.whatsapp_number);
         const currentUrl = window.location.href;
 
         let message = `¡Hola *${config.business_name}*! Quisiera realizar el siguiente pedido desde su catálogo digital:\n\n`;

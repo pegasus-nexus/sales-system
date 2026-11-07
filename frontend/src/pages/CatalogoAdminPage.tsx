@@ -8,7 +8,6 @@ import {
     Check, 
     Palette, 
     Package, 
-    MessageCircle, 
     Upload, 
     Trash2, 
     Edit, 
@@ -28,6 +27,7 @@ import {
 } from '../api/catalogoApi';
 import type { CatalogoProducto } from '../api/catalogoApi';
 import CatalogoProductModal from '../components/catalogo/CatalogoProductModal';
+import PhoneCountryInput from '../components/catalogo/PhoneCountryInput';
 
 const COLOR_PRESETS = [
     { name: 'Índigo Moderno', primary: '#4f46e5', secondary: '#06b6d4' },
@@ -468,17 +468,12 @@ export default function CatalogoAdminPage() {
                                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                                     Número de WhatsApp para Pedidos *
                                 </label>
-                                <div className="relative">
-                                    <MessageCircle size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600" />
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={whatsapp}
-                                        onChange={(e) => setWhatsapp(e.target.value)}
-                                        placeholder="Ej. +591 70012345"
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-gray-900 bg-white placeholder-slate-400 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                                    />
-                                </div>
+                                <PhoneCountryInput
+                                    value={whatsapp}
+                                    onChange={setWhatsapp}
+                                    required
+                                    placeholder="67998576"
+                                />
                                 <p className="text-[11px] text-slate-500 mt-1">
                                     Los clientes enviarán sus carritos de compra directamente a este número con código de país.
                                 </p>

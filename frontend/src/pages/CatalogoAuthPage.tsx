@@ -7,7 +7,6 @@ import {
     Lock, 
     Building2, 
     User as UserIcon, 
-    Phone, 
     ArrowRight, 
     Loader2, 
     Eye, 
@@ -19,6 +18,7 @@ import { useAuthStore } from '../store/authStore';
 import { BASE_URL } from '../api/client';
 import { registerCatalogo, googleAuthCatalogo } from '../api/catalogoApi';
 import type { CatalogoRegisterRequest } from '../api/catalogoApi';
+import PhoneCountryInput from '../components/catalogo/PhoneCountryInput';
 
 declare global {
     interface Window {
@@ -341,18 +341,13 @@ export default function CatalogoAuthPage() {
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                                             WhatsApp para Recibir Pedidos (Opcional)
                                         </label>
-                                        <div className="relative">
-                                            <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
-                                            <input
-                                                type="tel"
-                                                value={whatsapp}
-                                                onChange={(e) => setWhatsapp(e.target.value)}
-                                                placeholder="Ej. +591 70012345"
-                                                className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 text-gray-900 bg-white placeholder-slate-600 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-xs"
-                                            />
-                                        </div>
+                                        <PhoneCountryInput
+                                            value={whatsapp}
+                                            onChange={setWhatsapp}
+                                            placeholder="67998576"
+                                        />
                                         <p className="text-[11px] text-slate-600 mt-1">
-                                            Tus clientes tocarán un botón y te enviarán el pedido directamente a este número.
+                                            Tus clientes tocarán un botón y te enviarán el pedido directamente a este número con su código de país.
                                         </p>
                                     </div>
                                 </motion.div>

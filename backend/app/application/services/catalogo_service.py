@@ -31,6 +31,18 @@ from app.infrastructure.auth import (
 from app.infrastructure.core.config import settings
 
 
+def normalize_catalog_phone(phone: Optional[str]) -> str:
+    """Normaliza un número de WhatsApp asegurando prefijo internacional (por defecto +591 en Bolivia)."""
+    if not phone:
+        return ""
+    digits = re.sub(r"\D", "", phone)
+    if not digits:
+        return ""
+    if len(digits) == 8 and digits[0] in ("6", "7"):
+        return f"+591{digits}"
+    return f"+{digits}" if not phone.strip().startswith("+") else phone.strip()
+
+
 def slugify(text: str) -> str:
     """Convierte texto en un slug limpio y seguro para URL."""
     clean = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8').lower()
@@ -91,7 +103,7 @@ class CatalogoService:
             "tenant_id": tenant_id,
             "business_name": req.company_name.strip(),
             "slug": slug,
-            "whatsapp_number": req.whatsapp.strip() if req.whatsapp else "",
+            "whatsapp_number": normalize_catalog_phone(req.whatsapp),
             "primary_color": "#4f46e5",
             "secondary_color": "#06b6d4",
             "currency_symbol": "Bs.",
@@ -236,6 +248,8 @@ class CatalogoService:
 
     async def update_tenant_config(self, tenant_id: str, updates: CatalogoConfigUpdate) -> CatalogoConfigOut:
         dump = updates.model_dump(exclude_unset=True)
+        if "whatsapp_number" in dump:
+            dump["whatsapp_number"] = normalize_catalog_phone(dump["whatsapp_number"])
         if "slug" in dump and dump["slug"]:
             clean_slug = slugify(dump["slug"])
             is_avail = await self.config_repo.is_slug_available(clean_slug, exclude_tenant_id=tenant_id)
