@@ -31,7 +31,7 @@ import type {
 
     Almacen, AlmacenCreate, AlmacenUpdate,
 
-    InventarioItem, AjusteInventario, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
+    InventarioItem, AjusteInventario, ProductoDetalleResponse, InventoryLogsPaginated, AjusteInventarioMasivoRequest,
 
     PedidoInterno, PedidoCreate,
 
@@ -758,6 +758,10 @@ export const deactivateProduct = (id: string) =>
 
     client<{ message: string }>(`/products/${id}`, { method: 'DELETE' });
 
+export const getProductDetail = (id: string): Promise<ProductoDetalleResponse> =>
+
+    client<ProductoDetalleResponse>(`/products/${id}`);
+
 
 
 export const getAdminDashboardMetrics = async () => {
@@ -1124,10 +1128,42 @@ export const getMovimientosInventario = (
 
 
 
-export const recalcularKardex = (productoId: string, sucursalId: string, almacenId: string = 'default') =>
-    client<{ message: string, data: { corregidos: number, logs_modificados: number, inventarios_modificados: number, detalles: Array<{ producto_id: string, descripcion: string, stock_anterior: number, stock_nuevo: number }> } }>(`/inventario/corregir-kardex/${productoId}?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
-        method: 'POST'
+export const recalcularKardex = (
+    productoIdOrIds: string | string[],
+    sucursalId: string,
+    almacenId: string = 'default'
+) => {
+    if (Array.isArray(productoIdOrIds)) {
+        return client<{
+            message: string;
+            data: {
+                corregidos: number;
+                logs_modificados: number;
+                inventarios_modificados: number;
+                detalles: Array<{ producto_id: string; descripcion: string; stock_anterior: number; stock_nuevo: number }>;
+            };
+        }>(`/inventario/corregir-kardex?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
+            method: 'POST',
+            body: JSON.stringify({
+                producto_ids: productoIdOrIds,
+                sucursal_id: sucursalId,
+                almacen_id: almacenId,
+            }),
+        });
+    }
+
+    return client<{
+        message: string;
+        data: {
+            corregidos: number;
+            logs_modificados: number;
+            inventarios_modificados: number;
+            detalles: Array<{ producto_id: string; descripcion: string; stock_anterior: number; stock_nuevo: number }>;
+        };
+    }>(`/inventario/corregir-kardex/${productoIdOrIds}?sucursal_id=${sucursalId}&almacen_id=${almacenId}`, {
+        method: 'POST',
     });
+};
 
 export const exportMovimientosInventario = async (sucursal_id = 'CENTRAL', almacen_id = 'default', producto_id?: string, startDate?: string, endDate?: string, search?: string, tipo_movimiento?: string) => {
 
@@ -1762,7 +1798,6 @@ export const checkHomonimoCliente = async (params: {
 
 
 
-
 // ── Listas de Precios ─────────────────────────────────────────────────────
 
 export const getSesionesCaja = () => client<unknown[]>(`/caja/sesiones`);
@@ -2287,4 +2322,134 @@ export const convertirCotizacionAVenta = (id: string, metodoPago: string = 'EFEC
 export const getLoginBranding = async (slug?: string): Promise<LoginBrandingResponse> => {
     const query = slug ? `?slug=${encodeURIComponent(slug)}` : '';
     return client<LoginBrandingResponse>(`/auth/login-branding${query}`);
+};
+
+
+// ── WhatsApp App API (Odoo Style) ──────────────────────────────
+import type { 
+    WhatsAppAccountStatus, 
+    WhatsAppTemplate, 
+    WhatsAppLog, 
+    WhatsAppSendPayload,
+    PremioMomentosTaboada,
+    CanjeMomentosTaboada,
+    ClienteSellosResponse,
+    MetricasMomentosTaboada,
+    CajaChicaTaboadaResponse 
+} from './types';
+
+export const getWhatsAppStatus = (): Promise<WhatsAppAccountStatus> =>
+    client<WhatsAppAccountStatus>('/whatsapp/status');
+
+export const updateWhatsAppConfig = (data: Partial<WhatsAppAccountStatus>): Promise<WhatsAppAccountStatus> =>
+    client<WhatsAppAccountStatus>('/whatsapp/config', {
+        method: 'POST',
+        body: data,
+    });
+
+export const getWhatsAppTemplates = (): Promise<WhatsAppTemplate[]> =>
+    client<WhatsAppTemplate[]>('/whatsapp/templates');
+
+export const createWhatsAppTemplate = (data: Omit<WhatsAppTemplate, 'id' | '_id' | 'created_at'>): Promise<WhatsAppTemplate> =>
+    client<WhatsAppTemplate>('/whatsapp/templates', {
+        method: 'POST',
+        body: data,
+    });
+
+export const updateWhatsAppTemplate = (id: string, data: Partial<WhatsAppTemplate>): Promise<WhatsAppTemplate> =>
+    client<WhatsAppTemplate>(`/whatsapp/templates/${id}`, {
+        method: 'PUT',
+        body: data,
+    });
+
+export const deleteWhatsAppTemplate = (id: string): Promise<{ status: string }> =>
+    client<{ status: string }>(`/whatsapp/templates/${id}`, {
+        method: 'DELETE',
+    });
+
+export const sendWhatsAppCustomMessage = (payload: WhatsAppSendPayload): Promise<{ success: boolean; log_id: string; phone: string }> =>
+    client<{ success: boolean; log_id: string; phone: string }>('/whatsapp/send', {
+        method: 'POST',
+        body: payload,
+    });
+
+export const getWhatsAppLogs = (page: number = 1, limit: number = 30, origen?: string, estado?: string): Promise<{ items: WhatsAppLog[]; total: number; page: number; pages: number }> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (origen) params.append('origen', origen);
+    if (estado) params.append('estado', estado);
+    return client<{ items: WhatsAppLog[]; total: number; page: number; pages: number }>(`/whatsapp/logs?${params.toString()}`);
+};
+
+// ── Momentos Taboada (Campaña de Fidelización Exclusiva) ────────
+export const getMomentosTaboadaPremios = (): Promise<PremioMomentosTaboada[]> =>
+    client<PremioMomentosTaboada[]>('/momentos-taboada/premios');
+
+export const createMomentosTaboadaPremio = (data: {
+    nombre: string;
+    descripcion?: string;
+    sellos_requeridos: number;
+    copago_bs: number;
+    imagen_url?: string;
+    codigo?: string;
+    stock_por_sucursal?: Record<string, number>;
+}): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>('/momentos-taboada/premios', {
+        method: 'POST',
+        body: data,
+    });
+
+export const updateMomentosTaboadaPremio = (
+    premioId: string,
+    data: Partial<{
+        nombre: string;
+        descripcion: string;
+        sellos_requeridos: number;
+        copago_bs: number;
+        imagen_url: string;
+        codigo: string;
+        stock_por_sucursal: Record<string, number>;
+        is_active: boolean;
+    }>
+): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>(`/momentos-taboada/premios/${premioId}`, {
+        method: 'PUT',
+        body: data,
+    });
+
+export const deleteMomentosTaboadaPremio = (premioId: string): Promise<{ ok: boolean; message: string }> =>
+    client<{ ok: boolean; message: string }>(`/momentos-taboada/premios/${premioId}`, {
+        method: 'DELETE',
+    });
+
+export const updateMomentosTaboadaStock = (premioId: string, sucursalId: string, nuevoStock: number): Promise<PremioMomentosTaboada> =>
+    client<PremioMomentosTaboada>(`/momentos-taboada/premios/${premioId}/stock`, {
+        method: 'PUT',
+        body: { sucursal_id: sucursalId, nuevo_stock: nuevoStock },
+    });
+
+export const getMomentosTaboadaClienteSellos = (query: string): Promise<ClienteSellosResponse> =>
+    client<ClienteSellosResponse>(`/momentos-taboada/cliente-sellos?query=${encodeURIComponent(query)}`);
+
+export const registrarMomentosTaboadaCanje = (data: {
+    premio_id: string;
+    sucursal_id: string;
+    cliente_telefono: string;
+    cliente_nombre?: string;
+    metodo_pago?: string;
+    notas?: string;
+}): Promise<{ status: string; message: string; canje_id: string; sellos_descontados: number; sellos_restantes: number; copago_recaudado_bs: number }> =>
+    client('/momentos-taboada/canjes', {
+        method: 'POST',
+        body: data,
+    });
+
+export const getMomentosTaboadaCanjes = (): Promise<CanjeMomentosTaboada[]> =>
+    client<CanjeMomentosTaboada[]>('/momentos-taboada/canjes');
+
+export const getMomentosTaboadaMetricas = (): Promise<MetricasMomentosTaboada> =>
+    client<MetricasMomentosTaboada>('/momentos-taboada/metricas');
+
+export const getMomentosTaboadaCajaChica = (sucursalId?: string): Promise<CajaChicaTaboadaResponse> => {
+    const q = sucursalId ? `?sucursal_id=${encodeURIComponent(sucursalId)}` : '';
+    return client<CajaChicaTaboadaResponse>(`/momentos-taboada/caja-chica${q}`);
 };

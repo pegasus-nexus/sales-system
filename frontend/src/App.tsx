@@ -24,6 +24,9 @@ const POSPage = lazy(() => import('./pages/POSPage'));
 const CajaPage = lazy(() => import('./pages/CajaPage'));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage'));
 const CatalogoWebPage = lazy(() => import('./pages/CatalogoWebPage'));
+const PublicCatalogoPage = lazy(() => import('./pages/PublicCatalogoPage'));
+const CatalogoAuthPage = lazy(() => import('./pages/CatalogoAuthPage'));
+const CatalogoAdminPage = lazy(() => import('./pages/CatalogoAdminPage'));
 const WebConfigPage = lazy(() => import('./pages/WebConfigPage'));
 const PremiosWebPage = lazy(() => import('./pages/PremiosWebPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -50,6 +53,8 @@ const IngresoHistoricoPage = lazy(() => import('./pages/IngresoHistoricoPage'));
 const RecepcionesCompraPage = lazy(() => import('./pages/RecepcionesCompraPage'));
 const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
+const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
+const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -230,18 +235,32 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/crear-password" element={<SetupPasswordPage />} />
 
+                {/* Rutas Públicas de Micro-Catálogo Digital y WhatsApp */}
+                <Route path="/c/:slug" element={<PublicCatalogoPage />} />
+                <Route path="/catalogo/auth" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/login" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/registro" element={<CatalogoAuthPage />} />
+                <Route path="/catalogo/admin" element={
+                  <ProtectedRoute>
+                    <CatalogoAdminPage />
+                  </ProtectedRoute>
+                } />
+
                 {/* 2. Rutas del SuperAdmin SaaS dentro de SaasWorkspaceLayout */}
                 <Route path="/admin/*" element={
                   <ProtectedRoute allowedRoles={['SUPERADMIN', 'SUPERADMIN_STAFF']}>
                     <SaasWorkspaceLayout>
                       <Routes>
-                        <Route path="/" element={<SaasAppsLauncher />} />
-                        <Route path="/dashboard" element={<AdminDashboardPage />} />
-                        <Route path="/empresas" element={<TenantsAdminPage />} />
-                        <Route path="/planes" element={<PlanesAdminPage />} />
-                        <Route path="/health" element={<SystemHealthPage />} />
-                        <Route path="/monitor" element={<SystemHealthPage />} />
-                        <Route path="/colaboradores" element={<SaasCollaboratorsPage />} />
+                        <Route index element={<SaasAppsLauncher />} />
+                        <Route path="dashboard" element={<AdminDashboardPage />} />
+                        <Route path="empresas" element={<TenantsAdminPage />} />
+                        <Route path="planes" element={<PlanesAdminPage />} />
+                        <Route path="health" element={<SystemHealthPage />} />
+                        <Route path="monitor" element={<SystemHealthPage />} />
+                        <Route path="colaboradores" element={<SaasCollaboratorsPage />} />
+                        <Route path="auditoria" element={<AuditLogsPage />} />
+                        <Route path="whatsapp" element={<WhatsAppPage />} />
+                        <Route path="*" element={<SaasAppsLauncher />} />
                       </Routes>
                     </SaasWorkspaceLayout>
                   </ProtectedRoute>
@@ -464,6 +483,20 @@ function App() {
                       <Route path="/premios-web" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
                           <PremiosWebPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* WhatsApp Nexus */}
+                      <Route path="/whatsapp" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF}>
+                          <WhatsAppPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Momentos Taboada (Exclusivo Chocolates Taboada) */}
+                      <Route path="/momentos-taboada" element={
+                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                          <MomentosTaboadaPage />
                         </ProtectedRoute>
                       } />
 

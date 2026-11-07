@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+import { getClienteByNit } from '../../api/api';
 import { 
     CreditCard, MoreHorizontal, User as UserIcon, Plus, Keyboard, 
     ChevronDown, ChevronUp, SlidersHorizontal, Tag, MessageSquare, Calendar, FileText 
@@ -47,6 +49,7 @@ interface POSTicketSidebarProps {
     fechaVenta: string;
     setFechaVenta: (val: string) => void;
     canEditDate: boolean;
+    onOpenSettleDue?: () => void;
 }
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
@@ -87,8 +90,36 @@ export function POSTicketSidebar({
     fechaVenta,
     setFechaVenta,
     canEditDate,
+    onOpenSettleDue,
 }: POSTicketSidebarProps) {
     const [showNumpad, setShowNumpad] = useLocalStorage<boolean>('pos-show-numpad', false);
+    const nitSidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleQuickNitChange = (val: string) => {
+        const cleanNit = val.replace(/\D/g, '');
+        setCliente({ nit: cleanNit });
+        if (nitSidebarTimerRef.current) clearTimeout(nitSidebarTimerRef.current);
+        if (cleanNit.length >= 4) {
+            nitSidebarTimerRef.current = setTimeout(async () => {
+                try {
+                    const found = await getClienteByNit(cleanNit);
+                    const foundId = found?._id || found?.id;
+                    if (found && foundId) {
+                        setCliente({
+                            cliente_id: foundId,
+                            nit: found.nit_ci || cleanNit,
+                            razon_social: found.nombre || '',
+                            email: found.email || '',
+                            telefono: found.telefono || '',
+                            is_miembro_comunidad: cliente.is_miembro_comunidad || !!found.is_miembro_comunidad,
+                        });
+                    }
+                } catch {
+                    // Ignore not found
+                }
+            }, 350);
+        }
+    };
 
     return (
         <div
@@ -173,6 +204,17 @@ export function POSTicketSidebar({
                             )}
                         </div>
                     </button>
+                    {onOpenSettleDue && (
+                        <button
+                            type="button"
+                            onClick={onOpenSettleDue}
+                            className="py-1.5 px-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                            title="Cobrar Crédito / Saldar Deuda de Cliente (Odoo Settle Due)"
+                        >
+                            <CreditCard size={13} className="text-emerald-600" />
+                            <span className="hidden sm:inline">Crédito</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onOpenActionsModal}
@@ -266,9 +308,9 @@ export function POSTicketSidebar({
                                         type="text"
                                         inputMode="numeric"
                                         value={cliente.nit}
-                                        onChange={(e) => setCliente({ nit: e.target.value.replace(/\D/g, '') })}
+                                        onChange={(e) => handleQuickNitChange(e.target.value)}
                                         placeholder="NIT / CI"
-                                        className="flex-1 px-2 py-0.5 border border-gray-200 rounded text-xs text-gray-900 bg-white outline-none"
+                                        className="flex-1 px-2 py-0.5 border border-gray-200 rounded text-xs text-gray-900 bg-white outline-none focus:ring-1 focus:ring-indigo-400"
                                     />
                                 )}
                             </div>

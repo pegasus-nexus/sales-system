@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2, CreditCard } from 'lucide-react';
 import { ClientCombobox } from '../ClientCombobox';
 import { getClienteByNit, checkHomonimoCliente, type CheckHomonimoResponse } from '../../api/api';
 import type { ClienteData, VendedorData } from '../../store/usePosStore';
@@ -27,6 +27,7 @@ interface POSActionsModalProps {
     onParkTicket: () => void;
     onClearTicket: () => void;
     hasItems: boolean;
+    onOpenSettleDue?: () => void;
 }
 
 export function POSActionsModal({
@@ -49,7 +50,8 @@ export function POSActionsModal({
     hasWhatsAppEnabled,
     onParkTicket,
     onClearTicket,
-    hasItems
+    hasItems,
+    onOpenSettleDue
 }: POSActionsModalProps) {
     const [isSearchingNit, setIsSearchingNit] = useState(false);
     const [nitClientMatch, setNitClientMatch] = useState<string | null>(null);
@@ -111,7 +113,7 @@ export function POSActionsModal({
 
     const handleNitChange = (val: string) => {
         const cleanNit = val.replace(/\D/g, '');
-        setCliente({ nit: cleanNit, cliente_id: undefined });
+        setCliente({ nit: cleanNit });
         setNitClientMatch(null);
 
         if (nitTimerRef.current) {
@@ -123,9 +125,10 @@ export function POSActionsModal({
                 setIsSearchingNit(true);
                 try {
                     const found = await getClienteByNit(cleanNit);
-                    if (found && found._id) {
+                    const foundId = found?._id || found?.id;
+                    if (found && foundId) {
                         setCliente({
-                            cliente_id: found._id,
+                            cliente_id: foundId,
                             nit: found.nit_ci || cleanNit,
                             razon_social: found.nombre || '',
                             email: found.email || '',
@@ -282,13 +285,14 @@ export function POSActionsModal({
                                     )}
 
                                     {hasDuplicateCollision && (
-                                        <div className="col-span-2 bg-red-50 border border-red-300 rounded-xl p-3 text-red-900 flex items-start gap-2.5 shadow-sm">
-                                            <span className="text-base leading-none">🚫</span>
+                                        <div className="col-span-2 bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-900 flex items-start gap-2.5 shadow-sm">
+                                            <span className="text-base leading-none">ℹ️</span>
                                             <div className="flex-1 text-xs space-y-1">
-                                                <p className="font-bold">Datos duplicados (deben ser únicos por persona):</p>
-                                                {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_nit}</p>}
-                                                {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_telefono}</p>}
-                                                {homonimoCheck?.duplicado_email && <p className="text-[11px] text-red-700">• {homonimoCheck.duplicado_email}</p>}
+                                                <p className="font-bold">Cliente existente identificado en el sistema:</p>
+                                                {homonimoCheck?.duplicado_nit && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_nit}</p>}
+                                                {homonimoCheck?.duplicado_telefono && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_telefono}</p>}
+                                                {homonimoCheck?.duplicado_email && <p className="text-[11px] text-indigo-800">• {homonimoCheck.duplicado_email}</p>}
+                                                <p className="text-[10px] text-indigo-600 mt-0.5">La venta se vinculará a este registro.</p>
                                             </div>
                                         </div>
                                     )}
@@ -386,6 +390,31 @@ export function POSActionsModal({
                                 <span className="text-[10px] text-gray-400 mt-1 block">
                                     Dejar en blanco para usar la fecha y hora actual automáticamente.
                                 </span>
+                            </div>
+                        )}
+
+                        {/* Seccion 3.5: Odoo Settle Due (Cobrar Crédito) */}
+                        {onOpenSettleDue && (
+                            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                        <CreditCard size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-black text-emerald-950">Cobrar Crédito / Saldar Deuda</h4>
+                                        <p className="text-[11px] text-emerald-800">Registra abono de un cliente directo en caja (Odoo Settle Due)</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onClose();
+                                        onOpenSettleDue();
+                                    }}
+                                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                                >
+                                    Abrir Cobro →
+                                </button>
                             </div>
                         )}
 

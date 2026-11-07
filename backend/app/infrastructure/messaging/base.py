@@ -23,3 +23,9 @@ class BaseMessageProvider(ABC):
         :return: True si el envío fue exitoso, False en caso contrario.
         """
         pass
+
+    async def get_status(self) -> dict:
+        """
+        Retorna el estado de conexión de la instancia de WhatsApp.
+        """
+        return {"state": "authorized", "is_authorized": True}

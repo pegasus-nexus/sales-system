@@ -1,13 +1,16 @@
 from app.api.v1.endpoints import dashboard_matriz
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
+    momentos_taboada,
+    whatsapp,
     conteos_fisicos,
     auth, tenants, users, products, sales,
     caja, categories, upload, analytics,
     sucursales, inventario, pedidos, descuentos,
     price_requests, clientes, price_lists, reports, creditos, b2b,
     comunidad, traslados, audit, almacenes, recipes, meal_plans, production, proveedores, fidelizacion,
-    saas_staff, system_monitor, compras, web_collections, web_config, bi, bi_productos, bi_clientes, bi_sucursales, bi_inventario, bi_rentabilidad, bi_descuentos, bi_productividad, bi_ejecutivo, bi_ai, operating_hours, contabilidad, lotes, cotizaciones
+    saas_staff, system_monitor, compras, web_collections, web_config, bi, bi_productos, bi_clientes, bi_sucursales, bi_inventario, bi_rentabilidad, bi_descuentos, bi_productividad, bi_ejecutivo, bi_ai, operating_hours, contabilidad, lotes, cotizaciones,
+    catalogo
     # chat,  # DESACTIVADO: Chatbot IA consume demasiada memoria (46K+ registros). Reactivar cuando se optimice.
 )
 
@@ -62,6 +65,9 @@ api_router.include_router(fidelizacion.router, prefix="/fidelizacion", tags=["fi
 api_router.include_router(compras.router, prefix="/compras", tags=["compras"])
 api_router.include_router(conteos_fisicos.router, prefix="/conteos-fisicos", tags=["conteos_fisicos"])
 api_router.include_router(lotes.router, prefix="/lotes", tags=["lotes"])
+api_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["whatsapp"])
+api_router.include_router(momentos_taboada.router, prefix="/momentos-taboada", tags=["momentos-taboada"])
 
 api_router.include_router(dashboard_matriz.router, prefix="/dashboard-matriz", tags=["dashboard-matriz"])
+api_router.include_router(catalogo.router)
 api_router.include_router(system_monitor.router)

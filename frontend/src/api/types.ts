@@ -88,6 +88,7 @@ export interface TenantUpdate {
 
 export interface Sucursal {
     _id: string;
+    id?: string;
     tenant_id: string;
     nombre: string;
     ciudad: string;
@@ -134,6 +135,23 @@ export interface AlmacenUpdate {
 }
 
 /** Canonical product model matching the backend Product document. */
+export interface ProductVariantItem {
+    _id?: string;
+    id?: string;
+    descripcion: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    precio_venta: number;
+    costo_producto: number;
+    atributos: Record<string, string>;
+    image_url?: string;
+}
+
+export interface ProductAttributeDef {
+    name: string;
+    values: string[];
+}
+
 export interface Product {
     _id: string;
     tenant_id: string;
@@ -154,6 +172,11 @@ export interface Product {
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
+    parent_id?: string;
+    is_variant?: boolean;
+    has_variants?: boolean;
+    atributos?: Record<string, string>;
+    variantes_resumen?: ProductVariantItem[];
 }
 
 export interface ProductCreate {
@@ -171,6 +194,12 @@ export interface ProductCreate {
     meal_plan_template_id?: string;
     show_on_web?: boolean;
     is_destacado?: boolean;
+    parent_id?: string;
+    is_variant?: boolean;
+    has_variants?: boolean;
+    atributos?: Record<string, string>;
+    variantes_resumen?: ProductVariantItem[];
+    variantes_payload?: ProductVariantItem[];
 }
 
 export type ProductUpdate = Partial<ProductCreate>;
@@ -183,10 +212,46 @@ export interface InventarioItem {
     precio_sucursal?: number;
     image_url?: string;
     sucursal_id: string;
+    almacen_id?: string;
     cantidad: number;
     codigo_barras?: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    codigo_sistema?: string;
     categoria_id?: string;
     categoria_nombre?: string;
+    costo_producto?: number;
+    tipo_item?: string;
+    is_active?: boolean;
+}
+
+export interface StockDesgloseSucursal {
+    sucursal_id: string;
+    sucursal_nombre: string;
+    almacen_id: string;
+    cantidad: number;
+    precio_sucursal?: number | null;
+    updated_at?: string | null;
+}
+
+export interface ProductoDetalleResponse {
+    id: string;
+    descripcion: string;
+    codigo_sistema?: string;
+    codigo_corto?: string;
+    codigo_largo?: string;
+    categoria_id: string;
+    categoria_nombre: string;
+    precio_venta: number;
+    costo_producto?: number | null;
+    tipo_item: string;
+    image_url?: string;
+    is_active: boolean;
+    is_destacado: boolean;
+    show_on_web: boolean;
+    created_at?: string;
+    stock_total: number;
+    stock_desglose: StockDesgloseSucursal[];
 }
 
 export interface AjusteInventario {
@@ -918,4 +983,165 @@ export interface LoginBrandingResponse {
     headline: string;
     description: string;
     badge_text: string;
+}
+
+
+export interface WhatsAppLiveStatus {
+    provider?: string;
+    state?: string;
+    is_authorized?: boolean;
+    qr_code?: string | null;
+    error?: string;
+}
+
+export interface WhatsAppAccountStatus {
+    enabled: boolean;
+    provider: string;
+    instance_id?: string;
+    api_token?: string | null;
+    default_message: string;
+    live_status: WhatsAppLiveStatus;
+}
+
+export interface WhatsAppTemplate {
+    id: string;
+    _id?: string;
+    nombre: string;
+    categoria: 'POS' | 'CREDITOS' | 'PEDIDOS' | 'MARKETING' | 'GENERAL' | string;
+    mensaje: string;
+    is_default: boolean;
+    created_at?: string;
+}
+
+export interface WhatsAppLog {
+    id: string;
+    telefono: string;
+    cliente_nombre?: string;
+    mensaje: string;
+    origen: string;
+    estado: 'ENVIADO' | 'ERROR' | 'PENDIENTE' | string;
+    error_detalle?: string;
+    pdf_url?: string;
+    usuario_nombre: string;
+    created_at: string;
+}
+
+export interface WhatsAppSendPayload {
+    phone: string;
+    message: string;
+    origen?: string;
+    cliente_nombre?: string;
+    pdf_url?: string;
+    variables?: Record<string, string>;
+}
+
+// ─── Momentos Taboada (Campaña de Fidelización Exclusiva) ──────────────────────
+export interface PremioMomentosTaboada {
+    id: string;
+    _id?: string;
+    codigo: string;
+    nombre: string;
+    descripcion: string;
+    sellos_requeridos: number;
+    copago_bs: number;
+    stock_por_sucursal: Record<string, number>;
+    imagen_url?: string;
+    is_active: boolean;
+    stock_total?: number;
+    total_canjeados?: number;
+}
+
+export interface CanjeMomentosTaboada {
+    id: string;
+    _id?: string;
+    sucursal_id: string;
+    sucursal_nombre: string;
+    cliente_id?: string;
+    cliente_nombre: string;
+    cliente_telefono: string;
+    premio_id: string;
+    premio_codigo: string;
+    premio_nombre: string;
+    sellos_utilizados: number;
+    copago_bs: number;
+    metodo_pago: 'EFECTIVO' | 'QR';
+    cajero_nombre?: string;
+    estado: string;
+    notas?: string;
+    created_at: string;
+}
+
+export interface CartillaCasilla {
+    numero: number;
+    marcado: boolean;
+    es_hito: boolean;
+}
+
+export interface TicketCampanaInfo {
+    ticket_id: string;
+    fecha: string;
+    monto_bs: number;
+    sellos_otorgados: number;
+    sobrante_no_acumulable_bs: number;
+    sucursal_id: string;
+}
+
+export interface ClienteSellosResponse {
+    cliente: {
+        id?: string;
+        nombre: string;
+        telefono: string;
+        is_registrado: boolean;
+    };
+    balance: {
+        sellos_totales_ganados: number;
+        sellos_canjeados: number;
+        sellos_disponibles: number;
+        total_compras_campana_bs: number;
+        tickets_computados: number;
+    };
+    cartilla_progreso: CartillaCasilla[];
+    historial_tickets: TicketCampanaInfo[];
+    historial_canjes: {
+        canje_id: string;
+        fecha: string;
+        premio_nombre: string;
+        sellos_utilizados: number;
+        copago_bs: number;
+        sucursal_nombre: string;
+    }[];
+}
+
+export interface MetricasMomentosTaboada {
+    fecha_inicio: string;
+    metricas: {
+        total_canjes: number;
+        total_sellos_redimidos: number;
+        total_sellos_emitidos: number;
+        sellos_circulantes: number;
+        total_recaudado_fondo_bs: number;
+        recaudado_efectivo_bs: number;
+        recaudado_qr_bs: number;
+        total_facturado_ventas_bs: number;
+        total_tickets_participantes: number;
+    };
+    premios: PremioMomentosTaboada[];
+}
+
+export interface MovimientoCajaChicaTaboada {
+    id: string;
+    fecha: string;
+    sucursal_nombre: string;
+    tipo: 'INGRESO_CANJE' | 'EGRESO_FONDO' | 'AJUSTE_FONDO';
+    monto: number;
+    metodo_pago: string;
+    descripcion: string;
+    usuario_nombre?: string;
+}
+
+export interface CajaChicaTaboadaResponse {
+    saldo_fondo_bs: number;
+    total_ingresos_bs: number;
+    total_egresos_bs: number;
+    movimientos: MovimientoCajaChicaTaboada[];
 }

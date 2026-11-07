@@ -184,11 +184,108 @@ async def obtener_cliente_por_nit(
     return cliente
 
 
+@router.get("/clientes/check-homonimo")
+async def check_homonimo_endpoint(
+    nombre: Optional[str] = Query(None, description="Nombre o razón social a evaluar"),
+    nit_ci: Optional[str] = Query(None, description="NIT/CI a evaluar"),
+    telefono: Optional[str] = Query(None, description="Teléfono a evaluar"),
+    email: Optional[str] = Query(None, description="Email a evaluar"),
+    exclude_id: Optional[str] = Query(None, description="ID del cliente a excluir en edición"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Evalúa si un nombre ya existe (homónimo) y verifica que los datos únicos (NIT/CI, celular, correo) no colisionen.
+    """
+    tenant_id = current_user.tenant_id or "default"
+    result = {
+        "es_homonimo": False,
+        "homonimo_count": 0,
+        "homonimo_nombres": [],
+        "duplicado_nit": None,
+        "duplicado_telefono": None,
+        "duplicado_email": None,
+    }
+
+    from bson import ObjectId
+    exclude_oid = None
+    if exclude_id and len(exclude_id) == 24:
+        try:
+            exclude_oid = ObjectId(exclude_id)
+        except Exception:
+            pass
+
+    col = Cliente.get_pymongo_collection()
+
+    # 1. Evaluar Homónimo por Nombre
+    if nombre and nombre.strip():
+        import re
+        nom_clean = nombre.strip()
+        query_nom = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "nombre": {"$regex": f"^{re.escape(nom_clean)}$", "$options": "i"}
+        }
+        if exclude_oid:
+            query_nom["_id"] = {"$ne": exclude_oid}
+        homonimos = await col.find(query_nom, {"nombre": 1, "nit_ci": 1, "telefono": 1}).to_list(10)
+        if homonimos:
+            result["es_homonimo"] = True
+            result["homonimo_count"] = len(homonimos)
+            result["homonimo_nombres"] = [h.get("nombre") for h in homonimos]
+
+    # 2. Evaluar duplicado por NIT/CI
+    if nit_ci and nit_ci.strip():
+        nit_clean = nit_ci.strip()
+        query_nit = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "nit_ci": nit_clean
+        }
+        if exclude_oid:
+            query_nit["_id"] = {"$ne": exclude_oid}
+        exist_nit = await col.find_one(query_nit, {"nombre": 1, "nit_ci": 1})
+        if exist_nit:
+            result["duplicado_nit"] = f"El NIT/CI {nit_clean} ya pertenece a '{exist_nit.get('nombre')}'."
+
+    # 3. Evaluar duplicado por Teléfono
+    if telefono and telefono.strip():
+        tel_clean = telefono.strip()
+        query_tel = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "telefono": tel_clean
+        }
+        if exclude_oid:
+            query_tel["_id"] = {"$ne": exclude_oid}
+        exist_tel = await col.find_one(query_tel, {"nombre": 1, "telefono": 1})
+        if exist_tel:
+            result["duplicado_telefono"] = f"El teléfono {tel_clean} ya pertenece a '{exist_tel.get('nombre')}'."
+
+    # 4. Evaluar duplicado por Email
+    if email and email.strip():
+        email_clean = email.strip().lower()
+        query_email = {
+            "tenant_id": tenant_id,
+            "is_active": True,
+            "email": email_clean
+        }
+        if exclude_oid:
+            query_email["_id"] = {"$ne": exclude_oid}
+        exist_email = await col.find_one(query_email, {"nombre": 1, "email": 1})
+        if exist_email:
+            result["duplicado_email"] = f"El correo {email_clean} ya pertenece a '{exist_email.get('nombre')}'."
+
+    return result
+
+
 @router.get("/clientes/{cliente_id}", response_model=ClienteResponse)
 async def obtener_cliente(
     cliente_id: str,
     current_user: User = Depends(get_current_active_user)
 ):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     cliente = await Cliente.get(cliente_id)
     if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -201,6 +298,9 @@ async def actualizar_cliente(
     data: ClienteUpdate,
     current_user: User = Depends(get_current_active_user)
 ):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     tenant_id = current_user.tenant_id or "default"
     cliente = await Cliente.get(cliente_id)
     
@@ -253,6 +353,9 @@ async def eliminar_cliente(
     cliente_id: str,
     current_user: User = Depends(get_current_active_user)
 ):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     # Soft delete
     cliente = await Cliente.get(cliente_id)
     if not cliente or cliente.tenant_id != (current_user.tenant_id or "default"):
@@ -270,6 +373,9 @@ async def obtener_wallet_cliente(
     cliente_id: str,
     current_user: User = Depends(get_current_active_user)
 ):
+    from bson import ObjectId
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     tenant_id = current_user.tenant_id or "default"
     
     # Verificar que el cliente exista y pertenezca al tenant

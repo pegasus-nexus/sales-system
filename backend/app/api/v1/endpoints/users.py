@@ -183,6 +183,9 @@ async def create_cajero(
     if current_user.role == UserRole.ADMIN_SUCURSAL and data.role not in [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.FACTURADOR, UserRole.SUPERVISOR]:
         raise HTTPException(status_code=403, detail="No tienes permisos para asignar ese rol")
 
+    if data.role in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF] and current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para asignar roles de superadministración")
+
     import re
     username_lower = data.username.lower()
     if await User.find_one({"username": re.compile(f"^{username_lower}$", re.IGNORECASE)}):
@@ -257,12 +260,18 @@ async def update_employee(
         
     if current_user.role != UserRole.SUPERADMIN and target_user.tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
+    if target_user.role in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF] and current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="No puedes modificar cuentas de superadministración")
+
     if current_user.role == UserRole.ADMIN_SUCURSAL:
         if target_user.sucursal_id != current_user.sucursal_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         if data.role is not None and data.role not in [UserRole.CAJERO, UserRole.VENDEDOR, UserRole.FACTURADOR, UserRole.SUPERVISOR]:
             raise HTTPException(status_code=403, detail="No tienes permisos para asignar ese rol")
+
+    if data.role is not None and data.role in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF] and current_user.role != UserRole.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para asignar roles de superadministración")
 
     import re
     if data.username is not None:

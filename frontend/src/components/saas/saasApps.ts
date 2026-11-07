@@ -81,7 +81,7 @@ export const SAAS_APPS: SaasApp[] = [
         title: 'Auditoría Global',
         shortTitle: 'Auditoría',
         description: 'Bitácora general de seguridad, accesos y eventos críticos',
-        path: '/auditoria',
+        path: '/admin/auditoria',
         icon: ShieldCheck,
         gradient: 'from-slate-600 via-slate-700 to-zinc-800',
         shadowColor: 'rgba(100, 116, 139, 0.35)',

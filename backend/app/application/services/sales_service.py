@@ -441,7 +441,9 @@ class SalesService:
 
                     if sale.cliente_id:
                         from beanie.operators import Inc, Set
-                        await Cliente.find_one(Cliente.id == sale.cliente_id, session=session).update(
+                        from bson import ObjectId
+                        cid_obj = ObjectId(sale.cliente_id) if ObjectId.is_valid(sale.cliente_id) else sale.cliente_id
+                        await Cliente.find_one(Cliente.id == cid_obj, session=session).update(
                             Inc({Cliente.total_compras: sale.total}),
                             Inc({Cliente.cantidad_compras: 1}),
                             Set({Cliente.ultima_compra_at: sale.created_at}),

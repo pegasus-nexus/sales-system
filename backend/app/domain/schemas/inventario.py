@@ -19,6 +19,13 @@ class InventarioItem(BaseModel):
     sucursal_id: str
     almacen_id: str = "default"
     cantidad: float
+    codigo_corto: Optional[str] = None
+    codigo_largo: Optional[str] = None
+    codigo_sistema: Optional[str] = None
+    categoria_id: Optional[str] = None
+    categoria_nombre: Optional[str] = None
+    costo_producto: Optional[DecimalMoney] = None
+    tipo_item: Optional[str] = None
 
 
 class AjusteInventario(BaseModel):
