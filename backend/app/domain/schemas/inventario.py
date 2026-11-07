@@ -51,3 +51,9 @@ class InventarioPaginated(BaseModel):
     total: int
     page: int
     pages: int
+
+
+class CorregirKardexPayload(BaseModel):
+    producto_ids: Optional[list[str]] = None
+    sucursal_id: Optional[str] = None
+    almacen_id: Optional[str] = None

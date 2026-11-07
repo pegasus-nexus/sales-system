@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pymongo import UpdateOne
@@ -12,7 +12,7 @@ from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimient
 from app.domain.models.user import User, UserRole
 from app.domain.models.category import Category
 from app.infrastructure.auth import get_current_active_user, require_roles
-from app.domain.schemas.inventario import InventarioItem, AjusteInventario, InventarioPaginated, AjusteInventarioMasivoRequest
+from app.domain.schemas.inventario import InventarioItem, AjusteInventario, InventarioPaginated, AjusteInventarioMasivoRequest, CorregirKardexPayload
 from app.utils.date_utils import get_day_range_bolivia
 
 router = APIRouter()
@@ -938,11 +938,6 @@ async def export_inventory_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-
-class CorregirKardexPayload(BaseModel):
-    producto_ids: Optional[List[str]] = None
-    sucursal_id: Optional[str] = None
-    almacen_id: Optional[str] = None
 
 @router.post("/inventario/corregir-kardex")
 async def corregir_kardex_batch(
