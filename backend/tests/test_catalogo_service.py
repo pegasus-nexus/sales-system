@@ -1,9 +1,8 @@
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 from app.application.services.catalogo_service import CatalogoService, slugify
 from app.domain.schemas.catalogo import (
     CatalogoRegisterRequest,
-    CatalogoConfigUpdate,
     CatalogoProductoCreate,
 )
 
@@ -43,7 +42,8 @@ async def test_register_merchant():
         whatsapp="+59170012345"
     )
 
-    res = await service.register_merchant(req)
+    with patch("app.application.services.catalogo_service.get_password_hash", return_value="hashed_secret"):
+        res = await service.register_merchant(req)
 
     assert res.user_id == "user-123"
     assert res.tenant_id == "tenant-123"

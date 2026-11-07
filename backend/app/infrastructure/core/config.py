@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Pegasus SalesSystem API"
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "sales_system_dev"
-    JWT_SECRET_KEY: str = ""
+    JWT_SECRET_KEY: str = "pegasus-sales-system-default-jwt-secret-key-for-local-dev-and-ci!!"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     ENVIRONMENT: str = "development"

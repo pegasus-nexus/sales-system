@@ -9,7 +9,7 @@ from app.domain.models.user import User, UserRole
 from app.infrastructure.core.config import settings
 
 # Configuration — override via environment variable in production
-SECRET_KEY = settings.JWT_SECRET_KEY
+SECRET_KEY = settings.JWT_SECRET_KEY or "pegasus-sales-system-default-jwt-secret-key-for-local-dev-and-ci!!"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
