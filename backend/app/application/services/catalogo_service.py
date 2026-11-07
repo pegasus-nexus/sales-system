@@ -250,6 +250,12 @@ class CatalogoService:
         dump = updates.model_dump(exclude_unset=True)
         if "whatsapp_number" in dump:
             dump["whatsapp_number"] = normalize_catalog_phone(dump["whatsapp_number"])
+        
+        # En la versión gratuita actual, el slug y los colores de marca son fijos
+        # (se habilitarán para edición en las versiones de pago Estándar y Pro)
+        dump.pop("slug", None)
+        dump.pop("primary_color", None)
+        dump.pop("secondary_color", None)
         if "slug" in dump and dump["slug"]:
             clean_slug = slugify(dump["slug"])
             is_avail = await self.config_repo.is_slug_available(clean_slug, exclude_tenant_id=tenant_id)

@@ -12,7 +12,8 @@ import {
     Trash2, 
     Edit, 
     Loader2, 
-    Sparkles, 
+    Sparkles,
+    Lock, 
     Eye, 
     EyeOff 
 } from 'lucide-react';
@@ -60,8 +61,6 @@ export default function CatalogoAdminPage() {
     const [slug, setSlug] = useState('');
     const [description, setDescription] = useState('');
     const [whatsapp, setWhatsapp] = useState('');
-    const [primaryColor, setPrimaryColor] = useState('#4f46e5');
-    const [secondaryColor, setSecondaryColor] = useState('#06b6d4');
     const [logoUrl, setLogoUrl] = useState('');
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [isSavingBranding, setIsSavingBranding] = useState(false);
@@ -73,8 +72,6 @@ export default function CatalogoAdminPage() {
             setSlug(config.slug || '');
             setDescription(config.description || '');
             setWhatsapp(config.whatsapp_number || '');
-            setPrimaryColor(config.primary_color || '#4f46e5');
-            setSecondaryColor(config.secondary_color || '#06b6d4');
             setLogoUrl(config.logo_url || '');
         }
     }, [config]);
@@ -113,11 +110,8 @@ export default function CatalogoAdminPage() {
         try {
             await updateMyCatalogConfig({
                 business_name: businessName.trim(),
-                slug: slug.trim().toLowerCase(),
                 description: description.trim() || undefined,
                 whatsapp_number: whatsapp.trim(),
-                primary_color: primaryColor,
-                secondary_color: secondaryColor,
                 logo_url: logoUrl || undefined,
             });
             await queryClient.invalidateQueries({ queryKey: ['my-catalog-config'] });
@@ -446,20 +440,28 @@ export default function CatalogoAdminPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                        Enlace Personalizado (Slug)
-                                    </label>
-                                    <div className="flex items-center rounded-xl border border-slate-300 bg-slate-50 overflow-hidden">
-                                        <span className="px-3 text-xs text-slate-600 font-mono">/c/</span>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                            Enlace de tu Catálogo
+                                        </label>
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                            <Lock size={10} />
+                                            Fijo en Plan Gratuito
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 overflow-hidden">
+                                        <span className="px-3 text-xs text-slate-500 font-mono">/c/</span>
                                         <input
                                             type="text"
-                                            required
+                                            readOnly
+                                            disabled
                                             value={slug}
-                                            onChange={(e) => setSlug(e.target.value)}
-                                            placeholder="mi-tienda"
-                                            className="w-full py-2.5 pr-3 text-gray-900 bg-white text-xs sm:text-sm focus:outline-none font-mono font-medium"
+                                            className="w-full py-2.5 pr-3 text-slate-600 bg-slate-100 text-xs sm:text-sm font-mono font-medium cursor-not-allowed select-all"
                                         />
                                     </div>
+                                    <p className="text-[11px] text-slate-500 mt-1">
+                                        Tu enlace se asigna automáticamente al registrarte. La personalización de enlaces estará disponible en los planes de pago.
+                                    </p>
                                 </div>
                             </div>
 
@@ -493,73 +495,39 @@ export default function CatalogoAdminPage() {
                                 />
                             </div>
 
-                            {/* Color Palettes & Custom Colors */}
+                            {/* Color Palettes & Custom Colors (Locked in Free Plan) */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                                    Colores de Marca
-                                </label>
-
-                                {/* Presets */}
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-                                    {COLOR_PRESETS.map((preset) => (
-                                        <button
-                                            key={preset.name}
-                                            type="button"
-                                            onClick={() => {
-                                                setPrimaryColor(preset.primary);
-                                                setSecondaryColor(preset.secondary);
-                                            }}
-                                            className="p-2 rounded-xl border border-slate-200 hover:border-indigo-500 bg-white text-left transition-all cursor-pointer flex flex-col gap-1 shadow-xs"
-                                        >
-                                            <div className="flex h-4 w-full rounded-md overflow-hidden">
-                                                <div className="w-1/2 h-full" style={{ backgroundColor: preset.primary }} />
-                                                <div className="w-1/2 h-full" style={{ backgroundColor: preset.secondary }} />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-slate-700 truncate">
-                                                {preset.name}
-                                            </span>
-                                        </button>
-                                    ))}
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                        Colores de Marca
+                                    </label>
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                        <Lock size={10} />
+                                        Próximamente en Planes Estándar y Pro
+                                    </span>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <span className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                            Color Principal
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={primaryColor}
-                                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                                className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 p-0.5 bg-white"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={primaryColor}
-                                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                                className="w-28 px-3 py-2 rounded-xl border border-slate-300 text-gray-900 bg-white text-xs font-mono"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <span className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                            Color Secundario
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={secondaryColor}
-                                                onChange={(e) => setSecondaryColor(e.target.value)}
-                                                className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 p-0.5 bg-white"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={secondaryColor}
-                                                onChange={(e) => setSecondaryColor(e.target.value)}
-                                                className="w-28 px-3 py-2 rounded-xl border border-slate-300 text-gray-900 bg-white text-xs font-mono"
-                                            />
-                                        </div>
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                    <p className="text-xs text-slate-600 leading-relaxed">
+                                        En la versión gratuita se utiliza la paleta visual oficial y moderna de Pegasus. La selección ilimitada de colores de marca y temas personalizados estará disponible al habilitar las versiones de pago.
+                                    </p>
+
+                                    {/* Presets Visual Preview (Disabled) */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 opacity-50 pointer-events-none select-none">
+                                        {COLOR_PRESETS.map((preset) => (
+                                            <div
+                                                key={preset.name}
+                                                className="p-2 rounded-xl border border-slate-200 bg-white text-left flex flex-col gap-1 shadow-xs"
+                                            >
+                                                <div className="flex h-4 w-full rounded-md overflow-hidden">
+                                                    <div className="w-1/2 h-full" style={{ backgroundColor: preset.primary }} />
+                                                    <div className="w-1/2 h-full" style={{ backgroundColor: preset.secondary }} />
+                                                </div>
+                                                <span className="text-[10px] font-bold text-slate-700 truncate">
+                                                    {preset.name}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
