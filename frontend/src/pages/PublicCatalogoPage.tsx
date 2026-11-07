@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -51,6 +51,58 @@ export default function PublicCatalogoPage() {
 
     const config = data?.config;
     const products = data?.products || [];
+
+    // Dynamically update page title, favicon and meta tags with merchant branding
+    useEffect(() => {
+        if (!config) return;
+
+        const originalTitle = document.title;
+        const iconLink: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        const originalIcon = iconLink?.href;
+
+        // 1. Update Document Title
+        document.title = `${config.business_name} | Catálogo Digital`;
+
+        // 2. Update Favicon with Merchant Logo
+        if (config.logo_url && iconLink) {
+            iconLink.href = config.logo_url;
+        }
+
+        // 3. Helper to update or inject Open Graph / Twitter Meta Tags
+        const updateMeta = (propOrName: string, content: string) => {
+            let el = document.querySelector(`meta[property="${propOrName}"], meta[name="${propOrName}"]`);
+            if (!el) {
+                el = document.createElement('meta');
+                if (propOrName.startsWith('twitter:')) {
+                    el.setAttribute('name', propOrName);
+                } else {
+                    el.setAttribute('property', propOrName);
+                }
+                document.head.appendChild(el);
+            }
+            el.setAttribute('content', content);
+        };
+
+        updateMeta('og:title', `${config.business_name} | Catálogo Digital`);
+        updateMeta('og:description', config.description || `Explora el catálogo digital de ${config.business_name} y haz tu pedido directamente por WhatsApp.`);
+        updateMeta('og:type', 'website');
+        updateMeta('og:url', window.location.href);
+        updateMeta('twitter:card', 'summary_large_image');
+        updateMeta('twitter:title', `${config.business_name} | Catálogo Digital`);
+        updateMeta('twitter:description', config.description || `Explora nuestro catálogo digital y realiza tu pedido.`);
+
+        if (config.logo_url) {
+            updateMeta('og:image', config.logo_url);
+            updateMeta('twitter:image', config.logo_url);
+        }
+
+        return () => {
+            document.title = originalTitle;
+            if (iconLink && originalIcon) {
+                iconLink.href = originalIcon;
+            }
+        };
+    }, [config]);
     const categories = data?.categories || [];
 
     // Filtered products
