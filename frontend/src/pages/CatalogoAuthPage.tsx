@@ -12,9 +12,7 @@ import {
     Loader2, 
     Eye, 
     EyeOff, 
-    Sparkles, 
-    HelpCircle, 
-    X
+    Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/authStore';
@@ -44,7 +42,6 @@ export default function CatalogoAuthPage() {
     const [isRegister, setIsRegister] = useState<boolean>(searchParams.get('mode') !== 'login');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [showGoogleHelp, setShowGoogleHelp] = useState(false);
 
     // Form fields
     const [firstName, setFirstName] = useState('');
@@ -54,7 +51,8 @@ export default function CatalogoAuthPage() {
     const [whatsapp, setWhatsapp] = useState('');
     const [password, setPassword] = useState('');
 
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const DEFAULT_GOOGLE_CLIENT_ID = '32112312994-ddleo20g3kjtbrjo6s12uetv5iibujfn.apps.googleusercontent.com';
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 
     // Initialize Google Identity Services if client ID is set
     useEffect(() => {
@@ -109,15 +107,10 @@ export default function CatalogoAuthPage() {
     };
 
     const handleGoogleClick = () => {
-        if (!googleClientId) {
-            setShowGoogleHelp(true);
-            return;
-        }
-
         if (window.google?.accounts?.id) {
             window.google.accounts.id.prompt();
         } else {
-            toast.info('Cargando servicio de Google... intenta en 2 segundos.');
+            toast.error('Inicio con Google no disponible en este momento. Por favor ingresa con tu correo y contraseña.');
         }
     };
 
@@ -438,53 +431,6 @@ export default function CatalogoAuthPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Google OAuth Setup Guide Modal */}
-            {showGoogleHelp && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                                    <HelpCircle size={20} />
-                                </div>
-                                <h3 className="text-base font-bold text-gray-900">Configuración de Google OAuth</h3>
-                            </div>
-                            <button
-                                onClick={() => setShowGoogleHelp(false)}
-                                className="p-1 text-slate-600 hover:text-slate-800 rounded-lg cursor-pointer"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-3 text-xs text-slate-700 leading-relaxed">
-                            <p>
-                                Para activar el inicio con Google en un clic, sólo necesitas agregar tu <strong>Google Client ID</strong> en las variables de entorno:
-                            </p>
-                            <ol className="list-decimal list-inside space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-800">
-                                <li>Ingresa a <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-600 underline font-sans">Google Cloud Console</a>.</li>
-                                <li>Crea una credencial de tipo <strong>ID de cliente de OAuth (Aplicación web)</strong>.</li>
-                                <li>En <em>Orígenes autorizados de JavaScript</em> añade: <span className="text-indigo-700 font-bold">http://localhost:5173</span> y tu dominio web.</li>
-                                <li>Pega tu ID en <span className="text-emerald-700 font-bold">frontend/.env</span> como <span className="font-bold">VITE_GOOGLE_CLIENT_ID=tu_id.apps.googleusercontent.com</span>.</li>
-                            </ol>
-                            <p className="text-slate-600">
-                                ¡Listo! Una vez guardado el archivo <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700">.env</code>, el botón de Google se activará al instante.
-                            </p>
-                        </div>
-
-                        <div className="mt-5">
-                            <button
-                                type="button"
-                                onClick={() => setShowGoogleHelp(false)}
-                                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
-                            >
-                                Entendido, gracias
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

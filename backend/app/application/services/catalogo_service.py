@@ -122,7 +122,7 @@ class CatalogoService:
 
     async def google_auth_merchant(self, req: CatalogoGoogleAuthRequest) -> CatalogoAuthResponse:
         try:
-            google_client_id = getattr(settings, "GOOGLE_CLIENT_ID", None)
+            google_client_id = getattr(settings, "GOOGLE_CLIENT_ID", None) or "32112312994-ddleo20g3kjtbrjo6s12uetv5iibujfn.apps.googleusercontent.com"
             id_info = id_token.verify_oauth2_token(
                 req.credential,
                 google_requests.Request(),

@@ -23,13 +23,13 @@ def _doc_to_dict(doc) -> Dict[str, Any]:
 class MongoCatalogoConfigRepository(ICatalogoConfigRepository):
     async def get_by_tenant_id(self, tenant_id: str) -> Optional[Dict[str, Any]]:
         doc = await CatalogoConfig.find_one(
-            {"tenant_id": tenant_id, "deleted": False}
+            {"tenant_id": tenant_id, "is_active": {"$ne": False}}
         )
         return _doc_to_dict(doc) if doc else None
 
     async def get_by_slug(self, slug: str) -> Optional[Dict[str, Any]]:
         doc = await CatalogoConfig.find_one(
-            {"slug": slug.strip().lower(), "deleted": False, "is_active": True}
+            {"slug": slug.strip().lower(), "is_active": {"$ne": False}}
         )
         return _doc_to_dict(doc) if doc else None
 
@@ -39,7 +39,7 @@ class MongoCatalogoConfigRepository(ICatalogoConfigRepository):
         return _doc_to_dict(config)
 
     async def update(self, tenant_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        doc = await CatalogoConfig.find_one({"tenant_id": tenant_id, "deleted": False})
+        doc = await CatalogoConfig.find_one({"tenant_id": tenant_id, "is_active": {"$ne": False}})
         if not doc:
             return None
         
@@ -52,7 +52,7 @@ class MongoCatalogoConfigRepository(ICatalogoConfigRepository):
 
     async def is_slug_available(self, slug: str, exclude_tenant_id: Optional[str] = None) -> bool:
         clean_slug = slug.strip().lower()
-        query: Dict[str, Any] = {"slug": clean_slug, "deleted": False}
+        query: Dict[str, Any] = {"slug": clean_slug, "is_active": {"$ne": False}}
         if exclude_tenant_id:
             query["tenant_id"] = {"$ne": exclude_tenant_id}
         existing = await CatalogoConfig.find_one(query)
@@ -66,12 +66,12 @@ class MongoCatalogoProductoRepository(ICatalogoProductoRepository):
         doc = await CatalogoProducto.find_one({
             "_id": ObjectId(product_id),
             "tenant_id": tenant_id,
-            "deleted": False
+            "is_active": {"$ne": False}
         })
         return _doc_to_dict(doc) if doc else None
 
     async def list_by_tenant(self, tenant_id: str, only_available: bool = False) -> List[Dict[str, Any]]:
-        query: Dict[str, Any] = {"tenant_id": tenant_id, "deleted": False}
+        query: Dict[str, Any] = {"tenant_id": tenant_id, "is_active": {"$ne": False}}
         if only_available:
             query["is_available"] = True
         docs = await CatalogoProducto.find(query).sort([("order", 1), ("created_at", -1)]).to_list()
@@ -88,7 +88,7 @@ class MongoCatalogoProductoRepository(ICatalogoProductoRepository):
         doc = await CatalogoProducto.find_one({
             "_id": ObjectId(product_id),
             "tenant_id": tenant_id,
-            "deleted": False
+            "is_active": {"$ne": False}
         })
         if not doc:
             return None
@@ -106,14 +106,12 @@ class MongoCatalogoProductoRepository(ICatalogoProductoRepository):
         doc = await CatalogoProducto.find_one({
             "_id": ObjectId(product_id),
             "tenant_id": tenant_id,
-            "deleted": False
+            "is_active": {"$ne": False}
         })
         if not doc:
             return False
         
-        doc.deleted = True
-        doc.updated_at = datetime.now(timezone.utc)
-        await doc.save()
+        await doc.soft_delete()
         return True
 
 
@@ -125,7 +123,7 @@ class MongoCatalogoAuthRepository(ICatalogoAuthRepository):
                 {"email": re.compile(f"^{re.escape(clean_email)}$", re.IGNORECASE)},
                 {"username": re.compile(f"^{re.escape(clean_email)}$", re.IGNORECASE)}
             ],
-            "deleted": False
+            "is_active": {"$ne": False}
         })
         return _doc_to_dict(user) if user else None
 

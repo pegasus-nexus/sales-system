@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     GOOGLE_DRIVE_FOLDER_ID: str = ""
     STATUS_PAGE_PROBE_INTERVAL_SECONDS: int = 60
-    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_ID: str = "32112312994-ddleo20g3kjtbrjo6s12uetv5iibujfn.apps.googleusercontent.com"
 
     model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 

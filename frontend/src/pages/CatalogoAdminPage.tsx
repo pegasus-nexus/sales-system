@@ -589,7 +589,7 @@ export default function CatalogoAdminPage() {
             <CatalogoProductModal
                 isOpen={isProductModalOpen}
                 onClose={() => setIsProductModalOpen(false)}
-                onSaved={() => queryClient.invalidateQueries({ queryKey: ['my-catalog-products'] })}
+                onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['my-catalog-products'] }); await queryClient.refetchQueries({ queryKey: ['my-catalog-products'] }); }}
                 productToEdit={editingProduct}
                 currencySymbol={config?.currency_symbol || 'Bs.'}
             />
