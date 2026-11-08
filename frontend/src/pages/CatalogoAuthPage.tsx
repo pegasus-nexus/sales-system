@@ -38,6 +38,14 @@ export default function CatalogoAuthPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const login = useAuthStore((state) => state.login);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+    // Si ya tiene sesión iniciada, redirigir directo al panel del catálogo
+    useEffect(() => {
+        if (isAuthenticated()) {
+            navigate('/catalogo/admin', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const [isRegister, setIsRegister] = useState<boolean>(searchParams.get('mode') !== 'login');
     const [showPassword, setShowPassword] = useState(false);

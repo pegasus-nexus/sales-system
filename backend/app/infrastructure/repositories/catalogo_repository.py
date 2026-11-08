@@ -145,7 +145,7 @@ class MongoCatalogoAuthRepository(ICatalogoAuthRepository):
             email=user_data.get("email"),
             hashed_password=user_data["hashed_password"],
             full_name=user_data.get("full_name"),
-            role=user_data.get("role", UserRole.ADMIN_MATRIZ),
+            role=user_data.get("role", UserRole.CATALOGO_MERCHANT),
             tenant_id=user_data.get("tenant_id"),
             created_at=datetime.now(timezone.utc)
         )

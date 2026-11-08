@@ -27,7 +27,7 @@ async def test_register_merchant():
         "username": "test@tienda.com",
         "email": "test@tienda.com",
         "full_name": "Juan Perez",
-        "role": "ADMIN_MATRIZ"
+        "role": "CATALOGO_MERCHANT"
     }
     mock_config_repo.create.return_value = {"id": "cfg-123", "slug": "mi-tienda"}
 

@@ -125,7 +125,12 @@ export async function client<T>(
     if (response.status === 401) {
         useAuthStore.getState().logout();
         toast.error('Tu sesión expiró. Volvé a iniciar sesión.');
-        window.location.href = '/login';
+        const isCatalogRoute = window.location.pathname.startsWith('/catalogo') || window.location.pathname.startsWith('/c/');
+        if (isCatalogRoute) {
+            window.location.href = '/catalogo/auth?mode=login';
+        } else {
+            window.location.href = '/login';
+        }
         throw new Error('Sesión expirada');
     }
 

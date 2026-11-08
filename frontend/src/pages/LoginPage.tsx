@@ -118,6 +118,8 @@ export default function LoginPage() {
             login(token, userData);
             if (userData.role === 'SUPERADMIN' || userData.role === 'SUPERADMIN_STAFF') {
                 navigate('/admin');
+            } else if (userData.role === 'CATALOGO_MERCHANT') {
+                navigate('/catalogo/admin');
             } else {
                 navigate('/');
             }

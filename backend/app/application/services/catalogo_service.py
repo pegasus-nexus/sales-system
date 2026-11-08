@@ -28,6 +28,7 @@ from app.infrastructure.auth import (
     get_password_hash,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from app.domain.models.user import UserRole
 from app.infrastructure.core.config import settings
 
 
@@ -94,7 +95,7 @@ class CatalogoService:
             "email": req.email.strip().lower(),
             "hashed_password": get_password_hash(req.password),
             "full_name": f"{req.first_name.strip()} {req.last_name.strip()}",
-            "role": "ADMIN_MATRIZ",
+            "role": UserRole.CATALOGO_MERCHANT.value,
             "tenant_id": tenant_id,
         }
         user = await self.auth_repo.create_user(user_data)
@@ -194,7 +195,7 @@ class CatalogoService:
             "email": email.strip().lower(),
             "hashed_password": get_password_hash(dummy_password),
             "full_name": full_name,
-            "role": "ADMIN_MATRIZ",
+            "role": UserRole.CATALOGO_MERCHANT.value,
             "tenant_id": tenant_id,
         }
         user = await self.auth_repo.create_user(user_data)

@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
-  const { slug } = req.query;
+  const rawSlug = req.query.slug || "";
+  const slug = String(rawSlug).trim().split("?")[0].split("/")[0];
 
   let title = "Catálogo Digital";
   let description = "Explora nuestro catálogo de productos y haz tu pedido directamente por WhatsApp.";
@@ -8,22 +9,25 @@ export default async function handler(req, res) {
   const publicCatalogUrl = `https://app.pegasus-nexus.com/c/${cleanSlug}`;
 
   if (slug) {
-    // Potential backend endpoints to retrieve catalog metadata
-    const candidates = [];
+    const candidates = [
+      `https://sales-system-aptb.onrender.com/api/v1/catalogo/public/${cleanSlug}`,
+      `https://app.pegasus-nexus.com/api/v1/catalogo/public/${cleanSlug}`,
+    ];
+
     const configuredApiUrl = process.env.VITE_API_URL || process.env.BACKEND_API_URL;
     if (configuredApiUrl) {
-      candidates.push(`${configuredApiUrl.replace(/\/+$/, "")}/catalogo/public/${cleanSlug}`);
+      candidates.unshift(`${configuredApiUrl.replace(/\/+$/, "")}/catalogo/public/${cleanSlug}`);
     }
-    candidates.push(`https://sales-system-kappa.vercel.app/api/v1/catalogo/public/${cleanSlug}`);
-    candidates.push(`https://sales-system-aptb.onrender.com/api/v1/catalogo/public/${cleanSlug}`);
 
     for (const url of candidates) {
       try {
         const apiRes = await fetch(url, {
           headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(8000),
         });
-        if (apiRes.ok) {
+
+        const contentType = apiRes.headers.get("content-type") || "";
+        if (apiRes.ok && contentType.includes("application/json")) {
           const data = await apiRes.json();
           if (data && data.config) {
             if (data.config.business_name) {
@@ -48,6 +52,13 @@ export default async function handler(req, res) {
     }
   }
 
+  // Ensure logo is absolute HTTPS
+  if (logoUrl.startsWith("/")) {
+    logoUrl = `https://app.pegasus-nexus.com${logoUrl}`;
+  } else if (logoUrl.startsWith("http://")) {
+    logoUrl = logoUrl.replace("http://", "https://");
+  }
+
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeLogo = escapeHtml(logoUrl);
@@ -63,7 +74,7 @@ export default async function handler(req, res) {
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="${safeTitle}">
-  <meta property="og:title" content="${safeTitle} | Catálogo Digital">
+  <meta property="og:title" content="${safeTitle}">
   <meta property="og:description" content="${safeDesc}">
   <meta property="og:url" content="${publicCatalogUrl}">
   <meta property="og:image" content="${safeLogo}">
@@ -72,7 +83,7 @@ export default async function handler(req, res) {
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${safeTitle} | Catálogo Digital">
+  <meta name="twitter:title" content="${safeTitle}">
   <meta name="twitter:description" content="${safeDesc}">
   <meta name="twitter:image" content="${safeLogo}">
 
@@ -91,7 +102,7 @@ export default async function handler(req, res) {
 </html>`;
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400");
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=86400");
   return res.status(200).send(html);
 }
 

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
-    Store, 
+    Store,
+    LogOut, 
     Plus, 
     ExternalLink, 
     Copy, 
@@ -40,6 +43,8 @@ const COLOR_PRESETS = [
 
 export default function CatalogoAdminPage() {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const logout = useAuthStore((state) => state.logout);
     const [activeTab, setActiveTab] = useState<'products' | 'branding'>('products');
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<CatalogoProducto | null>(null);
@@ -206,6 +211,18 @@ export default function CatalogoAdminPage() {
                         >
                             <Plus size={16} />
                             <span>Nuevo Producto</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                logout();
+                                navigate('/catalogo/auth?mode=login');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-rose-600 text-xs font-bold transition-colors cursor-pointer"
+                            title="Cerrar sesión"
+                        >
+                            <LogOut size={15} />
+                            <span className="hidden sm:inline">Cerrar Sesión</span>
                         </button>
                     </div>
                 </div>

@@ -100,13 +100,13 @@ async def get_catalog_og_preview(
   <meta name="description" content="{desc}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{title}">
-  <meta property="og:title" content="{title} | Catálogo Digital">
+  <meta property="og:title" content="{title}">
   <meta property="og:description" content="{desc}">
   <meta property="og:url" content="{redirect_url}">
   <meta property="og:image" content="{logo_url}">
   <meta property="og:image:secure_url" content="{logo_url}">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{title} | Catálogo Digital">
+  <meta name="twitter:title" content="{title}">
   <meta name="twitter:description" content="{desc}">
   <meta name="twitter:image" content="{logo_url}">
   <link rel="canonical" href="{redirect_url}">

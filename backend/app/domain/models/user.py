@@ -18,6 +18,7 @@ class UserRole(str, Enum):
     SUPERVISOR = "SUPERVISOR"       # Fuerza de ventas - Supervisor
     VENDEDOR = "VENDEDOR"           # Fuerza de ventas - Vendedor en calle
     FACTURADOR = "FACTURADOR"       # Facturador (invoice manager)
+    CATALOGO_MERCHANT = "CATALOGO_MERCHANT"  # Micro-Catálogo Digital (exclusivo catálogo, sin acceso al ERP)
     # Legacy aliases for backward compatibility
     ADMIN = "ADMIN_MATRIZ"
     USER = "CAJERO"

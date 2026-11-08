@@ -164,17 +164,32 @@ const ProtectedRoute = ({
   allowedRoles,
   requiredFeature,
   customCondition,
+  redirectTo,
 }: {
   children: React.ReactNode;
   allowedRoles?: string[];
   requiredFeature?: string;
   customCondition?: boolean;
+  redirectTo?: string;
 }) => {
   const { isAuthenticated, role, hasFeature } = useAuthStore();
 
-  if (!isAuthenticated()) return <Navigate to="/login" replace />;
+  if (!isAuthenticated()) {
+    if (redirectTo) return <Navigate to={redirectTo} replace />;
+    if (window.location.pathname.startsWith('/catalogo')) {
+      return <Navigate to="/catalogo/auth?mode=login" replace />;
+    }
+    return <Navigate to="/login" replace />;
+  }
   
   if (customCondition === false) return <Navigate to="/" replace />;
+
+  // Aislamiento estricto: Comercio de Catálogo sólo puede acceder a rutas que admitan CATALOGO_MERCHANT
+  if (role === 'CATALOGO_MERCHANT') {
+    if (!allowedRoles || !allowedRoles.includes('CATALOGO_MERCHANT')) {
+      return <Navigate to="/catalogo/admin" replace />;
+    }
+  }
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
@@ -200,6 +215,7 @@ const ProtectedRoute = ({
 // ─── Role Dispatcher ─────────────────────────────────────────────────────────
 const DashboardDispatch = () => {
   const { role } = useAuthStore();
+  if (role === 'CATALOGO_MERCHANT') return <Navigate to="/catalogo/admin" replace />;
   if (role === 'SUPERADMIN' || role === 'SUPERADMIN_STAFF') return <Navigate to="/admin" replace />;
   if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) return <Navigate to="/dashboard" replace />;
   if (role === 'ADMIN_SUCURSAL') return <Navigate to="/dashboard-sucursal" replace />;
@@ -241,7 +257,10 @@ function App() {
                 <Route path="/catalogo/login" element={<CatalogoAuthPage />} />
                 <Route path="/catalogo/registro" element={<CatalogoAuthPage />} />
                 <Route path="/catalogo/admin" element={
-                  <ProtectedRoute>
+                  <ProtectedRoute 
+                    allowedRoles={['CATALOGO_MERCHANT', 'ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN']}
+                    redirectTo="/catalogo/auth?mode=login"
+                  >
                     <CatalogoAdminPage />
                   </ProtectedRoute>
                 } />

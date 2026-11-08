@@ -6,7 +6,7 @@ import {
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
     Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen, MessageSquare
 } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
@@ -88,6 +88,10 @@ function TrialWarningBanner() {
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
     const { logout, user, role, hasFeature, tenantSettings } = useAuthStore();
+
+    if (role === 'CATALOGO_MERCHANT') {
+        return <Navigate to="/catalogo/admin" replace />;
+    }
     const impersonationChain = useAuthStore(state => state.impersonationChain) || [];
     const originalToken = useAuthStore(state => state.originalToken);
     const isImpersonating = impersonationChain.length > 0 || Boolean(originalToken);
