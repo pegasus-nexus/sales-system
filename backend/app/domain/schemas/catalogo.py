@@ -16,6 +16,7 @@ class CatalogoRegisterRequest(BaseModel):
 class CatalogoGoogleAuthRequest(BaseModel):
     credential: str = Field(..., description="Google ID Token JWT")
     company_name: Optional[str] = Field(default=None, max_length=100)
+    whatsapp: Optional[str] = Field(default=None, max_length=30)
 
 
 class CatalogoAuthResponse(BaseModel):

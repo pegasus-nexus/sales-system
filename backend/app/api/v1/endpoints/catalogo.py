@@ -134,6 +134,18 @@ async def check_slug_availability(
     return {"slug": slug, "available": available}
 
 
+@router.get("/check-email/{email}")
+async def check_email_availability(
+    email: str,
+    service: CatalogoService = Depends(get_catalogo_service)
+):
+    """
+    Verifica si un correo electrónico ya está registrado en la plataforma.
+    """
+    existing_user = await service.auth_repo.find_user_by_email(email.strip().lower())
+    return {"email": email, "exists": existing_user is not None}
+
+
 # ==========================================
 # Endpoints Protegidos (Gestión del Comercio)
 # ==========================================

@@ -167,7 +167,7 @@ class CatalogoService:
             token = create_access_token(
                 data={
                     "sub": existing_user["username"],
-                    "role": existing_user.get("role", "ADMIN_MATRIZ"),
+                    "role": existing_user.get("role", UserRole.CATALOGO_MERCHANT.value),
                     "tenant_id": tenant_id,
                     "sucursal_id": existing_user.get("sucursal_id")
                 },
@@ -205,6 +205,7 @@ class CatalogoService:
             "business_name": company_name.strip(),
             "slug": slug,
             "logo_url": picture,
+            "whatsapp_number": req.whatsapp.strip() if req.whatsapp else "",
             "primary_color": "#4f46e5",
             "secondary_color": "#06b6d4",
             "currency_symbol": "Bs.",

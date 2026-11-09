@@ -14,6 +14,7 @@ export interface CatalogoRegisterRequest {
 export interface CatalogoGoogleAuthRequest {
     credential: string;
     company_name?: string;
+    whatsapp?: string;
 }
 
 export interface CatalogoAuthResponse {
@@ -111,6 +112,17 @@ export async function getPublicCatalog(slug: string): Promise<PublicCatalogoResp
     return client<PublicCatalogoResponse>(`/catalogo/public/${encodeURIComponent(slug)}`, {
         method: 'GET',
     });
+}
+
+export async function checkEmailExists(email: string): Promise<boolean> {
+    try {
+        const res = await client<{ email: string; exists: boolean }>(`/catalogo/check-email/${encodeURIComponent(email)}`, {
+            method: 'GET',
+        });
+        return Boolean(res.exists);
+    } catch {
+        return false;
+    }
 }
 
 export async function checkSlugAvailability(slug: string): Promise<{ slug: string; available: boolean }> {
