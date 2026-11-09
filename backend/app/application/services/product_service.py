@@ -11,7 +11,6 @@ from app.domain.models.sucursal import Sucursal
 from app.domain.models.user import User, UserRole
 from app.domain.schemas.product import ProductCreate, ProductUpdate
 
-
 async def _enrich(product: Product) -> Product:
     if product.categoria_id:
         cat = await Category.get(product.categoria_id)
@@ -28,8 +27,6 @@ async def _can_user_edit_prices(current_user: User) -> bool:
             return True
         if current_user.sucursal_id:
             from beanie import PydanticObjectId
-
-            from app.domain.models.sucursal import Sucursal
             try:
                 suc = await Sucursal.get(PydanticObjectId(current_user.sucursal_id)) if PydanticObjectId.is_valid(current_user.sucursal_id) else None
                 if not suc:
@@ -176,6 +173,16 @@ class ProductService:
         variantes_payload = data.variantes_payload or []
         create_payload = data.model_dump(exclude={"precios_sucursales", "variantes_payload"})
 
+        if "proveedor" in create_payload:
+            prov = create_payload.pop("proveedor")
+            if prov and "proveedores" not in create_payload:
+                create_payload["proveedores"] = [prov]
+            elif prov and prov not in (create_payload.get("proveedores") or []):
+                create_payload["proveedores"] = (create_payload.get("proveedores") or []) + [prov]
+
+        allowed_fields = set(Product.model_fields.keys()) | {"is_active", "deleted_at", "deleted_by"}
+        create_payload = {k: v for k, v in create_payload.items() if k in allowed_fields}
+
         product = Product(
             tenant_id=tenant_id,
             **create_payload,
@@ -315,7 +322,6 @@ class ProductService:
                     cambiado_por_nombre=current_user.full_name or current_user.username
                 ).create()
 
-
             await AuditLog(
                 tenant_id=current_user.tenant_id,
                 user_id=str(current_user.id),
@@ -324,14 +330,79 @@ class ProductService:
                 entity_id=product_id, details=changes,
             ).create()
 
+        # Pop non-document fields safely
+        precios = updates.pop("precios_sucursales", None)
+        variantes_payload = updates.pop("variantes_payload", None)
+
+        if "proveedor" in updates:
+            prov = updates.pop("proveedor")
+            if prov and prov not in (product.proveedores or []):
+                product.proveedores = list(set((product.proveedores or []) + [prov]))
+
+        allowed_fields = set(Product.model_fields.keys()) | {"is_active", "deleted_at", "deleted_by"}
         for field, value in updates.items():
-            if field == "precios_sucursales": continue
-            setattr(product, field, value)
+            if field in allowed_fields:
+                setattr(product, field, value)
         await product.save()
 
-        if "precios_sucursales" in updates and updates["precios_sucursales"] is not None:
+        # Handle variantes_payload on update if present
+        if product.has_variants and variantes_payload:
+            current_variants_resumen = []
+            for v_idx, v in enumerate(variantes_payload):
+                v_id = v.get("id") or v.get("_id")
+                child = None
+                if v_id and ObjectId.is_valid(str(v_id)):
+                    child = await Product.get(str(v_id))
+
+                if child and child.parent_id == str(product.id):
+                    for k in ["descripcion", "codigo_corto", "codigo_largo", "atributos", "image_url"]:
+                        if k in v: setattr(child, k, v[k])
+                    if "precio_venta" in v: child.precio_venta = float(v["precio_venta"])
+                    if "costo_producto" in v: child.costo_producto = float(v["costo_producto"])
+                    child.categoria_id, child.show_on_web = product.categoria_id, product.show_on_web
+                    await child.save()
+                else:
+                    v_desc = v.get("descripcion") or f"{product.descripcion} ({', '.join(v.get('atributos', {}).values())})"
+                    v_sku = v.get("codigo_corto") or f"{product.codigo_corto or 'SKU'}-{v_idx+1}"
+                    v_barcode = v.get("codigo_largo")
+                    v_precio = float(v.get("precio_venta", product.precio_venta))
+                    v_costo = float(v.get("costo_producto", product.costo_producto))
+                    v_atributos = v.get("atributos", {})
+
+                    child = Product(
+                        tenant_id=product.tenant_id,
+                        parent_id=str(product.id),
+                        is_variant=True,
+                        has_variants=False,
+                        descripcion=v_desc,
+                        categoria_id=product.categoria_id,
+                        codigo_corto=v_sku,
+                        codigo_largo=v_barcode,
+                        costo_producto=v_costo,
+                        precio_venta=v_precio,
+                        atributos=v_atributos,
+                        image_url=v.get("image_url") or product.image_url,
+                        tipo_item=product.tipo_item,
+                        show_on_web=product.show_on_web,
+                    )
+                    await child.create()
+
+                current_variants_resumen.append({
+                    "_id": str(child.id),
+                    "id": str(child.id),
+                    "descripcion": child.descripcion,
+                    "codigo_corto": child.codigo_corto,
+                    "codigo_largo": child.codigo_largo,
+                    "precio_venta": float(child.precio_venta),
+                    "costo_producto": float(child.costo_producto),
+                    "atributos": child.atributos or {},
+                    "image_url": child.image_url,
+                })
+            product.variantes_resumen = current_variants_resumen
+            await product.save()
+
+        if precios is not None:
             from pymongo import UpdateOne
-            precios = updates["precios_sucursales"]
             ops = []
             for suc_id, precio in precios.items():
                 if precio is not None and precio >= 0:
