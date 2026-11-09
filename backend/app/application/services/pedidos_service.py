@@ -1,17 +1,23 @@
-from app.infrastructure.db import get_client
 import logging
-from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
-from bson import ObjectId
 from pymongo import ReturnDocument
 
-from app.domain.models.pedido_interno import PedidoInterno, PedidoItem, EstadoPedido
-from app.domain.models.inventario import Inventario, TipoMovimiento, InventoryLog
+from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
+from app.domain.models.pedido_interno import EstadoPedido, PedidoInterno, PedidoItem
 from app.domain.models.product import Product
 from app.domain.models.user import User, UserRole
-from app.domain.schemas.pedidos import PedidoCreate, PedidoRecepcion, PedidoRecepcionItem
-from app.utils.errors import PedidosErrors, handle_service_error, retry_on_write_conflict
+from app.domain.schemas.pedidos import (
+    PedidoCreate,
+    PedidoRecepcion,
+)
+from app.infrastructure.db import get_client
+from app.utils.errors import (
+    PedidosErrors,
+    handle_service_error,
+    retry_on_write_conflict,
+)
 
 logger = logging.getLogger("PedidosService")
 
@@ -22,10 +28,10 @@ class PedidosService:
         tenant_id = current_user.tenant_id or ""
         if data.sucursal_origen_id == "CENTRAL" and current_user.role == UserRole.SUPERVISOR:
             raise HTTPException(status_code=403, detail="Los Supervisores no pueden pedir directo a Matriz, solo a Sucursales Físicas")
-            
+
         if current_user.role in [UserRole.ADMIN_SUCURSAL, UserRole.VENDEDOR] and data.sucursal_destino_id != current_user.sucursal_id:
             raise HTTPException(status_code=403, detail="No puedes crear solicitudes de entrada para otras sucursales")
-            
+
         if current_user.role == UserRole.SUPERVISOR and data.transferencia_directa:
             if data.sucursal_origen_id != current_user.sucursal_id and data.sucursal_destino_id != current_user.sucursal_id:
                 raise HTTPException(status_code=403, detail="Solo puedes transferir inventario desde o hacia tu propia bodega de Supervisor")
@@ -39,7 +45,7 @@ class PedidosService:
                         product = await Product.get(item.producto_id, session=session)
                         if not product or product.tenant_id != tenant_id:
                             raise HTTPException(status_code=404, detail=PedidosErrors.producto_no_encontrado(item.producto_id))
-                            
+
                         if data.sucursal_origen_id != "CENTRAL":
                             inv = await Inventario.find_one(
                                 Inventario.tenant_id == tenant_id,
@@ -57,7 +63,7 @@ class PedidosService:
                             costo = inv.precio_sucursal if (inv and inv.precio_sucursal is not None) else product.precio_venta
                         else:
                             costo = product.costo_producto
-                        
+
                         subtotal = item.cantidad * costo
                         items.append(PedidoItem(
                             producto_id=item.producto_id,
@@ -68,7 +74,7 @@ class PedidosService:
                         ))
 
                     tipo_pedido = "SUCURSAL_A_SUCURSAL" if data.sucursal_origen_id != "CENTRAL" else "MATRIZ_A_SUCURSAL"
-                    
+
                     pedido = PedidoInterno(
                         tenant_id=tenant_id,
                         sucursal_id=data.sucursal_destino_id,
@@ -84,55 +90,132 @@ class PedidosService:
 
                     if data.transferencia_directa:
                         pedido.estado = EstadoPedido.RECIBIDO
-                        pedido.aceptado_at = datetime.now(timezone.utc)
-                        pedido.despachado_at = datetime.now(timezone.utc)
-                        pedido.recibido_at = datetime.now(timezone.utc)
+                        pedido.aceptado_at = datetime.now(UTC)
+                        pedido.despachado_at = datetime.now(UTC)
+                        pedido.recibido_at = datetime.now(UTC)
                         pedido.aceptado_por = str(current_user.id)
                         pedido.despachado_por = str(current_user.id)
                         pedido.recibido_por = str(current_user.id)
-                        
+
+                        # 1. Validar stock disponible en origen
+                        for item in items:
+                            orig_doc = await Inventario.get_pymongo_collection().find_one(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": data.sucursal_origen_id,
+                                    "producto_id": item.producto_id,
+                                    "$or": [
+                                        {"almacen_id": "default"},
+                                        {"almacen_id": {"$exists": False}},
+                                        {"almacen_id": None},
+                                    ]
+                                },
+                                session=session.client_session if hasattr(session, "client_session") else session
+                            )
+                            stock_disp = float(orig_doc.get("cantidad", 0)) if orig_doc else 0.0
+                            if stock_disp < item.cantidad:
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail=PedidosErrors.stock_insuficiente_origen(
+                                        item.descripcion, item.cantidad, int(stock_disp)
+                                    )
+                                )
+
+                        # 2. Descontar en origen y sumar en destino
                         for item in items:
                             item.cantidad_recibida = item.cantidad
                             inv_origen = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {"tenant_id": tenant_id, "sucursal_id": data.sucursal_origen_id, "producto_id": item.producto_id},
-                                {"$inc": {"cantidad": -item.cantidad}},
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": data.sucursal_origen_id,
+                                    "producto_id": item.producto_id,
+                                    "cantidad": {"$gte": item.cantidad}
+                                },
+                                {
+                                    "$inc": {"cantidad": -item.cantidad},
+                                    "$set": {"almacen_id": "default", "updated_at": datetime.now(UTC)}
+                                },
                                 return_document=ReturnDocument.AFTER,
                                 session=session.client_session if hasattr(session, "client_session") else session
                             )
-                            inv_destino = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {"tenant_id": tenant_id, "sucursal_id": data.sucursal_destino_id, "producto_id": item.producto_id},
-                                {"$inc": {"cantidad": item.cantidad}},
-                                upsert=True,
-                                return_document=ReturnDocument.AFTER,
+                            if not inv_origen:
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail=f"Stock insuficiente para '{item.descripcion}' en sucursal origen."
+                                )
+
+                            dest_doc = await Inventario.get_pymongo_collection().find_one(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": data.sucursal_destino_id,
+                                    "producto_id": item.producto_id,
+                                    "$or": [
+                                        {"almacen_id": "default"},
+                                        {"almacen_id": {"$exists": False}},
+                                        {"almacen_id": None},
+                                    ]
+                                },
                                 session=session.client_session if hasattr(session, "client_session") else session
                             )
-                            
-                            if inv_origen:
-                                await InventoryLog(
-                                    tenant_id=tenant_id,
-                                    sucursal_id=data.sucursal_origen_id,
-                                    producto_id=item.producto_id,
-                                    descripcion=item.descripcion,
-                                    tipo_movimiento=TipoMovimiento.TRASLADO,
-                                    cantidad_movida=-item.cantidad,
-                                    stock_resultante=inv_origen.get("cantidad", 0),
-                                    usuario_id=str(current_user.id),
-                                    usuario_nombre=current_user.username,
-                                    notas=f"Transferencia directa hacia {data.sucursal_destino_id}"
-                                ).create(session=session)
-                            if inv_destino:
-                                await InventoryLog(
-                                    tenant_id=tenant_id,
-                                    sucursal_id=data.sucursal_destino_id,
-                                    producto_id=item.producto_id,
-                                    descripcion=item.descripcion,
-                                    tipo_movimiento=TipoMovimiento.TRASLADO,
-                                    cantidad_movida=item.cantidad,
-                                    stock_resultante=inv_destino.get("cantidad", 0),
-                                    usuario_id=str(current_user.id),
-                                    usuario_nombre=current_user.username,
-                                    notas=f"Recepción directa desde {data.sucursal_origen_id}"
-                                ).create(session=session)
+                            if dest_doc:
+                                inv_destino = await Inventario.get_pymongo_collection().find_one_and_update(
+                                    {"_id": dest_doc["_id"]},
+                                    {
+                                        "$inc": {"cantidad": item.cantidad},
+                                        "$set": {"almacen_id": "default", "updated_at": datetime.now(UTC)}
+                                    },
+                                    return_document=ReturnDocument.AFTER,
+                                    session=session.client_session if hasattr(session, "client_session") else session
+                                )
+                            else:
+                                inv_destino = await Inventario.get_pymongo_collection().find_one_and_update(
+                                    {
+                                        "tenant_id": tenant_id,
+                                        "sucursal_id": data.sucursal_destino_id,
+                                        "producto_id": item.producto_id,
+                                        "almacen_id": "default"
+                                    },
+                                    {
+                                        "$inc": {"cantidad": item.cantidad},
+                                        "$setOnInsert": {
+                                            "created_at": datetime.now(UTC),
+                                            "updated_at": datetime.now(UTC)
+                                        }
+                                    },
+                                    upsert=True,
+                                    return_document=ReturnDocument.AFTER,
+                                    session=session.client_session if hasattr(session, "client_session") else session
+                                )
+
+                            await InventoryLog(
+                                tenant_id=tenant_id,
+                                sucursal_id=data.sucursal_origen_id,
+                                almacen_id="default",
+                                producto_id=item.producto_id,
+                                descripcion=item.descripcion,
+                                tipo_movimiento=TipoMovimiento.TRASLADO,
+                                cantidad_movida=-item.cantidad,
+                                stock_resultante=inv_origen.get("cantidad", 0),
+                                costo_unitario_momento=item.precio_mayorista,
+                                usuario_id=str(current_user.id),
+                                usuario_nombre=current_user.username,
+                                notas=f"Transferencia directa hacia {data.sucursal_destino_id}"
+                            ).create(session=session)
+
+                            await InventoryLog(
+                                tenant_id=tenant_id,
+                                sucursal_id=data.sucursal_destino_id,
+                                almacen_id="default",
+                                producto_id=item.producto_id,
+                                descripcion=item.descripcion,
+                                tipo_movimiento=TipoMovimiento.TRASLADO,
+                                cantidad_movida=item.cantidad,
+                                stock_resultante=inv_destino.get("cantidad", 0) if inv_destino else item.cantidad,
+                                costo_unitario_momento=item.precio_mayorista,
+                                usuario_id=str(current_user.id),
+                                usuario_nombre=current_user.username,
+                                notas=f"Recepción directa desde {data.sucursal_origen_id}"
+                            ).create(session=session)
 
                     await pedido.create(session=session)
 
@@ -157,7 +240,7 @@ class PedidosService:
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
 
         pedido.estado = EstadoPedido.CANCELADO
-        pedido.cancelado_at = datetime.now(timezone.utc)
+        pedido.cancelado_at = datetime.now(UTC)
         pedido.cancelado_por = str(current_user.id)
         await pedido.save()
         return pedido
@@ -169,16 +252,16 @@ class PedidosService:
         pedido = await PedidoInterno.get(pedido_id)
         if not pedido or pedido.tenant_id != (current_user.tenant_id or ""):
             raise HTTPException(status_code=404, detail="Order not found")
-            
+
         if not is_matrix_admin:
             if current_user.role not in [UserRole.ADMIN_SUCURSAL, UserRole.SUPERVISOR] or pedido.sucursal_origen_id != current_user.sucursal_id:
                 raise HTTPException(status_code=403, detail="No tienes permiso para aprobar despachos de esta sucursal origen")
-            
+
         if pedido.estado != EstadoPedido.CREADO:
             raise HTTPException(status_code=400, detail=f"No se puede aceptar un pedido en estado {pedido.estado}")
 
         pedido.estado = EstadoPedido.ACEPTADO
-        pedido.aceptado_at = datetime.now(timezone.utc)
+        pedido.aceptado_at = datetime.now(UTC)
         pedido.aceptado_por = str(current_user.id)
         await pedido.save()
         return pedido
@@ -212,52 +295,74 @@ class PedidosService:
                             detail=PedidosErrors.estado_invalido_para("despachar", pedido.estado)
                         )
 
-                    if pedido.sucursal_origen_id != "CENTRAL":
-                        # Verificar stock antes de descontar
-                        for item in pedido.items:
-                            inv = await Inventario.find_one(
-                                Inventario.tenant_id == tenant_id,
-                                Inventario.sucursal_id == pedido.sucursal_origen_id,
-                                Inventario.producto_id == item.producto_id,
-                                session=session
-                            )
-                            stock_disp = inv.cantidad if inv else 0
-                            if stock_disp < item.cantidad:
-                                raise HTTPException(
-                                    status_code=400,
-                                    detail=PedidosErrors.stock_insuficiente_origen(
-                                        item.descripcion, item.cantidad, stock_disp
-                                    )
-                                )
+                    origen_sucursal = pedido.sucursal_origen_id or "CENTRAL"
+                    destino_sucursal = pedido.sucursal_destino_id or pedido.sucursal_id
 
-                        for item in pedido.items:
-                            inv_origen = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {
-                                    "tenant_id": tenant_id,
-                                    "sucursal_id": pedido.sucursal_origen_id,
-                                    "producto_id": item.producto_id
-                                },
-                                {"$inc": {"cantidad": -item.cantidad}},
-                                return_document=ReturnDocument.AFTER,
-                                session=session.client_session if hasattr(session, "client_session") else session
+                    # 1. Verificar stock antes de descontar en sucursal origen
+                    for item in pedido.items:
+                        orig_doc = await Inventario.get_pymongo_collection().find_one(
+                            {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": origen_sucursal,
+                                "producto_id": item.producto_id,
+                                "$or": [
+                                    {"almacen_id": "default"},
+                                    {"almacen_id": {"$exists": False}},
+                                    {"almacen_id": None},
+                                ]
+                            },
+                            session=session.client_session if hasattr(session, "client_session") else session
+                        )
+                        stock_disp = float(orig_doc.get("cantidad", 0)) if orig_doc else 0.0
+                        if stock_disp < item.cantidad:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=PedidosErrors.stock_insuficiente_origen(
+                                    item.descripcion, item.cantidad, int(stock_disp)
+                                )
                             )
-                            if inv_origen:
-                                await InventoryLog(
-                                    tenant_id=tenant_id,
-                                    sucursal_id=pedido.sucursal_origen_id,
-                                    producto_id=item.producto_id,
-                                    descripcion=item.descripcion,
-                                    tipo_movimiento=TipoMovimiento.TRASLADO,
-                                    cantidad_movida=-item.cantidad,
-                                    stock_resultante=inv_origen.get("cantidad", 0),
-                                    usuario_id=str(current_user.id),
-                                    usuario_nombre=current_user.username,
-                                    notas=f"Despacho Interno hacia {pedido.sucursal_destino_id}"
-                                ).create(session=session)
+
+                    # 2. Descontar stock en origen y registrar Kardex
+                    for item in pedido.items:
+                        inv_origen = await Inventario.get_pymongo_collection().find_one_and_update(
+                            {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": origen_sucursal,
+                                "producto_id": item.producto_id,
+                                "cantidad": {"$gte": item.cantidad}
+                            },
+                            {
+                                "$inc": {"cantidad": -item.cantidad},
+                                "$set": {"almacen_id": "default", "updated_at": datetime.now(UTC)}
+                            },
+                            return_document=ReturnDocument.AFTER,
+                            session=session.client_session if hasattr(session, "client_session") else session
+                        )
+                        if not inv_origen:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Stock insuficiente para '{item.descripcion}' en sucursal origen."
+                            )
+
+                        await InventoryLog(
+                            tenant_id=tenant_id,
+                            sucursal_id=origen_sucursal,
+                            almacen_id="default",
+                            producto_id=item.producto_id,
+                            descripcion=item.descripcion,
+                            tipo_movimiento=TipoMovimiento.TRASLADO,
+                            cantidad_movida=-item.cantidad,
+                            stock_resultante=inv_origen.get("cantidad", 0),
+                            costo_unitario_momento=item.precio_mayorista,
+                            usuario_id=str(current_user.id),
+                            usuario_nombre=current_user.full_name or current_user.username,
+                            notas=f"Despacho Interno hacia {destino_sucursal}",
+                            referencia_id=str(pedido.id)
+                        ).create(session=session)
 
                     total = sum(item.cantidad * item.precio_mayorista for item in pedido.items)
                     pedido.estado = EstadoPedido.DESPACHADO
-                    pedido.despachado_at = datetime.now(timezone.utc)
+                    pedido.despachado_at = datetime.now(UTC)
                     pedido.despachado_por = str(current_user.id)
                     pedido.total_mayorista = total
                     await pedido.save(session=session)
@@ -273,7 +378,7 @@ class PedidosService:
 
 
     @staticmethod
-    async def recibir_pedido(pedido_id: str, data: Optional[PedidoRecepcion], current_user: User) -> PedidoInterno:
+    async def recibir_pedido(pedido_id: str, data: PedidoRecepcion | None, current_user: User) -> PedidoInterno:
         tenant_id = current_user.tenant_id or ""
         client = get_client()
 
@@ -300,32 +405,65 @@ class PedidosService:
 
                     for item in pedido.items:
                         cant_recibida = recepcion_map.get(item.producto_id, item.cantidad)
-                        
+
                         if cant_recibida > item.cantidad:
                             raise HTTPException(status_code=400, detail=f"No puedes recibir más de lo despachado para {item.descripcion}")
-                            
+
                         item.cantidad_recibida = cant_recibida
                         if cant_recibida == 0:
                             continue
 
-                        updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                        target_sucursal = pedido.sucursal_destino_id or pedido.sucursal_id
+                        dest_doc = await Inventario.get_pymongo_collection().find_one(
                             {
                                 "tenant_id": tenant_id,
-                                "sucursal_id": pedido.sucursal_id, # Target branch where stock arrives
-                                "producto_id": item.producto_id
+                                "sucursal_id": target_sucursal,
+                                "producto_id": item.producto_id,
+                                "$or": [
+                                    {"almacen_id": "default"},
+                                    {"almacen_id": {"$exists": False}},
+                                    {"almacen_id": None},
+                                ]
                             },
-                            {
-                                "$inc": {"cantidad": cant_recibida}
-                            },
-                            upsert=True,
-                            return_document=ReturnDocument.AFTER,
                             session=session.client_session if hasattr(session, "client_session") else session
                         )
+
+                        if dest_doc:
+                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                                {"_id": dest_doc["_id"]},
+                                {
+                                    "$inc": {"cantidad": cant_recibida},
+                                    "$set": {"almacen_id": "default", "updated_at": datetime.now(UTC)}
+                                },
+                                return_document=ReturnDocument.AFTER,
+                                session=session.client_session if hasattr(session, "client_session") else session
+                            )
+                        else:
+                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": target_sucursal,
+                                    "producto_id": item.producto_id,
+                                    "almacen_id": "default"
+                                },
+                                {
+                                    "$inc": {"cantidad": cant_recibida},
+                                    "$setOnInsert": {
+                                        "created_at": datetime.now(UTC),
+                                        "updated_at": datetime.now(UTC)
+                                    }
+                                },
+                                upsert=True,
+                                return_document=ReturnDocument.AFTER,
+                                session=session.client_session if hasattr(session, "client_session") else session
+                            )
+
                         stock_resultante = updated_inv["cantidad"] if updated_inv else cant_recibida
 
                         await InventoryLog(
                             tenant_id=tenant_id,
-                            sucursal_id=pedido.sucursal_id,
+                            sucursal_id=target_sucursal,
+                            almacen_id="default",
                             producto_id=item.producto_id,
                             descripcion=item.descripcion,
                             tipo_movimiento=TipoMovimiento.TRASLADO,
@@ -334,12 +472,12 @@ class PedidosService:
                             costo_unitario_momento=item.precio_mayorista,
                             usuario_id=str(current_user.id),
                             usuario_nombre=current_user.full_name or current_user.username,
-                            notas="Recepción de Pedido Central",
+                            notas=f"Recepción de Pedido desde {pedido.sucursal_origen_id or 'CENTRAL'}",
                             referencia_id=str(pedido.id)
                         ).create(session=session)
 
                     pedido.estado = EstadoPedido.RECIBIDO
-                    pedido.recibido_at = datetime.now(timezone.utc)
+                    pedido.recibido_at = datetime.now(UTC)
                     pedido.recibido_por = str(current_user.id)
                     await pedido.save(session=session)
                     return pedido

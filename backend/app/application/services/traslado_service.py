@@ -1,17 +1,17 @@
 import logging
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
-from app.infrastructure.db import get_client
-from app.domain.models.traslado import TrasladoInventario, TrasladoItem, EstadoTraslado
+from app.domain.models.base import DecimalMoney
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.product import Product
 from app.domain.models.sucursal import Sucursal
+from app.domain.models.traslado import EstadoTraslado, TrasladoInventario, TrasladoItem
 from app.domain.models.user import User, UserRole
 from app.domain.schemas.traslado import TrasladoCreate, TrasladoReceive
-from app.domain.models.base import DecimalMoney
+from app.infrastructure.db import get_client
 from app.utils.errors import retry_on_write_conflict
 
 logger = logging.getLogger("TrasladoService")
@@ -20,7 +20,11 @@ class TrasladoService:
     @staticmethod
     async def despachar_traslado(body: TrasladoCreate, current_user: User) -> TrasladoInventario:
         tenant_id = current_user.tenant_id or "default"
-        sucursal_origen_id = current_user.sucursal_id or "CENTRAL"
+        sucursal_origen_id = (
+            body.sucursal_origen_id
+            if (getattr(body, "sucursal_origen_id", None) and current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN])
+            else (current_user.sucursal_id or "CENTRAL")
+        )
 
         # Validate destination
         destino_tipo = body.destino_tipo or "SUCURSAL"
@@ -32,7 +36,7 @@ class TrasladoService:
         else:  # CLIENTE
             if not body.cliente_destino_nombre:
                 raise HTTPException(status_code=400, detail="Debe indicar el nombre del cliente destino.")
-            
+
         client = get_client()
 
         async def _run_transaction() -> TrasladoInventario:
@@ -99,7 +103,7 @@ class TrasladoService:
                                 "$inc": {"cantidad": -item_in.cantidad},
                                 "$set": {
                                     "almacen_id": almacen_origen,
-                                    "updated_at": datetime.now(timezone.utc)
+                                    "updated_at": datetime.now(UTC)
                                 }
                             },
                             return_document=ReturnDocument.AFTER,
@@ -146,7 +150,7 @@ class TrasladoService:
 
                     # For CLIENT transfers: immediately COMPLETADO (goods delivered in hand)
                     estado_inicial = EstadoTraslado.COMPLETADO if destino_tipo == "CLIENTE" else EstadoTraslado.EN_TRANSITO
-                    completado_at = datetime.now(timezone.utc) if destino_tipo == "CLIENTE" else None
+                    completado_at = datetime.now(UTC) if destino_tipo == "CLIENTE" else None
 
                     # Mark items as received if cliente (complete immediately)
                     if destino_tipo == "CLIENTE":
@@ -193,7 +197,7 @@ class TrasladoService:
     async def recibir_traslado(traslado_id: str, body: TrasladoReceive, current_user: User) -> TrasladoInventario:
         tenant_id = current_user.tenant_id or "default"
         sucursal_destino_id = current_user.sucursal_id or "CENTRAL"
-        
+
         client = get_client()
 
         async def _run_transaction() -> TrasladoInventario:
@@ -202,10 +206,10 @@ class TrasladoService:
                     traslado = await TrasladoInventario.get(traslado_id, session=session)
                     if not traslado or traslado.tenant_id != tenant_id:
                         raise HTTPException(status_code=404, detail="Traslado no encontrado.")
-                        
+
                     if traslado.estado != EstadoTraslado.EN_TRANSITO:
                         raise HTTPException(status_code=400, detail=f"El traslado ya está {traslado.estado.value}.")
-                        
+
                     if traslado.sucursal_destino_id != sucursal_destino_id and current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN_MATRIZ, UserRole.ADMIN]:
                         raise HTTPException(status_code=403, detail="No tienes permiso para recibir un traslado destinado a otra sucursal.")
 
@@ -216,7 +220,7 @@ class TrasladoService:
                         qty_recibida = items_recibidos_map.get(t_item.producto_id)
                         if qty_recibida is None:
                             qty_recibida = t_item.cantidad_enviada # Por defecto se recibe todo
-                            
+
                         if qty_recibida < 0 or qty_recibida > t_item.cantidad_enviada:
                             raise HTTPException(status_code=400, detail=f"Cantidad recibida inválida para {t_item.descripcion}.")
 
@@ -227,58 +231,77 @@ class TrasladoService:
                         if qty_recibida > 0:
                             # Aumentar stock en destino — en el almacén destino especificado
                             almacen_destino = traslado.almacen_destino_id or "default"
-                            inv_query_dest = {
-                                "tenant_id": tenant_id,
-                                "sucursal_id": traslado.sucursal_destino_id,
-                                "producto_id": t_item.producto_id
-                            }
-                            if almacen_destino == "default":
-                                # Upsert en almacén default
-                                inv_query_dest["$or"] = [
-                                    {"almacen_id": "default"},
-                                    {"almacen_id": {"$exists": False}},
-                                    {"almacen_id": None},
-                                ]
-                            else:
-                                inv_query_dest["almacen_id"] = almacen_destino
+                            dest_coll = Inventario.get_pymongo_collection()
+                            client_session = session.client_session if hasattr(session, "client_session") else session
 
-                            existing_dest = await Inventario.get_pymongo_collection().find_one(
-                                inv_query_dest,
-                                session=session.client_session if hasattr(session, "client_session") else session
+                            # 1. Buscar registro canónico con el almacén exacto
+                            canonical_dest = await dest_coll.find_one(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "sucursal_id": traslado.sucursal_destino_id,
+                                    "producto_id": t_item.producto_id,
+                                    "almacen_id": almacen_destino
+                                },
+                                session=client_session
                             )
 
-                            if existing_dest:
-                                updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                                    {"_id": existing_dest["_id"]},
+                            if canonical_dest:
+                                updated_inv = await dest_coll.find_one_and_update(
+                                    {"_id": canonical_dest["_id"]},
                                     {
                                         "$inc": {"cantidad": qty_recibida},
-                                        "$set": {
-                                            "almacen_id": almacen_destino,
-                                            "updated_at": datetime.now(timezone.utc)
-                                        }
+                                        "$set": {"updated_at": datetime.now(UTC)}
                                     },
                                     return_document=ReturnDocument.AFTER,
-                                    session=session.client_session if hasattr(session, "client_session") else session
+                                    session=client_session
                                 )
                             else:
-                                updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                                # 2. Buscar si existe uno legacy sin almacen_id
+                                legacy_dest = await dest_coll.find_one(
                                     {
                                         "tenant_id": tenant_id,
                                         "sucursal_id": traslado.sucursal_destino_id,
                                         "producto_id": t_item.producto_id,
-                                        "almacen_id": almacen_destino
+                                        "$or": [
+                                            {"almacen_id": {"$exists": False}},
+                                            {"almacen_id": None},
+                                        ]
                                     },
-                                    {
-                                        "$inc": {"cantidad": qty_recibida},
-                                        "$setOnInsert": {
-                                            "created_at": datetime.now(timezone.utc),
-                                            "updated_at": datetime.now(timezone.utc)
-                                        }
-                                    },
-                                    upsert=True,
-                                    return_document=ReturnDocument.AFTER,
-                                    session=session.client_session if hasattr(session, "client_session") else session
+                                    session=client_session
                                 )
+                                if legacy_dest:
+                                    updated_inv = await dest_coll.find_one_and_update(
+                                        {"_id": legacy_dest["_id"]},
+                                        {
+                                            "$inc": {"cantidad": qty_recibida},
+                                            "$set": {
+                                                "almacen_id": almacen_destino,
+                                                "updated_at": datetime.now(UTC)
+                                            }
+                                        },
+                                        return_document=ReturnDocument.AFTER,
+                                        session=client_session
+                                    )
+                                else:
+                                    # 3. Crear nuevo registro con almacen_id garantizado
+                                    updated_inv = await dest_coll.find_one_and_update(
+                                        {
+                                            "tenant_id": tenant_id,
+                                            "sucursal_id": traslado.sucursal_destino_id,
+                                            "producto_id": t_item.producto_id,
+                                            "almacen_id": almacen_destino
+                                        },
+                                        {
+                                            "$inc": {"cantidad": qty_recibida},
+                                            "$setOnInsert": {
+                                                "created_at": datetime.now(UTC),
+                                                "updated_at": datetime.now(UTC)
+                                            }
+                                        },
+                                        upsert=True,
+                                        return_document=ReturnDocument.AFTER,
+                                        session=client_session
+                                    )
 
                             # Log Kárdex Destino
                             await InventoryLog(
@@ -300,12 +323,12 @@ class TrasladoService:
 
                     traslado.estado = EstadoTraslado.COMPLETADO
                     traslado.valor_total_recibido = valor_total_recibido
-                    traslado.completado_at = datetime.now(timezone.utc)
+                    traslado.completado_at = datetime.now(UTC)
                     traslado.recibido_por_id = str(current_user.id)
                     traslado.recibido_por_nombre = current_user.full_name or current_user.username
                     if body.notas:
                         traslado.notas = (traslado.notas or "") + f" | Recepción: {body.notas}"
-                        
+
                     await traslado.save(session=session)
                     return traslado
 
@@ -322,63 +345,80 @@ class TrasladoService:
                     traslado = await TrasladoInventario.get(traslado_id, session=session)
                     if not traslado or traslado.tenant_id != tenant_id:
                         raise HTTPException(status_code=404, detail="Traslado no encontrado.")
-                        
+
                     if traslado.estado != EstadoTraslado.EN_TRANSITO:
-                        raise HTTPException(status_code=400, detail=f"Solo se pueden cancelar traslados EN_TRANSITO.")
+                        raise HTTPException(status_code=400, detail="Solo se pueden cancelar traslados EN_TRANSITO.")
 
                     # Devolver stock a origen — al almacén exacto de cada ítem (snapshot)
                     for t_item in traslado.items:
                         almacen_origen_item = getattr(t_item, 'almacen_origen_id', None) or traslado.almacen_origen_id or "default"
-                        inv_query_cancel = {
-                            "tenant_id": tenant_id,
-                            "sucursal_id": traslado.sucursal_origen_id,
-                            "producto_id": t_item.producto_id
-                        }
-                        if almacen_origen_item == "default":
-                            inv_query_cancel["$or"] = [
-                                {"almacen_id": "default"},
-                                {"almacen_id": {"$exists": False}},
-                                {"almacen_id": None},
-                            ]
-                        else:
-                            inv_query_cancel["almacen_id"] = almacen_origen_item
+                        orig_coll = Inventario.get_pymongo_collection()
+                        client_session = session.client_session if hasattr(session, "client_session") else session
 
-                        existing_orig = await Inventario.get_pymongo_collection().find_one(
-                            inv_query_cancel,
-                            session=session.client_session if hasattr(session, "client_session") else session
+                        canonical_orig = await orig_coll.find_one(
+                            {
+                                "tenant_id": tenant_id,
+                                "sucursal_id": traslado.sucursal_origen_id,
+                                "producto_id": t_item.producto_id,
+                                "almacen_id": almacen_origen_item
+                            },
+                            session=client_session
                         )
-                        if existing_orig:
-                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
-                                {"_id": existing_orig["_id"]},
+                        if canonical_orig:
+                            updated_inv = await orig_coll.find_one_and_update(
+                                {"_id": canonical_orig["_id"]},
                                 {
                                     "$inc": {"cantidad": t_item.cantidad_enviada},
-                                    "$set": {
-                                        "almacen_id": almacen_origen_item,
-                                        "updated_at": datetime.now(timezone.utc)
-                                    }
+                                    "$set": {"updated_at": datetime.now(UTC)}
                                 },
                                 return_document=ReturnDocument.AFTER,
-                                session=session.client_session if hasattr(session, "client_session") else session
+                                session=client_session
                             )
                         else:
-                            updated_inv = await Inventario.get_pymongo_collection().find_one_and_update(
+                            legacy_orig = await orig_coll.find_one(
                                 {
                                     "tenant_id": tenant_id,
                                     "sucursal_id": traslado.sucursal_origen_id,
                                     "producto_id": t_item.producto_id,
-                                    "almacen_id": almacen_origen_item
+                                    "$or": [
+                                        {"almacen_id": {"$exists": False}},
+                                        {"almacen_id": None},
+                                    ]
                                 },
-                                {
-                                    "$inc": {"cantidad": t_item.cantidad_enviada},
-                                    "$setOnInsert": {
-                                        "created_at": datetime.now(timezone.utc),
-                                        "updated_at": datetime.now(timezone.utc)
-                                    }
-                                },
-                                upsert=True,
-                                return_document=ReturnDocument.AFTER,
-                                session=session.client_session if hasattr(session, "client_session") else session
+                                session=client_session
                             )
+                            if legacy_orig:
+                                updated_inv = await orig_coll.find_one_and_update(
+                                    {"_id": legacy_orig["_id"]},
+                                    {
+                                        "$inc": {"cantidad": t_item.cantidad_enviada},
+                                        "$set": {
+                                            "almacen_id": almacen_origen_item,
+                                            "updated_at": datetime.now(UTC)
+                                        }
+                                    },
+                                    return_document=ReturnDocument.AFTER,
+                                    session=client_session
+                                )
+                            else:
+                                updated_inv = await orig_coll.find_one_and_update(
+                                    {
+                                        "tenant_id": tenant_id,
+                                        "sucursal_id": traslado.sucursal_origen_id,
+                                        "producto_id": t_item.producto_id,
+                                        "almacen_id": almacen_origen_item
+                                    },
+                                    {
+                                        "$inc": {"cantidad": t_item.cantidad_enviada},
+                                        "$setOnInsert": {
+                                            "created_at": datetime.now(UTC),
+                                            "updated_at": datetime.now(UTC)
+                                        }
+                                    },
+                                    upsert=True,
+                                    return_document=ReturnDocument.AFTER,
+                                    session=client_session
+                                )
 
                         await InventoryLog(
                             tenant_id=tenant_id,
@@ -398,7 +438,7 @@ class TrasladoService:
                         ).create(session=session)
 
                     traslado.estado = EstadoTraslado.CANCELADO
-                    traslado.cancelado_at = datetime.now(timezone.utc)
+                    traslado.cancelado_at = datetime.now(UTC)
                     traslado.cancelado_por_id = str(current_user.id)
                     traslado.cancelado_por_nombre = current_user.full_name or current_user.username
                     await traslado.save(session=session)

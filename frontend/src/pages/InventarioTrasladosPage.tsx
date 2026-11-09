@@ -45,7 +45,9 @@ export default function InventarioTrasladosPage() {
 
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['traslados'] });
-        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['inventario'] });
+        queryClient.invalidateQueries({ queryKey: ['inventario-traslado'] });
+        queryClient.invalidateQueries({ queryKey: ['movimientos'] });
     };
 
     const cancelMutation = useMutation({
@@ -505,6 +507,7 @@ function TrasladoDetailModal({ traslado: t, onClose, onReceive, onCancel, tab }:
 function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
+    const isMatrizAdmin = user?.role === 'SUPERADMIN' || user?.role === 'ADMIN_MATRIZ';
     const [destinoTipo, setDestinoTipo] = useState<'SUCURSAL' | 'CLIENTE'>('SUCURSAL');
     const [destinoId, setDestinoId] = useState('');
     const [notas, setNotas] = useState('');
@@ -518,7 +521,8 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const [almacenOrigenId, setAlmacenOrigenId] = useState<string>('default');
     const [almacenDestinoId, setAlmacenDestinoId] = useState<string>('default');
 
-    const sucursalId = user?.sucursal_id || 'CENTRAL';
+    const [sucursalOrigenId, setSucursalOrigenId] = useState<string>(user?.sucursal_id || 'CENTRAL');
+    const sucursalId = isMatrizAdmin ? sucursalOrigenId : (user?.sucursal_id || 'CENTRAL');
 
     // Cargar almacenes de la sucursal origen
     const { data: almacenesOrigen = [] } = useQuery<Almacen[]>({
@@ -627,6 +631,7 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
     const handleDespachar = () => {
         mutation.mutate({
             destino_tipo: destinoTipo,
+            sucursal_origen_id: isMatrizAdmin ? sucursalOrigenId : undefined,
             sucursal_destino_id: destinoTipo === 'SUCURSAL' ? destinoId : undefined,
             cliente_destino_id: destinoTipo === 'CLIENTE' ? clienteSeleccionado?._id : undefined,
             cliente_destino_nombre: destinoTipo === 'CLIENTE' ? clienteSeleccionado?.nombre : undefined,
@@ -659,7 +664,7 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                         <div className="flex gap-3">
                             <div className="flex-1 bg-gray-50 rounded-2xl p-4">
                                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Origen</p>
-                                <p className="font-black text-gray-800 mt-0.5">{sucursales.find((s: any) => s._id === sucursalId)?.nombre || 'Tu Sucursal'}</p>
+                                <p className="font-black text-gray-800 mt-0.5">{sucursalId === 'CENTRAL' ? 'Almacén Central (Matriz)' : (sucursales.find((s: any) => s._id === sucursalId)?.nombre || 'Tu Sucursal')}</p>
                             </div>
                             <div className="flex items-center text-gray-300"><ArrowRight size={20} /></div>
                             <div className="flex-1 bg-indigo-50 rounded-2xl p-4">
@@ -752,6 +757,27 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                         </button>
                     </div>
 
+                    {/* Sucursal Origen (para ADMIN_MATRIZ y SUPERADMIN) */}
+                    {isMatrizAdmin && (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Sucursal Origen (De donde sale mercadería)</label>
+                            <select
+                                value={sucursalOrigenId}
+                                onChange={(e) => {
+                                    setSucursalOrigenId(e.target.value);
+                                    setAlmacenOrigenId('default');
+                                    setItems([]);
+                                }}
+                                className="w-full p-3 rounded-xl border border-gray-200 bg-amber-50/50 focus:bg-white focus:ring-2 focus:ring-amber-500 transition-all outline-none text-black font-semibold"
+                            >
+                                <option value="CENTRAL">Almacén Central (Matriz)</option>
+                                {sucursales.map((s: any) => (
+                                    <option key={s._id} value={s._id}>{s.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Sucursal selector */}
                     {destinoTipo === 'SUCURSAL' && (
                         <div>
@@ -761,8 +787,11 @@ function CreateTrasladoModal({ onClose, sucursales, onSuccess }: any) {
                                 onChange={(e) => { setDestinoId(e.target.value); setAlmacenDestinoId('default'); }}
                                 className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-black"
                             >
-                                <option value="">-- Seleccionar Sucursal --</option>
-                                {sucursales.filter((s: any) => s._id !== user?.sucursal_id).map((s: any) => (
+                                <option value="">-- Seleccionar Sucursal Destino --</option>
+                                {sucursalId !== 'CENTRAL' && (
+                                    <option value="CENTRAL">Almacén Central (Matriz)</option>
+                                )}
+                                {sucursales.filter((s: any) => s._id !== sucursalId).map((s: any) => (
                                     <option key={s._id} value={s._id}>{s.nombre}</option>
                                 ))}
                             </select>
