@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Award, Save, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { X, Award, Save, Image as ImageIcon, AlertCircle, Upload, Loader2 } from 'lucide-react';
 import type { PremioMomentosTaboada, Sucursal } from '../../api/types';
-import { createMomentosTaboadaPremio, updateMomentosTaboadaPremio } from '../../api/api';
+import { createMomentosTaboadaPremio, updateMomentosTaboadaPremio, uploadImage } from '../../api/api';
 
 interface Props {
     isOpen: boolean;
@@ -29,7 +29,40 @@ export const PremioFormModal: React.FC<Props> = ({
     const [stockPorSucursal, setStockPorSucursal] = useState<Record<string, number>>({});
 
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [showUrlInput, setShowUrlInput] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            setUploadError('Por favor selecciona un archivo de imagen válido (JPG, PNG, WebP).');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setUploadError('La imagen no debe superar los 5MB.');
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            setUploadError(null);
+            const res = await uploadImage(file);
+            if (res && res.url) {
+                setImagenUrl(res.url);
+            }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error al subir la imagen a la nube';
+            setUploadError(msg);
+        } finally {
+            setIsUploading(false);
+            e.target.value = '';
+        }
+    };
 
     useEffect(() => {
         if (premio) {
@@ -232,33 +265,100 @@ export const PremioFormModal: React.FC<Props> = ({
                             </div>
                         </div>
 
-                        {/* URL Imagen con Previsualización */}
+                        {/* Foto del Premio (Subir archivo o ingresar URL) */}
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                                URL de la Imagen
+                                Foto del Premio
                             </label>
-                            <div className="flex gap-3 items-center">
-                                <div className="relative flex-1">
-                                    <input
-                                        type="url"
-                                        value={imagenUrl}
-                                        onChange={e => setImagenUrl(e.target.value)}
-                                        placeholder="https://ejemplo.com/imagen.jpg"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 font-medium focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-sm"
-                                    />
+
+                            <div className="space-y-3">
+                                {/* Zona de Subida y Previsualización */}
+                                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-3.5 bg-amber-50/50 border border-amber-200/80 rounded-2xl">
+                                    {/* Thumbnail Preview */}
+                                    <div className="relative group w-20 h-20 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                                        {imagenUrl ? (
+                                            <>
+                                                <img
+                                                    src={imagenUrl}
+                                                    alt="Preview premio"
+                                                    className="w-full h-full object-cover"
+                                                    onError={e => {
+                                                        (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100';
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setImagenUrl('')}
+                                                    className="absolute inset-0 bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                    title="Quitar foto"
+                                                >
+                                                    <X className="w-5 h-5 text-red-300" />
+                                                    <span className="text-[10px] font-bold">Quitar</span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center text-gray-400 p-2 text-center">
+                                                <ImageIcon className="w-6 h-6 mb-1 text-amber-600/50" />
+                                                <span className="text-[9px] font-bold text-gray-400">Sin foto</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Botón de Subida */}
+                                    <div className="flex-1 space-y-1.5">
+                                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    <span>Subiendo foto a la nube...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-4 h-4" />
+                                                    <span>{imagenUrl ? 'Cambiar Foto desde Dispositivo' : 'Subir Foto desde Dispositivo'}</span>
+                                                </>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/png, image/jpeg, image/webp"
+                                                className="hidden"
+                                                onChange={handleFileUpload}
+                                                disabled={isUploading}
+                                            />
+                                        </label>
+                                        <p className="text-[11px] text-gray-500">
+                                            JPG, PNG o WebP (máx. 5MB). La foto se sube y optimiza automáticamente en la nube.
+                                        </p>
+
+                                        {uploadError && (
+                                            <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
+                                                <AlertCircle className="w-3.5 h-3.5" />
+                                                <span>{uploadError}</span>
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="w-12 h-12 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                    {imagenUrl ? (
-                                        <img
-                                            src={imagenUrl}
-                                            alt="Preview"
-                                            className="w-full h-full object-cover"
-                                            onError={e => {
-                                                (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100';
-                                            }}
-                                        />
-                                    ) : (
-                                        <ImageIcon className="w-5 h-5 text-gray-400" />
+
+                                {/* Toggle para ingresar enlace URL directo (opcional) */}
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowUrlInput(!showUrlInput)}
+                                        className="text-xs text-amber-800 hover:text-amber-950 font-semibold underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                                    >
+                                        {showUrlInput ? 'Ocultar campo de URL' : 'O ingresar enlace URL directo (opcional)'}
+                                    </button>
+
+                                    {showUrlInput && (
+                                        <div className="mt-2">
+                                            <input
+                                                type="url"
+                                                value={imagenUrl}
+                                                onChange={e => setImagenUrl(e.target.value)}
+                                                placeholder="https://ejemplo.com/imagen.jpg"
+                                                className="w-full px-4 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             </div>
