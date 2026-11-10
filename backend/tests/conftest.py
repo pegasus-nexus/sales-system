@@ -3,23 +3,28 @@ import pytest_asyncio
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import init_db
 
-# Solo conectar a base de datos si TEST_MONGO_URI está explícitamente configurada (ej. en CI con un contenedor de MongoDB)
-test_db_url = os.getenv("TEST_MONGO_URI")
+# En CI (GitHub Actions) MONGO_URI es configurado con el contenedor local: "mongodb://127.0.0.1:27017/salessystem_test"
+test_db_url = os.getenv("MONGO_URI") or os.getenv("TEST_MONGO_URI")
+
+# Protección: si no hay MONGO_URI o apunta a producción (Atlas con mongodb+srv), usar localhost de pruebas
+if not test_db_url or "mongodb+srv" in test_db_url:
+    test_db_url = "mongodb://127.0.0.1:27017/salessystem_test?serverSelectionTimeoutMS=2000"
+
+os.environ["MONGODB_URL"] = test_db_url
+settings.MONGODB_URL = test_db_url
+settings.MONGODB_DB_NAME = "salessystem_test"
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def initialize_test_database():
     """
     Se ejecuta una sola vez al inicio de la sesión de pruebas.
-    Inicializa los modelos de Beanie si TEST_MONGO_URI está configurada.
-    En entornos locales sin Mongo corriendo, permite ejecutar pruebas puras de modelos y lógica rápidamente.
+    Inicializa los modelos de Beanie si MongoDB está disponible (en CI con servicio Mongo activo).
+    En entornos locales sin Mongo corriendo, permite continuar para pruebas unitarias.
     """
-    if test_db_url:
-        try:
-            settings.MONGODB_URL = test_db_url
-            settings.MONGODB_DB_NAME = "sales_system_test_suite"
-            await init_db()
-        except Exception:
-            # Si MongoDB no está corriendo, se continúa
-            pass
+    try:
+        await init_db()
+    except Exception as e:
+        # Si MongoDB no está disponible en local, se continúa
+        print(f"Aviso: MongoDB no disponible en pruebas: {e}")
     yield
