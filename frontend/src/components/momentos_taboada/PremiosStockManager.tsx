@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
-import { Award, Package, Save, CheckCircle2, AlertCircle, Plus, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    Award,
+    Package,
+    Save,
+    CheckCircle2,
+    AlertCircle,
+    Plus,
+    Edit2,
+    Trash2,
+    ChevronDown,
+    ChevronUp,
+    PackagePlus,
+    ArrowLeftRight,
+    History,
+} from 'lucide-react';
 import type { PremioMomentosTaboada, Sucursal } from '../../api/types';
 import { updateMomentosTaboadaStock, deleteMomentosTaboadaPremio } from '../../api/api';
 import { PremioFormModal } from './PremioFormModal';
+import { SurtirStockModal } from './SurtirStockModal';
+import { TrasladarStockModal } from './TrasladarStockModal';
+import { MovimientosStockTable } from './MovimientosStockTable';
 
 interface Props {
     premios: PremioMomentosTaboada[];
@@ -19,9 +36,12 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-    // Estado del modal de crear / editar premio
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // Modales
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [selectedPremioToEdit, setSelectedPremioToEdit] = useState<PremioMomentosTaboada | null>(null);
+    const [surtirPremio, setSurtirPremio] = useState<PremioMomentosTaboada | null>(null);
+    const [trasladarPremio, setTrasladarPremio] = useState<PremioMomentosTaboada | null>(null);
+    const [showMovimientos, setShowMovimientos] = useState<boolean>(false);
 
     // Expandir detalle de stock por todas las sucursales
     const [expandedPremioId, setExpandedPremioId] = useState<string | null>(null);
@@ -64,8 +84,8 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
     const handleSaveStock = async (premio: PremioMomentosTaboada) => {
         if (!selectedSucursal) return;
         const pId = premio.id || premio._id || '';
-        const nuevo = editingStock[pId] !== undefined 
-            ? editingStock[pId] 
+        const nuevo = editingStock[pId] !== undefined
+            ? editingStock[pId]
             : (premio.stock_por_sucursal[selectedSucursal] || 0);
 
         try {
@@ -85,22 +105,34 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
 
     return (
         <div className="space-y-6">
-            {/* Header, Selector de Sucursal y Botón Nuevo Premio */}
+            {/* Header, Selector de Sucursal y Botones */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <Award className="w-5 h-5 text-amber-600" />
-                        Premios Oficiales & Stock por Sucursal
+                        Gestión de Premios & Logística de Surtido
                     </h3>
-                    <p className="text-sm text-gray-500">
-                        Crea premios, edita requisitos y gestiona existencias físicas en cada sucursal.
+                    <p className="text-xs text-gray-500">
+                        Crea premios, surte existencias desde fábrica y traslada premios entre tiendas con auditoría.
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                        onClick={() => setShowMovimientos(!showMovimientos)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                            showMovimientos
+                                ? 'bg-amber-100 border-amber-300 text-amber-900'
+                                : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                        }`}
+                    >
+                        <History className="w-3.5 h-3.5" />
+                        <span>{showMovimientos ? 'Ocultar Auditoría' : 'Auditoría Surtidos'}</span>
+                    </button>
+
                     <button
                         onClick={handleOpenCreateModal}
-                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl text-sm shadow-md transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Crear Premio</span>
@@ -108,7 +140,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
 
                     <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                            Sucursal:
+                            Tienda Activa:
                         </label>
                         <select
                             value={selectedSucursal}
@@ -116,7 +148,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                 setSelectedSucursal(e.target.value);
                                 setEditingStock({});
                             }}
-                            className="px-3 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                            className="px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                         >
                             {sucursales.map(s => {
                                 const sId = s._id || s.id || '';
@@ -133,19 +165,24 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
 
             {/* Mensajes de feedback */}
             {successMsg && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-sm">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-xs font-semibold shadow-sm">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                     <span>{successMsg}</span>
                 </div>
             )}
             {errorMsg && (
-                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2 text-sm">
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2 text-xs font-semibold shadow-sm">
                     <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                     <span>{errorMsg}</span>
                 </div>
             )}
 
-            {/* Cuadrícula de Premios */}
+            {/* Auditoría de Surtidos y Traslados (Collapsible) */}
+            {showMovimientos && (
+                <MovimientosStockTable sucursalId={selectedSucursal} />
+            )}
+
+            {/* Cuadrícula de Premios Oficiales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {premios.map(premio => {
                     const pId = premio.id || premio._id || '';
@@ -154,7 +191,6 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                     const isSaving = savingId === pId;
                     const isExpanded = expandedPremioId === pId;
 
-                    // Calcular stock total acumulado de todas las sucursales
                     const stockTotalEmpresa = Object.values(premio.stock_por_sucursal || {}).reduce(
                         (a, b) => a + (Number(b) || 0),
                         0
@@ -166,7 +202,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                             className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between hover:border-amber-300 hover:shadow-md transition-all group relative"
                         >
                             <div className="p-5">
-                                {/* Barra Superior de la Tarjeta con Badges y Acciones */}
+                                {/* Barra Superior con Badges y Acciones */}
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-black rounded-lg border border-amber-200">
@@ -181,7 +217,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                     <div className="flex items-center gap-1">
                                         <button
                                             onClick={() => handleOpenEditModal(premio)}
-                                            title="Editar información y requisitos del premio"
+                                            title="Editar información y requisitos"
                                             className="p-1.5 rounded-lg text-gray-400 hover:text-amber-700 hover:bg-amber-50 transition-colors"
                                         >
                                             <Edit2 className="w-3.5 h-3.5" />
@@ -197,7 +233,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                 </div>
 
                                 {/* Imagen */}
-                                <div className="w-full h-44 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 overflow-hidden border border-gray-100 group-hover:border-amber-200 transition-colors">
+                                <div className="w-full h-40 bg-gray-50 rounded-2xl flex items-center justify-center mb-3 overflow-hidden border border-gray-100 group-hover:border-amber-200 transition-colors">
                                     {premio.imagen_url ? (
                                         <img
                                             src={premio.imagen_url}
@@ -213,54 +249,65 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                     )}
                                 </div>
 
-                                <div className="mb-2">
+                                <div className="mb-1">
                                     <h4 className="font-bold text-gray-900 text-base leading-snug">
                                         {premio.nombre}
                                     </h4>
-                                    <span className="text-[10px] font-mono font-semibold text-gray-400 block mt-0.5">
+                                    <span className="text-[10px] font-mono font-semibold text-gray-400 block">
                                         CÓDIGO: {premio.codigo}
                                     </span>
                                 </div>
 
-                                <p className="text-xs text-gray-500 line-clamp-2 mb-4 min-h-[32px]">
+                                <p className="text-xs text-gray-500 line-clamp-2 mb-3 min-h-[30px]">
                                     {premio.descripcion || 'Sin descripción adicional.'}
                                 </p>
 
-                                {/* Indicador de Stock en la sucursal actual */}
+                                {/* Semáforo de Existencias por Tienda */}
                                 <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100 mb-3">
                                     <div className="flex justify-between items-center text-xs mb-1">
-                                        <span className="text-gray-600 font-medium">Stock en tienda activa:</span>
+                                        <span className="text-gray-600 font-medium">Estado en tienda activa:</span>
                                         <span
-                                            className={`font-black ${
-                                                stockActual > 5
-                                                    ? 'text-emerald-700'
+                                            className={`font-black text-xs px-2 py-0.5 rounded-md ${
+                                                stockActual > 3
+                                                    ? 'bg-emerald-100 text-emerald-800'
                                                     : stockActual > 0
-                                                    ? 'text-amber-700'
-                                                    : 'text-rose-700'
+                                                    ? 'bg-amber-100 text-amber-900 animate-pulse'
+                                                    : 'bg-rose-100 text-rose-800 font-black'
                                             }`}
                                         >
-                                            {stockActual > 0 ? `${stockActual} disponibles` : 'AGOTADO'}
+                                            {stockActual > 3
+                                                ? `🟢 ${stockActual} u. (Óptimo)`
+                                                : stockActual > 0
+                                                ? `🟡 ${stockActual} u. (Crítico)`
+                                                : '🔴 Agotado'}
                                         </span>
                                     </div>
-                                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all duration-300 ${
-                                                stockActual > 5
-                                                    ? 'bg-emerald-500'
-                                                    : stockActual > 0
-                                                    ? 'bg-amber-500'
-                                                    : 'bg-rose-500'
-                                            }`}
-                                            style={{ width: `${Math.min(100, (stockActual / 20) * 100)}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] text-gray-500 mt-1.5 pt-1 border-t border-amber-100/60">
+                                    <div className="flex justify-between items-center text-[10px] text-gray-500 mt-1 pt-1 border-t border-amber-100/60">
                                         <span>Total Empresa:</span>
                                         <span className="font-bold text-gray-700">{stockTotalEmpresa} unidades</span>
                                     </div>
                                 </div>
 
-                                {/* Botón para desglosar stock de todas las sucursales */}
+                                {/* Acciones de Logística: Surtir & Trasladar */}
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                    <button
+                                        onClick={() => setSurtirPremio(premio)}
+                                        className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1"
+                                    >
+                                        <PackagePlus className="w-3.5 h-3.5" />
+                                        <span>+ Surtir</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setTrasladarPremio(premio)}
+                                        className="py-1.5 px-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1"
+                                    >
+                                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                                        <span>⇄ Trasladar</span>
+                                    </button>
+                                </div>
+
+                                {/* Desglose de Stock por Sucursal */}
                                 <button
                                     onClick={() => setExpandedPremioId(isExpanded ? null : pId)}
                                     className="w-full py-1 text-[11px] font-bold text-amber-800 hover:text-amber-900 flex items-center justify-center gap-1 transition-colors"
@@ -270,7 +317,7 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                 </button>
 
                                 {isExpanded && (
-                                    <div className="mt-2 p-2 bg-gray-50 rounded-xl border border-gray-200 space-y-1.5 max-h-36 overflow-y-auto text-xs">
+                                    <div className="mt-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1.5 max-h-36 overflow-y-auto text-xs">
                                         {sucursales.map(s => {
                                             const sId = s._id || s.id || '';
                                             const branchQty = premio.stock_por_sucursal[sId] ?? 0;
@@ -279,7 +326,11 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                                     <span className="text-gray-700 truncate">{s.nombre}</span>
                                                     <span
                                                         className={`font-bold ${
-                                                            branchQty > 0 ? 'text-gray-900' : 'text-rose-600'
+                                                            branchQty > 3
+                                                                ? 'text-gray-900'
+                                                                : branchQty > 0
+                                                                ? 'text-amber-700'
+                                                                : 'text-rose-600'
                                                         }`}
                                                     >
                                                         {branchQty} u.
@@ -291,27 +342,27 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                                 )}
                             </div>
 
-                            {/* Control rápido de edición de stock */}
-                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+                            {/* Control manual de ajuste de stock */}
+                            <div className="p-3.5 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
                                 <div className="flex-1">
-                                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
-                                        Fijar Stock Tienda:
+                                    <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">
+                                        Fijar Stock Directo:
                                     </label>
                                     <input
                                         type="number"
                                         min={0}
                                         value={stockInputVal}
                                         onChange={e => handleStockChange(pId, parseInt(e.target.value) || 0)}
-                                        className="w-full px-3 py-1.5 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 bg-white text-center focus:ring-2 focus:ring-amber-500 outline-none"
+                                        className="w-full px-2.5 py-1 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 bg-white text-center focus:ring-2 focus:ring-amber-500 outline-none"
                                     />
                                 </div>
                                 <button
                                     onClick={() => handleSaveStock(premio)}
                                     disabled={isSaving || stockInputVal === stockActual}
-                                    className={`px-4 py-2 mt-4 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
+                                    className={`px-3 py-1.5 mt-3.5 rounded-xl font-bold text-xs flex items-center gap-1 transition-all shadow-sm ${
                                         stockInputVal === stockActual
                                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                            : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+                                            : 'bg-amber-700 hover:bg-amber-800 text-white'
                                     }`}
                                 >
                                     <Save className="w-3.5 h-3.5" />
@@ -342,6 +393,35 @@ export const PremiosStockManager: React.FC<Props> = ({ premios, sucursales, onRe
                     onRefresh();
                 }}
             />
+
+            {/* Modal de Surtir Stock (+X) */}
+            <SurtirStockModal
+                isOpen={surtirPremio !== null}
+                premio={surtirPremio}
+                sucursales={sucursales}
+                defaultSucursalId={selectedSucursal}
+                onClose={() => setSurtirPremio(null)}
+                onSuccess={() => {
+                    setSuccessMsg('Stock surtido con éxito.');
+                    setTimeout(() => setSuccessMsg(null), 3000);
+                    onRefresh();
+                }}
+            />
+
+            {/* Modal de Trasladar Stock */}
+            <TrasladarStockModal
+                isOpen={trasladarPremio !== null}
+                premio={trasladarPremio}
+                sucursales={sucursales}
+                defaultOrigenId={selectedSucursal}
+                onClose={() => setTrasladarPremio(null)}
+                onSuccess={() => {
+                    setSuccessMsg('Traslado de stock completado exitosamente.');
+                    setTimeout(() => setSuccessMsg(null), 3000);
+                    onRefresh();
+                }}
+            />
         </div>
     );
 };
+export default PremiosStockManager;

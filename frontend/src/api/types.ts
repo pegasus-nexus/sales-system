@@ -1091,6 +1091,8 @@ export interface ClienteSellosResponse {
         id?: string;
         nombre: string;
         telefono: string;
+        numero_tarjeta?: string | null;
+        is_miembro_comunidad?: boolean;
         is_registrado: boolean;
     };
     balance: {
@@ -1110,6 +1112,44 @@ export interface ClienteSellosResponse {
         copago_bs: number;
         sucursal_nombre: string;
     }[];
+}
+
+export interface ParticipantePromocion {
+    id: string;
+    nombre: string;
+    celular: string;
+    raw_tel: string;
+    fecha_ultima_compra: string;
+    tickets_acumulados: number;
+    tickets_utilizados: number;
+    tickets_disponibles: number;
+    estado_canjeado: string;
+    total_canjes: number;
+    tarjeta_taboada?: string | null;
+    is_miembro_comunidad?: boolean;
+    cantidad_compras: number;
+    total_gastado_bs: number;
+}
+
+export interface MetricasPromocionCajero {
+    total_participantes: number;
+    ticket_promedio: number;
+    total_tickets_repartidos: number;
+    participantes_recurrentes: number;
+    total_tickets_campana: number;
+}
+
+export interface PromocionCajeroResponse {
+    metricas: MetricasPromocionCajero;
+    participantes: ParticipantePromocion[];
+}
+
+export interface AfiliarTarjetaResponse {
+    status: string;
+    message: string;
+    numero_tarjeta: string;
+    cliente_nombre: string;
+    cliente_telefono: string;
 }
 
 export interface MetricasMomentosTaboada {
@@ -1144,4 +1184,50 @@ export interface CajaChicaTaboadaResponse {
     total_ingresos_bs: number;
     total_egresos_bs: number;
     movimientos: MovimientoCajaChicaTaboada[];
+}
+
+export interface MovimientoStockPremio {
+    id: string;
+    fecha: string;
+    premio_nombre: string;
+    premio_codigo: string;
+    tipo: 'SURTIDO_INGRESO' | 'TRASLADO_INTERNO' | 'AJUSTE_STOCK';
+    cantidad: number;
+    origen?: string | null;
+    destino: string;
+    motivo?: string | null;
+    usuario_nombre?: string | null;
+}
+
+export interface AlertaStockPremio {
+    premio_nombre: string;
+    sucursal_nombre: string;
+    sucursal_id: string;
+    stock_actual?: number;
+}
+
+export interface ResumenLogisticoPremios {
+    total_premios_activos: number;
+    alertas: {
+        agotados_count: number;
+        bajos_count: number;
+        agotados: AlertaStockPremio[];
+        bajos: AlertaStockPremio[];
+    };
+    premios: {
+        id: string;
+        codigo: string;
+        nombre: string;
+        stock_total: number;
+        stock_por_sucursal: Record<string, number>;
+        total_canjeados: number;
+    }[];
+}
+
+export interface EstadoCampanaTaboada {
+    activa: boolean;
+    mensaje_inactivo: string;
+    fecha_activacion?: string | null;
+    activado_por_usuario?: string | null;
+    updated_at?: string | null;
 }

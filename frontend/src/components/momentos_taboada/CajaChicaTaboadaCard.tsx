@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { DollarSign, Wallet, ArrowDownRight, RefreshCcw } from 'lucide-react';
+import { DollarSign, Wallet, ArrowDownRight, RefreshCcw, MinusCircle } from 'lucide-react';
 import type { CajaChicaTaboadaResponse, Sucursal } from '../../api/types';
 import { getMomentosTaboadaCajaChica } from '../../api/api';
+import { RegistrarEgresoCajaModal } from './RegistrarEgresoCajaModal';
 
 interface Props {
     sucursales: Sucursal[];
@@ -12,6 +13,7 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
     const [cajaData, setCajaData] = useState<CajaChicaTaboadaResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
 
     const loadCaja = useCallback(async () => {
         try {
@@ -63,6 +65,14 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                             );
                         })}
                     </select>
+
+                    <button
+                        onClick={() => setIsEgresoModalOpen(true)}
+                        className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                        <MinusCircle className="w-3.5 h-3.5" />
+                        <span>Registrar Egreso</span>
+                    </button>
 
                     <button
                         onClick={loadCaja}
@@ -192,8 +202,8 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                                         <td className="py-3 px-4 font-semibold text-gray-600">
                                             {m.metodo_pago === 'QR' ? '📱 Pago QR' : '💵 Efectivo'}
                                         </td>
-                                        <td className="py-3 px-4 text-right font-extrabold text-gray-900">
-                                            +{m.monto.toFixed(2)} Bs
+                                        <td className={`py-3 px-4 text-right font-extrabold ${m.tipo === 'EGRESO_FONDO' ? 'text-rose-600' : 'text-emerald-700'}`}>
+                                            {m.tipo === 'EGRESO_FONDO' ? '-' : '+'}{m.monto.toFixed(2)} Bs
                                         </td>
                                         <td className="py-3 px-4 text-gray-500">
                                             {m.usuario_nombre || 'Sistema'}
@@ -209,6 +219,17 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                     </div>
                 )}
             </div>
+
+            {/* Modal de Registro de Egresos */}
+            <RegistrarEgresoCajaModal
+                isOpen={isEgresoModalOpen}
+                onClose={() => setIsEgresoModalOpen(false)}
+                sucursales={sucursales}
+                defaultSucursalId={selectedSucursal === 'TODAS' ? undefined : selectedSucursal}
+                onSuccess={() => {
+                    loadCaja();
+                }}
+            />
         </div>
     );
 };

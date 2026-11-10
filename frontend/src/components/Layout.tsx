@@ -370,7 +370,7 @@ export default function Layout({ children }: LayoutProps) {
                     { icon: Banknote, label: 'Créditos', path: '/creditos', feature: 'CREDITOS', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: FileText, label: 'Cotizaciones (B2B)', path: '/cotizaciones', feature: 'COTIZACIONES', roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO'] },
                     { icon: MessageSquare, label: 'WhatsApp', path: '/whatsapp', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'USER', 'SUPERVISOR', 'VENDEDOR', 'CAJERO', 'SUPERADMIN'] },
-                    ...(isTaboada ? [{ icon: Sparkles, label: 'Momentos Taboada', path: '/momentos-taboada', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'] }] : []),
+                    ...(isTaboada ? [{ icon: Sparkles, label: 'Momentos Taboada', path: '/momentos-taboada', feature: null, roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'VENDEDOR', 'SUPERVISOR'] }] : []),
                 ]
             },
             {

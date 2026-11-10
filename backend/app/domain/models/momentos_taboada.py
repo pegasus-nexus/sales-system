@@ -89,3 +89,55 @@ class MovimientoCajaChicaTaboada(Document):
             "created_at",
             [("tenant_id", 1), ("created_at", -1)],
         ]
+
+
+class MovimientoStockPremio(Document):
+    """
+    Auditoría inmutable de surtidos, ingresos y traslados de premios entre sucursales.
+    """
+    tenant_id: str
+    premio_id: str
+    premio_codigo: str
+    premio_nombre: str
+    tipo: Literal["SURTIDO_INGRESO", "TRASLADO_INTERNO", "AJUSTE_STOCK"]
+    sucursal_origen_id: Optional[str] = None
+    sucursal_origen_nombre: Optional[str] = None
+    sucursal_destino_id: str
+    sucursal_destino_nombre: str
+    cantidad: int
+    motivo: Optional[str] = None
+    usuario_id: Optional[str] = None
+    usuario_nombre: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Settings:
+        name = "momentos_taboada_stock_movimientos"
+        indexes = [
+            "tenant_id",
+            "premio_id",
+            "sucursal_destino_id",
+            "tipo",
+            "created_at",
+            [("tenant_id", 1), ("created_at", -1)],
+        ]
+
+
+class ConfiguracionCampanaTaboada(Document):
+    """
+    Configuración y estado de activación de la campaña Momentos Taboada para el tenant.
+    Permite que la administración prepare stock, premios y reglas antes de hacerla pública
+    para cajeros y clientes.
+    """
+    tenant_id: str
+    activa: bool = False
+    mensaje_inactivo: str = "La campaña Momentos Taboada se encuentra en preparación por administración."
+    fecha_activacion: Optional[datetime] = None
+    activado_por_usuario: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Settings:
+        name = "momentos_taboada_configuracion"
+        indexes = [
+            "tenant_id",
+            [("tenant_id", 1)],
+        ]

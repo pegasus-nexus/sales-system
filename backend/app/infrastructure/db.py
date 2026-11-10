@@ -45,7 +45,9 @@ from app.domain.models.whatsapp_log import WhatsAppLog
 from app.domain.models.momentos_taboada import (
     PremioMomentosTaboada,
     CanjeMomentosTaboada,
-    MovimientoCajaChicaTaboada
+    MovimientoCajaChicaTaboada,
+    MovimientoStockPremio,
+    ConfiguracionCampanaTaboada,
 )
 
 from app.domain.models.catalogo import CatalogoConfig, CatalogoProducto
@@ -149,6 +151,8 @@ async def init_db():
             PremioMomentosTaboada,
             CanjeMomentosTaboada,
             MovimientoCajaChicaTaboada,
+            MovimientoStockPremio,
+            ConfiguracionCampanaTaboada,
             Sucursal, WebCollection, WebConfig,
             CatalogoConfig, CatalogoProducto
         ],

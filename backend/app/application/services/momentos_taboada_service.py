@@ -23,27 +23,19 @@ class MomentosTaboadaService:
     async def get_or_seed_premios(tenant_id: str) -> list[PremioMomentosTaboada]:
         """Retorna los premios de la campaña o los inicializa si es la primera vez."""
         premios = await PremioMomentosTaboada.find(
-            PremioMomentosTaboada.tenant_id == tenant_id,
-            PremioMomentosTaboada.is_active == True,
+            {"tenant_id": tenant_id, "is_active": True}
         ).sort("sellos_requeridos").to_list()
 
         if not premios:
             # Auto-sembrado de los 4 premios oficiales de Momentos Taboada
-            for p_def in PREMIOS_DEFAULT:
-                nuevo = PremioMomentosTaboada(
-                    tenant_id=tenant_id,
-                    codigo=p_def["codigo"],
-                    nombre=p_def["nombre"],
-                    descripcion=p_def["descripcion"],
-                    sellos_requeridos=p_def["sellos_requeridos"],
-                    copago_bs=p_def["copago_bs"],
-                    imagen_url=p_def["imagen_url"],
-                    stock_por_sucursal={},
-                )
-                await nuevo.create()
+            for p in PREMIOS_DEFAULT:
+                await PremioMomentosTaboada(
+                    tenant_id=tenant_id, codigo=p["codigo"], nombre=p["nombre"],
+                    descripcion=p["descripcion"], sellos_requeridos=p["sellos_requeridos"],
+                    copago_bs=p["copago_bs"], imagen_url=p["imagen_url"], stock_por_sucursal={}
+                ).create()
             premios = await PremioMomentosTaboada.find(
-                PremioMomentosTaboada.tenant_id == tenant_id,
-                PremioMomentosTaboada.is_active == True,
+                {"tenant_id": tenant_id, "is_active": True}
             ).sort("sellos_requeridos").to_list()
 
         return premios
@@ -89,11 +81,11 @@ class MomentosTaboadaService:
                 codigo = f"PREMIO_{int(datetime.now(UTC).timestamp())}"
 
         # Evitar colisión de código activo
-        existente = await PremioMomentosTaboada.find_one(
-            PremioMomentosTaboada.tenant_id == tenant_id,
-            PremioMomentosTaboada.codigo == codigo,
-            PremioMomentosTaboada.is_active == True,
-        )
+        existente = await PremioMomentosTaboada.find_one({
+            "tenant_id": tenant_id,
+            "codigo": codigo,
+            "is_active": True,
+        })
         if existente:
             codigo = f"{codigo}_{int(datetime.now(UTC).timestamp()) % 10000}"
 
@@ -196,16 +188,22 @@ class MomentosTaboadaService:
             raise HTTPException(status_code=400, detail="Debes ingresar un teléfono o nombre de cliente")
 
         # Buscar cliente por teléfono o nombre
-        cliente = await Cliente.find_one(
-            Cliente.tenant_id == tenant_id,
-            Cliente.telefono == clean_q,
-        )
+        cliente = await Cliente.find_one({
+            "tenant_id": tenant_id,
+            "telefono": clean_q,
+        })
+        if not cliente:
+            # Intento por número de Tarjeta Taboada (ej. TAB-123456)
+            cliente = await Cliente.find_one({
+                "tenant_id": tenant_id,
+                "numero_tarjeta": clean_q.upper(),
+            })
         if not cliente:
             # Intento por nombre parcial
-            cliente = await Cliente.find_one(
-                Cliente.tenant_id == tenant_id,
-                {"nombre": re.compile(re.escape(clean_q), re.IGNORECASE)},
-            )
+            cliente = await Cliente.find_one({
+                "tenant_id": tenant_id,
+                "nombre": re.compile(re.escape(clean_q), re.IGNORECASE),
+            })
 
         telefono_objetivo = cliente.telefono if cliente else clean_q
         cliente_id_str = str(cliente.id) if cliente else None
@@ -247,11 +245,11 @@ class MomentosTaboadaService:
             })
 
         # Buscar canjes realizados por el cliente
-        canjes = await CanjeMomentosTaboada.find(
-            CanjeMomentosTaboada.tenant_id == tenant_id,
-            CanjeMomentosTaboada.cliente_telefono == telefono_objetivo,
-            CanjeMomentosTaboada.estado == "COMPLETADO",
-        ).sort("-created_at").to_list()
+        canjes = await CanjeMomentosTaboada.find({
+            "tenant_id": tenant_id,
+            "cliente_telefono": telefono_objetivo,
+            "estado": "COMPLETADO",
+        }).sort("-created_at").to_list()
 
         total_sellos_canjeados = sum(c.sellos_utilizados for c in canjes)
         sellos_disponibles = max(0, total_sellos_ganados - total_sellos_canjeados)
@@ -271,6 +269,8 @@ class MomentosTaboadaService:
                 "id": cliente_id_str,
                 "nombre": cliente_nombre,
                 "telefono": telefono_objetivo,
+                "numero_tarjeta": cliente.numero_tarjeta if cliente else None,
+                "is_miembro_comunidad": cliente.is_miembro_comunidad if cliente else False,
                 "is_registrado": cliente is not None,
             },
             "balance": {
@@ -403,10 +403,10 @@ class MomentosTaboadaService:
     async def get_dashboard_metricas(tenant_id: str) -> dict[str, Any]:
         """Calcula las métricas ejecutivas de la campaña para el admin."""
         # 1. Total canjes completados
-        canjes = await CanjeMomentosTaboada.find(
-            CanjeMomentosTaboada.tenant_id == tenant_id,
-            CanjeMomentosTaboada.estado == "COMPLETADO",
-        ).to_list()
+        canjes = await CanjeMomentosTaboada.find({
+            "tenant_id": tenant_id,
+            "estado": "COMPLETADO",
+        }).to_list()
 
         total_canjes = len(canjes)
         total_sellos_redimidos = sum(c.sellos_utilizados for c in canjes)
@@ -434,11 +434,11 @@ class MomentosTaboadaService:
             })
 
         # 3. Ventas totales participantes desde el 1 de noviembre
-        ventas_campana = await Sale.find(
-            Sale.tenant_id == tenant_id,
-            Sale.anulada == False,
-            Sale.created_at >= FECHA_INICIO_CAMPANA,
-        ).to_list()
+        ventas_campana = await Sale.find({
+            "tenant_id": tenant_id,
+            "anulada": False,
+            "created_at": {"$gte": FECHA_INICIO_CAMPANA},
+        }).to_list()
 
         total_facturado_campana = sum(float(v.total) for v in ventas_campana)
         total_sellos_emitidos = sum(int(float(v.total) // 30) for v in ventas_campana)

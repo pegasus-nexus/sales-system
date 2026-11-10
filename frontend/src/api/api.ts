@@ -2335,7 +2335,12 @@ import type {
     CanjeMomentosTaboada,
     ClienteSellosResponse,
     MetricasMomentosTaboada,
-    CajaChicaTaboadaResponse 
+    CajaChicaTaboadaResponse,
+    PromocionCajeroResponse,
+    AfiliarTarjetaResponse,
+    MovimientoStockPremio,
+    ResumenLogisticoPremios,
+    EstadoCampanaTaboada
 } from './types';
 
 export const getWhatsAppStatus = (): Promise<WhatsAppAccountStatus> =>
@@ -2452,4 +2457,96 @@ export const getMomentosTaboadaMetricas = (): Promise<MetricasMomentosTaboada> =
 export const getMomentosTaboadaCajaChica = (sucursalId?: string): Promise<CajaChicaTaboadaResponse> => {
     const q = sucursalId ? `?sucursal_id=${encodeURIComponent(sucursalId)}` : '';
     return client<CajaChicaTaboadaResponse>(`/momentos-taboada/caja-chica${q}`);
+};
+
+export const getMomentosTaboadaParticipantes = (
+    sucursalId?: string,
+    search?: string
+): Promise<PromocionCajeroResponse> => {
+    const params = new URLSearchParams();
+    if (sucursalId && sucursalId !== 'TODAS') params.append('sucursal_id', sucursalId);
+    if (search && search.trim()) params.append('search', search.trim());
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return client<PromocionCajeroResponse>(`/momentos-taboada/participantes${qs}`);
+};
+
+export const afiliarTarjetaTaboada = (
+    telefono: string,
+    nombre?: string
+): Promise<AfiliarTarjetaResponse> => {
+    return client<AfiliarTarjetaResponse>('/momentos-taboada/afiliar-tarjeta', {
+        method: 'POST',
+        body: { telefono, nombre },
+    });
+};
+
+export const surtirMomentosTaboadaStock = (
+    premioId: string,
+    sucursalId: string,
+    cantidad: number,
+    motivo?: string
+): Promise<{ status: string; message: string; nuevo_stock: number }> => {
+    return client(`/momentos-taboada/premios/${premioId}/surtir`, {
+        method: 'POST',
+        body: { sucursal_id: sucursalId, cantidad, motivo },
+    });
+};
+
+export const trasladarMomentosTaboadaStock = (
+    premioId: string,
+    sucursalOrigenId: string,
+    sucursalDestinoId: string,
+    cantidad: number,
+    motivo?: string
+): Promise<{ status: string; message: string; stock_origen_restante: number; stock_destino_nuevo: number }> => {
+    return client(`/momentos-taboada/premios/${premioId}/trasladar`, {
+        method: 'POST',
+        body: {
+            sucursal_origen_id: sucursalOrigenId,
+            sucursal_destino_id: sucursalDestinoId,
+            cantidad,
+            motivo,
+        },
+    });
+};
+
+export const getMomentosTaboadaMovimientosStock = (
+    premioId?: string,
+    sucursalId?: string
+): Promise<MovimientoStockPremio[]> => {
+    const params = new URLSearchParams();
+    if (premioId) params.append('premio_id', premioId);
+    if (sucursalId && sucursalId !== 'TODAS') params.append('sucursal_id', sucursalId);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return client<MovimientoStockPremio[]>(`/momentos-taboada/premios/movimientos-stock${qs}`);
+};
+
+export const getMomentosTaboadaResumenLogistico = (): Promise<ResumenLogisticoPremios> => {
+    return client<ResumenLogisticoPremios>('/momentos-taboada/premios/resumen-logistico');
+};
+
+export const registrarEgresoMomentosTaboadaCajaChica = (data: {
+    sucursal_id: string;
+    monto: number;
+    metodo_pago?: string;
+    descripcion: string;
+}): Promise<{ status: string; message: string }> => {
+    return client('/momentos-taboada/caja-chica/egreso', {
+        method: 'POST',
+        body: data,
+    });
+};
+
+export const getMomentosTaboadaEstadoCampana = (): Promise<EstadoCampanaTaboada> => {
+    return client<EstadoCampanaTaboada>('/momentos-taboada/estado-campana');
+};
+
+export const toggleMomentosTaboadaCampana = (data: {
+    activa: boolean;
+    mensaje_inactivo?: string;
+}): Promise<{ status: string; activa: boolean; message: string }> => {
+    return client('/momentos-taboada/activacion', {
+        method: 'PUT',
+        body: data,
+    });
 };

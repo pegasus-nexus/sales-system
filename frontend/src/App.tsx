@@ -514,7 +514,7 @@ function App() {
 
                       {/* Momentos Taboada (Exclusivo Chocolates Taboada) */}
                       <Route path="/momentos-taboada" element={
-                        <ProtectedRoute allowedRoles={MATRIZ_ROLES}>
+                        <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
                           <MomentosTaboadaPage />
                         </ProtectedRoute>
                       } />
