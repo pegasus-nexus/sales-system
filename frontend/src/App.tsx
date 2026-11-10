@@ -55,6 +55,7 @@ const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
+const RecordatoriosPage = lazy(() => import('./pages/RecordatoriosPage'));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -516,6 +517,13 @@ function App() {
                       <Route path="/momentos-taboada" element={
                         <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
                           <MomentosTaboadaPage />
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Recordatorios e Incidencias */}
+                      <Route path="/recordatorios" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF}>
+                          <RecordatoriosPage />
                         </ProtectedRoute>
                       } />
 

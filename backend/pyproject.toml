@@ -23,7 +23,7 @@ select = [
 ]
 
 # Reglas específicas a ignorar (si hubiese conflictos menores)
-ignore = []
+ignore = ["B008", "E501"]
 
 [tool.ruff.lint.isort]
 # Declarar módulos de primer nivel del proyecto para agruparlos correctamente

@@ -1231,3 +1231,93 @@ export interface EstadoCampanaTaboada {
     activado_por_usuario?: string | null;
     updated_at?: string | null;
 }
+
+// -------------------------------------------------------------
+// Tipos para el Módulo de Recordatorios e Incidencias
+// -------------------------------------------------------------
+export type PrioridadRecordatorio = 'BAJA' | 'MEDIA' | 'ALTA';
+export type EstadoRecordatorio = 'PENDIENTE' | 'EN_SEGUIMIENTO' | 'RESUELTO' | 'CANCELADO';
+
+export interface AdjuntoRecordatorio {
+    url: string;
+    nombre_archivo?: string;
+    tipo?: string;
+}
+
+export interface Recordatorio {
+    id: string;
+    tenant_id: string;
+    sucursal_id?: string | null;
+    sucursal_nombre?: string | null;
+    titulo: string;
+    categoria: string;
+    descripcion?: string | null;
+    prioridad: PrioridadRecordatorio;
+    estado: EstadoRecordatorio;
+    adjuntos: AdjuntoRecordatorio[];
+    creado_por_id: string;
+    creado_por_nombre: string;
+    creado_por_rol?: string | null;
+    asignado_a_id?: string | null;
+    asignado_a_nombre?: string | null;
+    fecha_limite?: string | null;
+    resuelto_en?: string | null;
+    resuelto_por_id?: string | null;
+    resuelto_por_nombre?: string | null;
+    notas_resolucion?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface RecordatorioKPIs {
+    total: number;
+    pendientes: number;
+    en_seguimiento: number;
+    resueltos: number;
+}
+
+export interface RecordatorioCreatePayload {
+    titulo: string;
+    categoria: string;
+    descripcion?: string;
+    prioridad: PrioridadRecordatorio;
+    estado?: EstadoRecordatorio;
+    sucursal_id?: string;
+    sucursal_nombre?: string;
+    asignado_a_id?: string;
+    asignado_a_nombre?: string;
+    fecha_limite?: string;
+    adjuntos?: AdjuntoRecordatorio[];
+}
+
+export interface RecordatorioUpdatePayload {
+    titulo?: string;
+    categoria?: string;
+    descripcion?: string;
+    prioridad?: PrioridadRecordatorio;
+    sucursal_id?: string;
+    sucursal_nombre?: string;
+    asignado_a_id?: string;
+    asignado_a_nombre?: string;
+    fecha_limite?: string;
+    adjuntos?: AdjuntoRecordatorio[];
+    notas_resolucion?: string;
+}
+
+export interface RecordatorioEstadoPayload {
+    estado: EstadoRecordatorio;
+    notas_resolucion?: string;
+}
+
+export interface CategoriaRecordatorioCreatePayload {
+    nombre: string;
+    color?: string;
+}
+
+export interface CategoriaRecordatorio {
+    id: string;
+    nombre: string;
+    color?: string;
+    creado_por_nombre?: string;
+    created_at: string;
+}

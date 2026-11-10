@@ -4,7 +4,7 @@ import {
     Search, Wallet, ShoppingBag, RotateCcw,
     Tag, Store, Package, ClipboardList, Warehouse, Users,
     Percent, QrCode, BarChart3, Banknote, Truck, Settings, Shield,
-    Briefcase, TrendingUp, X, Sparkles, ArrowRight, User as UserIcon, Loader2, MessageSquare
+    Briefcase, TrendingUp, X, Sparkles, ArrowRight, User as UserIcon, Loader2, MessageSquare, Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts, getClientes } from '../api/api';
@@ -39,6 +39,7 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
         { id: 'creditos', title: 'Créditos & Cobranzas', category: 'Ventas & Caja', path: '/creditos', icon: Banknote, keywords: ['creditos', 'deuda', 'cobro', 'cuotas', 'pagos', 'cobranza', 'settle due'] },
         { id: 'whatsapp', title: 'WhatsApp Nexus', category: 'Ventas & Caja', path: '/whatsapp', icon: MessageSquare, keywords: ['whatsapp', 'mensajes', 'comprobantes', 'plantillas', 'notificaciones', 'chat'] },
         { id: 'momentos-taboada', title: 'Momentos Taboada (Campaña & Premios)', category: 'Ventas & Caja', path: '/momentos-taboada', icon: Sparkles, keywords: ['momentos taboada', 'sellos', 'canjes', 'premios', 'tazas', 'fidelizacion', 'cartilla', 'taboada'] },
+        { id: 'recordatorios', title: 'Recordatorios & Incidencias', category: 'Operaciones & Control', path: '/recordatorios', icon: Bell, keywords: ['recordatorios', 'incidencias', 'tareas', 'fallas', 'pos', 'actividades', 'control', 'pendientes', 'alarmas'] },
 
         // Inventario & Productos
         { id: 'pedidos', title: 'Pedidos Internos (B2B)', category: 'Inventario & Logística', path: '/pedidos', icon: ClipboardList, keywords: ['pedidos', 'pedidos internos', 'solicitud stock', 'b2b', 'reposicion', 'despacho'] },

@@ -41,7 +41,9 @@ import type {
 
     Etiqueta, EtiquetaCreate, EtiquetaUpdate,
 
-    PredictiveCenterResponse, ScenarioSimulationRequest, ScenarioSimulationResponse
+    PredictiveCenterResponse, ScenarioSimulationRequest, ScenarioSimulationResponse,
+    Recordatorio, RecordatorioKPIs, RecordatorioCreatePayload, RecordatorioUpdatePayload,
+    RecordatorioEstadoPayload, CategoriaRecordatorioCreatePayload, CategoriaRecordatorio
 
 } from './types';
 
@@ -2548,5 +2550,94 @@ export const toggleMomentosTaboadaCampana = (data: {
     return client('/momentos-taboada/activacion', {
         method: 'PUT',
         body: data,
+    });
+};
+
+// ─── Recordatorios e Incidencias ──────────────────────────────────────────
+
+export const getRecordatorios = (params?: {
+    sucursal_id?: string;
+    categoria?: string;
+    prioridad?: string;
+    estado?: string;
+    search?: string;
+    limit?: number;
+    skip?: number;
+}): Promise<Recordatorio[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.sucursal_id && params.sucursal_id !== 'TODAS') {
+        searchParams.append('sucursal_id', params.sucursal_id);
+    }
+    if (params?.categoria && params.categoria !== 'Todas') {
+        searchParams.append('categoria', params.categoria);
+    }
+    if (params?.prioridad && params.prioridad !== 'TODAS') {
+        searchParams.append('prioridad', params.prioridad);
+    }
+    if (params?.estado && params.estado !== 'TODOS') {
+        searchParams.append('estado', params.estado);
+    }
+    if (params?.search && params.search.trim()) {
+        searchParams.append('search', params.search.trim());
+    }
+    if (params?.limit) searchParams.append('limit', String(params.limit));
+    if (params?.skip) searchParams.append('skip', String(params.skip));
+
+    const qs = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return client<Recordatorio[]>(`/recordatorios${qs}`);
+};
+
+export const getRecordatorioKPIs = (sucursal_id?: string): Promise<RecordatorioKPIs> => {
+    const qs = sucursal_id && sucursal_id !== 'TODAS' ? `?sucursal_id=${encodeURIComponent(sucursal_id)}` : '';
+    return client<RecordatorioKPIs>(`/recordatorios/kpis${qs}`);
+};
+
+export const getRecordatorioCategorias = (): Promise<string[]> => {
+    return client<string[]>('/recordatorios/categorias');
+};
+
+export const createRecordatorioCategoria = (
+    data: CategoriaRecordatorioCreatePayload
+): Promise<CategoriaRecordatorio> => {
+    return client<CategoriaRecordatorio>('/recordatorios/categorias', {
+        method: 'POST',
+        body: data,
+    });
+};
+
+export const createRecordatorio = (data: RecordatorioCreatePayload): Promise<Recordatorio> => {
+    return client<Recordatorio>('/recordatorios', {
+        method: 'POST',
+        body: data,
+    });
+};
+
+export const getRecordatorioById = (id: string): Promise<Recordatorio> => {
+    return client<Recordatorio>(`/recordatorios/${id}`);
+};
+
+export const updateRecordatorio = (
+    id: string,
+    data: RecordatorioUpdatePayload
+): Promise<Recordatorio> => {
+    return client<Recordatorio>(`/recordatorios/${id}`, {
+        method: 'PUT',
+        body: data,
+    });
+};
+
+export const changeRecordatorioEstado = (
+    id: string,
+    data: RecordatorioEstadoPayload
+): Promise<Recordatorio> => {
+    return client<Recordatorio>(`/recordatorios/${id}/estado`, {
+        method: 'PATCH',
+        body: data,
+    });
+};
+
+export const deleteRecordatorio = (id: string): Promise<{ ok: boolean; message: string }> => {
+    return client<{ ok: boolean; message: string }>(`/recordatorios/${id}`, {
+        method: 'DELETE',
     });
 };

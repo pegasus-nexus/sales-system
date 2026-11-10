@@ -49,6 +49,7 @@ from app.domain.models.momentos_taboada import (
     MovimientoStockPremio,
     ConfiguracionCampanaTaboada,
 )
+from app.domain.models.recordatorio import Recordatorio, CategoriaRecordatorio
 
 from app.domain.models.catalogo import CatalogoConfig, CatalogoProducto
 from app.infrastructure.core.config import settings
@@ -154,7 +155,8 @@ async def init_db():
             MovimientoStockPremio,
             ConfiguracionCampanaTaboada,
             Sucursal, WebCollection, WebConfig,
-            CatalogoConfig, CatalogoProducto
+            CatalogoConfig, CatalogoProducto,
+            Recordatorio, CategoriaRecordatorio
         ],
         skip_indexes=True
     )

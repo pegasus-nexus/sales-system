@@ -4,7 +4,8 @@ import {
     LayoutDashboard, Wallet, ShoppingBag, LogOut, Calculator,
     Tag, Store, Package, ClipboardList, Warehouse, Users, Globe,
     Menu, Percent, RotateCcw, X, QrCode, BarChart3, Banknote, Truck, Settings, Building, Layers,
-    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen, MessageSquare
+    Briefcase, ChevronDown, TrendingUp, FileText, DollarSign, Clock, Ban, Scale, Shield, Activity, HeartPulse, KeyRound, Lock, Eye, EyeOff, ShoppingCart, History, BookOpen, MessageSquare,
+    Bell
 } from 'lucide-react';
 import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -571,6 +572,26 @@ export default function Layout({ children }: LayoutProps) {
 
                     {/* User Profile / Logout */}
                     <div className="mt-auto pt-3 border-t border-gray-800 flex flex-col gap-1.5">
+                        {/* Botón de Recordatorios e Incidencias (Estilo Ilustración) */}
+                        <Link
+                            to="/recordatorios"
+                            title={isCollapsed ? "Recordatorios e Incidencias" : undefined}
+                            className={cn(
+                                "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 text-xs font-semibold group cursor-pointer",
+                                location.pathname === '/recordatorios'
+                                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30 font-bold"
+                                    : "text-gray-400 hover:text-white hover:bg-white/5",
+                                isCollapsed ? "justify-center px-0 py-2.5" : ""
+                            )}
+                        >
+                            <div className="relative shrink-0">
+                                <Bell size={16} className={cn("transition-colors", location.pathname === '/recordatorios' ? "text-white" : "text-gray-400 group-hover:text-purple-300")} />
+                            </div>
+                            <div className={cn("overflow-hidden transition-all duration-300 flex items-center justify-between flex-1", isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100")}>
+                                <span className="whitespace-nowrap">Recordatorios</span>
+                            </div>
+                        </Link>
+
                         {/* Botón de Novedades del Sistema */}
                         <button
                             onClick={handleOpenWhatsNew}

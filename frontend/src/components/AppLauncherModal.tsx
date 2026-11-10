@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, ShoppingCart, Package, BarChart3, Receipt,
     Wallet, Users, Truck, Store, BookOpen, Settings,
-    Search, Sparkles, ArrowRight
+    Search, Sparkles, ArrowRight, Bell
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -124,6 +124,17 @@ const SYSTEM_APPS: SystemApp[] = [
         color: 'text-teal-500',
         bgColor: 'bg-teal-500/10 hover:bg-teal-500/20 border-teal-500/20',
         roles: ['ADMIN_MATRIZ', 'ADMIN', 'SUPERADMIN'],
+    },
+    {
+        id: 'recordatorios',
+        title: 'Recordatorios',
+        description: 'Control de actividades, incidencias del personal y alertas',
+        path: '/recordatorios',
+        icon: Bell,
+        color: 'text-purple-500',
+        bgColor: 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20',
+        badge: 'Nuevo',
+        roles: ['ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL', 'CAJERO', 'USER', 'SUPERVISOR', 'VENDEDOR'],
     },
     {
         id: 'configuracion',
