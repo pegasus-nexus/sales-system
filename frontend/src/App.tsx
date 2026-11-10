@@ -56,6 +56,7 @@ const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPa
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
 const RecordatoriosPage = lazy(() => import('./pages/RecordatoriosPage'));
+const BranchAppsLauncher = lazy(() => import('./components/branch/BranchAppsLauncher').then(m => ({ default: m.BranchAppsLauncher })));
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -309,6 +310,12 @@ function App() {
                       <Route path="/sucursales" element={
                         <ProtectedRoute allowedRoles={MATRIZ_ROLES} requiredFeature="MULTI_SUCURSAL">
                           <SucursalesPage />
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/apps" element={
+                        <ProtectedRoute allowedRoles={ALL_STAFF}>
+                          <BranchAppsLauncher />
                         </ProtectedRoute>
                       } />
 

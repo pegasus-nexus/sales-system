@@ -21,6 +21,8 @@ import WhatsNewModal, { CURRENT_RELEASE_VERSION } from './WhatsNewModal';
 import AppLauncherModal from './AppLauncherModal';
 import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
+import { useBranchTabStore } from './branch/branchTabStore';
+import { BranchWorkspaceLayout } from './branch/BranchWorkspaceLayout';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -92,6 +94,11 @@ export default function Layout({ children }: LayoutProps) {
 
     if (role === 'CATALOGO_MERCHANT') {
         return <Navigate to="/catalogo/admin" replace />;
+    }
+
+    const isBranchWorkspaceEnabled = useBranchTabStore(state => state.isWorkspaceMode);
+    if (role === 'ADMIN_SUCURSAL' && isBranchWorkspaceEnabled) {
+        return <BranchWorkspaceLayout>{children}</BranchWorkspaceLayout>;
     }
     const impersonationChain = useAuthStore(state => state.impersonationChain) || [];
     const originalToken = useAuthStore(state => state.originalToken);
@@ -1092,6 +1099,26 @@ export default function Layout({ children }: LayoutProps) {
                                                 <span className="text-xs font-bold text-indigo-600 truncate block mt-0.5">{user?.role}</span>
                                             </div>
                                         </div>
+
+                                        {role === 'ADMIN_SUCURSAL' && (
+                                            <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center justify-between">
+                                                <div>
+                                                    <span className="block text-xs font-bold text-purple-950">Modo Pestañas Odoo</span>
+                                                    <span className="block text-[11px] text-purple-700">Espacio de trabajo multitarea sin barra lateral</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => useBranchTabStore.getState().setWorkspaceMode(!isBranchWorkspaceEnabled)}
+                                                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                        isBranchWorkspaceEnabled
+                                                            ? 'bg-purple-600 text-white shadow-xs'
+                                                            : 'bg-white text-gray-700 border border-gray-200'
+                                                    }`}
+                                                >
+                                                    {isBranchWorkspaceEnabled ? 'Activado' : 'Desactivado'}
+                                                </button>
+                                            </div>
+                                        )}
 
                                         <div className="pt-3 flex gap-3">
                                             <button 
