@@ -55,6 +55,25 @@ def test_loyalty_object_structure():
 
 def test_generate_save_jwt_signing():
     """Valida la firma criptográfica RS256 del token y la URL oficial Save to Google Wallet."""
+    # En CI donde el archivo de credenciales está en .gitignore, usar clave RSA generada en memoria
+    if not GoogleWalletService._cached_creds:
+        try:
+            GoogleWalletService._load_credentials()
+        except FileNotFoundError:
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric import rsa
+
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            pem = key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            ).decode("utf-8")
+            GoogleWalletService._cached_creds = {
+                "client_email": "google-wallet-taboada@pegasus-nexus.iam.gserviceaccount.com",
+                "private_key": pem,
+            }
+
     res = GoogleWalletService.generate_save_jwt(
         numero_tarjeta="TAB-123456",
         cliente_nombre="Valeria Méndez",

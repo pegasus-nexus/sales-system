@@ -1,14 +1,23 @@
 import os
+
 import pytest_asyncio
+
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import init_db
 
-# En CI (GitHub Actions) MONGO_URI es configurado con el contenedor local: "mongodb://127.0.0.1:27017/salessystem_test"
-test_db_url = os.getenv("MONGO_URI") or os.getenv("TEST_MONGO_URI")
+# En CI (GitHub Actions) MONGO_URI o MONGODB_URL es configurado con el contenedor local: "mongodb://127.0.0.1:27017/..."
+test_db_url = (
+    os.getenv("MONGO_URI")
+    or os.getenv("TEST_MONGO_URI")
+    or os.getenv("MONGODB_URL")
+    or "mongodb://127.0.0.1:27017/salessystem_test?serverSelectionTimeoutMS=2000"
+)
 
-# Protección: si no hay MONGO_URI o apunta a producción (Atlas con mongodb+srv), usar localhost de pruebas
-if not test_db_url or "mongodb+srv" in test_db_url:
-    test_db_url = "mongodb://127.0.0.1:27017/salessystem_test?serverSelectionTimeoutMS=2000"
+# Protección: si no hay URL o apunta a producción (Atlas con mongodb+srv), usar localhost de pruebas
+if "mongodb+srv" in test_db_url:
+    test_db_url = (
+        "mongodb://127.0.0.1:27017/salessystem_test?serverSelectionTimeoutMS=2000"
+    )
 
 os.environ["MONGODB_URL"] = test_db_url
 settings.MONGODB_URL = test_db_url
@@ -22,7 +31,13 @@ async def initialize_test_database():
     Inicializa los modelos de Beanie si MongoDB está disponible (en CI con servicio Mongo activo).
     En entornos locales sin Mongo corriendo, permite continuar para pruebas unitarias.
     """
-    has_test_mongo = bool(os.getenv("MONGO_URI") or os.getenv("TEST_MONGO_URI"))
+    is_ci = os.getenv("CI") == "true" or os.getenv("GITHUB_ACTIONS") == "true"
+    has_test_mongo = bool(
+        is_ci
+        or os.getenv("MONGO_URI")
+        or os.getenv("TEST_MONGO_URI")
+        or (os.getenv("MONGODB_URL") and "127.0.0.1" in os.getenv("MONGODB_URL"))
+    )
     if not has_test_mongo:
         yield
         return
