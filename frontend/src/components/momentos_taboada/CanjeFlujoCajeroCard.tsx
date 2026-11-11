@@ -7,13 +7,12 @@ import {
     Sparkles,
     AlertCircle,
     User,
-    ArrowRight,
-    QrCode,
-    Banknote,
     PlusCircle,
 } from 'lucide-react';
-import type { PremioMomentosTaboada, Sucursal, ClienteSellosResponse } from '../../api/types';
-import { getMomentosTaboadaClienteSellos, registrarMomentosTaboadaCanje, afiliarTarjetaTaboada } from '../../api/api';
+import type { PremioMomentosTaboada, Sucursal, ClienteSellosResponse, GoogleWalletPassResponse } from '../../api/types';
+import { getMomentosTaboadaClienteSellos, registrarMomentosTaboadaCanje, afiliarTarjetaTaboada, generarPaseGoogleWallet } from '../../api/api';
+import { CanjeLiquidacionSection } from './CanjeLiquidacionSection';
+import { GoogleWalletModal } from './GoogleWalletModal';
 
 interface Props {
     premios: PremioMomentosTaboada[];
@@ -46,6 +45,40 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
     const [isActivatingCard, setIsActivatingCard] = useState<boolean>(false);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
+
+    // Modal de Google Wallet
+    const [walletModalOpen, setWalletModalOpen] = useState(false);
+    const [walletData, setWalletData] = useState<GoogleWalletPassResponse | null>(null);
+    const [walletLoading, setWalletLoading] = useState(false);
+    const [walletError, setWalletError] = useState<string | null>(null);
+
+    const handleAbrirWallet = async () => {
+        if (!clienteData) return;
+        const tel = clienteData.cliente.telefono || '';
+        const numTarj = clienteData.cliente.numero_tarjeta || undefined;
+        setWalletModalOpen(true);
+        setWalletLoading(true);
+        setWalletError(null);
+        setWalletData(null);
+
+        try {
+            const res = await generarPaseGoogleWallet({
+                telefono: tel || undefined,
+                numero_tarjeta: numTarj,
+                cliente_id: clienteData.cliente.id || undefined,
+                nombre: clienteData.cliente.nombre,
+            });
+            setWalletData(res);
+            if (!clienteData.cliente.numero_tarjeta && res.numero_tarjeta) {
+                await ejecutarBusqueda(tel || res.numero_tarjeta);
+            }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error al generar el pase de Google Wallet';
+            setWalletError(msg);
+        } finally {
+            setWalletLoading(false);
+        }
+    };
 
     // Búsqueda automática si viene un initialQuery (ej. desde el botón "Canjear" de la tabla)
     useEffect(() => {
@@ -219,12 +252,22 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
                                     <span>{clienteData.cliente.nombre}</span>
                                 </h3>
 
-                                {/* Tarjeta Taboada (Incentivo de uso / Afiliación) */}
+                                {/* Tarjeta Taboada (Incentivo de uso / Afiliación / Google Wallet) */}
                                 <div className="pt-1 flex flex-wrap items-center gap-3">
                                     {clienteData.cliente.numero_tarjeta ? (
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/40 border border-amber-400/40 rounded-xl text-amber-300 font-mono font-bold text-xs shadow-inner">
-                                            <CreditCard className="w-4 h-4 text-amber-400" />
-                                            <span>Tarjeta Taboada: {clienteData.cliente.numero_tarjeta}</span>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/40 border border-amber-400/40 rounded-xl text-amber-300 font-mono font-bold text-xs shadow-inner">
+                                                <CreditCard className="w-4 h-4 text-amber-400" />
+                                                <span>Tarjeta Taboada: {clienteData.cliente.numero_tarjeta}</span>
+                                            </div>
+                                            <button
+                                                onClick={handleAbrirWallet}
+                                                className="px-3 py-1.5 bg-black hover:bg-gray-900 border border-amber-400/50 rounded-xl text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 hover:scale-105"
+                                                title="Ver y compartir Tarjeta en Google Wallet"
+                                            >
+                                                <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                                                <span><span className="text-amber-400 font-black">Google</span> Wallet</span>
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
@@ -375,151 +418,34 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
 
                     {/* SECCIÓN 4: Saldo Final & Confirmación de Canje */}
                     {selectedPremio && (
-                        <div className="bg-gradient-to-br from-amber-50 to-orange-50/40 p-6 rounded-3xl border-2 border-amber-300 shadow-md space-y-5 animate-fade-in">
-                            <div className="flex items-center justify-between border-b border-amber-200/80 pb-3">
-                                <div>
-                                    <h4 className="text-base font-bold text-amber-950 flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-amber-600" />
-                                        <span>Liquidación de Canje y Saldo Final</span>
-                                    </h4>
-                                    <p className="text-xs text-amber-800">
-                                        Verifica la sucursal de entrega, el método de copago y el saldo restante del cliente.
-                                    </p>
-                                </div>
-                                <span className="px-3 py-1 bg-amber-200 text-amber-900 rounded-xl text-xs font-black">
-                                    Premio: {selectedPremio.nombre}
-                                </span>
-                            </div>
-
-                            {/* Comparador de Saldo Final */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="bg-white p-4 rounded-2xl border border-amber-200 text-center">
-                                    <span className="text-xs font-semibold text-gray-500 block mb-1">
-                                        Tickets Disponibles
-                                    </span>
-                                    <span className="text-2xl font-black text-gray-900">
-                                        {ticketsDisponibles}
-                                    </span>
-                                </div>
-
-                                <div className="bg-white p-4 rounded-2xl border border-amber-200 text-center">
-                                    <span className="text-xs font-semibold text-rose-600 block mb-1">
-                                        Tickets a Descontar
-                                    </span>
-                                    <span className="text-2xl font-black text-rose-700">
-                                        -{selectedPremio.sellos_requeridos}
-                                    </span>
-                                </div>
-
-                                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-300 text-center">
-                                    <span className="text-xs font-black text-emerald-800 uppercase tracking-wider block mb-1">
-                                        Saldo Final Restante
-                                    </span>
-                                    <span className="text-3xl font-black text-emerald-700">
-                                        {saldoFinalProyectado} tickets
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Sucursal, Método de Pago y Copago */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                                {/* Sucursal */}
-                                <div>
-                                    <label className="text-xs font-bold text-gray-700 block mb-1">
-                                        Sucursal de Entrega (Descuento Stock):
-                                    </label>
-                                    <select
-                                        value={selectedSucursal}
-                                        onChange={e => setSelectedSucursal(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
-                                    >
-                                        {sucursales.map(s => {
-                                            const sId = s._id || s.id || '';
-                                            return (
-                                                <option key={sId} value={sId}>
-                                                    {s.nombre} (Stock: {selectedPremio.stock_por_sucursal[sId] || 0})
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                </div>
-
-                                {/* Método de Pago del Copago */}
-                                <div>
-                                    <label className="text-xs font-bold text-gray-700 block mb-1">
-                                        Método Cobro Copago (Bs {selectedPremio.copago_bs.toFixed(2)}):
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setMetodoPago('EFECTIVO')}
-                                            className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                                metodoPago === 'EFECTIVO'
-                                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm'
-                                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                        >
-                                            <Banknote className="w-3.5 h-3.5" />
-                                            <span>Efectivo</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setMetodoPago('QR')}
-                                            className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                                metodoPago === 'QR'
-                                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm'
-                                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                        >
-                                            <QrCode className="w-3.5 h-3.5" />
-                                            <span>Pago QR</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Notas / Observaciones */}
-                                <div>
-                                    <label className="text-xs font-bold text-gray-700 block mb-1">
-                                        Notas Opcionales:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={notas}
-                                        onChange={e => setNotas(e.target.value)}
-                                        placeholder="Ej: Entregado con empaque especial"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 bg-white outline-none focus:ring-2 focus:ring-amber-500 shadow-sm font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            {actionError && (
-                                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
-                                    <span>{actionError}</span>
-                                </div>
-                            )}
-
-                            {/* Botón de Confirmación Definitivo */}
-                            <div className="pt-2 flex justify-end">
-                                <button
-                                    onClick={handleConfirmarCanje}
-                                    disabled={isSubmitting}
-                                    className="px-8 py-3.5 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-900 hover:from-amber-800 hover:to-amber-950 text-white rounded-2xl font-black text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                                >
-                                    <Gift className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
-                                    <span>
-                                        {isSubmitting
-                                            ? 'Registrando Canje...'
-                                            : `Confirmar Canje: ${selectedPremio.nombre} (Cobrar Bs ${selectedPremio.copago_bs.toFixed(2)})`}
-                                    </span>
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
+                        <CanjeLiquidacionSection
+                            selectedPremio={selectedPremio}
+                            ticketsDisponibles={ticketsDisponibles}
+                            saldoFinalProyectado={saldoFinalProyectado}
+                            selectedSucursal={selectedSucursal}
+                            onSelectSucursal={setSelectedSucursal}
+                            sucursales={sucursales}
+                            metodoPago={metodoPago}
+                            onSelectMetodoPago={setMetodoPago}
+                            notas={notas}
+                            onChangeNotas={setNotas}
+                            actionError={actionError}
+                            isSubmitting={isSubmitting}
+                            onConfirmarCanje={handleConfirmarCanje}
+                        />
                     )}
                 </div>
             )}
+
+            {/* Modal Interactivo de Google Wallet */}
+            <GoogleWalletModal
+                isOpen={walletModalOpen}
+                onClose={() => setWalletModalOpen(false)}
+                walletData={walletData}
+                isLoading={walletLoading}
+                error={walletError}
+                clienteTelefono={clienteData?.cliente.telefono}
+            />
         </div>
     );
 };

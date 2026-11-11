@@ -1152,6 +1152,22 @@ export interface AfiliarTarjetaResponse {
     cliente_telefono: string;
 }
 
+export interface GoogleWalletPassResponse {
+    status: string;
+    save_url: string;
+    qr_image_url: string;
+    token: string;
+    numero_tarjeta: string;
+    cliente_nombre: string;
+    tickets_disponibles: number;
+}
+
+export interface EnviarWhatsAppWalletResponse {
+    status: string;
+    mensaje: string;
+    enviado: boolean;
+}
+
 export interface MetricasMomentosTaboada {
     fecha_inicio: string;
     metricas: {

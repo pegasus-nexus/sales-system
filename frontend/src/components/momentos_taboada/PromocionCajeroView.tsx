@@ -13,8 +13,9 @@ import {
     CheckCircle2,
     Sparkles,
 } from 'lucide-react';
-import type { ParticipantePromocion, MetricasPromocionCajero, Sucursal } from '../../api/types';
-import { getMomentosTaboadaParticipantes, afiliarTarjetaTaboada } from '../../api/api';
+import type { ParticipantePromocion, MetricasPromocionCajero, Sucursal, GoogleWalletPassResponse } from '../../api/types';
+import { getMomentosTaboadaParticipantes, afiliarTarjetaTaboada, generarPaseGoogleWallet } from '../../api/api';
+import { GoogleWalletModal } from './GoogleWalletModal';
 
 interface Props {
     sucursales: Sucursal[];
@@ -33,6 +34,40 @@ export const PromocionCajeroView: React.FC<Props> = ({
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [afiliandoTel, setAfiliandoTel] = useState<string | null>(null);
     const [successNotif, setSuccessNotif] = useState<string | null>(null);
+
+    // Estado del modal de Google Wallet
+    const [walletModalOpen, setWalletModalOpen] = useState(false);
+    const [walletData, setWalletData] = useState<GoogleWalletPassResponse | null>(null);
+    const [walletLoading, setWalletLoading] = useState(false);
+    const [walletError, setWalletError] = useState<string | null>(null);
+    const [selectedClienteTel, setSelectedClienteTel] = useState<string>('');
+
+    const handleAbrirWallet = async (p: ParticipantePromocion) => {
+        const cleanTel = p.raw_tel && !p.raw_tel.startsWith('ID:') ? p.raw_tel : '';
+        setSelectedClienteTel(cleanTel);
+        setWalletModalOpen(true);
+        setWalletLoading(true);
+        setWalletError(null);
+        setWalletData(null);
+
+        try {
+            const res = await generarPaseGoogleWallet({
+                telefono: cleanTel || undefined,
+                numero_tarjeta: p.tarjeta_taboada || undefined,
+                cliente_id: p.id,
+                nombre: p.nombre,
+            });
+            setWalletData(res);
+            if (!p.tarjeta_taboada && res.numero_tarjeta) {
+                loadData();
+            }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error al generar el pase de Google Wallet';
+            setWalletError(msg);
+        } finally {
+            setWalletLoading(false);
+        }
+    };
 
     const loadData = useCallback(async () => {
         try {
@@ -325,10 +360,14 @@ export const PromocionCajeroView: React.FC<Props> = ({
                                         {/* g. Tarjeta Taboada */}
                                         <td className="py-3 px-4 whitespace-nowrap">
                                             {p.tarjeta_taboada ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#2c1d11] text-amber-300 rounded-lg font-mono font-bold text-xs shadow-sm border border-amber-500/30">
+                                                <button
+                                                    onClick={() => handleAbrirWallet(p)}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#2c1d11] hover:bg-[#3d2717] text-amber-300 rounded-lg font-mono font-bold text-xs shadow-sm border border-amber-500/30 transition-all hover:scale-105 cursor-pointer"
+                                                    title="Ver y compartir Tarjeta Google Wallet"
+                                                >
                                                     <CreditCard className="w-3 h-3 text-amber-400" />
-                                                    {p.tarjeta_taboada}
-                                                </span>
+                                                    <span>{p.tarjeta_taboada}</span>
+                                                </button>
                                             ) : (
                                                 <button
                                                     onClick={() => handleAfiliarTarjeta(p)}
@@ -342,15 +381,25 @@ export const PromocionCajeroView: React.FC<Props> = ({
                                             )}
                                         </td>
 
-                                        {/* Acción Rápida: Canjear */}
+                                        {/* Acciones Rápidas: Canjear y Google Wallet */}
                                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                                            <button
-                                                onClick={() => onSelectClienteParaCanje(p.celular !== 'Sin celular' ? p.celular : p.nombre)}
-                                                className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto"
-                                            >
-                                                <Gift className="w-3.5 h-3.5" />
-                                                <span>Canjear</span>
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleAbrirWallet(p)}
+                                                    className="px-2.5 py-1.5 bg-black hover:bg-gray-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 border border-gray-700 hover:scale-105 cursor-pointer"
+                                                    title="Ver pase y QR de Google Wallet"
+                                                >
+                                                    <CreditCard className="w-3 h-3 text-amber-400" />
+                                                    <span>Wallet</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => onSelectClienteParaCanje(p.celular !== 'Sin celular' ? p.celular : p.nombre)}
+                                                    className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 hover:scale-105"
+                                                >
+                                                    <Gift className="w-3.5 h-3.5" />
+                                                    <span>Canjear</span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -359,6 +408,16 @@ export const PromocionCajeroView: React.FC<Props> = ({
                     </div>
                 )}
             </div>
+
+            {/* Modal Interactivo de Google Wallet */}
+            <GoogleWalletModal
+                isOpen={walletModalOpen}
+                onClose={() => setWalletModalOpen(false)}
+                walletData={walletData}
+                isLoading={walletLoading}
+                error={walletError}
+                clienteTelefono={selectedClienteTel}
+            />
         </div>
     );
 };

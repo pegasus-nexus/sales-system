@@ -49,3 +49,9 @@ logs/
 *.log
 err.txt
 models_list.txt
+
+# Credentials
+credentials/
+*service_account*.json
+*.pem
+

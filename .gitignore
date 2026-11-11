@@ -101,3 +101,10 @@ fix_*.js
 temp_*.txt
 
 .markdown-collab/
+
+# Google Cloud / Service Account Credentials
+credentials/
+backend/credentials/
+*.pem
+*service_account*.json
+

@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     STATUS_PAGE_PROBE_INTERVAL_SECONDS: int = 60
     GOOGLE_CLIENT_ID: str = "32112312994-ddleo20g3kjtbrjo6s12uetv5iibujfn.apps.googleusercontent.com"
 
+    # Google Wallet Pass Integration
+    GOOGLE_WALLET_ISSUER_ID: str = "3388000000023236729"
+    GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL: str = "google-wallet-taboada@pegasus-nexus.iam.gserviceaccount.com"
+    GOOGLE_WALLET_SERVICE_ACCOUNT_FILE: str = "backend/credentials/google_wallet_service_account.json"
+    GOOGLE_WALLET_PRIVATE_KEY: str = ""
+
     model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 
 settings = Settings()

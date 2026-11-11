@@ -2340,6 +2340,8 @@ import type {
     CajaChicaTaboadaResponse,
     PromocionCajeroResponse,
     AfiliarTarjetaResponse,
+    GoogleWalletPassResponse,
+    EnviarWhatsAppWalletResponse,
     MovimientoStockPremio,
     ResumenLogisticoPremios,
     EstadoCampanaTaboada
@@ -2479,6 +2481,30 @@ export const afiliarTarjetaTaboada = (
     return client<AfiliarTarjetaResponse>('/momentos-taboada/afiliar-tarjeta', {
         method: 'POST',
         body: { telefono, nombre },
+    });
+};
+
+export const generarPaseGoogleWallet = (data: {
+    telefono?: string;
+    numero_tarjeta?: string;
+    cliente_id?: string;
+    nombre?: string;
+}): Promise<GoogleWalletPassResponse> => {
+    return client<GoogleWalletPassResponse>('/momentos-taboada/google-wallet/generar-pase', {
+        method: 'POST',
+        body: data,
+    });
+};
+
+export const enviarPaseGoogleWalletWhatsApp = (data: {
+    telefono: string;
+    save_url: string;
+    cliente_nombre: string;
+    numero_tarjeta: string;
+}): Promise<EnviarWhatsAppWalletResponse> => {
+    return client<EnviarWhatsAppWalletResponse>('/momentos-taboada/google-wallet/enviar-whatsapp', {
+        method: 'POST',
+        body: data,
     });
 };
 

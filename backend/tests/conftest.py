@@ -22,6 +22,11 @@ async def initialize_test_database():
     Inicializa los modelos de Beanie si MongoDB está disponible (en CI con servicio Mongo activo).
     En entornos locales sin Mongo corriendo, permite continuar para pruebas unitarias.
     """
+    has_test_mongo = bool(os.getenv("MONGO_URI") or os.getenv("TEST_MONGO_URI"))
+    if not has_test_mongo:
+        yield
+        return
+
     try:
         await init_db()
     except Exception as e:
