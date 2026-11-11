@@ -88,6 +88,7 @@ def test_missing_credentials_raises_file_not_found():
     with patch(
         "app.application.services.google_wallet_service.settings"
     ) as mock_settings:
+        mock_settings.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON = ""
         mock_settings.GOOGLE_WALLET_PRIVATE_KEY = ""
         mock_settings.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL = ""
         mock_settings.GOOGLE_WALLET_SERVICE_ACCOUNT_FILE = (
@@ -99,6 +100,26 @@ def test_missing_credentials_raises_file_not_found():
 
         with pytest.raises(FileNotFoundError):
             GoogleWalletService._load_credentials()
+
+        # Restaurar caché
+        GoogleWalletService._cached_creds = None
+
+
+def test_load_credentials_from_env_json():
+    """Valida que las credenciales puedan cargarse desde la variable de entorno GOOGLE_WALLET_SERVICE_ACCOUNT_JSON en Render."""
+    with patch(
+        "app.application.services.google_wallet_service.settings"
+    ) as mock_settings:
+        mock_settings.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON = '{"client_email": "render@test.iam.gserviceaccount.com", "private_key": "dummy_key"}'
+        mock_settings.GOOGLE_WALLET_PRIVATE_KEY = ""
+        mock_settings.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL = ""
+
+        # Reset cached creds
+        GoogleWalletService._cached_creds = None
+
+        creds = GoogleWalletService._load_credentials()
+        assert creds["client_email"] == "render@test.iam.gserviceaccount.com"
+        assert creds["private_key"] == "dummy_key"
 
         # Restaurar caché
         GoogleWalletService._cached_creds = None

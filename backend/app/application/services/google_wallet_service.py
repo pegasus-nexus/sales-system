@@ -25,7 +25,20 @@ class GoogleWalletService:
         if cls._cached_creds:
             return cls._cached_creds
 
-        # 1. Si se configuró la private_key directamente por variable de entorno
+        # 1. Si se configuró el JSON completo en variables de entorno (ideal para Render / Cloud)
+        if (
+            settings.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON
+            and settings.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON.strip()
+        ):
+            try:
+                cls._cached_creds = json.loads(
+                    settings.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON
+                )
+                return cls._cached_creds
+            except Exception as e:
+                logger.error(f"Error parseando GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: {e}")
+
+        # 2. Si se configuró la private_key directamente por variable de entorno
         if (
             settings.GOOGLE_WALLET_PRIVATE_KEY
             and settings.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL
@@ -36,7 +49,7 @@ class GoogleWalletService:
             }
             return cls._cached_creds
 
-        # 2. Cargar desde archivo JSON
+        # 3. Cargar desde archivo JSON local
         json_path = Path(settings.GOOGLE_WALLET_SERVICE_ACCOUNT_FILE)
         if not json_path.is_absolute():
             # Buscar relativo a la raíz del proyecto o directorio backend
