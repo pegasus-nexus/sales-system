@@ -97,7 +97,7 @@ class GoogleWalletService:
             "programLogo": {
                 "kind": "walletobjects#image",
                 "sourceUri": {
-                    "uri": "https://chocolatestaboada.com/assets/logo-taboada.png"
+                    "uri": "https://raw.githubusercontent.com/pegasus-nexus/sales-system/main/frontend/public/logoTaboada.png"
                 },
             },
         }
