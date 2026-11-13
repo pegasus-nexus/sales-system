@@ -23,7 +23,8 @@ select = [
 ]
 
 # Reglas específicas a ignorar (si hubiese conflictos menores)
-ignore = ["B008", "E501"]
+# E712 se ignora porque los ORM/ODM (Beanie, Pymongo, SQLAlchemy) sobrecargan '==' para generar expresiones de filtro ({'is_active': True})
+ignore = ["B008", "E501", "E712"]
 
 [tool.ruff.lint.isort]
 # Declarar módulos de primer nivel del proyecto para agruparlos correctamente

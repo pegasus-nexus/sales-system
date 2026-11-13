@@ -75,7 +75,7 @@ async def listar_clientes(
     current_user: User = Depends(get_current_active_user)
 ):
     tenant_id = current_user.tenant_id or "default"
-    filters = [Cliente.tenant_id == tenant_id, Cliente.is_active]
+    filters = [Cliente.tenant_id == tenant_id, Cliente.is_active == True]
 
     if q and q.strip():
         import re
@@ -112,7 +112,7 @@ async def crear_cliente(
         existing_nit = await Cliente.find_one(
             Cliente.tenant_id == tenant_id,
             Cliente.nit_ci == nit_clean,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_nit:
             raise HTTPException(
@@ -126,7 +126,7 @@ async def crear_cliente(
         existing_tel = await Cliente.find_one(
             Cliente.tenant_id == tenant_id,
             Cliente.telefono == tel_clean,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_tel:
             raise HTTPException(
@@ -140,7 +140,7 @@ async def crear_cliente(
         existing_email = await Cliente.find_one(
             Cliente.tenant_id == tenant_id,
             Cliente.email == email_clean,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_email:
             raise HTTPException(
@@ -223,7 +223,7 @@ async def actualizar_cliente(
             Cliente.tenant_id == tenant_id,
             Cliente.nit_ci == nit_clean,
             Cliente.id != cliente.id,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_nit:
             raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este NIT/CI ({nit_clean}): '{existing_nit.nombre}'.")
@@ -234,7 +234,7 @@ async def actualizar_cliente(
             Cliente.tenant_id == tenant_id,
             Cliente.telefono == tel_clean,
             Cliente.id != cliente.id,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_tel:
             raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este teléfono/celular ({tel_clean}): '{existing_tel.nombre}'.")
@@ -245,7 +245,7 @@ async def actualizar_cliente(
             Cliente.tenant_id == tenant_id,
             Cliente.email == email_clean,
             Cliente.id != cliente.id,
-            Cliente.is_active,
+            Cliente.is_active == True,
         )
         if existing_email:
             raise HTTPException(status_code=400, detail=f"Ya existe un cliente activo con este correo ({email_clean}): '{existing_email.nombre}'.")
