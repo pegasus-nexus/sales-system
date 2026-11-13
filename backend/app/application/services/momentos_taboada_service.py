@@ -187,19 +187,18 @@ class MomentosTaboadaService:
         if not clean_q:
             raise HTTPException(status_code=400, detail="Debes ingresar un teléfono o nombre de cliente")
 
-        # Buscar cliente por teléfono o nombre
-        cliente = await Cliente.find_one({
-            "tenant_id": tenant_id,
-            "telefono": clean_q,
-        })
+        # Buscar cliente por ID, teléfono, número de tarjeta o nombre
+        cliente = None
+        if PydanticObjectId.is_valid(clean_q):
+            cliente = await Cliente.get(PydanticObjectId(clean_q))
+            if cliente and cliente.tenant_id != tenant_id:
+                cliente = None
+
         if not cliente:
-            # Intento por número de Tarjeta Taboada (ej. TAB-123456)
-            cliente = await Cliente.find_one({
-                "tenant_id": tenant_id,
-                "numero_tarjeta": clean_q.upper(),
-            })
+            cliente = await Cliente.find_one({"tenant_id": tenant_id, "telefono": clean_q})
         if not cliente:
-            # Intento por nombre parcial
+            cliente = await Cliente.find_one({"tenant_id": tenant_id, "numero_tarjeta": clean_q.upper()})
+        if not cliente:
             cliente = await Cliente.find_one({
                 "tenant_id": tenant_id,
                 "nombre": re.compile(re.escape(clean_q), re.IGNORECASE),

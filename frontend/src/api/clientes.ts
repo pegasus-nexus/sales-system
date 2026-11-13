@@ -9,6 +9,10 @@ export interface Cliente {
     direccion?: string;
     notas?: string;
     lista_precio_id?: string;
+    is_miembro_comunidad?: boolean;
+    fecha_afiliacion?: string;
+    numero_tarjeta?: string;
+    puntos_fidelizacion?: number;
     total_compras: number;
     cantidad_compras: number;
     ultima_compra_at?: string;
@@ -43,5 +47,9 @@ export const getClienteByNit = async (nit: string): Promise<Cliente | null> => {
     } catch {
         return null;
     }
+};
+
+export const asignarTarjetaTaboada = async (clienteId: string): Promise<Cliente> => {
+    return await client<Cliente>(`/clientes/${clienteId}/tarjeta-taboada`, { method: 'POST' });
 };
 

@@ -36,7 +36,6 @@ async def initialize_test_database():
         is_ci
         or os.getenv("MONGO_URI")
         or os.getenv("TEST_MONGO_URI")
-        or (os.getenv("MONGODB_URL") and "127.0.0.1" in os.getenv("MONGODB_URL"))
     )
     if not has_test_mongo:
         yield
