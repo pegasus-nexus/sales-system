@@ -2499,6 +2499,7 @@ export const generarPaseGoogleWallet = (data: {
 export const enviarPaseGoogleWalletWhatsApp = (data: {
     telefono: string;
     save_url: string;
+    short_url?: string;
     cliente_nombre: string;
     numero_tarjeta: string;
 }): Promise<EnviarWhatsAppWalletResponse> => {

@@ -83,6 +83,7 @@ class GoogleWalletService:
     def build_loyalty_class(cls, issuer_id: str | None = None) -> dict[str, Any]:
         """
         Construye la definición de la clase oficial de fidelización 'Momentos Taboada'.
+        Diseño optimizado y conciso para cumplir con las cuotas de tamaño de JWT de Google.
         """
         iss_id = issuer_id or cls.get_issuer_id()
         class_id = f"{iss_id}.taboada_momentos_loyalty"
@@ -92,30 +93,12 @@ class GoogleWalletService:
             "issuerName": "Chocolates Taboada",
             "programName": "Momentos Taboada",
             "reviewStatus": "UNDER_REVIEW",
-            "hexBackgroundColor": "#2D1406",  # Café chocolate oscuro elegante
+            "hexBackgroundColor": "#2D1406",  # Café chocolate elegante
             "programLogo": {
                 "kind": "walletobjects#image",
                 "sourceUri": {
                     "uri": "https://chocolatestaboada.com/assets/logo-taboada.png"
                 },
-                "contentDescription": {
-                    "defaultValue": {
-                        "language": "es-419",
-                        "value": "Logo Chocolates Taboada",
-                    }
-                },
-            },
-            "localizedIssuerName": {
-                "defaultValue": {
-                    "language": "es-419",
-                    "value": "Chocolates Taboada",
-                }
-            },
-            "localizedProgramName": {
-                "defaultValue": {
-                    "language": "es-419",
-                    "value": "Momentos Taboada",
-                }
             },
         }
 
@@ -145,41 +128,24 @@ class GoogleWalletService:
             "accountId": numero_tarjeta,
             "accountName": cliente_nombre or "Cliente Taboada",
             "barcode": {
-                "type": "CODE_128",  # Permite lectura directa con pistolas lectoras en caja POS
+                "type": "CODE_128",
                 "value": numero_tarjeta,
                 "alternateText": numero_tarjeta,
             },
             "loyaltyPoints": {
-                "label": "Tickets Acumulados",
+                "label": "Tickets",
                 "balance": {"string": str(tickets_disponibles)},
             },
             "secondaryLoyaltyPoints": {
-                "label": "Compras Acumuladas",
+                "label": "Compras",
                 "balance": {"string": f"Bs. {total_gastado:.2f}"},
             },
             "textModulesData": [
                 {
-                    "header": "Campaña Oficial",
-                    "body": "Momentos Taboada 2026. Por cada Bs. 30 en compras acumulas 1 ticket canjeable.",
-                },
-                {
-                    "header": "Código de Fidelización",
-                    "body": f"Presenta este código en caja: {numero_tarjeta}",
-                },
-                {
-                    "header": "Canje de Premios",
-                    "body": "Canjea tus tickets por tazas coleccionables y chocolates exclusivos en cualquier sucursal.",
-                },
+                    "header": "Comunidad Taboada",
+                    "body": f"Tarjeta oficial: {numero_tarjeta}. Presenta este código en caja para acumular y canjear premios.",
+                }
             ],
-            "linksModuleData": {
-                "uris": [
-                    {
-                        "kind": "walletobjects#uri",
-                        "uri": "https://chocolatestaboada.com",
-                        "description": "Sitio Web Chocolates Taboada",
-                    }
-                ]
-            },
         }
 
     @classmethod
@@ -189,10 +155,15 @@ class GoogleWalletService:
         cliente_nombre: str,
         tickets_disponibles: int = 0,
         total_gastado: float = 0.0,
+        short_url: str | None = None,
     ) -> dict[str, Any]:
         """
         Genera el token JWT firmado con RS256 y la URL oficial 'Save to Google Wallet'.
+        origins=[] permite abrir el enlace desde WhatsApp, SMS, QR o cualquier navegador.
         """
+        import urllib.parse
+        from datetime import UTC, datetime
+
         creds = cls._load_credentials()
         issuer_id = cls.get_issuer_id()
 
@@ -208,8 +179,9 @@ class GoogleWalletService:
         jwt_payload = {
             "iss": creds["client_email"],
             "aud": "google",
-            "origins": ["localhost", "https://chocolatestaboada.com"],
             "typ": "savetowallet",
+            "iat": int(datetime.now(UTC).timestamp()),
+            "origins": [],  # Vacío para admitir aperturas desde enlaces externos, móviles y WhatsApp
             "payload": {
                 "loyaltyClasses": [loyalty_class],
                 "loyaltyObjects": [loyalty_object],
@@ -225,13 +197,17 @@ class GoogleWalletService:
         )
 
         save_url = f"https://pay.google.com/gp/v/save/{token}"
+
+        # Si se cuenta con URL corta del backend, usarla para el QR (para lectura instantánea)
+        qr_target = short_url or save_url
         qr_image_url = (
-            f"https://api.qrserver.com/v1/create-qr-code/?size=320x320&data={save_url}"
+            f"https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data={urllib.parse.quote(qr_target)}"
         )
 
         return {
             "status": "success",
             "save_url": save_url,
+            "short_url": short_url or save_url,
             "qr_image_url": qr_image_url,
             "token": token,
             "numero_tarjeta": numero_tarjeta,

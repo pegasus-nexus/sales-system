@@ -1155,6 +1155,7 @@ export interface AfiliarTarjetaResponse {
 export interface GoogleWalletPassResponse {
     status: string;
     save_url: string;
+    short_url?: string;
     qr_image_url: string;
     token: string;
     numero_tarjeta: string;

@@ -48,7 +48,7 @@ def test_loyalty_object_structure():
     assert obj["barcode"]["alternateText"] == numero_tarjeta
 
     # Balance de puntos/tickets
-    assert obj["loyaltyPoints"]["label"] == "Tickets Acumulados"
+    assert obj["loyaltyPoints"]["label"] in ("Tickets", "Tickets Acumulados")
     assert obj["loyaltyPoints"]["balance"]["string"] == "14"
     assert obj["secondaryLoyaltyPoints"]["balance"]["string"] == "Bs. 420.50"
 

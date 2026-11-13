@@ -40,8 +40,9 @@ export const GoogleWalletModal: React.FC<Props> = ({
     if (!isOpen) return null;
 
     const handleCopy = () => {
-        if (!walletData?.save_url) return;
-        navigator.clipboard.writeText(walletData.save_url);
+        const targetUrl = walletData?.short_url || walletData?.save_url;
+        if (!targetUrl) return;
+        navigator.clipboard.writeText(targetUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
     };
@@ -60,6 +61,7 @@ export const GoogleWalletModal: React.FC<Props> = ({
             const res = await enviarPaseGoogleWalletWhatsApp({
                 telefono: tel,
                 save_url: walletData.save_url,
+                short_url: walletData.short_url,
                 cliente_nombre: walletData.cliente_nombre,
                 numero_tarjeta: walletData.numero_tarjeta,
             });
@@ -235,7 +237,7 @@ export const GoogleWalletModal: React.FC<Props> = ({
                             <div className="space-y-2.5 pt-2">
                                 {/* Botón oficial Google Wallet */}
                                 <a
-                                    href={walletData.save_url}
+                                    href={walletData.short_url || walletData.save_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full py-3.5 px-4 bg-black hover:bg-gray-900 text-white rounded-2xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 border border-gray-800 hover:scale-[1.01]"

@@ -3,7 +3,8 @@ import string
 from datetime import UTC, datetime
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from app.application.services.google_wallet_service import GoogleWalletService
@@ -46,12 +47,14 @@ class GoogleWalletPassRequest(BaseModel):
 class EnviarWhatsAppWalletRequest(BaseModel):
     telefono: str
     save_url: str
+    short_url: str | None = None
     cliente_nombre: str
     numero_tarjeta: str
 
 
 @router.post("/generar-pase")
 async def generar_pase_google_wallet(
+    request: Request,
     payload: GoogleWalletPassRequest,
     current_user: User = Depends(require_roles(CAJERO_ROLES)),
 ):
@@ -147,13 +150,117 @@ async def generar_pase_google_wallet(
         tickets_disponibles = int(balance_info.get("sellos_disponibles", 0))
         total_gastado = float(balance_info.get("total_compras_campana_bs", 0.0))
 
+    # URL corta del backend para QR ultra-nítido y WhatsApp sin saturación de caracteres
+    base_url = str(request.base_url).rstrip("/")
+    if "onrender.com" in base_url and base_url.startswith("http://"):
+        base_url = base_url.replace("http://", "https://")
+    short_url = f"{base_url}/api/v1/momentos-taboada/google-wallet/p/{numero_tarjeta}"
+
     # 3. Generar pase firmado JWT con GoogleWalletService
     return GoogleWalletService.generate_save_jwt(
         numero_tarjeta=numero_tarjeta,
         cliente_nombre=cliente_nombre,
         tickets_disponibles=tickets_disponibles,
         total_gastado=total_gastado,
+        short_url=short_url,
     )
+
+
+@router.get("/p/{tarjeta_o_id}", response_class=HTMLResponse)
+async def redirect_google_wallet_pass(tarjeta_o_id: str):
+    """
+    Enlace corto y directo para escanear en QR y compartir en WhatsApp.
+    Redirige al enlace oficial firmado de Google Wallet ('Save to Wallet').
+    """
+    clean_code = tarjeta_o_id.strip()
+    if not clean_code:
+        raise HTTPException(status_code=400, detail="Tarjeta no especificada")
+
+    # Buscar cliente por número de tarjeta o ID
+    cliente = await Cliente.find_one({"numero_tarjeta": clean_code.upper()})
+    if not cliente and PydanticObjectId.is_valid(clean_code):
+        cliente = await Cliente.get(PydanticObjectId(clean_code))
+
+    cliente_nombre = cliente.nombre if cliente else "Cliente Taboada"
+    numero_tarjeta = cliente.numero_tarjeta if cliente else clean_code.upper()
+    total_gastado = float(cliente.total_compras or 0.0) if cliente else 0.0
+
+    tickets_disponibles = 0
+    if cliente and cliente.tenant_id:
+        try:
+            cartilla = await MomentosTaboadaService.buscar_cliente_sellos(
+                cliente.tenant_id, numero_tarjeta
+            )
+            balance_info = cartilla.get("balance", {})
+            tickets_disponibles = int(balance_info.get("sellos_disponibles", 0))
+            total_gastado = (
+                float(balance_info.get("total_compras_campana_bs", 0.0))
+                or total_gastado
+            )
+        except Exception:
+            pass
+
+    pass_data = GoogleWalletService.generate_save_jwt(
+        numero_tarjeta=numero_tarjeta,
+        cliente_nombre=cliente_nombre,
+        tickets_disponibles=tickets_disponibles,
+        total_gastado=total_gastado,
+    )
+    save_url = pass_data["save_url"]
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Google Wallet - Chocolates Taboada</title>
+    <meta http-equiv="refresh" content="0; url={save_url}">
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #2D1406;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }}
+        .card {{
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 400px;
+            width: 100%;
+        }}
+        .btn {{
+            display: inline-block;
+            background: #ffffff;
+            color: #1a1a1a;
+            font-weight: 700;
+            padding: 14px 28px;
+            border-radius: 999px;
+            text-decoration: none;
+            margin-top: 20px;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin: 0 0 8px 0;">Chocolates Taboada</h2>
+        <p style="opacity: 0.8; font-size: 14px; margin: 0 0 20px 0;">Abriendo tu tarjeta en Google Wallet...</p>
+        <a class="btn" href="{save_url}">Añadir a Google Wallet</a>
+    </div>
+    <script>window.location.href = "{save_url}";</script>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
 
 
 @router.post("/enviar-whatsapp")
@@ -162,7 +269,7 @@ async def enviar_pase_whatsapp(
     current_user: User = Depends(require_roles(CAJERO_ROLES)),
 ):
     """
-    Envía un mensaje de WhatsApp al cliente con el enlace oficial para guardar
+    Envía un mensaje de WhatsApp al cliente con el enlace para guardar
     su Tarjeta Taboada en Google Wallet.
     """
     tenant_id = await _get_taboada_tenant_id(current_user)
@@ -174,13 +281,14 @@ async def enviar_pase_whatsapp(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
+    enlace = payload.short_url or payload.save_url
     mensaje = (
         f"🍫 *¡Hola, {payload.cliente_nombre}!*\\n\\n"
         f"Te compartimos tu *Tarjeta Digital Taboada*:\\n"
         f"💳 *Nº de Tarjeta:* `{payload.numero_tarjeta}`\\n\\n"
         f"📲 *Guárdala en tu teléfono con Google Wallet:*\\n"
         f"Toca el siguiente enlace para agregar tu tarjeta:\\n"
-        f"{payload.save_url}\\n\\n"
+        f"{enlace}\\n\\n"
         f"¡Presenta el código de barras en caja en cada compra para acumular tickets y canjear premios de *Momentos Taboada*! 🎉"
     )
 
