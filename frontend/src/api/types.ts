@@ -473,6 +473,7 @@ export interface SaleCreate {
         email?: string;
         telefono?: string;
         es_factura: boolean;
+        is_miembro_comunidad?: boolean;
     };
     vendedor_id?: string;
     vendedor_name?: string;
@@ -545,6 +546,7 @@ export interface Sale {
         email?: string;
         telefono?: string;
         es_factura: boolean;
+        is_miembro_comunidad?: boolean;
     };
     qr_info?: QRInfo;
     cashier_id: string;

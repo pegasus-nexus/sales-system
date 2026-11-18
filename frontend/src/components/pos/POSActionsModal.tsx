@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User as UserIcon, Calendar, Tag, MessageSquare, BookmarkPlus, Trash2, CheckCircle2, CreditCard } from 'lucide-react';
 import { ClientCombobox } from '../ClientCombobox';
 import { getClienteByNit, checkHomonimoCliente, type CheckHomonimoResponse } from '../../api/api';
+import { saveRecentInvoice } from '../../utils/recentInvoicesStorage';
 import type { ClienteData, VendedorData } from '../../store/usePosStore';
 import type { Descuento, User } from '../../api/types';
 
@@ -207,7 +208,20 @@ export function POSActionsModal({
                             <ClientCombobox
                                 selectedClient={cliente}
                                 onSelect={(c) => setCliente(c)}
-                                onClear={() => setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false, is_miembro_comunidad: false })}
+                                onClear={() => {
+                                    if (cliente.razon_social || cliente.nit || cliente.telefono) {
+                                        saveRecentInvoice({
+                                            razon_social: cliente.razon_social,
+                                            nit: cliente.nit,
+                                            telefono: cliente.telefono,
+                                            email: cliente.email,
+                                            es_factura: cliente.es_factura,
+                                            is_miembro_comunidad: cliente.is_miembro_comunidad,
+                                            motivo: 'CLIENTE_LIMPIADO',
+                                        });
+                                    }
+                                    setCliente({ cliente_id: undefined, nit: '', razon_social: '', email: '', telefono: '', es_factura: false, is_miembro_comunidad: false });
+                                }}
                             />
 
                             {(cliente.es_factura || cliente.is_miembro_comunidad || (!cliente.cliente_id && cliente.razon_social)) && (

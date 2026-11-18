@@ -84,7 +84,12 @@ export default function ComunidadPage() {
 
     const handleAfiliar = () => {
         if (!selectedClient) return;
-        afiliarMutation.mutate(selectedClient._id);
+        const clienteId = selectedClient.cliente_id || selectedClient._id || selectedClient.id;
+        if (!clienteId) {
+            toast.error("Por favor selecciona un cliente registrado para afiliar");
+            return;
+        }
+        afiliarMutation.mutate(clienteId);
     };
 
     const handleRefresh = () => {
@@ -122,7 +127,7 @@ export default function ComunidadPage() {
                 </div>
                 <button 
                     onClick={handleAfiliar}
-                    disabled={!selectedClient || afiliarMutation.isPending}
+                    disabled={!selectedClient || (!selectedClient.cliente_id && !selectedClient._id && !selectedClient.id) || afiliarMutation.isPending}
                     className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl transition-colors h-[42px]"
                 >
                     {afiliarMutation.isPending ? 'Afiliando...' : '+ Afiliar a Comunidad'}

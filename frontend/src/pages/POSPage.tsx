@@ -20,6 +20,8 @@ import { POSCatalogGrid } from '../components/pos/POSCatalogGrid';
 import { POSModals } from '../components/pos/POSModals';
 import { POSCustomizeModal, type POSQuickWidget } from '../components/pos/POSCustomizeModal';
 import POSSettleDueModal from '../components/pos/POSSettleDueModal';
+import { POSRecentInvoicesModal } from '../components/pos/POSRecentInvoicesModal';
+import { saveRecentInvoice } from '../utils/recentInvoicesStorage';
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
 
@@ -73,6 +75,7 @@ export default function POSPage() {
     const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('catalog');
     const [fechaVenta, setFechaVenta] = useState<string>('');
     const [isSettleDueOpen, setIsSettleDueOpen] = useState(false);
+    const [isRecentInvoicesOpen, setIsRecentInvoicesOpen] = useState(false);
 
     const canEditDate = user?.permisos_especiales?.includes('EDITAR_FECHA_VENTA') ||
         ['SUPERADMIN', 'ADMIN_MATRIZ', 'ADMIN', 'ADMIN_SUCURSAL'].includes(user?.role || '');
@@ -214,7 +217,7 @@ export default function POSPage() {
                 pagos: pagos.map((p) => ({ metodo: p.metodo, monto: p.monto })),
                 descuento: descuento.valor ? { nombre: descuento.nombre, tipo: descuento.tipo, valor: parseFloat(descuento.valor) } : undefined,
                 cliente_id: cliente.cliente_id || undefined,
-                cliente: cliente.es_factura || cliente.nit || cliente.razon_social ? {
+                cliente: cliente.es_factura || cliente.nit || cliente.razon_social || cliente.telefono || cliente.is_miembro_comunidad ? {
                     nit: cliente.nit || undefined,
                     razon_social: cliente.razon_social || undefined,
                     email: cliente.email || undefined,
@@ -234,6 +237,21 @@ export default function POSPage() {
             isSubmittingRef.current = false;
         },
         onSuccess: (data) => {
+            // Guardar cliente en papelera / memoria temporal para que nunca se pierda
+            if (cliente.razon_social || cliente.nit || cliente.telefono || data.cliente?.razon_social || data.cliente?.nit) {
+                saveRecentInvoice({
+                    razon_social: cliente.razon_social || data.cliente?.razon_social || 'CLIENTE MOSTRADOR',
+                    nit: cliente.nit || data.cliente?.nit,
+                    telefono: cliente.telefono || data.cliente?.telefono,
+                    email: cliente.email || data.cliente?.email,
+                    es_factura: cliente.es_factura || Boolean(data.cliente?.es_factura),
+                    is_miembro_comunidad: cliente.is_miembro_comunidad || Boolean(data.cliente?.is_miembro_comunidad),
+                    ticket_id: data._id,
+                    ticket_corto: data._id ? data._id.slice(-6).toUpperCase() : undefined,
+                    total: data.total,
+                    motivo: 'VENTA_COMPLETADA',
+                });
+            }
             almacenes.forEach((a) => {
                 if (a.id) qc.invalidateQueries({ queryKey: ['inventario', sucursalId, a.id] });
             });
@@ -350,6 +368,7 @@ export default function POSPage() {
                 setFechaVenta={setFechaVenta}
                 canEditDate={canEditDate}
                 onOpenSettleDue={() => setIsSettleDueOpen(true)}
+                onOpenRecentInvoices={() => setIsRecentInvoicesOpen(true)}
             />
 
             {/* ══════════════ RIGHT COLUMN: High-Density Catalog Grid ══════════════ */}
@@ -482,6 +501,13 @@ export default function POSPage() {
                 logoBase64={tenantSettings?.logo_base64}
                 direccion={tenantSettings?.direccion}
                 telefono={tenantSettings?.telefono}
+            />
+
+            {/* Papelera & Memoria de Facturas Recientes */}
+            <POSRecentInvoicesModal
+                isOpen={isRecentInvoicesOpen}
+                onClose={() => setIsRecentInvoicesOpen(false)}
+                onSelectCliente={(c) => setCliente(c)}
             />
         </div>
     );

@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { getClienteByNit } from '../../api/api';
 import { 
     CreditCard, MoreHorizontal, User as UserIcon, Plus, Keyboard, 
-    ChevronDown, ChevronUp, SlidersHorizontal, Tag, MessageSquare, Calendar, FileText 
+    ChevronDown, ChevronUp, SlidersHorizontal, Tag, MessageSquare, Calendar, FileText, History 
 } from 'lucide-react';
 import { useLocalStorage } from 'usehooks-ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +50,7 @@ interface POSTicketSidebarProps {
     setFechaVenta: (val: string) => void;
     canEditDate: boolean;
     onOpenSettleDue?: () => void;
+    onOpenRecentInvoices?: () => void;
 }
 
 const fmt = (n?: number) => (n || 0).toFixed(2);
@@ -91,6 +92,7 @@ export function POSTicketSidebar({
     setFechaVenta,
     canEditDate,
     onOpenSettleDue,
+    onOpenRecentInvoices,
 }: POSTicketSidebarProps) {
     const [showNumpad, setShowNumpad] = useLocalStorage<boolean>('pos-show-numpad', false);
     const nitSidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,7 +125,7 @@ export function POSTicketSidebar({
 
     return (
         <div
-            className={`md:w-[420px] lg:w-[440px] w-full md:flex flex-col overflow-hidden bg-white border-r border-gray-200 shadow-xl shrink-0 ${
+            className={`md:w-[480px] lg:w-[520px] xl:w-[550px] w-full md:flex flex-col overflow-hidden bg-white border-r border-gray-200 shadow-xl shrink-0 ${
                 isMobileTabActive ? 'flex' : 'hidden md:flex'
             }`}
         >
@@ -154,6 +156,17 @@ export function POSTicketSidebar({
                     ))}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                    {onOpenRecentInvoices && (
+                        <button
+                            type="button"
+                            onClick={onOpenRecentInvoices}
+                            className="px-2 py-1 bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                            title="Papelera & Memoria de Facturas Recientes"
+                        >
+                            <History size={12} className="text-indigo-600" />
+                            <span>Papelera</span>
+                        </button>
+                    )}
                     {items.length > 0 && (
                         <button
                             type="button"
