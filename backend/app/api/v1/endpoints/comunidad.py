@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
-from typing import List, Optional
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from datetime import datetime, timezone
+
 from app.application.services.comunidad_service import ComunidadService, ReclamoInput
-from app.domain.models.comunidad import ComunidadUser
-from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User, UserRole
+from app.infrastructure.auth import get_current_active_user
 
 router = APIRouter()
 
@@ -24,13 +24,13 @@ async def registrar_visita(request: Request, tenant_id: str = "default"):
 @router.get("/check-phone/{telefono}")
 async def check_phone(telefono: str, request: Request, tenant_id: str = "default"):
     """
-    Verifica si un número de teléfono ya ha reclamado. 
+    Verifica si un número de teléfono ya ha reclamado.
     Llamar a este endpoint también suma 1 a sus visitas_pagina.
     """
     ip = request.client.host if request.client else "Unknown"
     user_agent = request.headers.get("user-agent", "Unknown")
     await ComunidadService.registrar_visita(tenant_id, ip, user_agent, f"/check-phone/{telefono}")
-    
+
     user = await ComunidadService.check_phone(tenant_id, telefono)
     return {
         "telefono": user.telefono,
@@ -46,14 +46,14 @@ async def reclamar_premio(data: ReclamoInput, request: Request, tenant_id: str =
     ip = request.client.host if request.client else "Unknown"
     user_agent = request.headers.get("user-agent", "Unknown")
     await ComunidadService.registrar_visita(tenant_id, ip, user_agent, "/claim")
-    
+
     user = await ComunidadService.reclamar_premio(tenant_id, data)
     return {"status": "success", "user": user}
 
 class MiembroWebInput(BaseModel):
     nombre: str
-    telefono: Optional[str] = None
-    email: Optional[str] = None
+    telefono: str | None = None
+    email: str | None = None
 
 @router.post("/register-web")
 async def register_web_member(data: MiembroWebInput, request: Request, tenant_id: str = "default"):
@@ -62,18 +62,18 @@ async def register_web_member(data: MiembroWebInput, request: Request, tenant_id
     """
     if not data.telefono and not data.email:
         raise HTTPException(status_code=400, detail="Debe proporcionar un teléfono o email")
-        
+
     import re
     if not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$", data.nombre.strip()):
         raise HTTPException(status_code=400, detail="El nombre solo puede contener letras y espacios")
-        
+
     ip = request.client.host if request.client else "Unknown"
     user_agent = request.headers.get("user-agent", "Unknown")
     await ComunidadService.registrar_visita(tenant_id, ip, user_agent, "/register-web")
-    
+
     cliente = await ComunidadService.registrar_miembro_web(tenant_id, data.dict())
     return {
-        "status": "success", 
+        "status": "success",
         "cliente_id": str(cliente.id),
         "numero_tarjeta": cliente.numero_tarjeta,
         "nombre": cliente.nombre
@@ -90,7 +90,7 @@ async def get_premios_uso(current_user: User = Depends(get_current_active_user))
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]:
          raise HTTPException(status_code=403, detail="No tienes permisos")
-         
+
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_premios_uso(tenant_id)
 
@@ -102,7 +102,7 @@ async def get_stats(current_user: User = Depends(get_current_active_user)):
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos para ver estadísticas de comunidad")
-         
+
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_stats(tenant_id)
 
@@ -113,18 +113,18 @@ async def get_users(limit: int = 100, skip: int = 0, current_user: User = Depend
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos para ver los usuarios de comunidad")
-         
+
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_users(tenant_id, limit, skip)
 
 @router.get("/miembros")
-async def get_miembros(limit: int = 100, skip: int = 0, search: Optional[str] = None, tipo: str = "comunidad", current_user: User = Depends(get_current_active_user)):
+async def get_miembros(limit: int = 100, skip: int = 0, search: str | None = None, tipo: str = "comunidad", current_user: User = Depends(get_current_active_user)):
     """
     Lista de clientes oficiales etiquetados como miembros de la comunidad web.
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos")
-         
+
     tenant_id = current_user.tenant_id or "default"
     return await ComunidadService.get_miembros_comunidad(tenant_id, limit, skip, search, tipo)
 
@@ -136,26 +136,31 @@ async def afiliar_cliente(cliente_id: str, current_user: User = Depends(get_curr
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
          raise HTTPException(status_code=403, detail="No tienes permisos")
-         
+
     tenant_id = current_user.tenant_id or "default"
-    from app.domain.models.cliente import Cliente
-    from bson import ObjectId
     import random
     import string
-    
+
+    from bson import ObjectId
+
+    from app.domain.models.cliente import Cliente
+
+    if not ObjectId.is_valid(cliente_id):
+        raise HTTPException(status_code=400, detail="ID de cliente inválido")
+
     cliente = await Cliente.get(ObjectId(cliente_id))
     if not cliente or cliente.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-        
+
     if cliente.is_miembro_comunidad:
         return {"status": "success", "message": "El cliente ya es miembro de la comunidad"}
-        
+
     cliente.is_miembro_comunidad = True
-    cliente.fecha_afiliacion = datetime.now(timezone.utc)
+    cliente.fecha_afiliacion = datetime.now(UTC)
     if not cliente.numero_tarjeta:
         random_code = ''.join(random.choices(string.digits, k=6))
         cliente.numero_tarjeta = f"TAB-{random_code}"
-        
+
     await cliente.save()
     return {"status": "success", "message": "Cliente afiliado exitosamente", "numero_tarjeta": cliente.numero_tarjeta}
 
@@ -167,24 +172,25 @@ async def entregar_premio(cliente_id: str, premio_id: str, current_user: User = 
     """
     if current_user.role not in [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.CAJERO, UserRole.VENDEDOR, UserRole.SUPERVISOR]:
         raise HTTPException(status_code=403, detail="No autorizado")
-    
+
     tenant_id = current_user.tenant_id or "default"
-    
-    from app.domain.models.cliente import Cliente
+
     from bson import ObjectId
-    
+
+    from app.domain.models.cliente import Cliente
+
     cliente = await Cliente.find_one(Cliente.id == ObjectId(cliente_id), Cliente.tenant_id == tenant_id)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-        
+
     if not cliente.datos_crm:
         cliente.datos_crm = {}
-        
+
     if "premios_entregados" not in cliente.datos_crm:
         cliente.datos_crm["premios_entregados"] = []
-        
+
     if premio_id not in cliente.datos_crm["premios_entregados"]:
         cliente.datos_crm["premios_entregados"].append(premio_id)
-        
+
     await cliente.save()
     return {"status": "ok", "premios_entregados": cliente.datos_crm["premios_entregados"]}

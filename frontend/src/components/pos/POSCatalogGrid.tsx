@@ -120,7 +120,7 @@ export function POSCatalogGrid({
                     </div>
                 ) : (
                     <div className="flex flex-col h-full justify-between">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                             {products.map((p) => {
                                 const stock = stockMap[p._id] ?? 0;
                                 const inCart = itemsInCart
@@ -154,7 +154,7 @@ export function POSCatalogGrid({
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-xs text-gray-900 font-bold truncate leading-tight">
+                                        <p className="text-xs text-gray-900 font-bold line-clamp-3 leading-snug min-h-[2.5rem] break-words" title={p.descripcion}>
                                             {p.descripcion}
                                         </p>
                                         <div className="flex items-center justify-between mt-auto pt-1.5">

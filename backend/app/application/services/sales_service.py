@@ -1,51 +1,66 @@
-from app.infrastructure.db import get_client
 import logging
 import random
 import string
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
-from decimal import Decimal
 
-from app.domain.models.sale import Sale, SaleItem, PagoItem, ClienteInfo, QRInfo, EstadoPago
-from app.domain.models.product import Product
-from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
-from app.domain.models.caja import CajaMovimiento, CajaSesion, EstadoSesion, SubtipoMovimiento
+from app.domain.models.base import DecimalMoney
+from app.domain.models.caja import (
+    CajaMovimiento,
+    CajaSesion,
+    EstadoSesion,
+    SubtipoMovimiento,
+)
 from app.domain.models.cliente import Cliente
+from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
+from app.domain.models.product import Product
+from app.domain.models.sale import (
+    ClienteInfo,
+    EstadoPago,
+    PagoItem,
+    QRInfo,
+    Sale,
+    SaleItem,
+)
 from app.domain.models.user import User, UserRole
 from app.domain.schemas.sale import SaleCreate
-from app.utils.pricing import resolver_precio
-from app.domain.models.base import DecimalMoney
+from app.infrastructure.db import get_client
 from app.utils.errors import retry_on_write_conflict
+from app.utils.pricing import resolver_precio
 
 logger = logging.getLogger("SalesService")
 
 class SalesService:
     @staticmethod
     def _get_sale_repo():
-        from app.infrastructure.repositories.mongo_sale_repository import MongoSaleRepository
+        from app.infrastructure.repositories.mongo_sale_repository import (
+            MongoSaleRepository,
+        )
         return MongoSaleRepository()
 
     @staticmethod
     async def update_sale_date(tenant_id: str, sale_id: str, nueva_fecha: datetime, current_user: User):
         from fastapi import HTTPException
+
         from app.infrastructure.db import get_client
         sale = await Sale.get(sale_id)
         if not sale or sale.tenant_id != tenant_id:
             raise HTTPException(status_code=404, detail="Venta no encontrada")
-        
+
         client = get_client()
         async with await client.start_session() as session:
             async with session.start_transaction():
                 sale.created_at = nueva_fecha
                 await sale.save(session=session)
-                
+
                 await InventoryLog.find(InventoryLog.referencia_id == sale_id, session=session).update({"$set": {"created_at": nueva_fecha}}, session=session)
-                
+
                 await CajaMovimiento.find(CajaMovimiento.sale_id == sale_id, session=session).update({"$set": {"fecha": nueva_fecha, "created_at": nueva_fecha}}, session=session)
-                
+
         return sale
 
     @staticmethod
@@ -69,7 +84,7 @@ class SalesService:
                 return existing_sale
 
         # ── Lock Anti-Duplicado Secundario (Ventana de 5 segundos) ──────────────
-        five_sec_ago = datetime.now(timezone.utc) - timedelta(seconds=5)
+        five_sec_ago = datetime.now(UTC) - timedelta(seconds=5)
         new_items_summary = sorted([(i.producto_id, i.cantidad) for i in sale_in.items])
 
         recent_sales = await Sale.find({
@@ -95,10 +110,10 @@ class SalesService:
         client = get_client()
 
         async def _run_transaction() -> Sale:
-            fecha_transaccion = sale_in.fecha_venta if sale_in.fecha_venta else datetime.now(timezone.utc)
+            fecha_transaccion = sale_in.fecha_venta if sale_in.fecha_venta else datetime.now(UTC)
             async with await client.start_session() as session:
                 async with session.start_transaction():
-                    sale_items: List[SaleItem] = []
+                    sale_items: list[SaleItem] = []
                     computed_total = Decimal("0.0")
                     meal_plans_to_create = []
 
@@ -203,7 +218,7 @@ class SalesService:
                                 if lote.cantidad_actual <= 0:
                                     lote.cantidad_actual = 0.0
                                     lote.estado = "AGOTADO"
-                                lote.updated_at = datetime.now(timezone.utc)
+                                lote.updated_at = datetime.now(UTC)
                                 await lote.save(session=session)
                                 if not lot_code_used:
                                     lot_code_used = lote.lote_codigo
@@ -240,7 +255,7 @@ class SalesService:
                                 created_at=fecha_transaccion
                             ).create(session=session)
 
-                        
+
 
                     if sale_in.descuento:
                         val = DecimalMoney(sale_in.descuento.valor)
@@ -257,10 +272,13 @@ class SalesService:
                     if has_credit:
                         if not sale_in.cliente_id and not (sale_in.cliente and sale_in.cliente.razon_social):
                             raise HTTPException(status_code=400, detail="Ventas a crédito requieren un cliente registrado")
-                        
+
                         # Validar estado crediticio si el cliente ya existe
                         if sale_in.cliente_id:
-                            from app.domain.models.credito import CuentaCredito, EstadoCuenta
+                            from app.domain.models.credito import (
+                                CuentaCredito,
+                                EstadoCuenta,
+                            )
                             cuenta_existente = await CuentaCredito.find_one(
                                 CuentaCredito.tenant_id == tenant_id,
                                 CuentaCredito.cliente_id == sale_in.cliente_id,
@@ -270,7 +288,7 @@ class SalesService:
                                 if cuenta_existente.estado_cuenta == EstadoCuenta.MOROSO:
                                     logger.warning(f"Venta a crédito rechazada: Cliente {sale_in.cliente_id} está MOROSO.")
                                     raise HTTPException(status_code=400, detail="Este cliente tiene estado MOROSO en su cuenta y no puede comprar a crédito hasta regularizar sus deudas.")
-                                
+
                                 if cuenta_existente.limite_credito is not None:
                                     # Cuanto adeuda ahorita + Cuanto endeudará en esta venta (total de la venta menos los pagos parciales hechos)
                                     actual_pagos_validar = [p.monto for p in sale_in.pagos if p.metodo != "CREDITO"]
@@ -278,7 +296,7 @@ class SalesService:
                                     nueva_deuda = computed_total - pagado_ahora
                                     if Decimal(str(cuenta_existente.saldo_total)) + nueva_deuda > Decimal(str(cuenta_existente.limite_credito)):
                                         raise HTTPException(
-                                            status_code=400, 
+                                            status_code=400,
                                             detail=f"Esta venta excede el límite de crédito del cliente (Límite: Bs. {cuenta_existente.limite_credito}, Nuevo total proyectado: Bs. {Decimal(str(cuenta_existente.saldo_total)) + nueva_deuda})."
                                         )
 
@@ -332,18 +350,18 @@ class SalesService:
                     ).update({"$set": {"referencia_id": str(sale.id)}}, session=session)
 
                     # --- Resolución de cliente_id ---
-                    # Si la venta no tiene cliente_id formal y tiene datos del cliente (por crédito, factura o datos ingresados),
-                    # guardamos al cliente en la base de datos para que sea recurrente.
-                    if not sale.cliente_id and sale.cliente:
+                    # Si la venta tiene datos del cliente (por crédito, factura, comunidad o datos ingresados),
+                    # guardamos o actualizamos al cliente en la base de datos para fidelización y recurrencia.
+                    if sale.cliente:
                         es_credito = sale.estado_pago in [EstadoPago.PENDIENTE, EstadoPago.PARCIAL]
                         es_factura = sale.cliente.es_factura
                         tiene_nit = bool(sale.cliente.nit)
                         tiene_razon_social = bool(sale.cliente.razon_social)
                         tiene_telefono = bool(sale.cliente.telefono)
                         tiene_email = bool(sale.cliente.email)
-                        
+
                         if sale.cliente.is_miembro_comunidad:
-                            if not tiene_telefono and not tiene_email:
+                            if not tiene_telefono and not tiene_email and not sale.cliente_id:
                                 raise HTTPException(
                                     status_code=400,
                                     detail="Se requiere un número de teléfono o correo electrónico para registrar un miembro de la comunidad."
@@ -355,15 +373,18 @@ class SalesService:
                             nombre = raw_nombre if raw_nombre else ("CONSUMIDOR FINAL" if not tiene_nit else f"Cliente NIT {sale.cliente.nit.strip()}")
                             telf = (sale.cliente.telefono or "").strip() or None
                             nit_val = (sale.cliente.nit or "").strip() or None
-                            
+
                             cliente_existente = None
 
                             # 0. Priorizar si el cliente_id ya fue provisto desde el frontend
                             if sale.cliente_id:
                                 try:
-                                    c_by_id = await Cliente.get(sale.cliente_id, session=session)
-                                    if c_by_id and c_by_id.tenant_id == sale.tenant_id and c_by_id.is_active:
-                                        cliente_existente = c_by_id
+                                    from bson import ObjectId
+                                    cid_obj = ObjectId(sale.cliente_id) if ObjectId.is_valid(sale.cliente_id) else None
+                                    if cid_obj:
+                                        c_by_id = await Cliente.get(cid_obj, session=session)
+                                        if c_by_id and c_by_id.tenant_id == sale.tenant_id and c_by_id.is_active:
+                                            cliente_existente = c_by_id
                                 except Exception:
                                     cliente_existente = None
 
@@ -374,7 +395,7 @@ class SalesService:
                                     "nit_ci": nit_val,
                                     "is_active": True
                                 }, session=session)
-                                
+
                             # 2. Si no se encontró por NIT/CI, buscar por teléfono si está provisto
                             if not cliente_existente and telf:
                                 cliente_existente = await Cliente.find_one({
@@ -382,7 +403,7 @@ class SalesService:
                                     "telefono": telf,
                                     "is_active": True
                                 }, session=session)
-                                
+
                             # 3. Solo si no tiene NI NIT NI TELÉFONO, buscar por nombre exacto (evita colisión de homónimos)
                             if not cliente_existente and raw_nombre and raw_nombre.upper() not in ["CONSUMIDOR FINAL", "SIN NOMBRE"] and not nit_val and not telf:
                                 import re
@@ -391,7 +412,7 @@ class SalesService:
                                     "nombre": {"$regex": f"^{re.escape(raw_nombre)}$", "$options": "i"},
                                     "is_active": True
                                 }, session=session)
-                                
+
                             if not cliente_existente:
                                 random_code = ''.join(random.choices(string.digits, k=6))
                                 is_miembro = sale.cliente.is_miembro_comunidad
@@ -403,7 +424,8 @@ class SalesService:
                                     nit_ci=nit_val,
                                     email=sale.cliente.email,
                                     is_miembro_comunidad=is_miembro,
-                                    numero_tarjeta=num_tarj
+                                    numero_tarjeta=num_tarj,
+                                    fecha_afiliacion=datetime.now(UTC) if is_miembro else None
                                 )
                                 await cliente_existente.insert(session=session)
                             else:
@@ -413,13 +435,16 @@ class SalesService:
                                     if cliente_existente.nombre.upper() in ["CONSUMIDOR FINAL", "SIN NOMBRE"] or cliente_existente.nombre.startswith("Cliente NIT"):
                                         cliente_existente.nombre = raw_nombre
                                         updated = True
-                                        
+
                                 if sale.cliente.is_miembro_comunidad and not cliente_existente.is_miembro_comunidad:
                                     cliente_existente.is_miembro_comunidad = True
-                                    random_code = ''.join(random.choices(string.digits, k=6))
-                                    cliente_existente.numero_tarjeta = f"TAB-{random_code}"
+                                    if not cliente_existente.fecha_afiliacion:
+                                        cliente_existente.fecha_afiliacion = datetime.now(UTC)
+                                    if not cliente_existente.numero_tarjeta:
+                                        random_code = ''.join(random.choices(string.digits, k=6))
+                                        cliente_existente.numero_tarjeta = f"TAB-{random_code}"
                                     updated = True
-                                    
+
                                 # Si no tenía NIT y ahora se ingresó, asignarlo
                                 if nit_val and not cliente_existente.nit_ci:
                                     cliente_existente.nit_ci = nit_val
@@ -434,7 +459,7 @@ class SalesService:
                                     updated = True
                                 if updated:
                                     await cliente_existente.save(session=session)
-                                    
+
                             # Vincular el cliente a la venta
                             sale.cliente_id = str(cliente_existente.id)
                             await SalesService._get_sale_repo().update(sale, session=session)
@@ -449,30 +474,34 @@ class SalesService:
                             Set({Cliente.ultima_compra_at: sale.created_at}),
                             session=session
                         )
-                        
+
                         if sale.estado_pago in [EstadoPago.PENDIENTE, EstadoPago.PARCIAL]:
-                            from app.application.services.credito_service import CreditoService
+                            from app.application.services.credito_service import (
+                                CreditoService,
+                            )
                             monto_deuda = computed_total - total_pagado
                             await CreditoService.registrar_deuda_desde_venta(sale, monto_deuda, sale.cliente_id, session=session)
 
                     if meal_plans_to_create:
                         if not sale.cliente_id:
                             raise HTTPException(status_code=400, detail="No puedes vender un Plan sin asignar la venta a un cliente.")
-                        from app.domain.models.meal_plan_template import MealPlanTemplate
                         from app.domain.models.client_meal_plan import ClientMealPlan
+                        from app.domain.models.meal_plan_template import (
+                            MealPlanTemplate,
+                        )
                         for template_id, cantidad_vendida in meal_plans_to_create:
                             template = await MealPlanTemplate.get(template_id, session=session)
                             if not template:
                                 raise HTTPException(status_code=404, detail=f"Plantilla de Plan {template_id} no encontrada.")
-                            
+
                             for _ in range(cantidad_vendida):
                                 new_plan = ClientMealPlan(
                                     tenant_id=tenant_id,
                                     cliente_id=sale.cliente_id,
                                     template_id=template_id,
                                     sale_id=str(sale.id),
-                                    fecha_inicio=datetime.now(timezone.utc),
-                                    fecha_fin_estimada=datetime.now(timezone.utc) + timedelta(days=template.dias_vigencia),
+                                    fecha_inicio=datetime.now(UTC),
+                                    fecha_fin_estimada=datetime.now(UTC) + timedelta(days=template.dias_vigencia),
                                     comidas_totales=template.cantidad_comidas,
                                     comidas_consumidas=0
                                 )
@@ -540,7 +569,9 @@ class SalesService:
 
                     # Generar Asiento Contable Automático (ERP General Ledger)
                     try:
-                        from app.application.services.contabilidad_auto_posting_service import ContabilidadAutoPostingService
+                        from app.application.services.contabilidad_auto_posting_service import (
+                            ContabilidadAutoPostingService,
+                        )
                         await ContabilidadAutoPostingService.post_sale(
                             sale=sale,
                             usuario_nombre=current_user.full_name or current_user.username,
@@ -579,12 +610,14 @@ class SalesService:
         sale_id: str,
         current_user: User,
         motivo: str,
-        notas: Optional[str] = None,
-        metodo_pago_correcto: Optional[str] = None,
+        notas: str | None = None,
+        metodo_pago_correcto: str | None = None,
         afectar_caja: bool = True,
-        caja_sesion_id: Optional[str] = None,
+        caja_sesion_id: str | None = None,
     ) -> Sale:
-        from app.application.services.sales_anulacion_service import SalesAnulacionService
+        from app.application.services.sales_anulacion_service import (
+            SalesAnulacionService,
+        )
         return await SalesAnulacionService.anular_sale(
             sale_id=sale_id,
             current_user=current_user,

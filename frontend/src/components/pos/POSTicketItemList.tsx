@@ -70,7 +70,7 @@ export function POSTicketItemList({
 
                             {/* Details */}
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-gray-900 truncate leading-snug">
+                                <p className="text-xs font-bold text-gray-900 leading-snug line-clamp-3 break-words" title={item.product.descripcion}>
                                     {item.product.descripcion}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
