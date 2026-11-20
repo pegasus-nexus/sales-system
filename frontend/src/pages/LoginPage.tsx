@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User as UserIcon, ArrowRight, Loader2, Eye, EyeOff, RefreshCw, AlertCircle } from 'lucide-react';
+import { Lock, User as UserIcon, ArrowRight, Loader2, Eye, EyeOff, AlertCircle, Compass, Layers, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BASE_URL } from '../api/client';
-import { getLoginBranding } from '../api/api';
-import type { LoginBrandingResponse } from '../api/types';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
@@ -16,84 +14,23 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Branding State
-    const [branding, setBranding] = useState<LoginBrandingResponse | null>(null);
-    const [systemOnline, setSystemOnline] = useState(true);
-
     const login = useAuthStore((state) => state.login);
     const navigate = useNavigate();
     const passwordInputRef = useRef<HTMLInputElement>(null);
 
-    // 1. Cargar usuario recordado (si existe) y detectar tenant
+    // Cargar usuario recordado si existe
     useEffect(() => {
-        // Cargar usuario guardado con amor para agilizar el trabajo diario de cajeros
         const savedUser = localStorage.getItem('pegasus_remembered_username');
         if (savedUser) {
             setUsername(savedUser);
             setRememberMe(true);
         }
-
-        const detectAndFetchBranding = async () => {
-            try {
-                let detectedSlug: string | null = null;
-
-                // Prioridad 1: Query param en URL (?tenant=taboada o ?slug=taboada)
-                const params = new URLSearchParams(window.location.search);
-                const querySlug = params.get('tenant') || params.get('slug');
-                if (querySlug && querySlug.trim()) {
-                    detectedSlug = querySlug.trim();
-                }
-
-                // Prioridad 2: Subdominio (ej. taboada.pegasus-nexus.com)
-                if (!detectedSlug) {
-                    const hostnameParts = window.location.hostname.split('.');
-                    if (hostnameParts.length > 2) {
-                        const sub = hostnameParts[0].toLowerCase();
-                        if (!['app', 'www', 'api', 'admin', 'localhost', 'portal'].includes(sub)) {
-                            detectedSlug = sub;
-                        }
-                    }
-                }
-
-                // Prioridad 3: Último tenant recordado en este navegador
-                if (!detectedSlug) {
-                    const savedSlug = localStorage.getItem('pegasus_last_tenant_slug');
-                    if (savedSlug && savedSlug.trim()) {
-                        detectedSlug = savedSlug.trim();
-                    }
-                }
-
-                if (detectedSlug) {
-                    const data = await getLoginBranding(detectedSlug);
-                    if (data && data.custom_branding) {
-                        setBranding(data);
-                        if (data.tenant_slug) {
-                            localStorage.setItem('pegasus_last_tenant_slug', data.tenant_slug);
-                        }
-                    }
-                }
-                setSystemOnline(true);
-            } catch {
-                // Si la llamada falla, el sistema sigue funcionando con branding de Pegasus Nexus
-                setSystemOnline(true);
-            }
-        };
-
-        detectAndFetchBranding();
     }, []);
 
-    // 2. Detección en tiempo real de Bloq Mayús (Caps Lock)
+    // Detección en tiempo real de Bloq Mayús (Caps Lock)
     const handleKeyModifierCheck = (e: React.KeyboardEvent) => {
         if (typeof e.getModifierState === 'function') {
             setCapsLockActive(e.getModifierState('CapsLock'));
-        }
-    };
-
-    const handleClearTenant = () => {
-        localStorage.removeItem('pegasus_last_tenant_slug');
-        setBranding(null);
-        if (window.location.search) {
-            window.history.replaceState({}, '', window.location.pathname);
         }
     };
 
@@ -103,7 +40,7 @@ export default function LoginPage() {
         setRememberMe(false);
     };
 
-    // 3. Envío de credenciales con Timeout seguro (10 segundos)
+    // Envío de credenciales con Timeout de 10s
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -113,14 +50,12 @@ export default function LoginPage() {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
-            // Guardar o limpiar usuario recordado
             if (rememberMe && username.trim()) {
                 localStorage.setItem('pegasus_remembered_username', username.trim());
             } else {
                 localStorage.removeItem('pegasus_remembered_username');
             }
 
-            // A. Obtener Token
             const formData = new URLSearchParams();
             formData.append('username', username.trim());
             formData.append('password', password);
@@ -134,27 +69,25 @@ export default function LoginPage() {
 
             if (!response.ok) {
                 if (response.status === 401 || response.status === 400) {
-                    throw new Error('Usuario o contraseña incorrectos. Revisa tus datos e intenta de nuevo.');
+                    throw new Error('Credenciales incorrectas. Verifica tu usuario y contraseña.');
                 }
-                throw new Error(`Error en el servidor de autenticación (Código ${response.status}).`);
+                throw new Error(`Error en el servidor de autenticación (${response.status}).`);
             }
 
             const data = await response.json();
             const token = data.access_token;
 
-            // B. Obtener Perfil del Usuario
             const userResponse = await fetch(`${BASE_URL}/users/me`, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 signal: controller.signal,
             });
 
             if (!userResponse.ok) {
-                throw new Error('Sesión iniciada, pero no se pudo cargar el perfil del usuario.');
+                throw new Error('Sesión iniciada, pero no se pudo cargar el perfil.');
             }
 
             const userData = await userResponse.json();
 
-            // C. Iniciar sesión y enrutar
             login(token, userData);
             if (userData.role === 'SUPERADMIN' || userData.role === 'SUPERADMIN_STAFF') {
                 navigate('/admin');
@@ -165,7 +98,7 @@ export default function LoginPage() {
             }
         } catch (err: unknown) {
             if (err instanceof Error && err.name === 'AbortError') {
-                setError('Tiempo de espera agotado. Verifica tu conexión a internet e intenta nuevamente.');
+                setError('Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.');
             } else {
                 const message = err instanceof Error ? err.message : 'Error inesperado al iniciar sesión.';
                 setError(message);
@@ -176,230 +109,172 @@ export default function LoginPage() {
         }
     };
 
-    // Paleta cósmica adaptativa: Si el tenant tiene color propio (ej. Chocolates Taboada),
-    // se armoniza con el diseño sin perder la elegancia astronómica.
-    const accentColor = branding?.primary_color || '#38bdf8'; // Starlight Sky
-    const secondaryColor = branding?.secondary_color || '#f1e5c6'; // Pale Starlight Gold
-
     return (
-        <div className="min-h-screen bg-[#06080F] text-slate-100 flex flex-col lg:flex-row relative overflow-x-hidden selection:bg-sky-500/30 selection:text-sky-200">
-            {/* ── MAPA CELESTE DE FONDO (SVG ligero < 3KB, sin consumo de GPU ni animaciones pesadas) ── */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+        <div className="min-h-screen bg-[#060810] text-slate-100 flex flex-col lg:flex-row relative overflow-x-hidden selection:bg-sky-500/30 selection:text-sky-200">
+            {/* ── FONDO CARTOGRÁFICO ASTRONÓMICO PEGASUS NEXUS (SVG artesanal < 4KB) ── */}
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35">
                 <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                     <defs>
-                        <radialGradient id="celestialGlow" cx="25%" cy="35%" r="65%">
-                            <stop offset="0%" stopColor={accentColor} stopOpacity="0.12" />
-                            <stop offset="60%" stopColor="#0B132B" stopOpacity="0.04" />
-                            <stop offset="100%" stopColor="#06080F" stopOpacity="0" />
+                        <radialGradient id="nexusStarlight" cx="22%" cy="40%" r="60%">
+                            <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.14" />
+                            <stop offset="50%" stopColor="#1E293B" stopOpacity="0.05" />
+                            <stop offset="100%" stopColor="#060810" stopOpacity="0" />
                         </radialGradient>
-                        <pattern id="celestialGrid" width="80" height="80" patternUnits="userSpaceOnUse">
-                            <circle cx="40" cy="40" r="0.65" fill="#94A3B8" opacity="0.3" />
-                            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#334155" strokeWidth="0.35" opacity="0.25" />
+                        <pattern id="celestialGridPattern" width="90" height="90" patternUnits="userSpaceOnUse">
+                            <circle cx="45" cy="45" r="0.75" fill="#94A3B8" opacity="0.35" />
+                            <path d="M 90 0 L 0 0 0 90" fill="none" stroke="#1E293B" strokeWidth="0.5" opacity="0.4" />
                         </pattern>
                     </defs>
-                    <rect width="100%" height="100%" fill="url(#celestialGlow)" />
-                    <rect width="100%" height="100%" fill="url(#celestialGrid)" />
+                    <rect width="100%" height="100%" fill="url(#nexusStarlight)" />
+                    <rect width="100%" height="100%" fill="url(#celestialGridPattern)" />
+                    {/* Líneas meridianas astronómicas decorativas */}
+                    <circle cx="25%" cy="50%" r="320" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="3 6" opacity="0.3" />
+                    <circle cx="25%" cy="50%" r="480" fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="2 8" opacity="0.2" />
+                    <line x1="0" y1="50%" x2="50%" y2="50%" stroke="#38BDF8" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.2" />
                 </svg>
             </div>
 
-            {/* Si el tenant tiene su propia imagen de fondo de marca, se integra como textura elegante */}
-            {branding?.login_bg_image && (
-                <div
-                    className="absolute inset-0 bg-cover bg-center z-0 opacity-15 mix-blend-luminosity pointer-events-none"
-                    style={{ backgroundImage: `url(${branding.login_bg_image})` }}
-                />
-            )}
-
-            {/* ── PANEL IZQUIERDO: Observatorio & Identidad Pegasus Nexus (Desktop) ── */}
-            <div className="hidden lg:flex lg:w-7/12 relative z-10 flex-col justify-between p-10 xl:p-14 border-r border-slate-800/80 bg-gradient-to-b from-[#080C16]/95 to-[#06080F]/95">
-                {/* Cabecera de Marca */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3.5">
-                        {branding?.logo_url ? (
-                            <img
-                                src={branding.logo_url}
-                                alt={branding.tenant_name}
-                                className="h-11 w-auto max-w-[190px] object-contain rounded-xl p-1.5 bg-[#0C1220] border border-slate-700/70 shadow-sm"
-                            />
-                        ) : (
-                            <div className="w-11 h-11 rounded-xl bg-[#0D1629] border border-sky-500/30 flex items-center justify-center shadow-inner relative group">
-                                {/* Emblema artesanal de la Constelación Pegaso */}
-                                <svg className="w-6 h-6 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="5" cy="6" r="1.5" fill="currentColor" />
-                                    <circle cx="12" cy="4" r="1.5" fill="currentColor" />
-                                    <circle cx="19" cy="8" r="1.5" fill="currentColor" />
-                                    <circle cx="15" cy="17" r="1.5" fill="currentColor" />
-                                    <circle cx="8" cy="18" r="1.5" fill="currentColor" />
-                                    <path d="M5 6 L12 4 L19 8 L15 17 L8 18 Z" strokeWidth="0.8" opacity="0.6" strokeDasharray="2 2" />
-                                    <path d="M12 4 L15 17" strokeWidth="0.8" opacity="0.5" />
-                                    <path d="M5 6 L8 18" strokeWidth="0.8" opacity="0.5" />
-                                </svg>
-                                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
-                            </div>
-                        )}
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-black tracking-wider text-slate-100 font-serif">
-                                    {branding?.tenant_name || 'PEGASUS NEXUS'}
-                                </span>
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded border border-slate-700 bg-slate-800/80 text-slate-300">
-                                    2.5
-                                </span>
-                            </div>
-                            <span className="block text-[11px] text-slate-400 font-medium tracking-wide">
-                                {branding?.custom_branding ? 'Portal Corporativo Autorizado' : 'Constelación de Comercio & Punto de Venta'}
+            {/* ── PANEL IZQUIERDO: La Esencia de Pegasus Nexus (Desktop) ── */}
+            <div className="hidden lg:flex lg:w-7/12 relative z-10 flex-col justify-between p-12 xl:p-16 border-r border-slate-800/80 bg-gradient-to-b from-[#080C18]/95 via-[#060810]/95 to-[#05070D]/95">
+                {/* Cabecera / Emblema Celestial */}
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0F1B33] to-[#080F1E] border border-sky-400/30 flex items-center justify-center shadow-lg shadow-sky-950/50 relative group">
+                        {/* Constelación Pegaso Artesanal */}
+                        <svg className="w-7 h-7 text-sky-400 group-hover:text-amber-300 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="5" cy="6" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+                            <circle cx="19" cy="8" r="1.5" fill="currentColor" />
+                            <circle cx="15" cy="17" r="1.5" fill="currentColor" />
+                            <circle cx="8" cy="18" r="1.5" fill="currentColor" />
+                            <circle cx="2" cy="12" r="1.2" fill="#F59E0B" />
+                            <path d="M5 6 L12 4 L19 8 L15 17 L8 18 Z" strokeWidth="0.8" opacity="0.6" strokeDasharray="2 2" />
+                            <path d="M12 4 L15 17" strokeWidth="0.8" opacity="0.5" />
+                            <path d="M5 6 L8 18" strokeWidth="0.8" opacity="0.5" />
+                            <path d="M5 6 L2 12" strokeWidth="0.7" opacity="0.4" strokeDasharray="1 2" />
+                        </svg>
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-300 animate-pulse" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl font-black tracking-wider text-slate-50 font-serif">
+                                PEGASUS <span className="text-sky-400 font-sans font-black">NEXUS</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-sky-900/60 bg-sky-950/40 text-sky-300">
+                                v2.5
                             </span>
                         </div>
+                        <span className="block text-[11px] text-slate-400 font-medium tracking-widest uppercase">
+                            Commercial Operating System
+                        </span>
                     </div>
-
-                    {branding?.custom_branding && (
-                        <button
-                            type="button"
-                            onClick={handleClearTenant}
-                            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 transition-all cursor-pointer"
-                            title="Cambiar a Pegasus genérico u otra empresa"
-                        >
-                            <RefreshCw size={12} />
-                            <span>Cambiar empresa</span>
-                        </button>
-                    )}
                 </div>
 
-                {/* Contenido Central: Mensaje Poético y Estructurado */}
-                <div className="max-w-xl my-auto py-8 space-y-6">
-                    {/* Insignia Astronómica */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700/80 bg-slate-900/80 text-xs text-slate-300">
+                {/* Mensaje Central Cósmico y Elegante */}
+                <div className="max-w-xl my-auto py-10 space-y-7">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-slate-700/80 bg-slate-900/90 text-xs text-slate-300 shadow-inner">
                         <span className="text-amber-400">✦</span>
                         <span className="font-mono text-[11px] text-slate-400">PEGASUS · RA 21h 44m · DEC +15° 18'</span>
                         <span className="text-slate-600">|</span>
-                        <span className="font-semibold text-slate-200">{branding?.badge_text || 'Red de Operaciones Activa'}</span>
+                        <span className="font-semibold text-sky-300">Núcleo Central</span>
                     </div>
 
-                    <h1 className="text-3xl xl:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight font-serif">
-                        {branding?.headline ? (
-                            branding.headline
-                        ) : (
-                            <>
-                                El nexo donde convergen tus <br />
-                                <span className="text-sky-300 underline decoration-sky-500/30 underline-offset-4">
-                                    sucursales, ventas y personas
-                                </span>.
-                            </>
-                        )}
+                    <h1 className="text-3xl xl:text-5xl font-black text-slate-50 tracking-tight leading-[1.18] font-serif">
+                        El nexo donde convergen tus <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-200 to-amber-200">
+                            sucursales, ventas y personas
+                        </span>.
                     </h1>
 
-                    <p className="text-slate-300 text-sm leading-relaxed max-w-lg">
-                        {branding?.description ||
-                            'Diseñado con precisión y cariño para brindar agilidad en mostrador, control de inventario transparente y fidelización real en cada transacción.'}
+                    <p className="text-slate-300 text-sm xl:text-base leading-relaxed max-w-lg">
+                        Diseñado con rigor y cariño artesanal. Una plataforma atemporal creada para transformar la complejidad de tu comercio en un flujo armónico, fluido y exacto.
                     </p>
 
-                    {/* Fichas de Identidad Artesanal (Sin gradientes chillones) */}
-                    <div className="grid grid-cols-2 gap-3.5 pt-2 max-w-lg">
-                        <div className="p-3.5 rounded-xl bg-[#0C1220] border border-slate-800/90 hover:border-slate-700 transition-colors">
-                            <div className="flex items-center gap-2 text-sky-400 mb-1">
-                                <span className="text-sm">✦</span>
-                                <span className="text-xs font-bold text-slate-200">Terminal POS Precisa</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
-                                Cobros ágiles, soporte multidivisa y sincronización de caja en tiempo real.
+                    {/* Fichas de Pilares del Sistema (Diseño sólido, sobrio y sin clichés) */}
+                    <div className="grid grid-cols-3 gap-3 pt-2">
+                        <div className="p-4 rounded-2xl bg-[#0D1424] border border-slate-800 hover:border-slate-700 transition-colors">
+                            <Compass className="w-5 h-5 text-sky-400 mb-2" />
+                            <h4 className="text-xs font-bold text-slate-200 mb-1">Terminal POS</h4>
+                            <p className="text-[11px] text-slate-400 leading-snug">
+                                Cobro instantáneo, multidivisa y cuadratura precisa.
                             </p>
                         </div>
 
-                        <div className="p-3.5 rounded-xl bg-[#0C1220] border border-slate-800/90 hover:border-slate-700 transition-colors">
-                            <div className="flex items-center gap-2 text-amber-300 mb-1">
-                                <span className="text-sm">✦</span>
-                                <span className="text-xs font-bold text-slate-200">Kárdex & Fidelización</span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-normal">
-                                Control de stock por lote, sellos de cliente y tarjetas inteligentes.
+                        <div className="p-4 rounded-2xl bg-[#0D1424] border border-slate-800 hover:border-slate-700 transition-colors">
+                            <Layers className="w-5 h-5 text-amber-400 mb-2" />
+                            <h4 className="text-xs font-bold text-slate-200 mb-1">Kárdex Inteligente</h4>
+                            <p className="text-[11px] text-slate-400 leading-snug">
+                                Trazabilidad por lote y sincronización multi-almacén.
+                            </p>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-[#0D1424] border border-slate-800 hover:border-slate-700 transition-colors">
+                            <ShieldCheck className="w-5 h-5 text-emerald-400 mb-2" />
+                            <h4 className="text-xs font-bold text-slate-200 mb-1">Auditoría ACID</h4>
+                            <p className="text-[11px] text-slate-400 leading-snug">
+                                Consistencia blindada e integridad financiera.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Pie del Panel Izquierdo */}
-                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/70 pt-4">
-                    <span className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${systemOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                        <span className="font-mono text-[11px]">
-                            {systemOnline ? '✦ Núcleo Operativo Estable' : 'Conectando con el servidor...'}
-                        </span>
-                    </span>
-                    <span className="text-slate-400 text-[11px]">
-                        © 2026 {branding?.tenant_name || 'Pegasus SalesSystem'} · Alta Disponibilidad
+                <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80 pt-5">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-[11px] text-slate-400">✦ Conexión al Núcleo Estable</span>
+                    </div>
+                    <span className="text-slate-400 text-[11px] font-mono">
+                        PEGASUS NEXUS · 2026
                     </span>
                 </div>
             </div>
 
-            {/* ── PANEL DERECHO: Formulario de Acceso Humano & Accesible ── */}
+            {/* ── PANEL DERECHO: Tarjeta de Acceso Humana & Accesible ── */}
             <div className="w-full lg:w-5/12 flex items-center justify-center p-4 sm:p-8 relative z-10 my-auto min-h-screen overflow-y-auto">
                 <motion.div
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-sm sm:max-w-md bg-[#0C111E] border border-slate-700/80 p-6 sm:p-8 rounded-2xl shadow-xl space-y-5"
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="w-full max-w-sm sm:max-w-md bg-[#0C1220] border border-slate-700/90 p-7 sm:p-9 rounded-3xl shadow-2xl shadow-black/80 space-y-6"
                 >
-                    {/* Header para Mobile con Logo o Nombre */}
-                    <div className="lg:hidden flex items-center justify-between pb-4 border-b border-slate-800">
-                        <div className="flex items-center gap-2.5">
-                            {branding?.logo_url ? (
-                                <img
-                                    src={branding.logo_url}
-                                    alt={branding.tenant_name}
-                                    className="h-8 w-auto max-w-[130px] object-contain rounded-lg"
-                                />
-                            ) : (
-                                <div className="w-8 h-8 rounded-lg bg-[#0F182C] border border-sky-500/40 flex items-center justify-center">
-                                    <span className="text-sky-400 text-xs">✦</span>
-                                </div>
-                            )}
-                            <div>
-                                <span className="text-base font-black text-slate-100 tracking-wide font-serif">
-                                    {branding?.tenant_name || 'PEGASUS'}
-                                </span>
-                                <span className="block text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
-                                    {branding?.custom_branding ? 'Portal Corporativo' : 'SalesSystem'}
-                                </span>
-                            </div>
+                    {/* Header Mobile */}
+                    <div className="lg:hidden flex items-center gap-3 pb-4 border-b border-slate-800">
+                        <div className="w-9 h-9 rounded-xl bg-[#0F1B33] border border-sky-400/30 flex items-center justify-center">
+                            <span className="text-sky-400 font-bold text-sm">✦</span>
                         </div>
-
-                        {branding?.custom_branding && (
-                            <button
-                                type="button"
-                                onClick={handleClearTenant}
-                                className="text-xs text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700"
-                                title="Cambiar empresa"
-                            >
-                                <RefreshCw size={12} />
-                            </button>
-                        )}
+                        <div>
+                            <span className="text-lg font-black text-slate-100 font-serif">
+                                PEGASUS <span className="text-sky-400">NEXUS</span>
+                            </span>
+                            <span className="block text-[9px] text-slate-400 tracking-wider uppercase font-semibold">
+                                Commercial OS
+                            </span>
+                        </div>
                     </div>
 
-                    {/* Título del Formulario */}
+                    {/* Título */}
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-xl sm:text-2xl font-black text-slate-100 tracking-tight font-serif">
-                                Iniciar Sesión
-                            </h2>
-                            {branding?.custom_branding && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-                                    {branding.tenant_name}
-                                </span>
-                            )}
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-full bg-sky-950/60 border border-sky-800/60 text-sky-300">
+                                Acceso al Sistema
+                            </span>
                         </div>
+                        <h2 className="text-2xl font-black text-slate-100 tracking-tight font-serif">
+                            Iniciar Sesión
+                        </h2>
                         <p className="text-xs text-slate-400 mt-1">
-                            Ingresa con tus credenciales de tienda o administración.
+                            Ingresa tus credenciales autorizadas para comenzar tu jornada.
                         </p>
                     </div>
 
-                    {/* Alerta de Error Clara y Sobria */}
+                    {/* Alerta de Error Sobria */}
                     <AnimatePresence>
                         {error && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="p-3 bg-rose-950/40 border border-rose-500/40 rounded-xl text-rose-300 text-xs font-medium flex items-start gap-2"
+                                className="p-3 bg-rose-950/50 border border-rose-500/50 rounded-xl text-rose-200 text-xs font-medium flex items-start gap-2.5"
                             >
                                 <AlertCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
                                 <span className="flex-1 leading-snug">{error}</span>
@@ -410,7 +285,7 @@ export default function LoginPage() {
                     {/* Formulario */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Campo Usuario */}
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-slate-200 tracking-wide block">
                                     Usuario o Correo
@@ -420,7 +295,7 @@ export default function LoginPage() {
                                         type="button"
                                         onClick={handleClearRememberedUser}
                                         className="text-[10px] text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
-                                        title="Olvidar usuario recordado en este equipo"
+                                        title="Olvidar usuario en este equipo"
                                     >
                                         Limpiar
                                     </button>
@@ -438,18 +313,17 @@ export default function LoginPage() {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="ej. cajero1 o usuario@empresa.com"
-                                    className="w-full bg-[#131A2B] border border-slate-600/80 rounded-xl py-2.5 pl-10 pr-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400 transition-all text-xs sm:text-sm font-medium hover:border-slate-500"
+                                    className="w-full bg-[#131C30] border border-slate-600/90 rounded-xl py-2.5 pl-10 pr-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400 transition-all text-xs sm:text-sm font-medium hover:border-slate-500"
                                 />
                             </div>
                         </div>
 
-                        {/* Campo Contraseña con detección de Bloq Mayús sin CLS */}
-                        <div className="space-y-1">
+                        {/* Campo Contraseña con detección de Bloq Mayús */}
+                        <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-slate-200 tracking-wide block">
                                     Contraseña
                                 </label>
-                                {/* Alerta de CapsLock discreta reservando espacio */}
                                 <span className={`text-[10px] font-bold text-amber-300 flex items-center gap-1 transition-opacity ${capsLockActive ? 'opacity-100' : 'opacity-0 select-none pointer-events-none'}`}>
                                     <span>✦</span> Bloq Mayús activo
                                 </span>
@@ -469,8 +343,8 @@ export default function LoginPage() {
                                     onKeyDown={handleKeyModifierCheck}
                                     onKeyUp={handleKeyModifierCheck}
                                     placeholder="••••••••••••"
-                                    className={`w-full bg-[#131A2B] border rounded-xl py-2.5 pl-10 pr-10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/30 focus:border-sky-400 transition-all text-xs sm:text-sm font-medium hover:border-slate-500 ${
-                                        capsLockActive ? 'border-amber-400/70' : 'border-slate-600/80'
+                                    className={`w-full bg-[#131C30] border rounded-xl py-2.5 pl-10 pr-10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400 transition-all text-xs sm:text-sm font-medium hover:border-slate-500 ${
+                                        capsLockActive ? 'border-amber-400/80 ring-1 ring-amber-400/30' : 'border-slate-600/90'
                                     }`}
                                 />
                                 <button
@@ -484,34 +358,29 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        {/* Checkbox "Recordarme" para cajeros y personal de mostrador */}
+                        {/* Recordar Usuario */}
                         <div className="flex items-center justify-between pt-1">
                             <label className="flex items-center gap-2 cursor-pointer select-none group">
                                 <input
                                     type="checkbox"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="w-4 h-4 rounded border-slate-600 bg-[#131A2B] text-sky-500 focus:ring-sky-400/40 focus:ring-offset-0 cursor-pointer"
+                                    className="w-4 h-4 rounded border-slate-600 bg-[#131C30] text-sky-500 focus:ring-sky-400/40 focus:ring-offset-0 cursor-pointer"
                                 />
                                 <span className="text-xs text-slate-300 group-hover:text-slate-100 transition-colors">
                                     Recordar mi usuario
                                 </span>
                             </label>
                             <span className="text-[10px] text-slate-500">
-                                Solo en este equipo
+                                En este equipo
                             </span>
                         </div>
 
-                        {/* Botón de Ingreso Profesional */}
+                        {/* Botón de Ingreso Celestial */}
                         <button
                             type="submit"
                             disabled={isLoading}
-                            style={{
-                                background: branding?.primary_color 
-                                    ? `linear-gradient(135deg, ${branding.primary_color}, ${secondaryColor})` 
-                                    : 'linear-gradient(135deg, #0284c7, #2563eb)',
-                            }}
-                            className="w-full text-white font-bold py-3 px-4 rounded-xl transition-all duration-150 active:scale-[0.99] flex items-center justify-center gap-2 mt-2 text-xs sm:text-sm disabled:opacity-60 cursor-pointer hover:brightness-110 shadow-md shadow-sky-950/40"
+                            className="w-full bg-gradient-to-r from-sky-600 via-sky-500 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl transition-all duration-150 active:scale-[0.99] flex items-center justify-center gap-2 mt-2 text-xs sm:text-sm disabled:opacity-60 cursor-pointer shadow-lg shadow-sky-950/60"
                         >
                             {isLoading ? (
                                 <>
@@ -527,10 +396,10 @@ export default function LoginPage() {
                         </button>
                     </form>
 
-                    {/* Enlace de Soporte y Pie Técnico Sobrio */}
+                    {/* Soporte y Versión */}
                     <div className="pt-4 border-t border-slate-800 text-center space-y-2">
                         <p className="text-xs text-slate-400">
-                            ¿Problemas con tu cuenta o turno?{' '}
+                            ¿Necesitas asistencia técnica?{' '}
                             <a
                                 href="https://wa.me/59170000000"
                                 target="_blank"
@@ -541,9 +410,9 @@ export default function LoginPage() {
                             </a>
                         </p>
                         <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-slate-500">
-                            <span>PEGASUS NEXUS v2.5</span>
+                            <span>PEGASUS NEXUS</span>
                             <span>•</span>
-                            <span className="text-emerald-400 font-medium">✦ Sucursal Conectada</span>
+                            <span className="text-emerald-400 font-medium">✦ Red Comercial Segura</span>
                         </div>
                     </div>
                 </motion.div>
