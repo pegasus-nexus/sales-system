@@ -615,7 +615,7 @@ export default function PedidosPage() {
                                             return (
                                                 <div key={item.producto_id} className="flex gap-4 items-center bg-gray-50/50 p-3 rounded-2xl border border-gray-100 animate-in slide-in-from-right-4 duration-200">
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-sm font-bold text-gray-900 truncate">{p?.producto_nombre || 'Cargando...'}</div>
+                                                        <div className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 break-words" title={p?.producto_nombre}>{p?.producto_nombre || 'Cargando...'}</div>
                                                         <div className="text-[10px] text-gray-500 font-medium mt-0.5">
                                                             Unitario: Bs. {(Number(p?.precio)||0).toFixed(2)} · Subtotal: <span className="text-indigo-600 font-bold">Bs. {(item.cantidad * (Number(p?.precio)||0)).toFixed(2)}</span>
                                                         </div>

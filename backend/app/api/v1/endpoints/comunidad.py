@@ -152,16 +152,49 @@ async def afiliar_cliente(cliente_id: str, current_user: User = Depends(get_curr
     if not cliente or cliente.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
-    if cliente.is_miembro_comunidad:
-        return {"status": "success", "message": "El cliente ya es miembro de la comunidad"}
+    if cliente.is_miembro_comunidad and cliente.numero_tarjeta:
+        try:
+            from app.domain.models.sale import Sale
+            or_conds = []
+            if cliente.telefono and cliente.telefono.strip():
+                or_conds.append({"cliente.telefono": cliente.telefono.strip()})
+            if cliente.nit_ci and cliente.nit_ci.strip():
+                or_conds.append({"cliente.nit": cliente.nit_ci.strip()})
+            if or_conds:
+                await Sale.find({
+                    "tenant_id": tenant_id,
+                    "cliente_id": {"$in": [None, ""]},
+                    "$or": or_conds,
+                }).update({"$set": {"cliente_id": str(cliente.id)}})
+        except Exception:
+            pass
+        return {"status": "success", "message": "El cliente ya es miembro de la comunidad", "numero_tarjeta": cliente.numero_tarjeta}
 
     cliente.is_miembro_comunidad = True
-    cliente.fecha_afiliacion = datetime.now(UTC)
+    if not cliente.fecha_afiliacion:
+        cliente.fecha_afiliacion = datetime.now(UTC)
     if not cliente.numero_tarjeta:
         random_code = ''.join(random.choices(string.digits, k=6))
         cliente.numero_tarjeta = f"TAB-{random_code}"
 
     await cliente.save()
+
+    try:
+        from app.domain.models.sale import Sale
+        or_conds = []
+        if cliente.telefono and cliente.telefono.strip():
+            or_conds.append({"cliente.telefono": cliente.telefono.strip()})
+        if cliente.nit_ci and cliente.nit_ci.strip():
+            or_conds.append({"cliente.nit": cliente.nit_ci.strip()})
+        if or_conds:
+            await Sale.find({
+                "tenant_id": tenant_id,
+                "cliente_id": {"$in": [None, ""]},
+                "$or": or_conds,
+            }).update({"$set": {"cliente_id": str(cliente.id)}})
+    except Exception:
+        pass
+
     return {"status": "success", "message": "Cliente afiliado exitosamente", "numero_tarjeta": cliente.numero_tarjeta}
 
 

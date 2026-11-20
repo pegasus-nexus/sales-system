@@ -204,22 +204,29 @@ class MomentosTaboadaService:
                 "nombre": re.compile(re.escape(clean_q), re.IGNORECASE),
             })
 
-        telefono_objetivo = cliente.telefono if cliente else clean_q
+        raw_tel = (cliente.telefono if cliente else clean_q) or ""
+        telefono_objetivo = raw_tel.strip() if isinstance(raw_tel, str) else ""
         cliente_id_str = str(cliente.id) if cliente else None
         cliente_nombre = cliente.nombre if cliente else f"Cliente {clean_q}"
 
         # Buscar todas las ventas válidas desde el 1 de noviembre de 2026
-        filtro_ventas = {
-            "tenant_id": tenant_id,
-            "anulada": False,
-            "created_at": {"$gte": FECHA_INICIO_CAMPANA},
-            "$or": [
-                {"cliente_id": cliente_id_str} if cliente_id_str else {"cliente_id": "__NO_MATCH__"},
-                {"cliente.telefono": telefono_objetivo},
-            ],
-        }
+        # Solo incluir criterios válidos para evitar fuga con ventas anónimas
+        criterios_cliente = []
+        if cliente_id_str:
+            criterios_cliente.append({"cliente_id": cliente_id_str})
+        if telefono_objetivo and telefono_objetivo.lower() not in ["none", "null", "undefined"]:
+            criterios_cliente.append({"cliente.telefono": telefono_objetivo})
 
-        ventas = await Sale.find(filtro_ventas).sort("created_at").to_list()
+        if not criterios_cliente:
+            ventas = []
+        else:
+            filtro_ventas = {
+                "tenant_id": tenant_id,
+                "anulada": False,
+                "created_at": {"$gte": FECHA_INICIO_CAMPANA},
+                "$or": criterios_cliente,
+            }
+            ventas = await Sale.find(filtro_ventas).sort("created_at").to_list()
 
         # Detalle ticket por ticket
         historial_tickets = []
@@ -244,11 +251,13 @@ class MomentosTaboadaService:
             })
 
         # Buscar canjes realizados por el cliente
-        canjes = await CanjeMomentosTaboada.find({
-            "tenant_id": tenant_id,
-            "cliente_telefono": telefono_objetivo,
-            "estado": "COMPLETADO",
-        }).sort("-created_at").to_list()
+        canjes = []
+        if telefono_objetivo and telefono_objetivo.lower() not in ["none", "null", "undefined"]:
+            canjes = await CanjeMomentosTaboada.find({
+                "tenant_id": tenant_id,
+                "cliente_telefono": telefono_objetivo,
+                "estado": "COMPLETADO",
+            }).sort("-created_at").to_list()
 
         total_sellos_canjeados = sum(c.sellos_utilizados for c in canjes)
         sellos_disponibles = max(0, total_sellos_ganados - total_sellos_canjeados)

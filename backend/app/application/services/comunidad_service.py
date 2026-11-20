@@ -1,10 +1,10 @@
-from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 from pydantic import BaseModel
-from beanie.operators import In
 
 from app.domain.models.comunidad import ComunidadUser, PremioComunidad, VisitaRegistro
+
 
 class ReclamoInput(BaseModel):
     telefono: str
@@ -28,23 +28,23 @@ class ComunidadService:
     @staticmethod
     async def check_phone(tenant_id: str, telefono: str) -> ComunidadUser:
         """
-        Verifica si el teléfono ya existe. Si no, lo crea de forma temporal (solo teléfono) 
+        Verifica si el teléfono ya existe. Si no, lo crea de forma temporal (solo teléfono)
         para ir trackeando sus visitas.
         """
         user = await ComunidadUser.find_one(
             ComunidadUser.tenant_id == tenant_id,
             ComunidadUser.telefono == telefono
         )
-        
+
         if not user:
             user = ComunidadUser(tenant_id=tenant_id, telefono=telefono)
             await user.insert()
-            
+
         # Aumentar contador de visitas de este usuario
         user.visitas_pagina += 1
-        user.ultima_visita = datetime.now(timezone.utc)
+        user.ultima_visita = datetime.now(UTC)
         await user.save()
-        
+
         return user
 
     @staticmethod
@@ -56,26 +56,26 @@ class ComunidadService:
             ComunidadUser.tenant_id == tenant_id,
             ComunidadUser.telefono == data.telefono
         )
-        
+
         if not user:
             # En caso raro de que no haya hecho check_phone antes
             user = ComunidadUser(tenant_id=tenant_id, telefono=data.telefono)
-            
+
         if user.ha_reclamado:
             raise HTTPException(status_code=400, detail="Este número de teléfono ya ha reclamado un premio.")
-            
+
         user.nombre = data.nombre
         user.apellido = data.apellido
         user.email = data.email
         user.premio_reclamado = data.premio
         user.ha_reclamado = True
-        user.reclamado_at = datetime.now(timezone.utc)
-        
+        user.reclamado_at = datetime.now(UTC)
+
         await user.save()
-        
+
         # Aquí es donde se conectaría con WhatsApp (Ej: Twilio, Gupshup, API local, etc.)
         # await enviar_whatsapp(user.telefono, f"¡Hola {user.nombre}! Has reclamado tu {user.premio_reclamado}.")
-        
+
         return user
 
     @staticmethod
@@ -84,13 +84,14 @@ class ComunidadService:
         Registra un cliente desde la página web y lo etiqueta como miembro de la comunidad
         generando su número de tarjeta de fidelización.
         """
-        from app.domain.models.cliente import Cliente
         import random
         import string
 
+        from app.domain.models.cliente import Cliente
+
         telefono = data.get("telefono")
         email = data.get("email")
-        
+
         # Buscar cliente existente por teléfono o email
         cliente = None
         if telefono:
@@ -109,7 +110,7 @@ class ComunidadService:
         else:
             cliente.nombre = data.get("nombre", cliente.nombre)
             cliente.is_miembro_comunidad = True
-            
+
         # Generar número de tarjeta si no tiene
         if not cliente.numero_tarjeta:
             random_code = ''.join(random.choices(string.digits, k=6))
@@ -122,20 +123,20 @@ class ComunidadService:
     @staticmethod
     async def get_premios_uso(tenant_id: str):
         from app.domain.models.cliente import Cliente
-        
+
         # Aggregate to count the usage of each reward
         pipeline = [
             {"$match": {"tenant_id": tenant_id, "is_miembro_comunidad": True, "datos_crm.premios_canjeados": {"$exists": True, "$type": "array", "$not": {"$size": 0}}}},
             {"$unwind": "$datos_crm.premios_canjeados"},
             {"$group": {"_id": "$datos_crm.premios_canjeados", "count": {"$sum": 1}}}
         ]
-        
+
         counts = await Cliente.get_motor_collection().aggregate(pipeline).to_list(length=None)
-        
+
         result = {}
         for c in counts:
             result[c["_id"]] = c["count"]
-            
+
         return result
 
     @staticmethod
@@ -154,16 +155,16 @@ class ComunidadService:
             "tasa_conversion": round((total_reclamados / total_registrados * 100), 2) if total_registrados > 0 else 0
         }
     @staticmethod
-    async def get_users(tenant_id: str, limit: int = 100, skip: int = 0) -> List[ComunidadUser]:
+    async def get_users(tenant_id: str, limit: int = 100, skip: int = 0) -> list[ComunidadUser]:
         return await ComunidadUser.find(
             ComunidadUser.tenant_id == tenant_id
         ).sort("-created_at").skip(skip).limit(limit).to_list()
 
     @staticmethod
-    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0, search: Optional[str] = None, tipo_filtro: str = "comunidad"):
+    async def get_miembros_comunidad(tenant_id: str, limit: int = 100, skip: int = 0, search: str | None = None, tipo_filtro: str = "comunidad"):
         from app.domain.models.cliente import Cliente
         from app.domain.models.sale import Sale
-        
+
         query = {
             "tenant_id": tenant_id
         }
@@ -171,7 +172,7 @@ class ComunidadService:
             query["is_miembro_comunidad"] = True
         elif tipo_filtro == "regulares":
             query["is_miembro_comunidad"] = {"$ne": True}
-        
+
         if search:
             query["$or"] = [
                 {"nombre": {"$regex": search, "$options": "i"}},
@@ -180,40 +181,53 @@ class ComunidadService:
                 {"email": {"$regex": search, "$options": "i"}},
                 {"nit_ci": {"$regex": search, "$options": "i"}}
             ]
-        
+
         miembros = await Cliente.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
-        
+
         # Manual Join for CRM metrics
         if not miembros:
             return {"items": [], "total": 0, "page": (skip // limit) + 1, "limit": limit}
-            
+
         cliente_ids = [str(m.id) for m in miembros]
-        
-        from beanie.operators import In
-        
-        # Fetch matching sales
-        sales = await Sale.find(
-            Sale.tenant_id == tenant_id,
-            In(Sale.cliente_id, cliente_ids)
-        ).to_list()
-        
-        # Group by cliente_id
+        cliente_tels = [m.telefono.strip() for m in miembros if m.telefono and m.telefono.strip()]
+
+        # Fetch matching sales either by cliente_id or by phone (para historial pre-afiliación)
+        query_sales = {
+            "tenant_id": tenant_id,
+            "anulada": False,
+            "$or": [
+                {"cliente_id": {"$in": cliente_ids}},
+            ]
+        }
+        if cliente_tels:
+            query_sales["$or"].append({"cliente.telefono": {"$in": cliente_tels}})
+
+        sales = await Sale.find(query_sales).to_list()
+
+        tel_to_cid = {m.telefono.strip(): str(m.id) for m in miembros if m.telefono and m.telefono.strip()}
+
+        # Group by cliente_id sin duplicados
         from collections import defaultdict
         sales_by_client = defaultdict(list)
+        seen_sale_ids = defaultdict(set)
         for sale in sales:
-            if sale.cliente_id:
-                sales_by_client[sale.cliente_id].append(sale)
-                
+            cid = sale.cliente_id
+            if not cid and sale.cliente and sale.cliente.telefono:
+                cid = tel_to_cid.get(sale.cliente.telefono.strip())
+            if cid and str(sale.id) not in seen_sale_ids[cid]:
+                seen_sale_ids[cid].add(str(sale.id))
+                sales_by_client[cid].append(sale)
+
         # Build enriched results
         result = []
         for m in miembros:
             m_dict = m.dict(exclude={"id"})
             m_dict["_id"] = str(m.id)
             m_dict["id"] = str(m.id)
-            
+
             client_sales = sales_by_client.get(str(m.id), [])
             client_sales.sort(key=lambda x: x.created_at, reverse=True)
-            
+
             m_dict["total_compras"] = len(client_sales)
             if client_sales:
                 m_dict["ultima_compra_fecha"] = client_sales[0].created_at
@@ -221,15 +235,15 @@ class ComunidadService:
             else:
                 m_dict["ultima_compra_fecha"] = None
                 m_dict["estado_visita"] = "Solo Visitó"
-                
+
             # Extraer premios_canjeados de datos_crm
             datos_crm = getattr(m, 'datos_crm', {}) or {}
             m_dict["premios_canjeados"] = datos_crm.get("premios_canjeados", [])
             m_dict["premios_canjeados_fechas"] = datos_crm.get("premios_canjeados_fechas", {})
             m_dict["premios_entregados"] = datos_crm.get("premios_entregados", [])
             m_dict["premios_canjeados_nombres"] = datos_crm.get("premios_canjeados_nombres", {})
-            
+
             result.append(m_dict)
-            
+
         total_count = await Cliente.find(query).count()
         return {"items": result, "total": total_count, "page": (skip // limit) + 1, "limit": limit}
