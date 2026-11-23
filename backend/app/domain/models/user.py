@@ -35,6 +35,8 @@ class User(Document, SoftDeleteMixin):
     sucursal_id: Optional[str] = None  # Links to Sucursal, None = Matriz level
     last_active_at: Optional[datetime] = None
     permisos_especiales: List[str] = Field(default_factory=list)
+    is_email_verified: bool = False
+    password_history: List[str] = Field(default_factory=list)  # Hashes de contraseñas anteriores para evitar repetición
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:

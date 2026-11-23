@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     GOOGLE_WALLET_PRIVATE_KEY: str = ""
     GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: str = ""
 
+    # Email Subsystem (Resend / Mock / SMTP) - Zero hardcoding, DIP compliant
+    EMAIL_PROVIDER: str = "mock"  # Options: "resend", "smtp", "mock"
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "Pegasus Nexus <onboarding@resend.dev>"
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
+
     model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 
 

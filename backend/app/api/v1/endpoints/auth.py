@@ -8,6 +8,16 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.domain.models.tenant import Tenant
 from app.domain.models.user import User, UserRole
+from app.domain.schemas.auth import (
+    CompleteActivationInput,
+    CompleteActivationResponse,
+    RequestActivationInput,
+    VerifyTokenResponse,
+)
+from app.application.services.account_activation_service import (
+    AccountActivationService,
+    validate_password_not_repeated,
+)
 from app.infrastructure.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
@@ -221,6 +231,7 @@ async def change_password(
 ):
     """
     Allow any active logged-in user to change their own password.
+    Enforces that new password cannot be the current password nor a recently used password.
     """
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(
@@ -228,9 +239,65 @@ async def change_password(
             detail="La contraseña actual es incorrecta"
         )
 
+    # Validar no repetición de contraseñas
+    validate_password_not_repeated(
+        new_password=data.new_password,
+        current_hashed=current_user.hashed_password,
+        history_hashes=current_user.password_history,
+    )
+
+    # Guardar en historial de contraseñas (últimas 5)
+    hist = list(current_user.password_history or [])
+    hist.append(current_user.hashed_password)
+    current_user.password_history = hist[-5:]
+
     current_user.hashed_password = get_password_hash(data.new_password)
     await current_user.save()
     return {"message": "Contraseña actualizada exitosamente"}
+
+
+@router.post("/request-activation")
+@limiter.limit("5/minute")
+async def request_account_activation(
+    request: Request,
+    data: RequestActivationInput,
+):
+    """
+    Inicia el flujo de registro sin contraseña:
+    Envía un enlace de verificación único al correo especificado.
+    """
+    client_ip = request.client.host if request.client else None
+    return await AccountActivationService.request_activation(
+        email=data.email,
+        full_name=data.full_name,
+        business_name=data.business_name,
+        ip_address=client_ip,
+    )
+
+
+@router.get("/verify-activation-token", response_model=VerifyTokenResponse)
+async def verify_activation_token(token: str):
+    """
+    Verifica que el token sea genuino y no haya expirado para mostrar la pantalla de creación de contraseña.
+    """
+    return await AccountActivationService.verify_token(token)
+
+
+@router.post("/complete-activation", response_model=CompleteActivationResponse)
+@limiter.limit("5/minute")
+async def complete_account_activation(
+    request: Request,
+    data: CompleteActivationInput,
+):
+    """
+    Establece la contraseña por primera vez, valida que no sea repetida y activa la cuenta.
+    Retorna el access_token JWT para iniciar sesión automáticamente.
+    """
+    return await AccountActivationService.complete_activation(
+        raw_token=data.token,
+        password=data.password,
+        password_confirm=data.password_confirm,
+    )
 
 
 class UpdateProfileRequest(BaseModel):

@@ -40,6 +40,7 @@ from app.domain.models.contabilidad import CuentaContable, AsientoContable
 from app.domain.models.lote import LoteInventario
 from app.domain.models.cotizacion import Cotizacion
 from app.domain.models.service_monitor import ServiceHealthCheck, ServiceIncidentAlert, AdminPasswordSetupToken
+from app.domain.models.account_token import AccountToken
 from app.domain.models.whatsapp_template import WhatsAppTemplate
 from app.domain.models.whatsapp_log import WhatsAppLog
 from app.domain.models.momentos_taboada import (
@@ -147,6 +148,7 @@ async def init_db():
             ServiceHealthCheck,
             ServiceIncidentAlert,
             AdminPasswordSetupToken,
+            AccountToken,
             WhatsAppTemplate,
             WhatsAppLog,
             PremioMomentosTaboada,

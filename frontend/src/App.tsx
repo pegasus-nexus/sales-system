@@ -7,6 +7,8 @@ import SaasWorkspaceLayout from './components/saas/SaasWorkspaceLayout';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage'));
+const ActivateAccountPage = lazy(() => import('./pages/ActivateAccountPage'));
+const RegisterRequestPage = lazy(() => import('./pages/RegisterRequestPage'));
 const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
@@ -260,6 +262,8 @@ function App() {
               <Routes>
                 {/* 1. Ruta de Login fuera del Layout */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/registro" element={<RegisterRequestPage />} />
+                <Route path="/activar-cuenta" element={<ActivateAccountPage />} />
                 <Route path="/crear-password" element={<SetupPasswordPage />} />
 
                 {/* Rutas Públicas de Micro-Catálogo Digital y WhatsApp */}
