@@ -8,6 +8,7 @@ import { useMatrizTabStore } from './matrizTabStore';
 import { useAuthStore } from '../../store/authStore';
 import ViewSearchModal from '../ViewSearchModal';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from '../WhatsNewModal';
+import ImpersonationBanner from '../ImpersonationBanner';
 import { useLocalStorage } from 'usehooks-ts';
 import { changePassword } from '../../api/api';
 import { toast } from 'sonner';
@@ -100,6 +101,9 @@ export const MatrizWorkspaceLayout: React.FC<Props> = ({ children }) => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-[#080a11] text-white overflow-hidden select-none">
+            {/* Banner de Suplantación SuperAdmin SaaS */}
+            <ImpersonationBanner />
+
             {/* Top Browser Bar (Odoo 9-dots + Tabs + Controles Matriz) */}
             <MatrizBrowserBar
                 onOpenSearch={() => setSearchModalOpen(true)}
