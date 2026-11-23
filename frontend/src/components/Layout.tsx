@@ -23,6 +23,8 @@ import { LayoutGrid, Search, ArrowLeft } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 import { useBranchTabStore } from './branch/branchTabStore';
 import { BranchWorkspaceLayout } from './branch/BranchWorkspaceLayout';
+import { useMatrizTabStore } from './matriz/matrizTabStore';
+import { MatrizWorkspaceLayout } from './matriz/MatrizWorkspaceLayout';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -94,6 +96,11 @@ export default function Layout({ children }: LayoutProps) {
 
     if (role === 'CATALOGO_MERCHANT') {
         return <Navigate to="/catalogo/admin" replace />;
+    }
+
+    const isMatrizWorkspaceEnabled = useMatrizTabStore(state => state.isWorkspaceMode);
+    if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '') && isMatrizWorkspaceEnabled) {
+        return <MatrizWorkspaceLayout>{children}</MatrizWorkspaceLayout>;
     }
 
     const isBranchWorkspaceEnabled = useBranchTabStore(state => state.isWorkspaceMode);
@@ -1099,6 +1106,26 @@ export default function Layout({ children }: LayoutProps) {
                                                 <span className="text-xs font-bold text-indigo-600 truncate block mt-0.5">{user?.role}</span>
                                             </div>
                                         </div>
+
+                                        {['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '') && (
+                                            <div className="p-3 bg-indigo-50/70 rounded-xl border border-indigo-100 flex items-center justify-between">
+                                                <div>
+                                                    <span className="block text-xs font-bold text-indigo-950">Modo Ventanas / Pestañas</span>
+                                                    <span className="block text-[11px] text-indigo-700">Espacio de trabajo multitarea tipo OS para Matriz</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => useMatrizTabStore.getState().setWorkspaceMode(!isMatrizWorkspaceEnabled)}
+                                                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                        isMatrizWorkspaceEnabled
+                                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                                            : 'bg-white text-gray-700 border border-gray-200'
+                                                    }`}
+                                                >
+                                                    {isMatrizWorkspaceEnabled ? 'Activado' : 'Desactivado'}
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {role === 'ADMIN_SUCURSAL' && (
                                             <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 flex items-center justify-between">

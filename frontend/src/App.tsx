@@ -57,6 +57,15 @@ const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
 const RecordatoriosPage = lazy(() => import('./pages/RecordatoriosPage'));
 const BranchAppsLauncher = lazy(() => import('./components/branch/BranchAppsLauncher').then(m => ({ default: m.BranchAppsLauncher })));
+const MatrizAppsLauncher = lazy(() => import('./components/matriz/MatrizAppsLauncher').then(m => ({ default: m.MatrizAppsLauncher })));
+
+const AppsLauncherDispatcher: React.FC = () => {
+  const { role } = useAuthStore();
+  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) {
+    return <MatrizAppsLauncher />;
+  }
+  return <BranchAppsLauncher />;
+};
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -315,7 +324,7 @@ function App() {
 
                       <Route path="/apps" element={
                         <ProtectedRoute allowedRoles={ALL_STAFF}>
-                          <BranchAppsLauncher />
+                          <AppsLauncherDispatcher />
                         </ProtectedRoute>
                       } />
 
