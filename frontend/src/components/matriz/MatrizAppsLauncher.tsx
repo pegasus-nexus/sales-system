@@ -116,14 +116,14 @@ export const MatrizAppsLauncher: React.FC = () => {
                     )}
                 </div>
 
-                {/* Filtro de Categorías */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+                {/* Filtro de Categorías con scroll horizontal suave en móvil */}
+                <div className="flex overflow-x-auto hide-scrollbar sm:flex-wrap items-center justify-start sm:justify-center gap-1.5 sm:gap-2 mt-5 max-w-full sm:max-w-3xl px-2 py-1">
                     {CATEGORIES.map(cat => (
                         <button
                             key={cat}
                             type="button"
                             onClick={() => setSelectedCategory(cat)}
-                            className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                                 selectedCategory === cat
                                     ? 'bg-indigo-600 text-white shadow-xs shadow-indigo-600/30'
                                     : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'
@@ -140,7 +140,7 @@ export const MatrizAppsLauncher: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 relative z-10"
+                className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 relative z-10"
             >
                 <AnimatePresence>
                     {accessibleApps.map((app, index) => {
@@ -154,7 +154,7 @@ export const MatrizAppsLauncher: React.FC = () => {
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.22, delay: index * 0.02 }}
                                 onClick={() => handleLaunchApp(app)}
-                                className="group relative bg-[#121622]/85 hover:bg-[#181d2e] border border-white/10 hover:border-indigo-500/50 rounded-3xl p-4 sm:p-5 flex flex-col items-start justify-between cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 backdrop-blur-xs overflow-hidden"
+                                className="group relative bg-[#121622]/85 hover:bg-[#181d2e] border border-white/10 hover:border-indigo-500/50 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 flex flex-col items-start justify-between cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 backdrop-blur-xs overflow-hidden"
                             >
                                 {/* Badge si tiene */}
                                 {app.badge && (

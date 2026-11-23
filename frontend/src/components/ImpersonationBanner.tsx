@@ -46,14 +46,14 @@ export const ImpersonationBanner: React.FC = () => {
     };
 
     return (
-        <div className="w-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white px-3 sm:px-4 py-2 flex items-center justify-between shadow-lg text-xs font-medium z-50 shrink-0 border-b border-amber-400/40">
-            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        <div className="w-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between shadow-lg text-xs font-medium z-50 shrink-0 border-b border-amber-400/40">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar min-w-0 mr-2">
                 <span className="w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0" />
                 <span className="font-extrabold text-amber-200 flex items-center gap-1 shrink-0">
-                    <Shield size={14} />
-                    SuperAdmin Impersonation:
+                    <Shield size={13} />
+                    <span className="hidden sm:inline">SuperAdmin</span> Impersonation:
                 </span>
-                <span className="text-white/90 truncate">
+                <span className="text-white/90 truncate text-[11px] sm:text-xs">
                     Viendo como <strong className="text-white">{user?.full_name || user?.username}</strong> ({user?.role})
                 </span>
             </div>
@@ -61,11 +61,12 @@ export const ImpersonationBanner: React.FC = () => {
             <button
                 type="button"
                 onClick={() => handleRevert(impersonationChain && impersonationChain.length > 0 ? impersonationChain.length - 1 : 0)}
-                className="ml-3 px-3 py-1 bg-white text-amber-950 hover:bg-amber-100 rounded-xl font-bold flex items-center gap-1.5 transition-all shadow-md text-xs shrink-0 cursor-pointer"
+                className="px-2.5 sm:px-3 py-1 bg-white text-amber-950 hover:bg-amber-100 rounded-xl font-bold flex items-center gap-1 transition-all shadow-md text-xs shrink-0 cursor-pointer"
                 title="Salir del modo suplantación y volver al panel SuperAdmin SaaS"
             >
-                <ArrowLeft size={13} />
-                <span>Volver al Panel SaaS →</span>
+                <ArrowLeft size={12} />
+                <span className="hidden sm:inline">Volver al Panel SaaS →</span>
+                <span className="sm:hidden font-extrabold">Volver</span>
             </button>
         </div>
     );

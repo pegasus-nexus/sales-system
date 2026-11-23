@@ -121,7 +121,9 @@ export const MatrizBrowserBar: React.FC<Props> = ({
                                     type="button"
                                     onClick={e => handleCloseTab(e, tab.id)}
                                     title="Cerrar pestaña"
-                                    className="w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white/20 transition-all ml-1 shrink-0 text-gray-400 hover:text-white cursor-pointer"
+                                    className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ml-1 shrink-0 text-gray-400 hover:text-white cursor-pointer ${
+                                        isActive ? 'opacity-90 hover:bg-white/20' : 'opacity-0 group-hover:opacity-100 hover:bg-white/20'
+                                    }`}
                                 >
                                     <X size={10} />
                                 </button>
