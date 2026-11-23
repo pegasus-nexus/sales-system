@@ -1,20 +1,21 @@
 import re
-from typing import Optional
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field, field_validator
+
+from app.domain.models.tenant import Tenant
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import (
-    create_access_token,
-    verify_password,
-    get_password_hash,
     ACCESS_TOKEN_EXPIRE_MINUTES,
-    get_current_active_user
+    create_access_token,
+    get_current_active_user,
+    get_password_hash,
+    verify_password,
 )
-from fastapi import Request
 from app.infrastructure.core.rate_limit import limiter
-from beanie import PydanticObjectId
 
 router = APIRouter()
 
@@ -32,10 +33,10 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
             {"email": re.compile(f"^{re.escape(form_data.username)}$", re.IGNORECASE)}
         ]
     })
-    
+
     # Prevenimos el Timing Attack: Siempre evaluamos un hash, exista el usuario o no
     password_valid = verify_password(form_data.password, user.hashed_password if user else DUMMY_HASH)
-    
+
     if not user or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,8 +59,9 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     user_dict = current_user.model_dump()
     if current_user.tenant_id:
-        from app.domain.models.tenant import Tenant
         from beanie import PydanticObjectId
+
+        from app.domain.models.tenant import Tenant
         try:
             tenant = await Tenant.get(PydanticObjectId(current_user.tenant_id))
             if tenant:
@@ -78,7 +80,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         user_dict["configuracion"] = {}
         user_dict["rubro"] = "RETAIL"
         user_dict["modulos_activos"] = ["INVENTARIO", "POS", "KARDEX"]
-    
+
     # Enrich sucursal_nombre if available
     if current_user.sucursal_id:
         from app.domain.models.sucursal import Sucursal
@@ -98,16 +100,20 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 @router.post("/impersonate/{tenant_id}")
 async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_current_active_user)):
-    """[SUPERADMIN] Logs in as the ADMIN of the target tenant without password."""
+    """[SUPERADMIN] Logs in as the ADMIN or CATALOGO_MERCHANT of the target tenant without password."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.ADMIN_MATRIZ})
     if not admin_user:
         admin_user = await User.find_one({"tenant_id": tenant_id, "role": "ADMIN"})
         if not admin_user:
-            raise HTTPException(status_code=404, detail="No ADMIN found for this tenant")
-        
+            admin_user = await User.find_one({"tenant_id": tenant_id, "role": UserRole.CATALOGO_MERCHANT})
+            if not admin_user:
+                admin_user = await User.find_one({"tenant_id": tenant_id, "is_active": {"$ne": False}})
+                if not admin_user:
+                    raise HTTPException(status_code=404, detail="No se encontró un usuario administrador para esta empresa")
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
@@ -118,7 +124,23 @@ async def impersonate_tenant(tenant_id: str, current_user: User = Depends(get_cu
         },
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer", "role": admin_user.role}
+
+    tenant = await Tenant.get(PydanticObjectId(tenant_id)) if PydanticObjectId.is_valid(tenant_id) else None
+    if not tenant:
+        tenant = await Tenant.find_one({"tenant_id": tenant_id})
+
+    is_catalog_only = (
+        admin_user.role == UserRole.CATALOGO_MERCHANT or
+        (tenant and tenant.modulos_activos == ["CATALOGO"])
+    )
+    redirect_to = "/catalogo/admin" if is_catalog_only else "/dashboard"
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "role": admin_user.role,
+        "redirect_to": redirect_to
+    }
 
 @router.post("/impersonate/user/{user_id}")
 async def impersonate_user(user_id: str, current_user: User = Depends(get_current_active_user)):
@@ -205,15 +227,15 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña actual es incorrecta"
         )
-    
+
     current_user.hashed_password = get_password_hash(data.new_password)
     await current_user.save()
     return {"message": "Contraseña actualizada exitosamente"}
 
 
 class UpdateProfileRequest(BaseModel):
-    full_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    full_name: str | None = None
+    avatar_url: str | None = None
 
 
 @router.put("/users/me/profile")
@@ -248,9 +270,9 @@ async def update_my_profile(
 class LoginBrandingResponse(BaseModel):
     custom_branding: bool = False
     tenant_name: str = "PEGASUS NEXUS"
-    tenant_slug: Optional[str] = None
-    logo_url: Optional[str] = None
-    login_bg_image: Optional[str] = None
+    tenant_slug: str | None = None
+    logo_url: str | None = None
+    login_bg_image: str | None = None
     primary_color: str = "#6366f1"
     secondary_color: str = "#06b6d4"
     headline: str = "Potencia tus operaciones retail con velocidad y precisión."
@@ -259,7 +281,7 @@ class LoginBrandingResponse(BaseModel):
 
 
 @router.get("/auth/login-branding", response_model=LoginBrandingResponse)
-async def get_login_branding(slug: Optional[str] = None, tenant: Optional[str] = None):
+async def get_login_branding(slug: str | None = None, tenant: str | None = None):
     """
     Endpoint público que retorna el branding personalizado de login para un tenant
     según su slug o nombre en URL/subdominio. Si no existe, retorna el branding default.
@@ -271,8 +293,9 @@ async def get_login_branding(slug: Optional[str] = None, tenant: Optional[str] =
     target_str = target.strip()
     clean_target = target_str.lower()
 
-    from app.domain.models.tenant import Tenant
     import unicodedata
+
+    from app.domain.models.tenant import Tenant
 
     # 1. Búsqueda por slug exacto
     tenant_doc = await Tenant.find_one({"slug": clean_target})

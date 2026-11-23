@@ -21,6 +21,7 @@ import {
     EyeOff 
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getMe } from '../api/api';
 import { 
     getMyCatalogConfig, 
     getMyCatalogProducts, 
@@ -45,6 +46,26 @@ export default function CatalogoAdminPage() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
+    const impersonationChain = useAuthStore((state) => state.impersonationChain) || [];
+    const isImpersonating = impersonationChain.length > 0;
+
+    const handleRevertImpersonation = async () => {
+        const store = useAuthStore.getState();
+        const target = store.revertToImpersonationIndex(impersonationChain.length - 1);
+        if (target) {
+            useAuthStore.setState({ token: target.token });
+            try {
+                const me = await getMe();
+                store.login(target.token, me);
+                toast.success(`Sesión restaurada como ${target.username || 'Superadmin'}`);
+                window.location.href = '/admin/empresas';
+            } catch {
+                store.clearImpersonation?.();
+                window.location.href = '/login';
+            }
+        }
+    };
+
     const [activeTab, setActiveTab] = useState<'products' | 'branding'>('products');
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<CatalogoProducto | null>(null);
@@ -172,6 +193,24 @@ export default function CatalogoAdminPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+            {/* Banner de Suplantación / Regreso a Superadmin */}
+            {isImpersonating && (
+                <div className="bg-amber-400 text-slate-950 px-4 py-2.5 text-xs font-bold flex items-center justify-between sticky top-0 z-50 shadow-md border-b border-amber-500">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-ping" />
+                        <span>
+                            Estás visualizando el catálogo de <b>{config?.business_name || 'este cliente'}</b> como Administrador SaaS.
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleRevertImpersonation}
+                        className="px-3 py-1 bg-slate-950 hover:bg-slate-900 text-white rounded-lg transition-colors text-xs font-bold cursor-pointer"
+                    >
+                        Volver al Panel SaaS →
+                    </button>
+                </div>
+            )}
+
             {/* Top Navigation */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

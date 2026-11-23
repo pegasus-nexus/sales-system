@@ -1,25 +1,31 @@
-from typing import List, Optional
+import re
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field, field_validator
-import re
-from app.domain.models.tenant import Tenant, PlanType
+
+from app.domain.models.almacen import Almacen, TipoAlmacen
+from app.domain.models.catalogo import CatalogoConfig
 from app.domain.models.plan import Plan
 from app.domain.models.plan_feature import PlanFeature
-from app.domain.models.user import User, UserRole
-from app.domain.models.sucursal import Sucursal, TipoSucursal
-from app.domain.models.almacen import Almacen, TipoAlmacen
 from app.domain.models.product import Product
 from app.domain.models.sale import Sale
-from app.infrastructure.auth import get_current_active_user, get_password_hash, require_roles
+from app.domain.models.sucursal import Sucursal, TipoSucursal
+from app.domain.models.tenant import PlanType, Tenant
+from app.domain.models.user import User, UserRole
+from app.infrastructure.auth import (
+    get_current_active_user,
+    get_password_hash,
+    require_roles,
+)
 
 router = APIRouter()
 
 # ─── Todos los features disponibles (usado para ILIMITADO / sin plan) ──────────
-ALL_FEATURES: List[str] = [f.value for f in PlanFeature]
+ALL_FEATURES: list[str] = [f.value for f in PlanFeature]
 
 
-async def _get_tenant_by_id_or_slug(tenant_id: str) -> Optional[Tenant]:
+async def _get_tenant_by_id_or_slug(tenant_id: str) -> Tenant | None:
     try:
         from beanie import PydanticObjectId
         tenant = await Tenant.get(PydanticObjectId(tenant_id))
@@ -43,7 +49,7 @@ class TenantCreate(BaseModel):
         min_length=8,
         description="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     )
-    rubro: Optional[str] = "RETAIL"
+    rubro: str | None = "RETAIL"
 
     @field_validator("admin_password")
     @classmethod
@@ -63,7 +69,7 @@ class TenantUpdate(BaseModel):
     plan: str | None = None
     is_active: bool | None = None
     plan_expires_at: datetime | None = None
-    modulos_activos: List[str] | None = None
+    modulos_activos: list[str] | None = None
 
 class AdminCredentialsUpdate(BaseModel):
     username: str | None = None
@@ -73,14 +79,14 @@ class PlanCreate(BaseModel):
     name: str
     max_sucursales: int
     max_usuarios_por_sucursal: int
-    features: List[PlanFeature]
+    features: list[PlanFeature]
     precio_mensual: float = 0.0
 
 class PlanUpdate(BaseModel):
     name: str | None = None
     max_sucursales: int | None = None
     max_usuarios_por_sucursal: int | None = None
-    features: List[PlanFeature] | None = None
+    features: list[PlanFeature] | None = None
     precio_mensual: float | None = None
     is_public: bool | None = None
 
@@ -109,7 +115,7 @@ async def get_my_features(current_user: User = Depends(get_current_active_user))
     # Plan ILIMITADO o plan no asignado → acceso total
     if not tenant.plan_id or tenant.plan == PlanType.ILIMITADO:
         return {
-            "features": ALL_FEATURES, 
+            "features": ALL_FEATURES,
             "plan": tenant.plan.value if tenant.plan else "NONE",
             "rubro": tenant.rubro.value,
             "modulos_activos": tenant.modulos_activos
@@ -120,7 +126,7 @@ async def get_my_features(current_user: User = Depends(get_current_active_user))
     if not plan:
         # Plan no encontrado → fallback seguro: acceso total
         return {
-            "features": ALL_FEATURES, 
+            "features": ALL_FEATURES,
             "plan": "UNKNOWN",
             "rubro": tenant.rubro.value,
             "modulos_activos": tenant.modulos_activos
@@ -135,22 +141,34 @@ async def get_my_features(current_user: User = Depends(get_current_active_user))
     }
 
 
-@router.get("/tenants", response_model=List[Tenant])
+@router.get("/tenants", response_model=list[Tenant])
 async def get_tenants(current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    return await Tenant.find_all().to_list()
+    tenants = await Tenant.find_all().to_list()
+
+    # Asociar slugs de catálogos activos para acceso directo
+    catalogo_configs = await CatalogoConfig.find({"is_active": {"$ne": False}}).to_list()
+    cat_map = {c.tenant_id: c.slug for c in catalogo_configs if c.slug}
+
+    for t in tenants:
+        t_id_str = str(t.id)
+        cat_slug = cat_map.get(t_id_str) or t.slug
+        t.catalog_slug = cat_slug
+        t.has_catalog = bool(t_id_str in cat_map or t.slug or "CATALOGO" in (t.modulos_activos or []))
+
+    return tenants
 
 
 @router.post("/tenants", response_model=Tenant)
 async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     # Check if tenant exists
     if await Tenant.find_one(Tenant.name == tenant_in.name):
         raise HTTPException(status_code=400, detail="Tenant name already exists")
-    
+
     # Check if admin user exists
     import re
     admin_username_lower = tenant_in.admin_username.lower()
@@ -163,12 +181,12 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
         plan_enum = PlanType(plan_code)
     except ValueError:
         plan_enum = PlanType.PERSONALIZADO
-        
+
     plan_doc = await Plan.find_one(Plan.code == plan_code)
     plan_id = str(plan_doc.id) if plan_doc else None
 
     # Determine rubro and its default modules
-    from app.domain.models.tenant import RubroEmpresa, MODULOS_DEFAULT_POR_RUBRO
+    from app.domain.models.tenant import MODULOS_DEFAULT_POR_RUBRO, RubroEmpresa
     rubro_str = tenant_in.rubro or "RETAIL"
     try:
         rubro_enum = RubroEmpresa(rubro_str)
@@ -251,16 +269,16 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
     """Returns key metrics for the Superadmin SaaS Dashboard."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     tenants = await Tenant.find_all().to_list()
     active_tenants = [t for t in tenants if t.is_active and not t.deleted_at]
     inactive_tenants = [t for t in tenants if not t.is_active or t.deleted_at]
-    
+
     # 1. Calculate Real MRR
     plans = await Plan.find_all().to_list()
     plan_prices_by_id = {str(p.id): float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
     plan_prices_by_code = {p.code: float(str(p.precio_mensual)) for p in plans if p.precio_mensual is not None}
-    
+
     DEFAULT_PLAN_PRICES = {
         "BASICO": 40.0,
         "PRO": 80.0,
@@ -268,15 +286,15 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
         "ILIMITADO": 250.0,
         "FREE": 0.0,
     }
-    
+
     mrr = 0.0
     plans_distribution = {}
-    
+
     for t in active_tenants:
         plan_key = getattr(t, "plan", "BASICO")
         plan_str = plan_key.value if hasattr(plan_key, "value") else str(plan_key)
         plans_distribution[plan_str] = plans_distribution.get(plan_str, 0) + 1
-        
+
         price = 0.0
         if t.plan_id and str(t.plan_id) in plan_prices_by_id:
             price = plan_prices_by_id[str(t.plan_id)]
@@ -286,9 +304,9 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
             price = plan_prices_by_code[f"CUSTOM_PLAN_{plan_str.upper()}"]
         else:
             price = DEFAULT_PLAN_PRICES.get(plan_str, 40.0)
-            
+
         mrr += price
-            
+
     # 2. Global Platform Counters
     total_users_count = await User.find(User.is_active == True).count()
     total_sales_count = await Sale.count()
@@ -300,19 +318,19 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
         tid = str(t.id)
         active_products = await Product.find(Product.tenant_id == tid).count()
         sales_count = await Sale.find(Sale.tenant_id == tid).count()
-        
+
         base_mb = 5.0
         products_mb = active_products * 0.001
         sales_mb = sales_count * 0.002
         total_mb = base_mb + products_mb + sales_mb
         total_gb = round(total_mb / 1024, 4)
-        
+
         if total_gb > 0.0001:
             storage_by_tenant.append({
                 "name": t.name,
                 "value": total_gb
             })
-            
+
     storage_by_tenant.sort(key=lambda x: x["value"], reverse=True)
     if len(storage_by_tenant) > 5:
         top_5 = storage_by_tenant[:5]
@@ -320,14 +338,14 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
         if otros_gb > 0:
             top_5.append({"name": "Otros", "value": round(otros_gb, 4)})
         storage_by_tenant = top_5
-        
+
     try:
         db = Tenant.get_motor_collection().database
         stats = await db.command("dbStats")
         total_db_gb = round(stats.get("dataSize", 0) / (1024**3), 4)
     except Exception:
         total_db_gb = round(sum(x["value"] for x in storage_by_tenant), 4)
-        
+
     return {
         "mrr": round(mrr, 2),
         "activeTenants": len(active_tenants),
@@ -344,12 +362,11 @@ async def get_admin_dashboard_metrics(current_user: User = Depends(get_current_a
 async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    from beanie import PydanticObjectId
+
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     if tenant_in.name is not None:
         tenant.name = tenant_in.name
     if tenant_in.plan is not None:
@@ -357,7 +374,7 @@ async def update_tenant(tenant_id: str, tenant_in: TenantUpdate, current_user: U
             plan_enum = PlanType(tenant_in.plan)
         except ValueError:
             plan_enum = PlanType.PERSONALIZADO
-            
+
         plan_doc = await Plan.find_one(Plan.code == tenant_in.plan)
         tenant.plan_id = str(plan_doc.id) if plan_doc else None
         tenant.plan = plan_enum
@@ -387,26 +404,26 @@ async def get_tenant_admin(tenant_id: str, current_user: User = Depends(get_curr
 async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate, current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     tenant = await Tenant.get(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     admin_user = await User.find_one({
         "tenant_id": tenant_id,
         "role": {"$in": [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, "ADMIN_MATRIZ", "ADMIN"]}
     })
-    
+
     if not admin_user:
         # Si no existe un usuario administrador, lo creamos
         if not creds.username or not creds.password:
             raise HTTPException(status_code=400, detail="El usuario admin no existe para este tenant. Debes ingresar un correo y una contraseña para crearlo.")
-        
+
         admin_username_lower = creds.username.lower()
         existing = await User.find_one({"username": admin_username_lower})
         if existing:
             raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona en el sistema")
-            
+
         admin_user = User(
             username=admin_username_lower,
             email=admin_username_lower,
@@ -425,12 +442,12 @@ async def update_admin_credentials(tenant_id: str, creds: AdminCredentialsUpdate
                 raise HTTPException(status_code=400, detail="Este correo/usuario ya está en uso por otra persona")
             admin_user.username = admin_username_lower
             admin_user.email = admin_username_lower
-            
+
         if creds.password:
             admin_user.hashed_password = get_password_hash(creds.password)
-            
+
         await admin_user.save()
-        
+
     return {"message": "Credenciales actualizadas exitosamente"}
 
 @router.delete("/tenants/{tenant_id}")
@@ -438,11 +455,11 @@ async def delete_tenant(tenant_id: str, current_user: User = Depends(get_current
     """Archiva la empresa (Soft Delete) protegiendo el histórico sin borrado destructivo."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     await tenant.soft_delete(deleted_by=str(current_user.id))
     # Desactivar accesos de usuarios de esta empresa para bloquear inicio de sesión
     await User.find(User.tenant_id == tenant_id).update({"$set": {"is_active": False}})
@@ -455,16 +472,16 @@ async def restore_tenant(tenant_id: str, current_user: User = Depends(get_curren
     """Restaura una empresa archivada, reactivando su acceso."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     tenant.is_active = True
     tenant.deleted_at = None
     tenant.deleted_by = None
     await tenant.save()
-    
+
     # Reactivar usuarios de esta empresa
     await User.find(User.tenant_id == tenant_id).update({"$set": {"is_active": True}})
 
@@ -472,28 +489,28 @@ async def restore_tenant(tenant_id: str, current_user: User = Depends(get_curren
 
 
 class WhatsAppSettingsUpdate(BaseModel):
-    enabled: Optional[bool] = None
-    provider: Optional[str] = None
-    instance_id: Optional[str] = None
-    api_token: Optional[str] = None
-    default_message: Optional[str] = None
+    enabled: bool | None = None
+    provider: str | None = None
+    instance_id: str | None = None
+    api_token: str | None = None
+    default_message: str | None = None
 
 class TenantSettingsUpdate(BaseModel):
-    slug: Optional[str] = None
-    ticket_footer: Optional[str] = None
-    report_watermark: Optional[str] = None
-    logo_base64: Optional[str] = None
-    direccion: Optional[str] = None
-    telefono: Optional[str] = None
-    brand_color: Optional[str] = None
-    margen_distribuidor: Optional[float] = None
-    whatsapp: Optional[WhatsAppSettingsUpdate] = None
-    login_bg_image: Optional[str] = None
-    login_primary_color: Optional[str] = None
-    login_secondary_color: Optional[str] = None
-    login_headline: Optional[str] = None
-    login_description: Optional[str] = None
-    login_badge_text: Optional[str] = None
+    slug: str | None = None
+    ticket_footer: str | None = None
+    report_watermark: str | None = None
+    logo_base64: str | None = None
+    direccion: str | None = None
+    telefono: str | None = None
+    brand_color: str | None = None
+    margen_distribuidor: float | None = None
+    whatsapp: WhatsAppSettingsUpdate | None = None
+    login_bg_image: str | None = None
+    login_primary_color: str | None = None
+    login_secondary_color: str | None = None
+    login_headline: str | None = None
+    login_description: str | None = None
+    login_badge_text: str | None = None
 
 @router.get("/tenants/me", response_model=Tenant)
 async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
@@ -507,20 +524,20 @@ async def get_my_tenant(current_user: User = Depends(get_current_active_user)):
 
 @router.put("/tenants/me/settings", response_model=Tenant)
 async def update_my_tenant_settings(
-    settings_in: TenantSettingsUpdate, 
+    settings_in: TenantSettingsUpdate,
     current_user: User = Depends(get_current_active_user)
 ):
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
         raise HTTPException(status_code=403, detail="Not authorized to change settings")
-        
+
     tenant_id = current_user.tenant_id
     if not tenant_id:
         raise HTTPException(status_code=404, detail="No tenant associated")
-        
+
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     if settings_in.ticket_footer is not None:
         tenant.settings.ticket_footer = settings_in.ticket_footer
     if settings_in.report_watermark is not None:
@@ -570,7 +587,7 @@ async def update_my_tenant_settings(
             tenant.settings.whatsapp.api_token = settings_in.whatsapp.api_token
         if settings_in.whatsapp.default_message is not None:
             tenant.settings.whatsapp.default_message = settings_in.whatsapp.default_message
-        
+
     await tenant.save()
     return tenant
 
@@ -583,11 +600,11 @@ async def update_tenant_configuracion(
     tenant_id = current_user.tenant_id
     if not tenant_id:
         raise HTTPException(status_code=404, detail="No tenant associated")
-        
+
     tenant = await _get_tenant_by_id_or_slug(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-        
+
     tenant.configuracion = config_data
     await tenant.save()
     return tenant.configuracion
@@ -737,13 +754,13 @@ async def list_plans(current_user: User = Depends(get_current_active_user)):
         raise HTTPException(status_code=403, detail="Not authorized")
     plans = await Plan.find_all().to_list()
     return [{
-        "id": str(p.id), 
-        "code": p.code, 
-        "name": p.name, 
+        "id": str(p.id),
+        "code": p.code,
+        "name": p.name,
         "max_sucursales": p.max_sucursales,
         "max_usuarios_por_sucursal": p.max_usuarios_por_sucursal,
-        "is_public": p.is_public, 
-        "precio_mensual": float(p.precio_mensual), 
+        "is_public": p.is_public,
+        "precio_mensual": float(p.precio_mensual),
         "features": [f.value for f in p.features]
     } for p in plans]
 
@@ -752,7 +769,7 @@ async def create_plan(plan_data: PlanCreate, current_user: User = Depends(get_cu
     """[SUPERADMIN] Crea un plan nuevo atómico."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     from decimal import Decimal
     code = f"CUSTOM_{plan_data.name.upper().replace(' ', '_')}"
     new_plan = Plan(
@@ -773,12 +790,12 @@ async def update_plan(plan_id: str, plan_data: PlanUpdate, current_user: User = 
     """[SUPERADMIN] Edita un plan existente."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     from beanie import PydanticObjectId
     plan = await Plan.get(PydanticObjectId(plan_id))
     if not plan:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
-        
+
     from decimal import Decimal
     if plan_data.name is not None:
         plan.name = plan_data.name
@@ -792,7 +809,7 @@ async def update_plan(plan_id: str, plan_data: PlanUpdate, current_user: User = 
         plan.precio_mensual = Decimal(str(plan_data.precio_mensual))
     if plan_data.is_public is not None:
         plan.is_public = plan_data.is_public
-        
+
     await plan.save()
     return {"message": "Plan actualizado correctamente"}
 
@@ -801,20 +818,20 @@ async def delete_plan(plan_id: str, current_user: User = Depends(get_current_act
     """[SUPERADMIN] Elimina un plan si no está en uso."""
     if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     from beanie import PydanticObjectId
     plan = await Plan.get(PydanticObjectId(plan_id))
     if not plan:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
-        
+
     if not plan.code.startswith("CUSTOM_"):
         raise HTTPException(status_code=400, detail="No puedes eliminar los planes base del sistema. Edítalos en su lugar.")
-        
+
     # Validar que ningún tenant lo esté usando
     in_use = await Tenant.find({"plan_id": plan_id}).count()
     if in_use > 0:
         raise HTTPException(status_code=400, detail="El plan está en uso por una o más empresas.")
-        
+
     await plan.soft_delete()
     return {"message": "Plan eliminado correctamente"}
 
