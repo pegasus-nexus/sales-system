@@ -212,6 +212,32 @@ async def init_db():
     except Exception:
         pass
 
+    # Índices optimizados para POS, Caja, Clientes y Logística
+    col_clientes = database["clientes"]
+    try:
+        await col_clientes.create_index([("tenant_id", ASCENDING), ("ci_nit", ASCENDING)], name="tenant_nit_lookup_opt", background=True)
+        await col_clientes.create_index([("tenant_id", ASCENDING), ("is_active", ASCENDING)], name="tenant_active_clientes_opt", background=True)
+    except Exception:
+        pass
+
+    col_caja_sesiones = database["caja_sesiones"]
+    try:
+        await col_caja_sesiones.create_index([("tenant_id", ASCENDING), ("sucursal_id", ASCENDING), ("estado", ASCENDING)], name="tenant_suc_estado_caja_opt", background=True)
+    except Exception:
+        pass
+
+    col_caja_movs = database["caja_movimientos"]
+    try:
+        await col_caja_movs.create_index([("tenant_id", ASCENDING), ("sesion_id", ASCENDING)], name="tenant_sesion_movs_opt", background=True)
+    except Exception:
+        pass
+
+    col_traslados = database["traslados"]
+    try:
+        await col_traslados.create_index([("tenant_id", ASCENDING), ("estado", ASCENDING), ("created_at", DESCENDING)], name="tenant_estado_traslados_opt", background=True)
+    except Exception:
+        pass
+
     print("Optimized indexes setup completed.", flush=True)
 
 def get_client() -> motor.motor_asyncio.AsyncIOMotorClient:

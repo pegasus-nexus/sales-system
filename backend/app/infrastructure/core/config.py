@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     ENVIRONMENT: str = "development"
+    SENTRY_DSN: str = ""
     GEMINI_API_KEY: str = ""
 
     # Business Timezone Config
