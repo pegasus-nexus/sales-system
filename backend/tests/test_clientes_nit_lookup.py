@@ -1,12 +1,24 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
 from bson import ObjectId
-from app.main import app
+from httpx import ASGITransport, AsyncClient
+
 from app.domain.models.cliente import Cliente
 from app.domain.models.user import User
 from app.infrastructure.auth import get_current_active_user
+from app.main import app
 
-@pytest.mark.asyncio(loop_scope="session")
+
+@pytest.fixture(autouse=True)
+async def init_mongo_for_nit_lookup():
+    from app.infrastructure.db import init_db
+
+    try:
+        await init_db()
+    except Exception as e:
+        pytest.skip(f"MongoDB no disponible en este entorno: {e}")
+
+
+@pytest.mark.asyncio
 async def test_cliente_by_nit_and_tenant_isolation():
     tenant_a = "tenant_test_a"
     tenant_b = "tenant_test_b"
@@ -21,7 +33,7 @@ async def test_cliente_by_nit_and_tenant_isolation():
         nit_ci="12345678",
         telefono="77711122",
         email="alfa@test.com",
-        is_active=True
+        is_active=True,
     )
     await c_a.create()
 
@@ -30,7 +42,7 @@ async def test_cliente_by_nit_and_tenant_isolation():
         nombre="EMPRESA BETA S.A.",
         nit_ci="12345678",
         telefono="77733344",
-        is_active=True
+        is_active=True,
     )
     await c_b.create()
 
@@ -40,7 +52,7 @@ async def test_cliente_by_nit_and_tenant_isolation():
         tenant_id=tenant_a,
         role="CAJERO",
         is_active=True,
-        hashed_password="pw"
+        hashed_password="pw",
     )
     user_b = User(
         id=ObjectId(),
@@ -48,7 +60,7 @@ async def test_cliente_by_nit_and_tenant_isolation():
         tenant_id=tenant_b,
         role="CAJERO",
         is_active=True,
-        hashed_password="pw"
+        hashed_password="pw",
     )
 
     transport = ASGITransport(app=app)
