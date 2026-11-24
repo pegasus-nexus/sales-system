@@ -40,6 +40,7 @@ from app.domain.models.contabilidad import CuentaContable, AsientoContable
 from app.domain.models.lote import LoteInventario
 from app.domain.models.cotizacion import Cotizacion
 from app.domain.models.service_monitor import ServiceHealthCheck, ServiceIncidentAlert, AdminPasswordSetupToken
+from app.domain.models.account_token import AccountToken
 from app.domain.models.whatsapp_template import WhatsAppTemplate
 from app.domain.models.whatsapp_log import WhatsAppLog
 from app.domain.models.momentos_taboada import (
@@ -147,6 +148,7 @@ async def init_db():
             ServiceHealthCheck,
             ServiceIncidentAlert,
             AdminPasswordSetupToken,
+            AccountToken,
             WhatsAppTemplate,
             WhatsAppLog,
             PremioMomentosTaboada,
@@ -209,6 +211,32 @@ async def init_db():
     col_audit = database["audit_logs"]
     try:
         await col_audit.create_index([("tenant_id", ASCENDING), ("created_at", DESCENDING)], name="tenant_created_audit_opt", background=True)
+    except Exception:
+        pass
+
+    # Índices optimizados para POS, Caja, Clientes y Logística
+    col_clientes = database["clientes"]
+    try:
+        await col_clientes.create_index([("tenant_id", ASCENDING), ("ci_nit", ASCENDING)], name="tenant_nit_lookup_opt", background=True)
+        await col_clientes.create_index([("tenant_id", ASCENDING), ("is_active", ASCENDING)], name="tenant_active_clientes_opt", background=True)
+    except Exception:
+        pass
+
+    col_caja_sesiones = database["caja_sesiones"]
+    try:
+        await col_caja_sesiones.create_index([("tenant_id", ASCENDING), ("sucursal_id", ASCENDING), ("estado", ASCENDING)], name="tenant_suc_estado_caja_opt", background=True)
+    except Exception:
+        pass
+
+    col_caja_movs = database["caja_movimientos"]
+    try:
+        await col_caja_movs.create_index([("tenant_id", ASCENDING), ("sesion_id", ASCENDING)], name="tenant_sesion_movs_opt", background=True)
+    except Exception:
+        pass
+
+    col_traslados = database["traslados"]
+    try:
+        await col_traslados.create_index([("tenant_id", ASCENDING), ("estado", ASCENDING), ("created_at", DESCENDING)], name="tenant_estado_traslados_opt", background=True)
     except Exception:
         pass
 

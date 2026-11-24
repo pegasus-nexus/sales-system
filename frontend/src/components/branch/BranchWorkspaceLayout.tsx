@@ -7,6 +7,7 @@ import { useBranchTabStore } from './branchTabStore';
 import { useAuthStore } from '../../store/authStore';
 import ViewSearchModal from '../ViewSearchModal';
 import WhatsNewModal from '../WhatsNewModal';
+import ImpersonationBanner from '../ImpersonationBanner';
 
 interface Props {
     children: React.ReactNode;
@@ -49,6 +50,9 @@ export const BranchWorkspaceLayout: React.FC<Props> = ({ children }) => {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-[#080a11] text-white overflow-hidden select-none">
+            {/* Banner de Suplantación SuperAdmin SaaS */}
+            <ImpersonationBanner />
+
             {/* Top Browser Bar (Odoo 9-dots + Tabs + Controles) */}
             <BranchBrowserBar
                 onOpenSearch={() => setSearchModalOpen(true)}

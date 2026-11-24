@@ -7,6 +7,8 @@ import SaasWorkspaceLayout from './components/saas/SaasWorkspaceLayout';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage'));
+const ActivateAccountPage = lazy(() => import('./pages/ActivateAccountPage'));
+const RegisterRequestPage = lazy(() => import('./pages/RegisterRequestPage'));
 const TenantsAdminPage = lazy(() => import('./pages/TenantsAdminPage'));
 const PlanesAdminPage = lazy(() => import('./pages/PlanesAdminPage'));
 const SystemHealthPage = lazy(() => import('./pages/SystemHealthPage'));
@@ -57,6 +59,15 @@ const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
 const RecordatoriosPage = lazy(() => import('./pages/RecordatoriosPage'));
 const BranchAppsLauncher = lazy(() => import('./components/branch/BranchAppsLauncher').then(m => ({ default: m.BranchAppsLauncher })));
+const MatrizAppsLauncher = lazy(() => import('./components/matriz/MatrizAppsLauncher').then(m => ({ default: m.MatrizAppsLauncher })));
+
+const AppsLauncherDispatcher: React.FC = () => {
+  const { role } = useAuthStore();
+  if (['ADMIN_MATRIZ', 'ADMIN'].includes(role ?? '')) {
+    return <MatrizAppsLauncher />;
+  }
+  return <BranchAppsLauncher />;
+};
 import { useAuthStore } from './store/authStore';
 import { getMyFeatures, getMyTenant, getMe } from './api/api';
 import { Toaster } from 'sonner';
@@ -251,6 +262,8 @@ function App() {
               <Routes>
                 {/* 1. Ruta de Login fuera del Layout */}
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/registro" element={<RegisterRequestPage />} />
+                <Route path="/activar-cuenta" element={<ActivateAccountPage />} />
                 <Route path="/crear-password" element={<SetupPasswordPage />} />
 
                 {/* Rutas Públicas de Micro-Catálogo Digital y WhatsApp */}
@@ -315,7 +328,7 @@ function App() {
 
                       <Route path="/apps" element={
                         <ProtectedRoute allowedRoles={ALL_STAFF}>
-                          <BranchAppsLauncher />
+                          <AppsLauncherDispatcher />
                         </ProtectedRoute>
                       } />
 

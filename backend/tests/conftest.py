@@ -1,6 +1,6 @@
 import os
-
-import pytest_asyncio
+import pytest
+import asyncio
 
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import init_db
@@ -24,8 +24,8 @@ settings.MONGODB_URL = test_db_url
 settings.MONGODB_DB_NAME = "salessystem_test"
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def initialize_test_database():
+@pytest.fixture(scope="session", autouse=True)
+def initialize_test_database():
     """
     Se ejecuta una sola vez al inicio de la sesión de pruebas.
     Inicializa los modelos de Beanie si MongoDB está disponible (en CI con servicio Mongo activo).
@@ -34,7 +34,6 @@ async def initialize_test_database():
     is_ci = os.getenv("CI") == "true" or os.getenv("GITHUB_ACTIONS") == "true"
     has_test_mongo = bool(
         is_ci
-        or os.getenv("MONGO_URI")
         or os.getenv("TEST_MONGO_URI")
     )
     if not has_test_mongo:
@@ -42,7 +41,7 @@ async def initialize_test_database():
         return
 
     try:
-        await init_db()
+        asyncio.run(init_db())
     except Exception as e:
         # Si MongoDB no está disponible en local, se continúa
         print(f"Aviso: MongoDB no disponible en pruebas: {e}")

@@ -291,8 +291,8 @@ export default function CatalogoWebPage() {
                                         ) : (
                                             <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-[10px] shrink-0 border border-gray-200 font-medium">Sin img</div>
                                         )}
-                                        <div className="truncate flex-1">
-                                            <p className="font-bold text-sm text-gray-900 truncate" title={product.descripcion}>{product.descripcion}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm text-gray-900 leading-snug line-clamp-2 break-words" title={product.descripcion}>{product.descripcion}</p>
                                             <p className="text-[10px] font-medium text-gray-500">{product.codigo_corto || 'Sin SKU'}</p>
                                         </div>
                                     </div>

@@ -10,6 +10,21 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.api.v1.endpoints import etiquetas
 
+# Inicialización segura de Sentry para observabilidad en producción
+if getattr(settings, "SENTRY_DSN", None):
+    try:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.ENVIRONMENT,
+            traces_sample_rate=0.2 if settings.ENVIRONMENT == "production" else 1.0,
+            profiles_sample_rate=0.1 if settings.ENVIRONMENT == "production" else 1.0,
+            send_default_pii=False,
+        )
+        print("[Sentry] Monitoreo de producción inicializado correctamente.", flush=True)
+    except Exception as e:
+        print(f"[Sentry] Advertencia al inicializar Sentry: {e}", flush=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import os

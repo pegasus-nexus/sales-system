@@ -5,7 +5,8 @@ import { client } from '../api/client';
 import { useAuthStore } from '../store/authStore';
 import { useConfirm } from '../components/ConfirmModal';
 import { 
-    Plus, Edit2, Trash2, LogIn, Settings, Loader2, Archive, RotateCcw, Building2
+    Plus, Edit2, Trash2, LogIn, Settings, Loader2, Archive, RotateCcw, Building2,
+    Globe, ExternalLink, Store
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tenant, TenantCreate, TenantUpdate, Plan } from '../api/types';
@@ -23,8 +24,8 @@ export default function TenantsAdminPage() {
     const confirm = useConfirm();
     const queryClient = useQueryClient();
 
-    // Tab state: 'activas' | 'archivadas'
-    const [activeTab, setActiveTab] = useState<'activas' | 'archivadas'>('activas');
+    // Tab state: 'activas' | 'catalogos' | 'archivadas'
+    const [activeTab, setActiveTab] = useState<'activas' | 'catalogos' | 'archivadas'>('activas');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
@@ -57,23 +58,35 @@ export default function TenantsAdminPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
-    // Filter active vs archived
+    // Filter active vs catalogos vs archived
     const activeTenants = useMemo(() => {
         return tenants.filter(t => t.is_active !== false && !t.deleted_at);
+    }, [tenants]);
+
+    const catalogTenants = useMemo(() => {
+        return tenants.filter(t => 
+            t.is_active !== false && 
+            !t.deleted_at && 
+            (t.has_catalog || Boolean(t.catalog_slug) || Boolean(t.slug) || t.modulos_activos?.includes('CATALOGO') || t.plan === 'FREE')
+        );
     }, [tenants]);
 
     const archivedTenants = useMemo(() => {
         return tenants.filter(t => t.is_active === false || !!t.deleted_at);
     }, [tenants]);
 
-    const currentList = activeTab === 'activas' ? activeTenants : archivedTenants;
+    const currentList = activeTab === 'activas' 
+        ? activeTenants 
+        : activeTab === 'catalogos' 
+            ? catalogTenants 
+            : archivedTenants;
 
     const paginatedTenants = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         return currentList.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     }, [currentList, currentPage]);
 
-    const handleTabChange = (tab: 'activas' | 'archivadas') => {
+    const handleTabChange = (tab: 'activas' | 'catalogos' | 'archivadas') => {
         setActiveTab(tab);
         setCurrentPage(1);
     };
@@ -140,14 +153,20 @@ export default function TenantsAdminPage() {
                 });
             }
             
-            const { access_token } = await impersonateTenant(tenantId);
-            useAuthStore.setState({ token: access_token });
+            const res = await impersonateTenant(tenantId);
+            useAuthStore.setState({ token: res.access_token });
             const me = await getMe();
-            useAuthStore.getState().login(access_token, me);
-            return access_token;
+            useAuthStore.getState().login(res.access_token, me);
+            return { token: res.access_token, role: me.role, redirectTo: res.redirect_to };
         },
-        onSuccess: () => {
-            window.location.href = '/dashboard';
+        onSuccess: (data) => {
+            if (data.redirectTo) {
+                window.location.href = data.redirectTo;
+            } else if (data.role === 'CATALOGO_MERCHANT') {
+                window.location.href = '/catalogo/admin';
+            } else {
+                window.location.href = '/dashboard';
+            }
         },
         onError: (err: { message?: string }) => {
             toast.error(err.message || 'Error al iniciar sesión como cliente');
@@ -251,8 +270,8 @@ export default function TenantsAdminPage() {
                 </button>
             </div>
 
-            {/* Pestañas Activas vs Archivadas */}
-            <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+            {/* Pestañas Activas vs Catálogos vs Archivadas */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-2">
                 <button
                     type="button"
                     onClick={() => handleTabChange('activas')}
@@ -262,11 +281,29 @@ export default function TenantsAdminPage() {
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
-                    <span>Empresas Activas</span>
+                    <span>Todas las Empresas</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                         activeTab === 'activas' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
                     }`}>
                         {activeTenants.length}
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => handleTabChange('catalogos')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'catalogos' 
+                            ? 'bg-indigo-600 text-white shadow-xs' 
+                            : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    }`}
+                >
+                    <Globe size={14} />
+                    <span>Catálogos Web / Gratuitos</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        activeTab === 'catalogos' ? 'bg-white/20 text-white' : 'bg-indigo-200 text-indigo-800'
+                    }`}>
+                        {catalogTenants.length}
                     </span>
                 </button>
 
@@ -294,12 +331,18 @@ export default function TenantsAdminPage() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
-                            {activeTab === 'activas' ? 'Empresas en Operación' : 'Empresas Archivadas'}
+                            {activeTab === 'activas' 
+                                ? 'Todas las Empresas en Operación' 
+                                : activeTab === 'catalogos'
+                                    ? 'Comercios con Catálogo Web y Tienda Online'
+                                    : 'Empresas Archivadas'}
                         </h3>
                         <p className="text-[11px] text-gray-500 font-medium">
                             {activeTab === 'activas' 
                                 ? 'Empresas con suscripción activa y acceso habilitado para sus usuarios.'
-                                : 'Empresas dadas de baja o suspendidas. No ocupan espacio en la vista principal y pueden restaurarse.'}
+                                : activeTab === 'catalogos'
+                                    ? 'Clientes que utilizan el micro-catálogo gratuito o catálogo web. Puedes ver sus webs o administrar sus productos.'
+                                    : 'Empresas dadas de baja o suspendidas. No ocupan espacio en la vista principal y pueden restaurarse.'}
                         </p>
                     </div>
                     <div className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-600">
@@ -315,86 +358,138 @@ export default function TenantsAdminPage() {
                 ) : currentList.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-2xl">
                         <p className="text-xs text-gray-400 font-bold">
-                            {activeTab === 'activas' ? 'No hay empresas activas registradas.' : 'La papelera de empresas archivadas está vacía.'}
+                            {activeTab === 'activas' ? 'No hay empresas activas registradas.' : activeTab === 'catalogos' ? 'No hay clientes registrados en catálogo web aún.' : 'La papelera de empresas archivadas está vacía.'}
                         </p>
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {paginatedTenants.map(tenant => (
-                            <div key={tenant._id} className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all border border-gray-150">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-xs shrink-0 ${
-                                        tenant.is_active ? 'bg-gray-900' : 'bg-gray-400'
-                                    }`}>
-                                        {tenant.name.substring(0, 1).toUpperCase()}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2.5">
-                                            <h4 className="font-bold text-gray-900 text-sm">{tenant.name}</h4>
-                                            {!tenant.is_active && (
-                                                <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                                                    Archivada
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <PlanBadge plan={tenant.plan} />
-                                            <span className="text-gray-300 text-xs">•</span>
-                                            <p className="text-[11px] text-gray-400 font-mono">ID: {tenant._id.substring(0, 8)}...</p>
-                                        </div>
-                                    </div>
-                                </div>
+                        {paginatedTenants.map(tenant => {
+                            const catalogSlug = tenant.catalog_slug || tenant.slug;
+                            const hasCatalog = tenant.has_catalog || Boolean(catalogSlug) || tenant.modulos_activos?.includes('CATALOGO') || tenant.plan === 'FREE';
+                            const publicWebUrl = catalogSlug ? `/c/${catalogSlug}` : null;
 
-                                <div className="flex items-center gap-1.5">
-                                    {activeTab === 'activas' ? (
-                                        <>
+                            return (
+                                <div key={tenant._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-all border border-gray-150 gap-3">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-xs shrink-0 ${
+                                            tenant.is_active ? 'bg-gray-900' : 'bg-gray-400'
+                                        }`}>
+                                            {tenant.name.substring(0, 1).toUpperCase()}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h4 className="font-bold text-gray-900 text-sm">{tenant.name}</h4>
+                                                {!tenant.is_active && (
+                                                    <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                        Archivada
+                                                    </span>
+                                                )}
+                                                {hasCatalog && (
+                                                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                                                        <Store size={10} />
+                                                        Catálogo Web
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                                                <PlanBadge plan={tenant.plan} />
+                                                {publicWebUrl && (
+                                                    <>
+                                                        <span className="text-gray-300">•</span>
+                                                        <a 
+                                                            href={publicWebUrl} 
+                                                            target="_blank" 
+                                                            rel="noreferrer"
+                                                            title="Ver web pública en nueva pestaña"
+                                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 transition-colors"
+                                                        >
+                                                            <Globe size={11} className="text-emerald-600" />
+                                                            <span>/c/{catalogSlug}</span>
+                                                            <ExternalLink size={10} className="text-emerald-500" />
+                                                        </a>
+                                                    </>
+                                                )}
+                                                <span className="text-gray-300">•</span>
+                                                <p className="text-[11px] text-gray-400 font-mono">ID: {tenant._id.substring(0, 8)}...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-center">
+                                        {activeTab !== 'archivadas' ? (
+                                            <>
+                                                {publicWebUrl && (
+                                                    <a 
+                                                        href={publicWebUrl} 
+                                                        target="_blank" 
+                                                        rel="noreferrer"
+                                                        title={`Ver Web Pública de ${tenant.name}`}
+                                                        className="px-2.5 py-1.5 flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                                    >
+                                                        <Globe size={13} />
+                                                        <span>Ver Web</span>
+                                                        <ExternalLink size={11} />
+                                                    </a>
+                                                )}
+                                                {hasCatalog && (
+                                                    <button 
+                                                        onClick={() => impersonateMutation.mutate(tenant._id)} 
+                                                        disabled={impersonateMutation.isPending}
+                                                        title={`Entrar al Administrador de Catálogo de ${tenant.name}`}
+                                                        className="px-2.5 py-1.5 flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 rounded-lg text-xs font-bold transition-colors border border-indigo-200 disabled:opacity-50 cursor-pointer"
+                                                    >
+                                                        <Store size={13} />
+                                                        <span className="hidden sm:inline">Gestionar Catálogo</span>
+                                                    </button>
+                                                )}
+                                                <button 
+                                                    onClick={() => {
+                                                        setModulesTenant(tenant);
+                                                        setLocalModules(tenant.modulos_activos || []);
+                                                    }} 
+                                                    title="Control de Módulos (Feature Toggles)"
+                                                    className="w-8 h-8 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-100 cursor-pointer"
+                                                >
+                                                    <Settings size={15} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => impersonateMutation.mutate(tenant._id)} 
+                                                    disabled={impersonateMutation.isPending}
+                                                    title="Magic Login (Impersonation)"
+                                                    className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100 disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    <LogIn size={15} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEditClick(tenant)} 
+                                                    title="Editar Empresa" 
+                                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 cursor-pointer"
+                                                >
+                                                    <Edit2 size={15} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleArchiveClick(tenant)} 
+                                                    title="Archivar en papelera" 
+                                                    className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-rose-100 cursor-pointer"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </>
+                                        ) : (
                                             <button 
-                                                onClick={() => {
-                                                    setModulesTenant(tenant);
-                                                    setLocalModules(tenant.modulos_activos || []);
-                                                }} 
-                                                title="Control de Módulos (Feature Toggles)"
-                                                className="w-8 h-8 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-100 cursor-pointer"
+                                                onClick={() => handleRestoreClick(tenant)} 
+                                                disabled={restoreTenantMutation.isPending}
+                                                title="Restaurar y Reactivar Empresa" 
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                                             >
-                                                <Settings size={15} />
+                                                <RotateCcw size={13} />
+                                                <span>Restaurar Empresa</span>
                                             </button>
-                                            <button 
-                                                onClick={() => impersonateMutation.mutate(tenant._id)} 
-                                                disabled={impersonateMutation.isPending}
-                                                title="Magic Login (Impersonation)"
-                                                className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100 disabled:opacity-50 cursor-pointer"
-                                            >
-                                                <LogIn size={15} />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleEditClick(tenant)} 
-                                                title="Editar Empresa" 
-                                                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 cursor-pointer"
-                                            >
-                                                <Edit2 size={15} />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleArchiveClick(tenant)} 
-                                                title="Archivar en papelera" 
-                                                className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-rose-100 cursor-pointer"
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button 
-                                            onClick={() => handleRestoreClick(tenant)} 
-                                            disabled={restoreTenantMutation.isPending}
-                                            title="Restaurar y Reactivar Empresa" 
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                                        >
-                                            <RotateCcw size={13} />
-                                            <span>Restaurar Empresa</span>
-                                        </button>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         {currentList.length > ITEMS_PER_PAGE && (
                             <div className="pt-4 border-t border-gray-100 mt-4">

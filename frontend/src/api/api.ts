@@ -61,7 +61,7 @@ import type {
 
 export const getMe = () => client<User>('/users/me');
 
-export const impersonateTenant = (tenant_id: string) => client<{access_token: string, token_type: string, role: string}>(`/impersonate/${tenant_id}`, { method: 'POST' });
+export const impersonateTenant = (tenant_id: string) => client<{access_token: string, token_type: string, role: string, redirect_to?: string}>(`/impersonate/${tenant_id}`, { method: 'POST' });
 
 export const impersonateUser = (user_id: string) => client<{access_token: string, token_type: string, role: string}>(`/impersonate/user/${user_id}`, { method: 'POST' });
 
@@ -2197,6 +2197,15 @@ export const updateSaasStaff = (id: string, data: any) => client<any>(`/saas-sta
 export const deleteSaasStaff = (id: string) => client<{ message: string }>(`/saas-staff/${id}`, { method: 'DELETE' });
 
 export const changePassword = (data: { current_password: string; new_password: string }) => client<{ message: string }>('/auth/change-password', { method: 'POST', body: data });
+
+export const requestAccountActivation = (data: { email: string; full_name: string; business_name?: string }) =>
+    client<{ status: string; message: string; email: string }>('/auth/request-activation', { method: 'POST', body: data });
+
+export const verifyActivationToken = (token: string) =>
+    client<{ valid: boolean; email: string; full_name: string; business_name: string }>(`/auth/verify-activation-token?token=${encodeURIComponent(token)}`);
+
+export const completeAccountActivation = (data: { token: string; password: string; password_confirm: string }) =>
+    client<{ status: string; message: string; access_token: string; token_type: string; role: string; username: string; email: string }>('/auth/complete-activation', { method: 'POST', body: data });
 
 export const updateMyProfile = (data: { full_name?: string; avatar_url?: string }) => client<{ message: string; user: any }>('/auth/users/me/profile', { method: 'PUT', body: data });
 

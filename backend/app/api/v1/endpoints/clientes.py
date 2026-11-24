@@ -318,12 +318,36 @@ async def asignar_o_obtener_tarjeta_taboada(
     if not cliente or cliente.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
+    updated = False
     if not cliente.numero_tarjeta:
         cliente.numero_tarjeta = f"TAB-{''.join(random.choices(string.digits, k=6))}"
+        updated = True
+    if not cliente.is_miembro_comunidad:
         cliente.is_miembro_comunidad = True
-        if not cliente.fecha_afiliacion:
-            cliente.fecha_afiliacion = datetime.now(UTC)
+        updated = True
+    if not cliente.fecha_afiliacion:
+        cliente.fecha_afiliacion = datetime.now(UTC)
+        updated = True
+    if updated:
         await cliente.save()
+
+    # Retro-vincular ventas pasadas sin cliente_id que coincidan con su teléfono o NIT
+    try:
+        from app.domain.models.sale import Sale
+        or_conds = []
+        if cliente.telefono and cliente.telefono.strip():
+            or_conds.append({"cliente.telefono": cliente.telefono.strip()})
+        if cliente.nit_ci and cliente.nit_ci.strip():
+            or_conds.append({"cliente.nit": cliente.nit_ci.strip()})
+        if or_conds:
+            await Sale.find({
+                "tenant_id": tenant_id,
+                "cliente_id": {"$in": [None, ""]},
+                "$or": or_conds,
+            }).update({"$set": {"cliente_id": str(cliente.id)}})
+    except Exception as exc:
+        import logging
+        logging.getLogger("app.api.clientes").warning(f"No se pudieron retro-vincular ventas pasadas: {exc}")
 
     return cliente
 

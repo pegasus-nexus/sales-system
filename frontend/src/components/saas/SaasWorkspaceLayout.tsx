@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut } from 'lucide-react';
 import SaasBrowserBar from './SaasBrowserBar';
 import WhatsNewModal, { CURRENT_RELEASE_VERSION } from '../WhatsNewModal';
+import ImpersonationBanner from '../ImpersonationBanner';
 import { useLocalStorage } from 'usehooks-ts';
 import { useSaasTabStore } from './saasTabStore';
 import { useAuthStore } from '../../store/authStore';
@@ -44,6 +45,9 @@ export default function SaasWorkspaceLayout({ children }: SaasWorkspaceLayoutPro
 
     return (
         <div className="flex flex-col h-screen w-screen bg-[#080a11] text-white overflow-hidden select-none">
+            {/* ── Exit Impersonation Banner (si está en modo suplantación) ── */}
+            <ImpersonationBanner />
+
             {/* ── Top Browser Bar (Odoo 9-dots + Tabs + Controls) ── */}
             <SaasBrowserBar
                 onOpenWhatsNew={handleOpenWhatsNew}

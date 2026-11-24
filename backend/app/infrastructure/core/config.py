@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     ENVIRONMENT: str = "development"
+    SENTRY_DSN: str = ""
     GEMINI_API_KEY: str = ""
 
     # Business Timezone Config
@@ -43,6 +44,12 @@ class Settings(BaseSettings):
     )
     GOOGLE_WALLET_PRIVATE_KEY: str = ""
     GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: str = ""
+
+    # Email Subsystem (Resend / Mock / SMTP) - Zero hardcoding, DIP compliant
+    EMAIL_PROVIDER: str = "mock"  # Options: "resend", "smtp", "mock"
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "Pegasus Nexus <onboarding@resend.dev>"
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
 
     model_config = SettingsConfigDict(env_file=("backend/.env", ".env"), extra="ignore")
 

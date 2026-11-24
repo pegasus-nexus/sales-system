@@ -4,7 +4,7 @@ import { getTenants, getAdminDashboardMetrics } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 import { 
     Building, AlertCircle, DollarSign, Activity, Users, 
-    ShoppingCart, Store, ArrowUpRight, Database
+    ShoppingCart, Store, ArrowUpRight, Database, Globe, ExternalLink
 } from 'lucide-react';
 import type { Tenant } from '../api/types';
 import { 
@@ -56,6 +56,12 @@ export default function AdminDashboardPage() {
         const expires = new Date(t.plan_expires_at);
         return expires <= nextWeek && expires > now;
     }).sort((a, b) => new Date(a.plan_expires_at!).getTime() - new Date(b.plan_expires_at!).getTime());
+
+    const catalogTenants = tenants.filter(t => 
+        t.is_active !== false && 
+        !t.deleted_at && 
+        (t.has_catalog || Boolean(t.catalog_slug) || Boolean(t.slug) || t.modulos_activos?.includes('CATALOGO') || t.plan === 'FREE')
+    );
 
     if (user?.role !== 'SUPERADMIN' && user?.role !== 'SUPERADMIN_STAFF') {
         return <div className="p-5 text-center text-red-500 font-bold">Acceso Restringido</div>;
@@ -331,6 +337,68 @@ export default function AdminDashboardPage() {
                                     <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-700">
                                         Plan: {tenant.plan}
                                     </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Catálogos Web y Tiendas Digitales de Clientes */}
+            <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-150">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                            <Globe size={16} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900">Catálogos Web y Tiendas Digitales de Clientes</h3>
+                            <p className="text-[11px] text-gray-500 font-medium">Acceso directo a las páginas web y catálogos de clientes en la plataforma.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/admin/empresas')}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                    >
+                        Ver todos ({catalogTenants.length}) →
+                    </button>
+                </div>
+
+                {catalogTenants.length === 0 ? (
+                    <div className="bg-gray-50 rounded-xl p-4 text-center text-xs text-gray-500 font-medium">
+                        Aún no hay clientes con catálogos web registrados.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {catalogTenants.slice(0, 6).map(tenant => {
+                            const catalogSlug = tenant.catalog_slug || tenant.slug;
+                            const webUrl = catalogSlug ? `/c/${catalogSlug}` : null;
+                            return (
+                                <div key={tenant._id} className="p-3.5 rounded-xl border border-gray-150 bg-gray-50 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                                            {tenant.name.substring(0, 1).toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 text-xs truncate">{tenant.name}</p>
+                                            <p className="text-[11px] text-indigo-600 font-mono font-medium truncate">
+                                                /c/{catalogSlug}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {webUrl && (
+                                        <a
+                                            href={webUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title={`Abrir web pública de ${tenant.name}`}
+                                            className="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 border border-gray-200 hover:border-emerald-300 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 shadow-2xs"
+                                        >
+                                            <Globe size={12} className="text-emerald-600" />
+                                            <span>Ver Web</span>
+                                            <ExternalLink size={10} />
+                                        </a>
+                                    )}
                                 </div>
                             );
                         })}

@@ -1,18 +1,22 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
-from app.domain.models.caja import CajaMovimiento, CajaSesion, EstadoSesion, SubtipoMovimiento
+from app.domain.models.base import DecimalMoney
+from app.domain.models.caja import (
+    CajaMovimiento,
+    CajaSesion,
+    EstadoSesion,
+    SubtipoMovimiento,
+)
 from app.domain.models.cliente import Cliente
 from app.domain.models.inventario import Inventario, InventoryLog, TipoMovimiento
 from app.domain.models.product import Product
-from app.domain.models.sale import EstadoPago, PagoItem, Sale, SaleItem
+from app.domain.models.sale import PagoItem, Sale
 from app.domain.models.user import User, UserRole
-from app.domain.models.base import DecimalMoney
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import get_client
 from app.utils.errors import VentasErrors
@@ -23,7 +27,9 @@ logger = logging.getLogger("SalesAnulacionService")
 class SalesAnulacionService:
     @staticmethod
     def _get_sale_repo():
-        from app.infrastructure.repositories.mongo_sale_repository import MongoSaleRepository
+        from app.infrastructure.repositories.mongo_sale_repository import (
+            MongoSaleRepository,
+        )
         return MongoSaleRepository()
 
     @staticmethod
@@ -31,10 +37,10 @@ class SalesAnulacionService:
         sale_id: str,
         current_user: User,
         motivo: str,
-        notas: Optional[str] = None,
-        metodo_pago_correcto: Optional[str] = None,
+        notas: str | None = None,
+        metodo_pago_correcto: str | None = None,
         afectar_caja: bool = True,
-        caja_sesion_id: Optional[str] = None,
+        caja_sesion_id: str | None = None,
     ) -> Sale:
         """
         Anula una venta con lógica inteligente según el motivo:
@@ -81,7 +87,7 @@ class SalesAnulacionService:
                     if current_user.role == UserRole.CAJERO:
                         if sale.cashier_id != str(current_user.id):
                             raise HTTPException(status_code=403, detail="Los cajeros solo pueden anular sus propias ventas")
-                        hours_diff = (datetime.now(timezone.utc) - sale.created_at).total_seconds() / 3600
+                        hours_diff = (datetime.now(UTC) - sale.created_at).total_seconds() / 3600
                         if hours_diff > 24:
                             raise HTTPException(status_code=403, detail="Un cajero no puede anular una venta pasada de 24 horas.")
 
@@ -136,7 +142,12 @@ class SalesAnulacionService:
                     # ── 1.5 Revertir deuda de crédito ──
                     has_credit_payment = any(p.metodo == "CREDITO" for p in sale.pagos)
                     if has_credit_payment:
-                        from app.domain.models.credito import Deuda, EstadoDeuda, CuentaCredito, TransaccionCredito
+                        from app.domain.models.credito import (
+                            CuentaCredito,
+                            Deuda,
+                            EstadoDeuda,
+                            TransaccionCredito,
+                        )
                         deuda = await Deuda.find_one(Deuda.sale_id == str(sale.id), session=session)
                         if deuda and deuda.estado != EstadoDeuda.ANULADA:
                             cuenta = await CuentaCredito.get(deuda.cuenta_id, session=session)
@@ -144,7 +155,7 @@ class SalesAnulacionService:
                                 from decimal import Decimal
                                 nuevo_saldo = max(Decimal("0"), Decimal(str(cuenta.saldo_total)) - Decimal(str(deuda.saldo_pendiente)))
                                 cuenta.saldo_total = DecimalMoney(str(nuevo_saldo))
-                                cuenta.updated_at = datetime.now(timezone.utc)
+                                cuenta.updated_at = datetime.now(UTC)
                                 await cuenta.save(session=session)
 
                             transaccion = TransaccionCredito(
@@ -163,12 +174,14 @@ class SalesAnulacionService:
 
                             deuda.saldo_pendiente = DecimalMoney("0")
                             deuda.estado = EstadoDeuda.ANULADA
-                            deuda.updated_at = datetime.now(timezone.utc)
+                            deuda.updated_at = datetime.now(UTC)
                             await deuda.save(session=session)
 
                     if sale.cliente_id:
                         from beanie.operators import Inc
-                        await Cliente.find_one(Cliente.id == sale.cliente_id, session=session).update(
+                        from bson import ObjectId
+                        cid_obj = ObjectId(sale.cliente_id) if ObjectId.is_valid(sale.cliente_id) else sale.cliente_id
+                        await Cliente.find_one(Cliente.id == cid_obj, session=session).update(
                             Inc({Cliente.total_compras: -sale.total}),
                             Inc({Cliente.cantidad_compras: -1}),
                             session=session
@@ -248,11 +261,11 @@ class SalesAnulacionService:
                     sale.notas_anulacion      = notas
                     sale.anulada_por_id       = str(current_user.id)
                     sale.anulada_por_nombre   = current_user.full_name or current_user.username
-                    sale.anulada_at           = datetime.now(timezone.utc)
+                    sale.anulada_at           = datetime.now(UTC)
                     sale.metodo_pago_correcto = metodo_pago_correcto
                     await SalesAnulacionService._get_sale_repo().update(sale, session=session)
 
-                    
+
 
                     # ── 4. CLONAR Y CREAR NUEVA VENTA CON MÉTODO CORRECTO (Para ERROR_COBRO) ──
                     if motivo == "ERROR_COBRO":
@@ -321,14 +334,16 @@ class SalesAnulacionService:
                             vendedor_id=sale.vendedor_id,
                             vendedor_name=sale.vendedor_name,
                             anulada=False,
-                            created_at=datetime.now(timezone.utc),
+                            created_at=datetime.now(UTC),
                             notas_anulacion=f"[Creada automáticamente por corrección del Ticket #{str(sale.id)[-6:].upper()}]"
                         )
                         await SalesAnulacionService._get_sale_repo().add(new_sale, session=session)
 
                         if new_sale.cliente_id:
                             from beanie.operators import Inc, Set
-                            await Cliente.find_one(Cliente.id == new_sale.cliente_id, session=session).update(
+                            from bson import ObjectId
+                            cid_obj = ObjectId(new_sale.cliente_id) if ObjectId.is_valid(new_sale.cliente_id) else new_sale.cliente_id
+                            await Cliente.find_one(Cliente.id == cid_obj, session=session).update(
                                 Inc({Cliente.total_compras: new_sale.total}),
                                 Inc({Cliente.cantidad_compras: 1}),
                                 Set({Cliente.ultima_compra_at: new_sale.created_at}),
@@ -361,7 +376,7 @@ class SalesAnulacionService:
             raise
         except Exception as e:
             logger.error(f"[SalesAnulacionService.anular_sale] Transaction aborted: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Error transaccional al anular la venta: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error transaccional al anular la venta: {e!s}")
 
         if sale_obj:
             async def _sync_anular_background():

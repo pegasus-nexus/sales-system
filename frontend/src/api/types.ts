@@ -1,4 +1,4 @@
-export type UserRole = 'SUPERADMIN' | 'SUPERADMIN_STAFF' | 'ADMIN_MATRIZ' | 'ADMIN' | 'USER' | 'ADMIN_SUCURSAL' | 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR' | 'FACTURADOR';
+export type UserRole = 'SUPERADMIN' | 'SUPERADMIN_STAFF' | 'ADMIN_MATRIZ' | 'ADMIN' | 'USER' | 'ADMIN_SUCURSAL' | 'CAJERO' | 'SUPERVISOR' | 'VENDEDOR' | 'FACTURADOR' | 'CATALOGO_MERCHANT';
 
 export interface User {
     _id: string;
@@ -49,6 +49,8 @@ export interface Tenant {
     _id: string;
     name: string;
     slug?: string;
+    catalog_slug?: string;
+    has_catalog?: boolean;
     plan: string;
     plan_id?: string;
     is_active: boolean;

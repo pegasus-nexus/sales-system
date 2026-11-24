@@ -1,25 +1,27 @@
-from typing import List, Dict, Any
 import html
-from fastapi import APIRouter, Depends, status
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
-from app.infrastructure.auth import get_current_active_user
-from app.domain.models.user import User
+
+from app.application.services.catalogo_service import CatalogoService
+from app.domain.models.catalogo import CatalogoConfig, CatalogoProducto
+from app.domain.models.user import User, UserRole
 from app.domain.schemas.catalogo import (
-    CatalogoRegisterRequest,
-    CatalogoGoogleAuthRequest,
     CatalogoAuthResponse,
-    CatalogoConfigUpdate,
     CatalogoConfigOut,
+    CatalogoConfigUpdate,
+    CatalogoGoogleAuthRequest,
     CatalogoProductoCreate,
-    CatalogoProductoUpdate,
     CatalogoProductoOut,
+    CatalogoProductoUpdate,
+    CatalogoRegisterRequest,
     PublicCatalogoResponse,
 )
-from app.application.services.catalogo_service import CatalogoService
+from app.infrastructure.auth import get_current_active_user
 from app.infrastructure.repositories.catalogo_repository import (
+    MongoCatalogoAuthRepository,
     MongoCatalogoConfigRepository,
     MongoCatalogoProductoRepository,
-    MongoCatalogoAuthRepository,
 )
 
 router = APIRouter(prefix="/catalogo", tags=["catalogo"])
@@ -173,7 +175,7 @@ async def update_my_catalog_config(
     return await service.update_tenant_config(current_user.tenant_id, updates)
 
 
-@router.get("/productos", response_model=List[CatalogoProductoOut])
+@router.get("/productos", response_model=list[CatalogoProductoOut])
 async def list_my_products(
     current_user: User = Depends(get_current_active_user),
     service: CatalogoService = Depends(get_catalogo_service)
@@ -219,3 +221,35 @@ async def delete_product(
     Elimina (soft-delete) un producto del catálogo digital.
     """
     return await service.delete_product(current_user.tenant_id, product_id)
+
+
+# ==========================================
+# Endpoints de Observabilidad SaaS (Superadmin)
+# ==========================================
+
+@router.get("/admin/all-catalogs")
+async def list_all_catalogs_admin(
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    [SUPERADMIN] Lista todos los catálogos digitales creados por clientes, con enlace público y conteo de productos.
+    """
+    if current_user.role not in [UserRole.SUPERADMIN, UserRole.SUPERADMIN_STAFF]:
+        raise HTTPException(status_code=403, detail="No autorizado para ver catálogos globales")
+
+    configs = await CatalogoConfig.find({"is_active": {"$ne": False}}).to_list()
+    result = []
+    for c in configs:
+        count = await CatalogoProducto.find({"tenant_id": c.tenant_id, "is_deleted": {"$ne": True}}).count()
+        result.append({
+            "tenant_id": c.tenant_id,
+            "business_name": c.business_name,
+            "slug": c.slug,
+            "whatsapp_number": c.whatsapp_number,
+            "products_count": count,
+            "logo_url": c.logo_url,
+            "primary_color": c.primary_color,
+            "is_active": c.is_active,
+            "created_at": c.created_at.isoformat() if c.created_at else None
+        })
+    return result

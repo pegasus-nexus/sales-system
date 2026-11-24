@@ -26,7 +26,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error("Uncaught error in UI:", error, errorInfo);
-        // Here we could also log the error to Sentry or another service
+        const sentry = (window as unknown as { Sentry?: { captureException: (err: unknown, ctx?: unknown) => void } }).Sentry;
+        if (sentry) {
+            sentry.captureException(error, { extra: errorInfo });
+        }
     }
 
     private handleReset = () => {

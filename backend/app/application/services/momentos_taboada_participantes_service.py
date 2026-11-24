@@ -1,13 +1,12 @@
-from datetime import datetime, UTC
-from typing import List, Dict, Any, Optional
 import random
 import string
-import re
+from datetime import UTC, datetime
+from typing import Any
 
 from app.domain.constants.momentos_taboada import FECHA_INICIO_CAMPANA
-from app.domain.models.sale import Sale
 from app.domain.models.cliente import Cliente
 from app.domain.models.momentos_taboada import CanjeMomentosTaboada
+from app.domain.models.sale import Sale
 
 
 class MomentosTaboadaParticipantesService:
@@ -19,14 +18,14 @@ class MomentosTaboadaParticipantesService:
     @staticmethod
     async def get_participantes_y_metricas(
         tenant_id: str,
-        sucursal_id: Optional[str] = None,
-        search: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        sucursal_id: str | None = None,
+        search: str | None = None,
+    ) -> dict[str, Any]:
         """
         Retorna los KPIs ejecutivos para el cajero y la tabla completa de participantes
         con base en las ventas participantes desde el 1 de noviembre de 2026.
         """
-        filtro_ventas: Dict[str, Any] = {
+        filtro_ventas: dict[str, Any] = {
             "tenant_id": tenant_id,
             "anulada": False,
             "created_at": {"$gte": FECHA_INICIO_CAMPANA},
@@ -38,7 +37,7 @@ class MomentosTaboadaParticipantesService:
         ventas = await Sale.find(filtro_ventas).sort("-created_at").to_list()
 
         # 2. Cargar todos los canjes de este tenant
-        filtro_canjes: Dict[str, Any] = {
+        filtro_canjes: dict[str, Any] = {
             "tenant_id": tenant_id,
             "estado": "COMPLETADO",
         }
@@ -48,14 +47,14 @@ class MomentosTaboadaParticipantesService:
         canjes = await CanjeMomentosTaboada.find(filtro_canjes).to_list()
 
         # Indexar canjes por teléfono del cliente
-        canjes_por_telefono: Dict[str, List[CanjeMomentosTaboada]] = {}
+        canjes_por_telefono: dict[str, list[CanjeMomentosTaboada]] = {}
         for c in canjes:
             tel = (c.cliente_telefono or "").strip()
             if tel:
                 canjes_por_telefono.setdefault(tel, []).append(c)
 
         # 3. Agrupar ventas por participante (usando teléfono o cliente_id como clave única)
-        participantes_map: Dict[str, Dict[str, Any]] = {}
+        participantes_map: dict[str, dict[str, Any]] = {}
         total_tickets_repartidos_global = 0
         total_monto_ventas_global = 0.0
 
@@ -117,7 +116,7 @@ class MomentosTaboadaParticipantesService:
         cliente_info_map = {c.telefono: c for c in clientes_db if c.telefono}
 
         # 5. Construir lista de participantes y calcular estado de canjes
-        lista_participantes: List[Dict[str, Any]] = []
+        lista_participantes: list[dict[str, Any]] = []
         compraron_mas_de_una_vez = 0
 
         for key, p in participantes_map.items():
@@ -200,8 +199,8 @@ class MomentosTaboadaParticipantesService:
     async def afiliar_tarjeta_taboada(
         tenant_id: str,
         telefono: str,
-        nombre: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        nombre: str | None = None,
+    ) -> dict[str, Any]:
         """
         Asigna o genera una Tarjeta Taboada (código TAB-XXXXXX) para un cliente,
         marcando su afiliación a la Comunidad Taboada para incentivar la fidelización.
@@ -238,6 +237,17 @@ class MomentosTaboadaParticipantesService:
             if nombre and nombre.strip() and cliente.nombre.startswith("Cliente "):
                 cliente.nombre = nombre.strip()
             await cliente.save()
+
+        # Retro-vincular ventas pasadas sin cliente_id que coincidan con su teléfono
+        try:
+            from app.domain.models.sale import Sale
+            await Sale.find({
+                "tenant_id": tenant_id,
+                "cliente_id": {"$in": [None, ""]},
+                "cliente.telefono": clean_tel,
+            }).update({"$set": {"cliente_id": str(cliente.id)}})
+        except Exception:
+            pass
 
         return {
             "status": "success",
