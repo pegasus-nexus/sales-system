@@ -9,13 +9,11 @@ from app.main import app
 
 
 @pytest.fixture(autouse=True)
-async def init_mongo_for_nit_lookup():
-    from app.infrastructure.db import init_db
+def require_mongodb():
+    import tests.conftest as tc
 
-    try:
-        await init_db()
-    except Exception as e:
-        pytest.skip(f"MongoDB no disponible en este entorno: {e}")
+    if not tc.MONGODB_AVAILABLE:
+        pytest.skip("MongoDB no disponible en este entorno")
 
 
 @pytest.mark.asyncio
