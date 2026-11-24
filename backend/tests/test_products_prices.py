@@ -10,7 +10,17 @@ from app.domain.models.product import Product
 from app.domain.models.user import User, UserRole
 
 
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.fixture(autouse=True)
+async def init_mongo_for_products_prices():
+    from app.infrastructure.db import init_db
+
+    try:
+        await init_db()
+    except Exception as e:
+        pytest.skip(f"MongoDB no disponible en este entorno: {e}")
+
+
+@pytest.mark.asyncio
 async def test_product_price_mapping_for_sucursal_cajero():
     """
     Test de Integración para la resolución de precios por sucursal.
@@ -21,11 +31,7 @@ async def test_product_price_mapping_for_sucursal_cajero():
     sucursal_id = f"sucursal_heroinas_{uuid.uuid4().hex[:8]}"
 
     # 1. Crear categoría de prueba
-    cat = Category(
-        tenant_id=tenant_id,
-        name="Cremas Test",
-        is_active=True
-    )
+    cat = Category(tenant_id=tenant_id, name="Cremas Test", is_active=True)
     await cat.create()
 
     # 2. Crear Producto con precio base = 0.0 (o base)
@@ -35,7 +41,7 @@ async def test_product_price_mapping_for_sucursal_cajero():
         precio_venta=Decimal("0.0"),
         categoria_id=str(cat.id),
         codigo_corto="TEST-01",
-        is_active=True
+        is_active=True,
     )
     await product.create()
 
@@ -45,7 +51,7 @@ async def test_product_price_mapping_for_sucursal_cajero():
         sucursal_id=sucursal_id,
         producto_id=str(product.id),
         cantidad=100.0,
-        precio_sucursal=Decimal("63.0")
+        precio_sucursal=Decimal("63.0"),
     )
     await inv.create()
 
@@ -56,15 +62,13 @@ async def test_product_price_mapping_for_sucursal_cajero():
         tenant_id=tenant_id,
         sucursal_id=sucursal_id,
         role=UserRole.CAJERO,
-        hashed_password="hashed_pwd"
+        hashed_password="hashed_pwd",
     )
     await cajero.create()
 
     # 5. Ejecutar la resolución de productos a través de ProductService
     result = await ProductService.get_products_list(
-        current_user=cajero,
-        page=1,
-        limit=50
+        current_user=cajero, page=1, limit=50
     )
 
     items = result.get("items", [])
@@ -79,4 +83,3 @@ async def test_product_price_mapping_for_sucursal_cajero():
     await inv.delete()
     await product.delete()
     await cat.delete()
-
