@@ -57,6 +57,8 @@ const ContabilidadPage = lazy(() => import('./pages/ContabilidadPage'));
 const CalculadoraMargenesPage = lazy(() => import('./pages/CalculadoraMargenesPage'));
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const MomentosTaboadaPage = lazy(() => import('./pages/MomentosTaboadaPage'));
+import { RequireCustomModule } from './components/RequireCustomModule';
+import { MODULO_MOMENTOS_TABOADA } from './utils/tenantModules';
 const RecordatoriosPage = lazy(() => import('./pages/RecordatoriosPage'));
 const BranchAppsLauncher = lazy(() => import('./components/branch/BranchAppsLauncher').then(m => ({ default: m.BranchAppsLauncher })));
 const MatrizAppsLauncher = lazy(() => import('./components/matriz/MatrizAppsLauncher').then(m => ({ default: m.MatrizAppsLauncher })));
@@ -536,7 +538,9 @@ function App() {
                       {/* Momentos Taboada (Exclusivo Chocolates Taboada) */}
                       <Route path="/momentos-taboada" element={
                         <ProtectedRoute allowedRoles={MOBILE_MANAGEMENT_ROLES}>
-                          <MomentosTaboadaPage />
+                          <RequireCustomModule modulo={MODULO_MOMENTOS_TABOADA}>
+                            <MomentosTaboadaPage />
+                          </RequireCustomModule>
                         </ProtectedRoute>
                       } />
 

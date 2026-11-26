@@ -10,7 +10,11 @@ from app.application.services.momentos_taboada_logistica_service import (
 from app.application.services.momentos_taboada_participantes_service import (
     MomentosTaboadaParticipantesService,
 )
+from app.application.services.momentos_taboada_scope_service import (
+    MomentosTaboadaScopeService as Scope,
+)
 from app.application.services.momentos_taboada_service import MomentosTaboadaService
+from app.domain.constants.momentos_taboada import MODULO_MOMENTOS_TABOADA
 from app.domain.models.tenant import Tenant
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import get_current_active_user, require_roles
@@ -18,6 +22,8 @@ from app.infrastructure.auth import get_current_active_user, require_roles
 router = APIRouter()
 
 ADMIN_ROLES = [UserRole.ADMIN_MATRIZ, UserRole.ADMIN, UserRole.SUPERADMIN]
+# Admin de sucursal: lecturas de su propia sucursal (stock, caja chica, movimientos).
+SUCURSAL_LECTURA_ROLES = [UserRole.ADMIN_MATRIZ, UserRole.ADMIN_SUCURSAL, UserRole.SUPERADMIN]
 CAJERO_ROLES = [
     UserRole.CAJERO,
     UserRole.VENDEDOR,
@@ -29,17 +35,20 @@ CAJERO_ROLES = [
 ]
 
 
+def tenant_has_momentos_taboada(tenant: Tenant | None) -> bool:
+    """El módulo a medida está habilitado solo si el tenant lo tiene en modulos_activos."""
+    return bool(tenant) and MODULO_MOMENTOS_TABOADA in (tenant.modulos_activos or [])
+
+
 def check_taboada_access(current_user: User, tenant: Tenant | None = None) -> bool:
-    """Verifica que el usuario pertenezca a Chocolates Taboada o sea SUPERADMIN."""
+    """Acceso: SUPERADMIN, o tenant con el módulo MOMENTOS_TABOADA asignado.
+
+    No se usa nombre, slug ni email: el slug lo edita el propio admin del tenant,
+    por lo que no sirve como control de acceso.
+    """
     if current_user.role == UserRole.SUPERADMIN:
         return True
-    # Validar por tenant o módulo activo
-    if tenant:
-        if "Taboada" in (tenant.name or "") or "taboada" in (tenant.slug or ""):
-            return True
-        if "MOMENTOS_TABOADA" in (tenant.modulos_activos or []):
-            return True
-    return False
+    return tenant_has_momentos_taboada(tenant)
 
 
 async def get_taboada_tenant_id(current_user: User) -> str:
@@ -58,13 +67,11 @@ async def get_taboada_tenant_id(current_user: User) -> str:
         if PydanticObjectId.is_valid(tenant_id)
         else None
     )
-    if not tenant:
-        tenant = await Tenant.find_one({"name": "Chocolates Taboada"})
 
     if not check_taboada_access(current_user, tenant):
         raise HTTPException(
             status_code=403,
-            detail="El módulo 'Momentos Taboada' es exclusivo para Chocolates Taboada.",
+            detail="El módulo 'Momentos Taboada' no está habilitado para tu empresa.",
         )
     return tenant_id
 
@@ -127,7 +134,8 @@ class ToggleCampanaRequest(BaseModel):
 
 class CanjeRequest(BaseModel):
     premio_id: str
-    sucursal_id: str
+    # Solo matriz la indica; para usuarios de sucursal se usa la de su usuario.
+    sucursal_id: str | None = None
     cliente_telefono: str
     cliente_nombre: str | None = "Cliente"
     metodo_pago: str = "EFECTIVO"
@@ -180,7 +188,7 @@ async def get_participantes(
     )
     return await MomentosTaboadaParticipantesService.get_participantes_y_metricas(
         tenant_id=tenant_id,
-        sucursal_id=sucursal_id,
+        sucursal_id=Scope.resolver_sucursal_lectura(current_user, sucursal_id),
         search=search,
     )
 
@@ -206,7 +214,15 @@ async def afiliar_tarjeta(
 async def get_premios(current_user: User = Depends(require_roles(CAJERO_ROLES))):
     """Retorna los premios oficiales de Momentos Taboada con stock por sucursal."""
     tenant_id = await get_taboada_tenant_id(current_user)
-    return await MomentosTaboadaService.get_or_seed_premios(tenant_id)
+    premios = await MomentosTaboadaService.get_or_seed_premios(tenant_id)
+    if Scope.es_matriz(current_user):
+        return premios
+    # Usuarios de sucursal solo ven el stock de su propia sucursal.
+    propia = Scope.sucursal_del_usuario(current_user)
+    return [
+        p.model_copy(update={"stock_por_sucursal": {propia: p.stock_por_sucursal.get(propia, 0)}})
+        for p in premios
+    ]
 
 
 @router.post("/premios")
@@ -283,9 +299,11 @@ async def registrar_canje(
     await MomentosTaboadaConfigService.validar_campana_disponible_para_usuario(
         tenant_id, current_user
     )
+    data = payload.model_dump()
+    data["sucursal_id"] = Scope.resolver_sucursal_operacion(current_user, payload.sucursal_id)
     return await MomentosTaboadaService.registrar_canje(
         tenant_id=tenant_id,
-        payload=payload.model_dump(),
+        payload=data,
         current_user=current_user,
     )
 
@@ -298,8 +316,12 @@ async def get_historial_canjes(
     tenant_id = await get_taboada_tenant_id(current_user)
     from app.domain.models.momentos_taboada import CanjeMomentosTaboada
 
+    filtro: dict = {"tenant_id": tenant_id}
+    sucursal_id = Scope.resolver_sucursal_lectura(current_user, None)
+    if sucursal_id:
+        filtro["sucursal_id"] = sucursal_id
     return (
-        await CanjeMomentosTaboada.find(CanjeMomentosTaboada.tenant_id == tenant_id)
+        await CanjeMomentosTaboada.find(filtro)
         .sort("-created_at")
         .limit(100)
         .to_list()
@@ -316,12 +338,13 @@ async def get_metricas(current_user: User = Depends(require_roles(ADMIN_ROLES)))
 @router.get("/caja-chica")
 async def get_caja_chica(
     sucursal_id: str | None = Query(None, description="ID de sucursal o TODAS"),
-    current_user: User = Depends(require_roles(ADMIN_ROLES)),
+    current_user: User = Depends(require_roles(SUCURSAL_LECTURA_ROLES)),
 ):
-    """Retorna los movimientos y saldo de la Caja Chica de la Promoción (separada de las ventas POS)."""
+    """Retorna los movimientos y saldo de la Caja Chica de la Promoción (separada de las ventas POS).
+    El admin de sucursal solo ve la de su sucursal."""
     tenant_id = await get_taboada_tenant_id(current_user)
     return await MomentosTaboadaService.get_caja_chica_movimientos(
-        tenant_id, sucursal_id
+        tenant_id, Scope.resolver_sucursal_lectura(current_user, sucursal_id)
     )
 
 
@@ -383,14 +406,15 @@ async def trasladar_stock(
 async def get_movimientos_stock(
     premio_id: str | None = Query(None),
     sucursal_id: str | None = Query(None),
-    current_user: User = Depends(require_roles(ADMIN_ROLES)),
+    current_user: User = Depends(require_roles(SUCURSAL_LECTURA_ROLES)),
 ):
-    """Retorna el historial inmutable de surtidos y traslados de premios para auditoría."""
+    """Retorna el historial inmutable de surtidos y traslados de premios para auditoría.
+    El admin de sucursal solo ve los que entran o salen de su sucursal."""
     tenant_id = await get_taboada_tenant_id(current_user)
     return await MomentosTaboadaLogisticaService.get_movimientos_stock(
         tenant_id=tenant_id,
         premio_id=premio_id,
-        sucursal_id=sucursal_id,
+        sucursal_id=Scope.resolver_sucursal_lectura(current_user, sucursal_id),
     )
 
 

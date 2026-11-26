@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { hasMomentosTaboada } from '../utils/tenantModules';
 import { useLocalStorage } from 'usehooks-ts';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -92,7 +93,7 @@ function TrialWarningBanner() {
 
 export default function Layout({ children }: LayoutProps) {
     const location = useLocation();
-    const { logout, user, role, hasFeature, tenantSettings } = useAuthStore();
+    const { logout, user, role, hasFeature, modulos_activos } = useAuthStore();
 
     if (role === 'CATALOGO_MERCHANT') {
         return <Navigate to="/catalogo/admin" replace />;
@@ -331,14 +332,7 @@ export default function Layout({ children }: LayoutProps) {
             isSupermercado
         );
 
-        const isTaboada = Boolean(
-            role === 'SUPERADMIN' ||
-            user?.tenant_id === '69cd7f0a8f3f6866d4cfbb62' ||
-            tenantSettings?.slug?.toLowerCase().includes('taboada') ||
-            user?.username?.toLowerCase().includes('taboada') ||
-            user?.email?.toLowerCase().includes('taboada') ||
-            useAuthStore.getState().modulos_activos?.includes('MOMENTOS_TABOADA')
-        );
+        const isTaboada = hasMomentosTaboada(role, modulos_activos);
 
         const rawGroups: NavGroup[] = [
             {

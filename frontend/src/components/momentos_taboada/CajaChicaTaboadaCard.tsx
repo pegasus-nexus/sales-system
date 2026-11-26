@@ -6,10 +6,14 @@ import { RegistrarEgresoCajaModal } from './RegistrarEgresoCajaModal';
 
 interface Props {
     sucursales: Sucursal[];
+    /** Admin de sucursal: solo su sucursal, sin selector ni egresos. */
+    soloLectura?: boolean;
 }
 
-export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
-    const [selectedSucursal, setSelectedSucursal] = useState<string>('TODAS');
+export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales, soloLectura = false }) => {
+    const [selectedSucursal, setSelectedSucursal] = useState<string>(
+        soloLectura ? (sucursales[0]?._id || sucursales[0]?.id || 'TODAS') : 'TODAS'
+    );
     const [cajaData, setCajaData] = useState<CajaChicaTaboadaResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -50,6 +54,11 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {soloLectura ? (
+                        <span className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 bg-gray-50">
+                            {sucursales[0]?.nombre || 'Mi sucursal'}
+                        </span>
+                    ) : (
                     <select
                         value={selectedSucursal}
                         onChange={e => setSelectedSucursal(e.target.value)}
@@ -65,7 +74,9 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                             );
                         })}
                     </select>
+                    )}
 
+                    {!soloLectura && (
                     <button
                         onClick={() => setIsEgresoModalOpen(true)}
                         className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
@@ -73,6 +84,7 @@ export const CajaChicaTaboadaCard: React.FC<Props> = ({ sucursales }) => {
                         <MinusCircle className="w-3.5 h-3.5" />
                         <span>Registrar Egreso</span>
                     </button>
+                    )}
 
                     <button
                         onClick={loadCaja}
