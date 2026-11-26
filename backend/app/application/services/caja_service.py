@@ -2,16 +2,32 @@ from app.infrastructure.db import get_client
 import logging
 from app.utils.errors import CajaErrors, handle_service_error
 from datetime import datetime, timezone
+from bson import ObjectId
 from fastapi import HTTPException
 
 from app.domain.models.caja import CajaSesion, CajaMovimiento, EstadoSesion, SubtipoMovimiento
 from app.domain.models.user import User
 from app.domain.schemas.caja import AbrirCajaIn, CerrarCajaIn
 from app.domain.models.base import DecimalMoney
+from app.application.services.caja_access import puede_acceder_sesion
 
 logger = logging.getLogger("CajaService")
 
 class CajaService:
+    @staticmethod
+    async def get_sesion_autorizada(sesion_id: str, current_user: User) -> CajaSesion:
+        """Carga una sesión verificando tenant, sucursal y dueño. 404 si no existe,
+        el id es inválido o el usuario no tiene acceso (no se revela su existencia)."""
+        if not ObjectId.is_valid(sesion_id):
+            raise HTTPException(status_code=404, detail=CajaErrors.SESION_NO_ENCONTRADA)
+        sesion = await CajaSesion.find_one(
+            CajaSesion.id == ObjectId(sesion_id),
+            CajaSesion.tenant_id == (current_user.tenant_id or "default"),
+        )
+        if not sesion or not puede_acceder_sesion(current_user, sesion):
+            raise HTTPException(status_code=404, detail=CajaErrors.SESION_NO_ENCONTRADA)
+        return sesion
+
     @staticmethod
     async def abrir_caja(body: AbrirCajaIn, current_user: User, ip: str = None, user_agent: str = None) -> CajaSesion:
         tenant_id   = current_user.tenant_id or "default"
@@ -63,10 +79,7 @@ class CajaService:
 
     @staticmethod
     async def cerrar_caja(sesion_id: str, body: CerrarCajaIn, current_user: User) -> CajaSesion:
-        tenant_id = current_user.tenant_id or "default"
-        sesion = await CajaSesion.get(sesion_id)
-        if not sesion or sesion.tenant_id != tenant_id:
-            raise HTTPException(status_code=404, detail=CajaErrors.SESION_NO_ENCONTRADA)
+        sesion = await CajaService.get_sesion_autorizada(sesion_id, current_user)
         if sesion.estado == EstadoSesion.CERRADA:
             raise HTTPException(status_code=400, detail=CajaErrors.SESION_YA_CERRADA)
 

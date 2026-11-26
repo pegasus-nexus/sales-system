@@ -20,8 +20,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.domain.models.caja import CajaSesion, CajaMovimiento, CajaGastoCategoria, EstadoSesion, SubtipoMovimiento
 from app.domain.models.sale import Sale
-from app.domain.models.user import User, UserRole
+from app.domain.models.user import User
 from app.infrastructure.auth import get_current_active_user
+from app.application.services.caja_access import cajero_filtro, sucursal_de, ve_todo_el_tenant
 
 router = APIRouter()
 
@@ -53,15 +54,19 @@ async def get_sesiones(
 ):
     """Return sessions with pagination, sucursal filtering and date range."""
     tenant_id   = current_user.tenant_id or "default"
-    # Permission check for sucursal filtering
-    if current_user.role in [UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.ADMIN_MATRIZ]:
+    # Autorización horizontal: admins de tenant filtran libremente; el resto queda
+    # confinado a su sucursal y, salvo ADMIN_SUCURSAL/SUPERVISOR, a sus propias sesiones.
+    if ve_todo_el_tenant(current_user):
         target_sucursal = sucursal_id if sucursal_id and sucursal_id != "all" else None
     else:
-        target_sucursal = current_user.sucursal_id
+        target_sucursal = sucursal_de(current_user)
 
     query_args = [
         CajaSesion.tenant_id == tenant_id
     ]
+    cajero_id = cajero_filtro(current_user)
+    if cajero_id:
+        query_args.append(CajaSesion.cajero_id == cajero_id)
     if target_sucursal:
         from beanie.operators import Or
         query_args.append(Or(
@@ -87,7 +92,7 @@ async def get_sesiones(
     # ── OPTIMIZACIÓN: Pre-fetch TODOS los movimientos de las sesiones en UNA sola query ──
     sesion_ids = [str(s.id) for s in sesiones]
     all_movs = await CajaMovimiento.find(
-        {"sesion_id": {"$in": sesion_ids}}
+        {"tenant_id": tenant_id, "sesion_id": {"$in": sesion_ids}}
     ).to_list() if sesion_ids else []
 
     movs_by_session: dict[str, list] = defaultdict(list)
@@ -243,11 +248,15 @@ async def get_sesiones_abiertas(current_user: User = Depends(get_current_active_
     tenant_id   = current_user.tenant_id or "default"
     sucursal_id = current_user.sucursal_id or "CENTRAL"
     
-    sesiones = await CajaSesion.find(
+    query_args = [
         CajaSesion.tenant_id   == tenant_id,
         CajaSesion.sucursal_id == sucursal_id,
         CajaSesion.estado      == EstadoSesion.ABIERTA,
-    ).to_list()
+    ]
+    cajero_id = cajero_filtro(current_user)
+    if cajero_id:
+        query_args.append(CajaSesion.cajero_id == cajero_id)
+    sesiones = await CajaSesion.find(*query_args).to_list()
     
     return sesiones
 
@@ -270,15 +279,14 @@ async def cerrar_caja(sesion_id: str, body: CerrarCajaIn, current_user: User = D
 
 @router.get("/sesion/{sesion_id}/resumen", response_model=ResumenCaja)
 async def get_resumen(sesion_id: str, current_user: User = Depends(get_current_active_user)):
+    from app.application.services.caja_service import CajaService
     tenant_id = current_user.tenant_id or "default"
-
-    sesion = await CajaSesion.get(sesion_id)
-    if not sesion or sesion.tenant_id != tenant_id:
-        raise HTTPException(status_code=404, detail="Sesi\u00f3n no encontrada.")
+    sesion = await CajaService.get_sesion_autorizada(sesion_id, current_user)
 
     # ── Cash movements ────────────────────────────────────────────────────────
     movimientos = await CajaMovimiento.find(
-        CajaMovimiento.sesion_id == sesion_id
+        CajaMovimiento.tenant_id == tenant_id,
+        CajaMovimiento.sesion_id == sesion_id,
     ).sort("+fecha").to_list()
 
     total_ventas_ef = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.VENTA_EFECTIVO)
@@ -418,7 +426,8 @@ async def get_movimientos(current_user: User = Depends(get_current_active_user))
         return []
 
     return await CajaMovimiento.find(
-        CajaMovimiento.sesion_id == str(sesion.id)
+        CajaMovimiento.tenant_id == tenant_id,
+        CajaMovimiento.sesion_id == str(sesion.id),
     ).sort("+fecha").to_list()
 
 
