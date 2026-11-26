@@ -97,7 +97,7 @@ async def get_sesiones(
     # ── OPTIMIZACIÓN: Pre-fetch TODOS los movimientos de las sesiones en UNA sola query ──
     sesion_ids = [str(s.id) for s in sesiones]
     all_movs = await CajaMovimiento.find(
-        {"sesion_id": {"$in": sesion_ids}}
+        {"tenant_id": tenant_id, "sesion_id": {"$in": sesion_ids}}
     ).to_list() if sesion_ids else []
 
     movs_by_session: dict[str, list] = defaultdict(list)
@@ -200,7 +200,8 @@ async def get_resumen(sesion_id: str, current_user: User = Depends(get_current_a
 
     # ── Cash movements ────────────────────────────────────────────────────────
     movimientos = await CajaMovimiento.find(
-        CajaMovimiento.sesion_id == sesion_id
+        CajaMovimiento.tenant_id == tenant_id,
+        CajaMovimiento.sesion_id == sesion_id,
     ).sort("+fecha").to_list()
 
     t = calcular_totales(movimientos, sesion.monto_inicial)
