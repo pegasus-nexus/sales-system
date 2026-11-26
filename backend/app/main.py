@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.infrastructure.core.config import settings
+from app.infrastructure.core.config import (
+    KNOWN_INSECURE_JWT_SECRETS,
+    settings,
+    validate_jwt_secret_for_deployment,
+)
 from app.infrastructure.db import init_db
 from app.api.v1.router import api_router
 from app.infrastructure.core.rate_limit import limiter
@@ -35,12 +39,11 @@ async def lifespan(app: FastAPI):
         print(f"FATAL: MONGODB_URL IS LOCALHOST. ENV VARS IN VERCEL: {env_keys}", file=sys.stderr, flush=True)
         raise ValueError(f"Missing MONGODB_URL in Vercel Environment Variables! Re-check your Vercel Project Settings. Env keys found: {env_keys}")
 
-    # Validación estricta de seguridad: JWT_SECRET_KEY no puede estar vacío ni ser débil en producción
-    if not settings.JWT_SECRET_KEY or len(settings.JWT_SECRET_KEY.strip()) < 16:
-        if settings.ENVIRONMENT == "production":
-            raise ValueError("FATAL: JWT_SECRET_KEY no está configurada o es demasiado corta (< 16 caracteres) para entorno de producción.")
-        else:
-            print("[ADVERTENCIA DE SEGURIDAD] JWT_SECRET_KEY no está configurada o es corta. Configura un valor robusto en tu archivo .env", file=sys.stderr, flush=True)
+    # Validación estricta de seguridad: en un entorno desplegado (production o Render)
+    # la app no arranca con una llave JWT pública, de ejemplo o débil.
+    validate_jwt_secret_for_deployment(settings)
+    if settings.JWT_SECRET_KEY in KNOWN_INSECURE_JWT_SECRETS:
+        print("[ADVERTENCIA DE SEGURIDAD] Usando la llave JWT de desarrollo. Configura JWT_SECRET_KEY en tu archivo .env", file=sys.stderr, flush=True)
         
     # No capturar excepciones aquÃ­ para que la app se detenga inmediatamente si no hay conexiÃ³n a base de datos.
     # Esto evita el estado zombi "CollectionWasNotInitialized".

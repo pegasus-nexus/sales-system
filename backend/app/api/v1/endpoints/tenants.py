@@ -172,7 +172,7 @@ async def create_tenant(tenant_in: TenantCreate, current_user: User = Depends(ge
     # Check if admin user exists
     import re
     admin_username_lower = tenant_in.admin_username.lower()
-    if await User.find_one({"username": re.compile(f"^{admin_username_lower}$", re.IGNORECASE)}):
+    if await User.find_one({"username": re.compile(f"^{re.escape(admin_username_lower)}$", re.IGNORECASE)}):
         raise HTTPException(status_code=400, detail="Admin username already exists")
 
     # Determine the PlanType and plan_id

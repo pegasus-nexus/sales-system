@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query, HTTPException
 
 from app.core.config import BUSINESS_TIMEZONE
-from app.infrastructure.auth import get_current_user
+from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.application.bi.productividad_service import ProductividadBIService
 from app.schemas.bi_productividad import BIProductividadDesempenoResponse
@@ -22,7 +22,7 @@ async def get_bi_productividad_desempeno_clean(
     start_date: Optional[str] = Query(None, description="Fecha de inicio YYYY-MM-DD en America/La_Paz"),
     end_date: Optional[str] = Query(None, description="Fecha de fin YYYY-MM-DD en America/La_Paz"),
     sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     service: ProductividadBIService = Depends(get_productividad_bi_service)
 ):
     """

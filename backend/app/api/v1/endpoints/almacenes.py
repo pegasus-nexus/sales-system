@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 from app.domain.models.almacen import Almacen, TipoAlmacen
-from app.infrastructure.auth import get_current_user
+from app.infrastructure.auth import get_current_active_user
 from app.infrastructure.core.dependencies import require_roles
 from app.domain.models.user import User, UserRole
 
@@ -21,7 +21,7 @@ class AlmacenUpdate(BaseModel):
 @router.get("/{sucursal_id}", response_model=List[Almacen])
 async def get_almacenes(
     sucursal_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """Obtiene los almacenes de una sucursal específica."""
     tenant_id = current_user.tenant_id

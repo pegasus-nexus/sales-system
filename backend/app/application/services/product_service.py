@@ -1,3 +1,4 @@
+import re
 import math
 from typing import Any
 
@@ -57,9 +58,9 @@ class ProductService:
         if search:
             query = query.find({
                 "$or": [
-                    {"descripcion": {"$regex": search, "$options": "i"}},
-                    {"codigo_largo": {"$regex": search, "$options": "i"}},
-                    {"codigo_corto": {"$regex": search, "$options": "i"}}
+                    {"descripcion": {"$regex": re.escape(search), "$options": "i"}},
+                    {"codigo_largo": {"$regex": re.escape(search), "$options": "i"}},
+                    {"codigo_corto": {"$regex": re.escape(search), "$options": "i"}}
                 ]
             })
         else:
@@ -165,7 +166,7 @@ class ProductService:
                 Product.tenant_id == tenant_id,
                 Product.is_active == True,
                 Product.is_variant == False,
-                {"descripcion": {"$regex": f"^{data.descripcion.strip()}$", "$options": "i"}}
+                {"descripcion": {"$regex": f"^{re.escape(data.descripcion.strip())}$", "$options": "i"}}
             )
             if existing_name:
                 raise HTTPException(status_code=400, detail=f"El producto con nombre '{data.descripcion}' ya existe en tu catálogo")
@@ -289,7 +290,7 @@ class ProductService:
             existing_name = await Product.find_one(
                 Product.tenant_id == product.tenant_id,
                 Product.is_active == True,
-                {"descripcion": {"$regex": f"^{data.descripcion.strip()}$", "$options": "i"}}
+                {"descripcion": {"$regex": f"^{re.escape(data.descripcion.strip())}$", "$options": "i"}}
             )
             if existing_name and str(existing_name.id) != str(product.id):
                 raise HTTPException(status_code=400, detail=f"Un producto con nombre '{data.descripcion}' ya existe")

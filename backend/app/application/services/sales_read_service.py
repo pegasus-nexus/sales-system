@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
@@ -107,7 +108,7 @@ class SalesReadService:
                     pass
             else:
                 try:
-                    suc_doc = await db.sucursales.find_one({"nombre": {"$regex": f"^{sucursal_id}$", "$options": "i"}})
+                    suc_doc = await db.sucursales.find_one({"nombre": {"$regex": f"^{re.escape(sucursal_id)}$", "$options": "i"}})
                     if suc_doc:
                         suc_conds.append(str(suc_doc["_id"]))
                         suc_conds.append(suc_doc["_id"])
