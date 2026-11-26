@@ -2,9 +2,11 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from bson import ObjectId
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
+from app.application.services.caja_access import SUCURSAL_DEFAULT, puede_acceder_sesion
 from app.domain.models.base import DecimalMoney
 from app.domain.models.caja import (
     CajaMovimiento,
@@ -19,7 +21,7 @@ from app.domain.models.sale import PagoItem, Sale
 from app.domain.models.user import User, UserRole
 from app.infrastructure.core.config import settings
 from app.infrastructure.db import get_client
-from app.utils.errors import VentasErrors
+from app.utils.errors import CajaErrors, VentasErrors
 
 logger = logging.getLogger("SalesAnulacionService")
 
@@ -31,6 +33,36 @@ class SalesAnulacionService:
             MongoSaleRepository,
         )
         return MongoSaleRepository()
+
+    @staticmethod
+    async def _resolver_caja_sesion(
+        caja_sesion_id: str,
+        current_user: User,
+        tenant_id: str,
+        sucursal_id: str | None,
+        session=None,
+    ) -> CajaSesion:
+        """Sesión de caja elegida explícitamente para la reversa.
+
+        Debe existir en el tenant, estar ABIERTA, pertenecer a la sucursal de
+        la venta y ser accesible para el usuario (`puede_acceder_sesion`).
+        Cualquier fallo -> 404 uniforme, sin revelar si la sesión existe.
+        """
+        if not ObjectId.is_valid(caja_sesion_id):
+            raise HTTPException(status_code=404, detail=CajaErrors.SESION_NO_ENCONTRADA)
+        caja_sesion = await CajaSesion.find_one(
+            CajaSesion.id == ObjectId(caja_sesion_id),
+            CajaSesion.tenant_id == tenant_id,
+            CajaSesion.estado == EstadoSesion.ABIERTA,
+            session=session,
+        )
+        if (
+            not caja_sesion
+            or (caja_sesion.sucursal_id or SUCURSAL_DEFAULT) != (sucursal_id or SUCURSAL_DEFAULT)
+            or not puede_acceder_sesion(current_user, caja_sesion)
+        ):
+            raise HTTPException(status_code=404, detail=CajaErrors.SESION_NO_ENCONTRADA)
+        return caja_sesion
 
     @staticmethod
     async def anular_sale(
@@ -190,9 +222,9 @@ class SalesAnulacionService:
                     # ── 2. Ajuste de caja según motivo ──
                     if afectar_caja:
                         if caja_sesion_id:
-                            caja_sesion = await CajaSesion.get(caja_sesion_id, session=session)
-                            if caja_sesion and caja_sesion.estado != EstadoSesion.ABIERTA:
-                                caja_sesion = None
+                            caja_sesion = await SalesAnulacionService._resolver_caja_sesion(
+                                caja_sesion_id, current_user, tenant_id, sucursal_id, session
+                            )
                         else:
                             caja_sesion = await CajaSesion.find_one(
                                 CajaSesion.tenant_id   == tenant_id,
