@@ -267,12 +267,12 @@ export function generarPDFSesion(
     doc.roundedRect(margin, y, W - margin * 2, BOX_H_2, 3, 3, 'FD');
     y += 3;
 
-    y = drawFormulaRow(doc, 'QR (Billetera digital)', '— Suma de pagos QR del período', totalQR, y, margin, W, C.sky);
-    y = drawFormulaRow(doc, 'Tarjeta / POS',           '— Suma de pagos con tarjeta del período', totalTarjeta, y, margin, W, C.purple);
+    y = drawFormulaRow(doc, 'QR (Billetera digital)', '— Suma de pagos QR de esta caja', totalQR, y, margin, W, C.sky);
+    y = drawFormulaRow(doc, 'Tarjeta / POS',           '— Suma de pagos con tarjeta de esta caja', totalTarjeta, y, margin, W, C.purple);
     y += 5;
 
     // ── SECCIÓN 3: RESUMEN FINANCIERO TOTAL ──────────────────────────────────
-    y = drawSectionTitle(doc, '3. Resumen Total de Ventas (coincide con Reporte Diario)', y, W, margin);
+    y = drawSectionTitle(doc, '3. Resumen Total de Ventas de esta caja', y, W, margin);
 
     const totalDescuentos = resumen.total_descuentos ?? sesion.total_descuentos ?? 0;
     const BOX_H_3 = totalDescuentos > 0 ? 39 : 32;
@@ -284,13 +284,13 @@ export function generarPDFSesion(
     y += 3;
 
     y = drawFormulaRow(doc, 'Total Efectivo Neto Vendido',  '= Ventas ef. − Vuelto + Ing. manuales', efVentas - cambio + efIngresos, y, margin, W, C.green);
-    y = drawFormulaRow(doc, 'Total QR',                      '= Suma pagos QR período', totalQR, y, margin, W, C.sky);
-    y = drawFormulaRow(doc, 'Total Tarjeta',                 '= Suma pagos tarjeta período', totalTarjeta, y, margin, W, C.purple);
+    y = drawFormulaRow(doc, 'Total QR',                      '= Pagos QR de esta caja', totalQR, y, margin, W, C.sky);
+    y = drawFormulaRow(doc, 'Total Tarjeta',                 '= Pagos tarjeta de esta caja', totalTarjeta, y, margin, W, C.purple);
     if (totalDescuentos > 0) {
         y = drawFormulaRow(doc, 'Descuentos Aplicados',      '— Informativo (ya descontado del total)', totalDescuentos, y, margin, W, C.amber);
     }
     y = drawDivider(doc, y, margin, W);
-    y = drawFormulaRow(doc, '= TOTAL VENTAS BRUTAS', '= Efectivo neto + QR + Tarjeta', totalVentas, y, margin, W, C.primary, true);
+    y = drawFormulaRow(doc, '= TOTAL VENTAS DE LA CAJA', '= Efectivo neto + QR + Tarjeta', totalVentas, y, margin, W, C.primary, true);
     y += 5;
 
     // ── SECCIÓN 4: CIERRE FÍSICO (si aplica) ─────────────────────────────────

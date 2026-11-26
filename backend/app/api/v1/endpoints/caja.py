@@ -13,12 +13,14 @@ Routes:
 """
 from collections import defaultdict
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 from bson import ObjectId
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.domain.models.caja import CajaSesion, CajaMovimiento, CajaGastoCategoria, EstadoSesion, SubtipoMovimiento
+from app.application.services.caja_totales import calcular_totales, money
 from app.domain.models.sale import Sale
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import get_current_active_user
@@ -38,6 +40,14 @@ async def _get_active_session(tenant_id: str, sucursal_id: str, cajero_id: str) 
         CajaSesion.cajero_id   == cajero_id,
         CajaSesion.estado      == EstadoSesion.ABIERTA,
     )
+
+
+async def _ventas_de_sesion(tenant_id: str, sale_ids: set[str]) -> list[Sale]:
+    """Ventas vigentes referenciadas por los movimientos de la(s) sesión(es)."""
+    oids = [ObjectId(i) for i in sale_ids if ObjectId.is_valid(i)]
+    if not oids:
+        return []
+    return await Sale.find({"_id": {"$in": oids}, "tenant_id": tenant_id, "anulada": False}).to_list()
 
 
 # ─── Historial de sesiones ────────────────────────────────────────────────────
@@ -87,111 +97,23 @@ async def get_sesiones(
     # ── OPTIMIZACIÓN: Pre-fetch TODOS los movimientos de las sesiones en UNA sola query ──
     sesion_ids = [str(s.id) for s in sesiones]
     all_movs = await CajaMovimiento.find(
-        {"sesion_id": {"$in": sesion_ids}}
+        {"tenant_id": tenant_id, "sesion_id": {"$in": sesion_ids}}
     ).to_list() if sesion_ids else []
 
     movs_by_session: dict[str, list] = defaultdict(list)
     for m in all_movs:
         movs_by_session[m.sesion_id].append(m)
 
+    totales = {str(s.id): calcular_totales(movs_by_session.get(str(s.id), []), s.monto_inicial) for s in sesiones}
+    all_sale_ids = set().union(*(t.sale_ids for t in totales.values())) if totales else set()
+    sales_by_id = {str(v.id): v for v in await _ventas_de_sesion(tenant_id, all_sale_ids)}
+
     result = []
     for s in sesiones:
-        movs = movs_by_session.get(str(s.id), [])
-        ef   = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.VENTA_EFECTIVO)
-        ef_ing = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_EFECTIVO)
-        cc   = sum((float(m.monto) if m.tipo == "EGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.CAMBIO)
-        gs   = sum((float(m.monto) if m.tipo == "EGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.GASTO)
-        aj   = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movs if m.subtipo == SubtipoMovimiento.AJUSTE)
-        saldo = float(s.monto_inicial) + ef + ef_ing - cc - gs + aj
-
-        # Digital totals from sales during this session (with BSON date compatibility)
-        cerrada_at = s.cerrada_at or datetime.now(timezone.utc)
-        abierta_naive = s.abierta_at.replace(tzinfo=None) if s.abierta_at else None
-        cerrada_naive = cerrada_at.replace(tzinfo=None) if cerrada_at else None
-
-        sales_query = [
-            Sale.tenant_id == tenant_id,
-            Sale.anulada == False,
-        ]
-        if s.sucursal_id:
-            from beanie.operators import Or
-            sales_query.append(Or(
-                Sale.sucursal_id == s.sucursal_id,
-                Sale.sucursal_id == (None if s.sucursal_id == "CENTRAL" else s.sucursal_id)
-            ))
-        if s.abierta_at:
-            from beanie.operators import Or
-            sales_query.append(Or(
-                Sale.created_at >= s.abierta_at,
-                Sale.created_at >= abierta_naive
-            ))
-        if cerrada_at:
-            from beanie.operators import Or
-            sales_query.append(Or(
-                Sale.created_at <= cerrada_at,
-                Sale.created_at <= cerrada_naive
-            ))
-
-        sales_filter = Sale.find(*sales_query).get_filter_query()
-        pipeline = [
-            {"$match": sales_filter},
-            {"$project": {
-                "pagos": {"$ifNull": ["$pagos", []]},
-                "items": {"$ifNull": ["$items", []]},
-                "descuento": 1
-            }},
-            # Extract totals in MongoDB
-            {"$facet": {
-                "ventas": [
-                    {"$unwind": {"path": "$pagos", "preserveNullAndEmptyArrays": True}},
-                    {"$group": {
-                        "_id": None,
-                        "total_qr": {"$sum": {"$cond": [{"$eq": [{"$toUpper": "$pagos.metodo"}, "QR"]}, {"$toDouble": "$pagos.monto"}, 0]}},
-                        "total_tarjeta": {"$sum": {"$cond": [{"$eq": [{"$toUpper": "$pagos.metodo"}, "TARJETA"]}, {"$toDouble": "$pagos.monto"}, 0]}},
-                        "total_ventas": {"$sum": {"$toDouble": "$pagos.monto"}}
-                    }}
-                ],
-                "descuentos": [
-                    # Discount logic requires summing over items, then adding global discount
-                    {"$project": {
-                        "global_discount": {
-                            "$cond": [
-                                {"$eq": [{"$type": "$descuento"}, "missing"]}, 0,
-                                {"$cond": [
-                                    {"$eq": ["$descuento.tipo", "MONTO"]}, {"$toDouble": "$descuento.valor"},
-                                    {"$multiply": [{"$sum": "$items.subtotal"}, {"$divide": [{"$toDouble": "$descuento.valor"}, 100]}]}
-                                ]}
-                            ]
-                        },
-                        "items_discount": {"$sum": "$items.descuento_unitario"}
-                    }},
-                    {"$group": {
-                        "_id": None,
-                        "total_descuentos": {"$sum": {"$add": ["$global_discount", "$items_discount"]}}
-                    }}
-                ],
-                "count": [
-                    {"$count": "n"}
-                ]
-            }}
-        ]
-        
-        agg_result = await Sale.aggregate(pipeline).to_list()
-        sales_agg = agg_result[0] if agg_result else {"ventas": [], "descuentos": [], "count": []}
-        
-        ventas_data = sales_agg["ventas"][0] if sales_agg.get("ventas") else {"total_qr": 0, "total_tarjeta": 0, "total_ventas": 0}
-        desc_data = sales_agg["descuentos"][0] if sales_agg.get("descuentos") else {"total_descuentos": 0}
-        count_data = sales_agg["count"][0] if sales_agg.get("count") else {"n": 0}
-        
-        raw_qr = ventas_data.get("total_qr", 0)
-        raw_tarjeta = ventas_data.get("total_tarjeta", 0)
-        raw_ventas = ventas_data.get("total_ventas", 0)
-        raw_descuentos = desc_data.get("total_descuentos", 0)
-
-        total_qr = (float(str(raw_qr)) if raw_qr is not None else 0.0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_QR)
-        total_tarjeta = (float(str(raw_tarjeta)) if raw_tarjeta is not None else 0.0) + sum(float(m.monto) for m in movs if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
-        total_ventas = float(str(raw_ventas)) if raw_ventas is not None else 0.0
-        total_descuentos = float(str(raw_descuentos)) if raw_descuentos is not None else 0.0
+        t = totales[str(s.id)]
+        ventas = [sales_by_id[i] for i in t.sale_ids if i in sales_by_id]
+        total_descuentos = sum((Decimal(str(v.get_total_descuento())) for v in ventas), Decimal("0"))
+        saldo = t.saldo_calculado
 
         result.append({
             "id":              str(s.id),
@@ -199,20 +121,20 @@ async def get_sesiones(
             "estado":          s.estado,
             "abierta_at":      s.abierta_at,
             "cerrada_at":      s.cerrada_at,
-            "monto_inicial":   float(s.monto_inicial),
-            "saldo_calculado": round(saldo, 2),
-            "total_efectivo":  round(ef, 2),
-            "total_ingresos_ef": round(ef_ing, 2),
-            "total_cambio":    round(cc, 2),
-            "total_gastos":    round(gs, 2),
-            "total_ajustes":   round(aj, 2),
-            "total_qr":        round(total_qr, 2),
-            "total_tarjeta":   round(total_tarjeta, 2),
-            "total_ventas":    round(total_ventas, 2),
-            "total_descuentos": round(total_descuentos, 2),
-            "num_transacciones": count_data.get("n", 0),
+            "monto_inicial":   money(t.monto_inicial),
+            "saldo_calculado": money(saldo),
+            "total_efectivo":  money(t.ventas_efectivo),
+            "total_ingresos_ef": money(t.ingresos_efectivo),
+            "total_cambio":    money(t.cambio),
+            "total_gastos":    money(t.gastos),
+            "total_ajustes":   money(t.ajustes),
+            "total_qr":        money(t.total_qr),
+            "total_tarjeta":   money(t.total_tarjeta),
+            "total_ventas":    money(t.total_ventas),
+            "total_descuentos": money(total_descuentos),
+            "num_transacciones": len(ventas),
             "monto_cierre_fisico": float(s.monto_cierre_fisico) if s.monto_cierre_fisico is not None else None,
-            "diferencia":      round(float(s.monto_cierre_fisico) - saldo, 2) if s.monto_cierre_fisico is not None else None,
+            "diferencia":      money(Decimal(str(s.monto_cierre_fisico)) - saldo) if s.monto_cierre_fisico is not None else None,
             "notas_cierre":    s.notas_cierre,
         })
 
@@ -278,70 +200,32 @@ async def get_resumen(sesion_id: str, current_user: User = Depends(get_current_a
 
     # ── Cash movements ────────────────────────────────────────────────────────
     movimientos = await CajaMovimiento.find(
-        CajaMovimiento.sesion_id == sesion_id
+        CajaMovimiento.tenant_id == tenant_id,
+        CajaMovimiento.sesion_id == sesion_id,
     ).sort("+fecha").to_list()
 
-    total_ventas_ef = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.VENTA_EFECTIVO)
-    total_ingresos_ef = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.INGRESO_EFECTIVO)
-    total_cambio    = sum((float(m.monto) if m.tipo == "EGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.CAMBIO)
-    total_gastos    = sum((float(m.monto) if m.tipo == "EGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.GASTO)
-    total_ajustes   = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.AJUSTE)
-    
-    total_ingresos_qr = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.INGRESO_QR)
-    total_ingresos_tj = sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
-
-    monto_inicial   = float(sesion.monto_inicial)
-    saldo_calculado = monto_inicial + total_ventas_ef + total_ingresos_ef - total_cambio - total_gastos + total_ajustes
-
-    # ── Sales made during this session (for digital channel totals) ───────────
-    cerrada_at = sesion.cerrada_at or datetime.now(timezone.utc)
-    sales_in_session = await Sale.find(
-        Sale.tenant_id    == tenant_id,
-        Sale.sucursal_id  == (sesion.sucursal_id),
-        Sale.created_at   >= sesion.abierta_at,
-        Sale.created_at   <= cerrada_at,
-        Sale.anulada      == False,
-    ).to_list()
-
-    total_qr       = 0.0
-    total_tarjeta  = 0.0
-    total_efectivo_sales = 0.0
-
-    for sale in sales_in_session:
-        for pago in (sale.pagos or []):
-            m = pago.metodo.upper() if hasattr(pago.metodo, 'upper') else str(pago.metodo).upper()
-            v = float(pago.monto)
-            if m == "QR":
-                total_qr += v
-            elif m == "TARJETA":
-                total_tarjeta += v
-            else:
-                total_efectivo_sales += v
-
-    total_qr += sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.INGRESO_QR)
-    total_tarjeta += sum((float(m.monto) if m.tipo == "INGRESO" else -float(m.monto)) for m in movimientos if m.subtipo == SubtipoMovimiento.INGRESO_TARJETA)
-    total_ventas_general = total_qr + total_tarjeta + total_efectivo_sales
-    total_descuentos = sum(float(sale.get_total_descuento()) for sale in sales_in_session)
-    num_transacciones    = len(sales_in_session)
+    t = calcular_totales(movimientos, sesion.monto_inicial)
+    sales_in_session = await _ventas_de_sesion(tenant_id, t.sale_ids)
+    total_descuentos = sum((Decimal(str(sale.get_total_descuento())) for sale in sales_in_session), Decimal("0"))
 
     return ResumenCaja(
         sesion_id              = str(sesion.id),
         cajero_name            = sesion.cajero_name,
         abierta_at             = sesion.abierta_at,
-        monto_inicial          = monto_inicial,
-        total_efectivo_ventas  = total_ventas_ef,
-        total_cambio           = total_cambio,
-        total_gastos           = total_gastos,
-        total_ajustes          = total_ajustes,
-        saldo_calculado        = saldo_calculado,
-        total_qr               = total_qr,
-        total_tarjeta          = total_tarjeta,
-        total_ventas_general   = total_ventas_general,
-        total_ingresos_efectivo = total_ingresos_ef,
-        total_ingresos_qr       = total_ingresos_qr,
-        total_ingresos_tarjeta  = total_ingresos_tj,
-        total_descuentos       = total_descuentos,
-        num_transacciones      = num_transacciones,
+        monto_inicial          = money(t.monto_inicial),
+        total_efectivo_ventas  = money(t.ventas_efectivo),
+        total_cambio           = money(t.cambio),
+        total_gastos           = money(t.gastos),
+        total_ajustes          = money(t.ajustes),
+        saldo_calculado        = money(t.saldo_calculado),
+        total_qr               = money(t.total_qr),
+        total_tarjeta          = money(t.total_tarjeta),
+        total_ventas_general   = money(t.total_ventas),
+        total_ingresos_efectivo = money(t.ingresos_efectivo),
+        total_ingresos_qr       = money(t.ingresos_qr),
+        total_ingresos_tarjeta  = money(t.ingresos_tarjeta),
+        total_descuentos       = money(total_descuentos),
+        num_transacciones      = len(sales_in_session),
         movimientos            = [m.model_dump(mode="json") for m in movimientos],
     )
 

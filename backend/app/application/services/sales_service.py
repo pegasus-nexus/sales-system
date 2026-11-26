@@ -29,7 +29,7 @@ from app.domain.models.sale import (
 from app.domain.models.user import User, UserRole
 from app.domain.schemas.sale import SaleCreate
 from app.infrastructure.db import get_client
-from app.utils.errors import retry_on_write_conflict
+from app.utils.errors import CajaErrors, retry_on_write_conflict
 from app.utils.pricing import resolver_precio
 
 logger = logging.getLogger("SalesService")
@@ -516,11 +516,17 @@ class SalesService:
 
                     caja_sesion = await CajaSesion.find_one(
                         CajaSesion.tenant_id   == tenant_id,
-                        CajaSesion.sucursal_id == sucursal_id,
+                        # Misma regla que /caja/sesion/abrir: la caja vive en la sucursal del usuario.
+                        CajaSesion.sucursal_id == (current_user.sucursal_id or "CENTRAL"),
                         CajaSesion.cajero_id   == str(current_user.id),
                         CajaSesion.estado      == EstadoSesion.ABIERTA,
                         session=session
                     )
+
+                    # Una caja por cajera: si entra dinero, debe quedar en la caja de quien cobra.
+                    # Sin esto la venta queda fuera de todo arqueo (no aparece en ningún reporte de caja).
+                    if not caja_sesion and any(p.monto > 0 for p in actual_pagos):
+                        raise HTTPException(status_code=409, detail=CajaErrors.SIN_CAJA_PARA_COBRAR)
 
                     cajero_id   = str(current_user.id)
                     cajero_name = current_user.full_name or current_user.username

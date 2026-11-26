@@ -120,6 +120,7 @@ class CajaErrors:
     SESION_NO_ENCONTRADA   = "No se encontró la sesión de caja. Es posible que ya haya sido cerrada."
     SESION_YA_CERRADA      = "Esta sesión de caja ya fue cerrada anteriormente."
     SIN_SESION_ACTIVA      = "No hay una caja abierta en este momento. Abrí la caja antes de registrar movimientos."
+    SIN_CAJA_PARA_COBRAR   = "No tenés una caja abierta. Abrí tu caja antes de cobrar: cada cajera registra sus ventas en su propia caja."
 
 
 class VentasErrors:
