@@ -5,6 +5,7 @@ import { Search, Sparkles, Building2, Shield } from 'lucide-react';
 import { MATRIZ_APPS, type MatrizApp, type MatrizCategory } from './matrizApps';
 import { useMatrizTabStore } from './matrizTabStore';
 import { useAuthStore } from '../../store/authStore';
+import { hasMomentosTaboada } from '../../utils/tenantModules';
 
 const CATEGORIES: ('Todas' | MatrizCategory)[] = [
     'Todas',
@@ -18,17 +19,12 @@ const CATEGORIES: ('Todas' | MatrizCategory)[] = [
 
 export const MatrizAppsLauncher: React.FC = () => {
     const navigate = useNavigate();
-    const { user, hasFeature, tenantSettings } = useAuthStore();
+    const { user, hasFeature, tenantSettings, role, modulos_activos } = useAuthStore();
     const { openTab } = useMatrizTabStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
-    const isTaboada = Boolean(
-        user?.tenant_id === '69cd7f0a8f3f6866d4cfbb62' ||
-        user?.username?.toLowerCase().includes('taboada') ||
-        user?.email?.toLowerCase().includes('taboada') ||
-        tenantSettings?.slug?.toLowerCase().includes('taboada')
-    );
+    const isTaboada = hasMomentosTaboada(role, modulos_activos);
 
     const accessibleApps = useMemo(() => {
         return MATRIZ_APPS.filter(app => {

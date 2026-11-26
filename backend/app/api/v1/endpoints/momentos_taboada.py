@@ -11,6 +11,7 @@ from app.application.services.momentos_taboada_participantes_service import (
     MomentosTaboadaParticipantesService,
 )
 from app.application.services.momentos_taboada_service import MomentosTaboadaService
+from app.domain.constants.momentos_taboada import MODULO_MOMENTOS_TABOADA
 from app.domain.models.tenant import Tenant
 from app.domain.models.user import User, UserRole
 from app.infrastructure.auth import get_current_active_user, require_roles
@@ -29,17 +30,20 @@ CAJERO_ROLES = [
 ]
 
 
+def tenant_has_momentos_taboada(tenant: Tenant | None) -> bool:
+    """El módulo a medida está habilitado solo si el tenant lo tiene en modulos_activos."""
+    return bool(tenant) and MODULO_MOMENTOS_TABOADA in (tenant.modulos_activos or [])
+
+
 def check_taboada_access(current_user: User, tenant: Tenant | None = None) -> bool:
-    """Verifica que el usuario pertenezca a Chocolates Taboada o sea SUPERADMIN."""
+    """Acceso: SUPERADMIN, o tenant con el módulo MOMENTOS_TABOADA asignado.
+
+    No se usa nombre, slug ni email: el slug lo edita el propio admin del tenant,
+    por lo que no sirve como control de acceso.
+    """
     if current_user.role == UserRole.SUPERADMIN:
         return True
-    # Validar por tenant o módulo activo
-    if tenant:
-        if "Taboada" in (tenant.name or "") or "taboada" in (tenant.slug or ""):
-            return True
-        if "MOMENTOS_TABOADA" in (tenant.modulos_activos or []):
-            return True
-    return False
+    return tenant_has_momentos_taboada(tenant)
 
 
 async def get_taboada_tenant_id(current_user: User) -> str:
@@ -58,13 +62,11 @@ async def get_taboada_tenant_id(current_user: User) -> str:
         if PydanticObjectId.is_valid(tenant_id)
         else None
     )
-    if not tenant:
-        tenant = await Tenant.find_one({"name": "Chocolates Taboada"})
 
     if not check_taboada_access(current_user, tenant):
         raise HTTPException(
             status_code=403,
-            detail="El módulo 'Momentos Taboada' es exclusivo para Chocolates Taboada.",
+            detail="El módulo 'Momentos Taboada' no está habilitado para tu empresa.",
         )
     return tenant_id
 

@@ -5,19 +5,16 @@ import { Search, Sparkles, Store } from 'lucide-react';
 import { BRANCH_APPS, type BranchApp } from './branchApps';
 import { useBranchTabStore } from './branchTabStore';
 import { useAuthStore } from '../../store/authStore';
+import { hasMomentosTaboada } from '../../utils/tenantModules';
 
 export const BranchAppsLauncher: React.FC = () => {
     const navigate = useNavigate();
-    const { user, hasFeature } = useAuthStore();
+    const { user, hasFeature, role, modulos_activos } = useAuthStore();
     const { openTab } = useBranchTabStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
 
-    const isTaboada = Boolean(
-        user?.tenant_id === '69cd7f0a8f3f6866d4cfbb62' ||
-        user?.username?.toLowerCase().includes('taboada') ||
-        user?.email?.toLowerCase().includes('taboada')
-    );
+    const isTaboada = hasMomentosTaboada(role, modulos_activos);
 
     const accessibleApps = useMemo(() => {
         return BRANCH_APPS.filter(app => {

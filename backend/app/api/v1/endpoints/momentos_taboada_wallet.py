@@ -181,6 +181,18 @@ async def redirect_google_wallet_pass(tarjeta_o_id: str):
     if not cliente and PydanticObjectId.is_valid(clean_code):
         cliente = await Cliente.get(PydanticObjectId(clean_code))
 
+    # Enlace público: no emitir pases para clientes de tenants sin el módulo.
+    if cliente:
+        from app.api.v1.endpoints.momentos_taboada import tenant_has_momentos_taboada
+
+        tenant = (
+            await Tenant.get(PydanticObjectId(cliente.tenant_id))
+            if cliente.tenant_id and PydanticObjectId.is_valid(cliente.tenant_id)
+            else None
+        )
+        if not tenant_has_momentos_taboada(tenant):
+            raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
+
     cliente_nombre = cliente.nombre if cliente else "Cliente Taboada"
     numero_tarjeta = cliente.numero_tarjeta if cliente else clean_code.upper()
     total_gastado = float(cliente.total_compras or 0.0) if cliente else 0.0

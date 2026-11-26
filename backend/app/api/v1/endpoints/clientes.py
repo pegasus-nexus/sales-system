@@ -313,7 +313,10 @@ async def asignar_o_obtener_tarjeta_taboada(
     if not ObjectId.is_valid(cliente_id):
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
-    tenant_id = current_user.tenant_id or "default"
+    from app.api.v1.endpoints.momentos_taboada import get_taboada_tenant_id
+
+    # Exclusivo del módulo a medida: 403 si el tenant no tiene MOMENTOS_TABOADA.
+    tenant_id = await get_taboada_tenant_id(current_user)
     cliente = await Cliente.get(ObjectId(cliente_id))
     if not cliente or cliente.tenant_id != tenant_id:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")

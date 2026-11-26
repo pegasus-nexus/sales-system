@@ -9,6 +9,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts, getClientes } from '../api/api';
 import type { Product, Cliente } from '../api/types';
+import { useAuthStore } from '../store/authStore';
+import { MODULO_MOMENTOS_TABOADA, hasCustomModule } from '../utils/tenantModules';
 
 interface ViewItem {
     id: string;
@@ -18,10 +20,13 @@ interface ViewItem {
     icon: React.ElementType;
     keywords: string[];
     roles?: string[];
+    /** Módulo a medida requerido (Tenant.modulos_activos). */
+    modulo?: string;
 }
 
 export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const navigate = useNavigate();
+    const { role, modulos_activos } = useAuthStore();
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +43,7 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
         { id: 'caja', title: 'Caja & Arqueo', category: 'Ventas & Caja', path: '/caja', icon: Wallet, keywords: ['caja', 'arqueo', 'abrir caja', 'cerrar caja', 'gastos', 'movimientos', 'efectivo'] },
         { id: 'creditos', title: 'Créditos & Cobranzas', category: 'Ventas & Caja', path: '/creditos', icon: Banknote, keywords: ['creditos', 'deuda', 'cobro', 'cuotas', 'pagos', 'cobranza', 'settle due'] },
         { id: 'whatsapp', title: 'WhatsApp Nexus', category: 'Ventas & Caja', path: '/whatsapp', icon: MessageSquare, keywords: ['whatsapp', 'mensajes', 'comprobantes', 'plantillas', 'notificaciones', 'chat'] },
-        { id: 'momentos-taboada', title: 'Momentos Taboada (Campaña & Premios)', category: 'Ventas & Caja', path: '/momentos-taboada', icon: Sparkles, keywords: ['momentos taboada', 'sellos', 'canjes', 'premios', 'tazas', 'fidelizacion', 'cartilla', 'taboada'] },
+        { id: 'momentos-taboada', title: 'Momentos Taboada (Campaña & Premios)', category: 'Ventas & Caja', path: '/momentos-taboada', modulo: MODULO_MOMENTOS_TABOADA, icon: Sparkles, keywords: ['momentos taboada', 'sellos', 'canjes', 'premios', 'tazas', 'fidelizacion', 'cartilla', 'taboada'] },
         { id: 'recordatorios', title: 'Recordatorios & Incidencias', category: 'Operaciones & Control', path: '/recordatorios', icon: Bell, keywords: ['recordatorios', 'incidencias', 'tareas', 'fallas', 'pos', 'actividades', 'control', 'pendientes', 'alarmas'] },
 
         // Inventario & Productos
@@ -68,14 +73,15 @@ export default function ViewSearchModal({ isOpen, onClose }: { isOpen: boolean; 
     ];
 
     const filteredViews = useMemo(() => {
-        if (!query.trim()) return ALL_VIEWS.slice(0, 7);
+        const views = ALL_VIEWS.filter(item => !item.modulo || hasCustomModule(item.modulo, role, modulos_activos));
+        if (!query.trim()) return views.slice(0, 7);
         const q = query.toLowerCase().trim();
-        return ALL_VIEWS.filter(item => 
+        return views.filter(item => 
             item.title.toLowerCase().includes(q) ||
             item.category.toLowerCase().includes(q) ||
             item.keywords.some(k => k.toLowerCase().includes(q))
         ).slice(0, 6);
-    }, [query]);
+    }, [query, role, modulos_activos]);
 
     // Búsqueda en vivo de productos y clientes estilo Odoo 19 Command Palette
     useEffect(() => {

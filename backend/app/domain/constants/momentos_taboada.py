@@ -1,5 +1,9 @@
 from datetime import UTC, datetime
 
+# Código del módulo a medida en Tenant.modulos_activos. Es la ÚNICA fuente de
+# verdad para habilitar Momentos Taboada; solo SUPERADMIN puede asignarlo.
+MODULO_MOMENTOS_TABOADA = "MOMENTOS_TABOADA"
+
 # Fecha oficial de inicio de la promoción Momentos Taboada
 FECHA_INICIO_CAMPANA = datetime(2026, 11, 1, 0, 0, 0, tzinfo=UTC)
 
