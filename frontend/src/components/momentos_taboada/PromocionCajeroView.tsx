@@ -20,12 +20,16 @@ import { GoogleWalletModal } from './GoogleWalletModal';
 interface Props {
     sucursales: Sucursal[];
     onSelectClienteParaCanje: (telefonoOIdentificador: string) => void;
+    /** Usuario de sucursal: solo ve su sucursal (sin selector). */
+    sucursalFija?: boolean;
 }
 
 export const PromocionCajeroView: React.FC<Props> = ({
     sucursales,
     onSelectClienteParaCanje,
+    sucursalFija = false,
 }) => {
+    // Para usuarios de sucursal el backend fuerza su sucursal; aquí solo se oculta el selector.
     const [selectedSucursal, setSelectedSucursal] = useState<string>('TODAS');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [participantes, setParticipantes] = useState<ParticipantePromocion[]>([]);
@@ -133,6 +137,11 @@ export const PromocionCajeroView: React.FC<Props> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {sucursalFija ? (
+                        <span className="px-3 py-1.5 border border-amber-200 rounded-xl text-xs font-semibold text-amber-900 bg-amber-50">
+                            {sucursales[0]?.nombre || 'Mi sucursal'}
+                        </span>
+                    ) : (
                     <select
                         value={selectedSucursal}
                         onChange={e => setSelectedSucursal(e.target.value)}
@@ -148,6 +157,7 @@ export const PromocionCajeroView: React.FC<Props> = ({
                             );
                         })}
                     </select>
+                    )}
 
                     <button
                         onClick={loadData}

@@ -9,6 +9,8 @@ interface Props {
     selectedSucursal: string;
     onSelectSucursal: (sucursalId: string) => void;
     sucursales: Sucursal[];
+    /** Usuario de sucursal: se canjea solo en su sucursal (sin selector). */
+    sucursalFija?: boolean;
     metodoPago: 'EFECTIVO' | 'QR';
     onSelectMetodoPago: (metodo: 'EFECTIVO' | 'QR') => void;
     notas: string;
@@ -25,6 +27,7 @@ export const CanjeLiquidacionSection: React.FC<Props> = ({
     selectedSucursal,
     onSelectSucursal,
     sucursales,
+    sucursalFija = false,
     metodoPago,
     onSelectMetodoPago,
     notas,
@@ -87,6 +90,11 @@ export const CanjeLiquidacionSection: React.FC<Props> = ({
                     <label className="text-xs font-bold text-gray-700 block mb-1">
                         Sucursal de Entrega (Descuento Stock):
                     </label>
+                    {sucursalFija ? (
+                        <div className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 bg-gray-50">
+                            {sucursales[0]?.nombre || 'Mi sucursal'} (Stock: {selectedPremio.stock_por_sucursal[selectedSucursal] || 0})
+                        </div>
+                    ) : (
                     <select
                         value={selectedSucursal}
                         onChange={e => onSelectSucursal(e.target.value)}
@@ -101,6 +109,7 @@ export const CanjeLiquidacionSection: React.FC<Props> = ({
                             );
                         })}
                     </select>
+                    )}
                 </div>
 
                 {/* Método de Pago del Copago */}

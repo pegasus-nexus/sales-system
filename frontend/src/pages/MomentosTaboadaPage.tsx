@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Sparkles, Award, Gift, Wallet, History, RefreshCcw, Users, Lock, CheckCircle2, Play, Pause } from 'lucide-react';
+import { Sparkles, Award, Gift, Wallet, History, RefreshCcw, Users, Lock, CheckCircle2, Play, Pause, BookOpen, Package, AlertTriangle } from 'lucide-react';
 import type {
     PremioMomentosTaboada,
     Sucursal,
@@ -20,12 +20,19 @@ import { PremiosStockManager } from '../components/momentos_taboada/PremiosStock
 import { CajaChicaTaboadaCard } from '../components/momentos_taboada/CajaChicaTaboadaCard';
 import { PromocionCajeroView } from '../components/momentos_taboada/PromocionCajeroView';
 import { CanjeFlujoCajeroCard } from '../components/momentos_taboada/CanjeFlujoCajeroCard';
+import { StockSucursalView } from '../components/momentos_taboada/StockSucursalView';
+import { GuiaMomentosTaboada, type GuiaRol } from '../components/momentos_taboada/GuiaMomentosTaboada';
 
-type TabType = 'canje' | 'promocion' | 'premios' | 'caja' | 'historial';
+type TabType = 'canje' | 'promocion' | 'premios' | 'mi_stock' | 'caja' | 'historial' | 'guia';
 
 export const MomentosTaboadaPage: React.FC = () => {
     const role = useAuthStore(state => state.role);
+    const miSucursalId = useAuthStore(state => state.user?.sucursal_id ?? state.sucursal_id ?? null);
+    // Matriz gestiona premios/stock de todas las sucursales; el resto opera solo su sucursal.
     const isAdmin = role === 'ADMIN_MATRIZ' || role === 'ADMIN' || role === 'SUPERADMIN';
+    const isAdminSucursal = role === 'ADMIN_SUCURSAL';
+    const sinSucursal = !isAdmin && !miSucursalId;
+    const guiaRol: GuiaRol = isAdmin ? 'matriz' : isAdminSucursal ? 'sucursal' : 'cajero';
 
     const [activeTab, setActiveTab] = useState<TabType>('promocion');
     const [premios, setPremios] = useState<PremioMomentosTaboada[]>([]);
@@ -36,6 +43,11 @@ export const MomentosTaboadaPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isTogglingCampana, setIsTogglingCampana] = useState<boolean>(false);
     const [preloadedQuery, setPreloadedQuery] = useState<string>('');
+
+    const sucursalesVisibles = isAdmin
+        ? sucursales
+        : sucursales.filter(s => (s._id || s.id) === miSucursalId);
+    const miSucursal = sucursalesVisibles[0];
 
     const loadData = useCallback(async () => {
         try {
@@ -256,6 +268,15 @@ export const MomentosTaboadaPage: React.FC = () => {
                 </div>
             ) : (
                 <>
+                    {sinSucursal && (
+                        <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl p-4 text-sm flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                            <span>
+                                <strong>Tu usuario no tiene una sucursal asignada.</strong> No puedes canjear premios hasta que la administración matriz te asigne una sucursal.
+                            </span>
+                        </div>
+                    )}
+
                     {/* Navegación por Pestañas */}
                     <div className="flex border-b border-gray-200 overflow-x-auto space-x-2">
                         <button
@@ -294,6 +315,46 @@ export const MomentosTaboadaPage: React.FC = () => {
                             <span>📜 Historial de Canjes ({canjes.length})</span>
                         </button>
 
+                        {/* Pestañas de Admin de Sucursal (solo lectura de su sucursal) */}
+                        {isAdminSucursal && (
+                            <>
+                        <button
+                            onClick={() => setActiveTab('mi_stock')}
+                            className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                                activeTab === 'mi_stock'
+                                    ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            <Package className="w-4 h-4" />
+                            <span>📦 Stock de mi sucursal</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('caja')}
+                            className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                                activeTab === 'caja'
+                                    ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            <Wallet className="w-4 h-4" />
+                            <span>💵 Caja Chica de mi sucursal</span>
+                        </button>
+                            </>
+                        )}
+
+                        <button
+                            onClick={() => setActiveTab('guia')}
+                            className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                                activeTab === 'guia'
+                                    ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            <BookOpen className="w-4 h-4" />
+                            <span>📘 Guía</span>
+                        </button>
+
                         {/* Pestañas solo para Administrador */}
                         {isAdmin && (
                             <>
@@ -327,15 +388,23 @@ export const MomentosTaboadaPage: React.FC = () => {
                     {/* Contenido de la Pestaña Activa */}
                     {activeTab === 'promocion' && (
                         <PromocionCajeroView
-                            sucursales={sucursales}
+                            sucursales={sucursalesVisibles}
+                            sucursalFija={!isAdmin}
                             onSelectClienteParaCanje={handleSelectClienteParaCanje}
                         />
                     )}
 
-                    {activeTab === 'canje' && (
+                    {activeTab === 'canje' && sinSucursal && (
+                        <div className="bg-white rounded-2xl p-8 text-center border border-rose-100 text-sm text-gray-700">
+                            Para canjear necesitas una sucursal asignada. Pide a la administración matriz que la asigne en Usuarios.
+                        </div>
+                    )}
+
+                    {activeTab === 'canje' && !sinSucursal && (
                         <CanjeFlujoCajeroCard
                             premios={premios}
-                            sucursales={sucursales}
+                            sucursales={sucursalesVisibles}
+                            sucursalFija={!isAdmin}
                             initialQuery={preloadedQuery}
                             onCanjeExitoso={loadData}
                         />
@@ -437,6 +506,16 @@ export const MomentosTaboadaPage: React.FC = () => {
                     {activeTab === 'caja' && isAdmin && (
                         <CajaChicaTaboadaCard sucursales={sucursales} />
                     )}
+
+                    {activeTab === 'caja' && isAdminSucursal && miSucursal && (
+                        <CajaChicaTaboadaCard sucursales={[miSucursal]} soloLectura />
+                    )}
+
+                    {activeTab === 'mi_stock' && isAdminSucursal && (
+                        <StockSucursalView premios={premios} sucursal={miSucursal} />
+                    )}
+
+                    {activeTab === 'guia' && <GuiaMomentosTaboada rol={guiaRol} />}
                 </>
             )}
         </div>

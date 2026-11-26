@@ -19,6 +19,8 @@ interface Props {
     sucursales: Sucursal[];
     initialQuery?: string;
     onCanjeExitoso: () => void;
+    /** Usuario de sucursal: canjea solo en su sucursal. */
+    sucursalFija?: boolean;
 }
 
 export const CanjeFlujoCajeroCard: React.FC<Props> = ({
@@ -26,6 +28,7 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
     sucursales,
     initialQuery = '',
     onCanjeExitoso,
+    sucursalFija = false,
 }) => {
     const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
     const [clienteData, setClienteData] = useState<ClienteSellosResponse | null>(null);
@@ -37,6 +40,12 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
     const [selectedSucursal, setSelectedSucursal] = useState<string>(
         sucursales[0]?._id || sucursales[0]?.id || ''
     );
+    // Las sucursales llegan async: fijar la primera (o la propia) cuando estén disponibles.
+    useEffect(() => {
+        const primera = sucursales[0]?._id || sucursales[0]?.id || '';
+        const existe = sucursales.some(s => (s._id || s.id) === selectedSucursal);
+        if (!existe && primera) setSelectedSucursal(primera);
+    }, [sucursales, selectedSucursal]);
     const [metodoPago, setMetodoPago] = useState<'EFECTIVO' | 'QR'>('EFECTIVO');
     const [notas, setNotas] = useState<string>('');
 
@@ -425,6 +434,7 @@ export const CanjeFlujoCajeroCard: React.FC<Props> = ({
                             selectedSucursal={selectedSucursal}
                             onSelectSucursal={setSelectedSucursal}
                             sucursales={sucursales}
+                            sucursalFija={sucursalFija}
                             metodoPago={metodoPago}
                             onSelectMetodoPago={setMetodoPago}
                             notas={notas}

@@ -352,9 +352,11 @@ class MomentosTaboadaService:
                 ),
             )
 
-        # Resolver nombre de sucursal
+        # La sucursal debe existir y pertenecer al tenant
         sucursal = await Sucursal.get(PydanticObjectId(sucursal_id)) if PydanticObjectId.is_valid(sucursal_id) else None
-        sucursal_nombre = sucursal.nombre if sucursal else "Sucursal"
+        if not sucursal or sucursal.tenant_id != tenant_id:
+            raise HTTPException(status_code=400, detail="Sucursal no válida para esta empresa")
+        sucursal_nombre = sucursal.nombre
 
         # 3. Descontar stock atómicamente
         premio.stock_por_sucursal[sucursal_id] = stock_actual - 1
