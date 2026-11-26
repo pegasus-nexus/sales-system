@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query, HTTPException
 
 from app.core.config import BUSINESS_TIMEZONE
-from app.infrastructure.auth import get_current_user
+from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.infrastructure.repositories.mongo_bi_repository import MongoBIRepository
 from app.application.services.bi_service import BIService
@@ -50,13 +50,14 @@ async def bi_health_check():
         }
     except Exception as e:
         latency_ms = round((time.time() - t0) * 1000, 2)
+        # Endpoint público: el detalle del error (host, cluster) solo va al log.
+        print(f"[BI health] MongoDB no disponible: {e}", flush=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "status": "unhealthy",
                 "timezone": BUSINESS_TIMEZONE,
                 "mongodb": "disconnected",
-                "error": str(e),
                 "latency_ms": latency_ms
             }
         )
@@ -67,7 +68,7 @@ async def get_bi_panel_general(
     start_date: Optional[str] = Query(None, description="Fecha de inicio YYYY-MM-DD o 'historial'."),
     end_date: Optional[str] = Query(None, description="Fecha de fin YYYY-MM-DD o 'historial'."),
     sucursal_id: Optional[str] = Query(None, description="ID de sucursal específica o 'all'."),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
     today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
@@ -94,7 +95,7 @@ async def get_bi_comparativas(
     end_date: Optional[str] = Query(None, description="Fecha fin del período actual YYYY-MM-DD."),
     comparar_contra: str = Query("ayer", description="Modo comparativo: 'ayer' | 'semana_anterior' | 'mes_anterior' | 'ano_anterior'."),
     sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
     today_bolivia_str = datetime.now(BOLIVIA_TZ).strftime("%Y-%m-%d")
@@ -121,7 +122,7 @@ async def get_bi_productos(
     start_date: Optional[str] = Query(None, description="Fecha inicio YYYY-MM-DD."),
     end_date: Optional[str] = Query(None, description="Fecha fin YYYY-MM-DD."),
     sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
     """
@@ -148,7 +149,7 @@ async def get_bi_productos(
 
 @router.get("/sucursales", response_model=List[Dict[str, Any]])
 async def get_bi_sucursales(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     bi_service: BIService = Depends(get_bi_service)
 ):
     tenant_id = str(current_user.tenant_id)

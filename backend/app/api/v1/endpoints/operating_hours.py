@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, Body
 from pydantic import BaseModel, Field
-from app.infrastructure.auth import get_current_user
+from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.infrastructure.repositories.mongo_operating_hours_repository import MongoBranchOperatingHoursRepository
 from app.application.services.operating_hours_service import OperatingHoursService
@@ -33,7 +33,7 @@ def get_operating_hours_service() -> OperatingHoursService:
 
 @router.get("/operating-hours", response_model=List[OperatingHoursResponse])
 async def get_operating_hours(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     service: OperatingHoursService = Depends(get_operating_hours_service)
 ):
     tenant_id = current_user.tenant_id or "default"
@@ -54,7 +54,7 @@ async def get_operating_hours(
 @router.post("/operating-hours", response_model=OperatingHoursResponse)
 async def update_operating_hours(
     payload: OperatingHoursUpdateRequest = Body(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     service: OperatingHoursService = Depends(get_operating_hours_service)
 ):
     tenant_id = current_user.tenant_id or "default"

@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query, HTTPException
 
 from app.core.config import BUSINESS_TIMEZONE
-from app.infrastructure.auth import get_current_user
+from app.infrastructure.auth import get_current_active_user
 from app.domain.models.user import User
 from app.application.bi.inventario_service import InventarioBIService
 from app.schemas.bi_inventario import BIInventarioControlResponse
@@ -20,7 +20,7 @@ def get_inventario_bi_service() -> InventarioBIService:
 @router.get("/control", response_model=BIInventarioControlResponse)
 async def get_bi_inventario_control_clean(
     sucursal_id: Optional[str] = Query(None, description="ID de sucursal o 'all'."),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     service: InventarioBIService = Depends(get_inventario_bi_service)
 ):
     """
