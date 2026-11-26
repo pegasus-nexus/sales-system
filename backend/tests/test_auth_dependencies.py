@@ -4,26 +4,50 @@ solo valida el token y se salta usuario inactivo, prueba vencida (402) y la
 restricción de cuentas de catálogo. Las rutas deben usar
 get_current_active_user o require_roles(...), que se apoyan en ella.
 
-Test de lógica pura: inspecciona el árbol de dependencias, no requiere MongoDB.
+Inspecciona el router de cada módulo de endpoints directamente, para no
+depender de cómo cada versión de FastAPI arma app.routes. No requiere MongoDB.
 """
 
+import importlib
+import pkgutil
 import re
 
 from fastapi.routing import APIRoute
 
+import app.api.v1.endpoints as endpoints_pkg
 from app.infrastructure.auth import get_current_active_user, get_current_user
-from app.main import app
+
+# Chequeos de salud públicos a propósito (monitoreo); no devuelven datos de negocio.
+PUBLIC_ROUTES = {("bi", "/health")}
 
 
-def _direct_dependencies(route: APIRoute):
-    return [dep.call for dep in route.dependant.dependencies]
+def _endpoint_routes():
+    """(módulo, ruta) de cada APIRoute definida en app/api/v1/endpoints."""
+    for info in pkgutil.iter_modules(endpoints_pkg.__path__):
+        module = importlib.import_module(f"{endpoints_pkg.__name__}.{info.name}")
+        router = getattr(module, "router", None)
+        if router is None:
+            continue
+        for route in router.routes:
+            if isinstance(route, APIRoute):
+                yield info.name, route
+
+
+def _all_dependency_calls(dependant):
+    for dep in dependant.dependencies:
+        yield dep.call
+        yield from _all_dependency_calls(dep)
+
+
+def test_endpoint_routes_are_discovered():
+    assert len(list(_endpoint_routes())) > 50
 
 
 def test_no_route_depends_directly_on_get_current_user():
     offenders = [
-        f"{','.join(sorted(route.methods))} {route.path}"
-        for route in app.routes
-        if isinstance(route, APIRoute) and get_current_user in _direct_dependencies(route)
+        f"{module}: {','.join(sorted(route.methods))} {route.path}"
+        for module, route in _endpoint_routes()
+        if get_current_user in [dep.call for dep in route.dependant.dependencies]
     ]
     assert offenders == [], (
         "Usa get_current_active_user o require_roles en lugar de get_current_user: "
@@ -31,23 +55,17 @@ def test_no_route_depends_directly_on_get_current_user():
     )
 
 
-# Chequeos de salud públicos a propósito (monitoreo); no devuelven datos de negocio.
-PUBLIC_BI_ROUTES = {"/api/v1/bi/health"}
-
-
 def test_bi_routes_require_active_user():
     bi_routes = [
-        route
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        and route.path.startswith("/api/v1/bi")
-        and route.path not in PUBLIC_BI_ROUTES
+        (module, route)
+        for module, route in _endpoint_routes()
+        if module.startswith("bi") and (module, route.path) not in PUBLIC_ROUTES
     ]
-    assert bi_routes, "No se encontraron rutas BI registradas"
-    for route in bi_routes:
-        calls = _direct_dependencies(route)
-        nested = [d.call for dep in route.dependant.dependencies for d in dep.dependencies]
-        assert get_current_active_user in calls + nested, route.path
+    assert bi_routes, "No se encontraron rutas BI"
+    for module, route in bi_routes:
+        assert get_current_active_user in set(_all_dependency_calls(route.dependant)), (
+            f"{module}: {route.path}"
+        )
 
 
 def test_escaped_username_regex_does_not_match_other_users():
