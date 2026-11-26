@@ -188,11 +188,11 @@ async def create_cajero(
 
     import re
     username_lower = data.username.lower()
-    if await User.find_one({"username": re.compile(f"^{username_lower}$", re.IGNORECASE)}):
+    if await User.find_one({"username": re.compile(f"^{re.escape(username_lower)}$", re.IGNORECASE)}):
         raise HTTPException(status_code=400, detail="Username already exists")
 
     email_lower = data.email.lower()
-    if await User.find_one({"email": re.compile(f"^{email_lower}$", re.IGNORECASE)}):
+    if await User.find_one({"email": re.compile(f"^{re.escape(email_lower)}$", re.IGNORECASE)}):
         raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
 
     # Strict injection from JWT — client cannot override this
@@ -277,14 +277,14 @@ async def update_employee(
     if data.username is not None:
         username_lower = data.username.lower()
         if username_lower != target_user.username:
-            if await User.find_one({"username": re.compile(f"^{username_lower}$", re.IGNORECASE)}):
+            if await User.find_one({"username": re.compile(f"^{re.escape(username_lower)}$", re.IGNORECASE)}):
                 raise HTTPException(status_code=400, detail="El nombre de usuario ya existe")
             target_user.username = username_lower
 
     if data.email is not None:
         email_lower = data.email.lower()
         if email_lower != target_user.email:
-            if await User.find_one({"email": re.compile(f"^{email_lower}$", re.IGNORECASE)}):
+            if await User.find_one({"email": re.compile(f"^{re.escape(email_lower)}$", re.IGNORECASE)}):
                 raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
             target_user.email = email_lower
 

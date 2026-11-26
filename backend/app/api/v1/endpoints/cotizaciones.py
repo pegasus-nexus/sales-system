@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -39,9 +40,9 @@ async def listar_cotizaciones(
         query["estado"] = estado
     if search:
         query["$or"] = [
-            {"numero_cotizacion": {"$regex": search, "$options": "i"}},
-            {"cliente.nombre_razon_social": {"$regex": search, "$options": "i"}},
-            {"cliente.nit_ci": {"$regex": search, "$options": "i"}},
+            {"numero_cotizacion": {"$regex": re.escape(search), "$options": "i"}},
+            {"cliente.nombre_razon_social": {"$regex": re.escape(search), "$options": "i"}},
+            {"cliente.nit_ci": {"$regex": re.escape(search), "$options": "i"}},
         ]
 
     coll = Cotizacion.get_motor_collection()

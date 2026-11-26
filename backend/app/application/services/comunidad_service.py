@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
@@ -175,11 +176,11 @@ class ComunidadService:
 
         if search:
             query["$or"] = [
-                {"nombre": {"$regex": search, "$options": "i"}},
-                {"numero_tarjeta": {"$regex": search, "$options": "i"}},
-                {"telefono": {"$regex": search, "$options": "i"}},
-                {"email": {"$regex": search, "$options": "i"}},
-                {"nit_ci": {"$regex": search, "$options": "i"}}
+                {"nombre": {"$regex": re.escape(search), "$options": "i"}},
+                {"numero_tarjeta": {"$regex": re.escape(search), "$options": "i"}},
+                {"telefono": {"$regex": re.escape(search), "$options": "i"}},
+                {"email": {"$regex": re.escape(search), "$options": "i"}},
+                {"nit_ci": {"$regex": re.escape(search), "$options": "i"}}
             ]
 
         miembros = await Cliente.find(query).sort("-created_at").skip(skip).limit(limit).to_list()

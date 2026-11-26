@@ -1,3 +1,4 @@
+import re
 from fastapi import APIRouter, Depends
 from typing import List, Optional
 from app.domain.models.user import User, UserRole
@@ -39,7 +40,7 @@ async def get_audit_logs(
     if entity:
         query["entity"] = entity
     if username:
-        query["username"] = {"$regex": username, "$options": "i"}
+        query["username"] = {"$regex": re.escape(username), "$options": "i"}
 
     logs = await AuditLog.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     return [serialize_mongo_types(log.model_dump()) for log in logs]
